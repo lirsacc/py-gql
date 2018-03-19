@@ -1,0 +1,9 @@
+# Dependencies for local development
+flake8~=3.5.0
+invoke~=0.22.1
+pylint==1.8.2
+pytest-cov==2.5.1
+pytest==3.4.2
+tox==2.9.1
+
+-e .
