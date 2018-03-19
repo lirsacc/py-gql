@@ -48,7 +48,7 @@ def _doc(loc, defs):
 
 
 def test_it_parses_simple_type():
-    body = '''
+    body = u'''
 type Hello {
   world: String
 }'''
@@ -74,7 +74,7 @@ type Hello {
 
 def test_it_parses_type_with_description_string():
     assert_node_equal(
-        parse('''
+        parse(u'''
 "Description"
 type Hello {
   world: String
@@ -106,7 +106,7 @@ type Hello {
 
 def test_it_parses_type_with_description_multi_line_string():
     assert_node_equal(
-        parse('''
+        parse(u'''
 """
 Description
 """
@@ -141,7 +141,7 @@ type Hello {
 
 
 def test_it_parses_simple_extension():
-    body = '''
+    body = u'''
 extend type Hello {
   world: String
 }
@@ -165,7 +165,7 @@ extend type Hello {
 
 def test_it_parses_extension_without_fields():
     assert_node_equal(
-        parse('extend type Hello implements Greeting'),
+        parse(u'extend type Hello implements Greeting'),
         _doc((0, 37), [
             _ast.ObjectTypeExtension(
                 loc=(0, 37),
@@ -212,14 +212,14 @@ def test_it_parses_extension_without_fields_followed_by_extension():
 
 def test_extension_without_anything_throws():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('extend type Hello')
+        parse(u'extend type Hello')
     assert exc_info.value.position == 17
     assert exc_info.value.message == '<EOF>'
 
 
 def test_extension_do_not_include_descriptions_0():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('''
+        parse(u'''
       "Description"
       extend type Hello {
         world: String
@@ -230,7 +230,7 @@ def test_extension_do_not_include_descriptions_0():
 
 def test_extension_do_not_include_descriptions_1():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('''
+        parse(u'''
       extend "Description" type Hello {
         world: String
       }''')
@@ -239,7 +239,7 @@ def test_extension_do_not_include_descriptions_1():
 
 
 def test_it_parses_simple_non_null_type():
-    body = '''
+    body = u'''
 type Hello {
   world: String!
 }'''
@@ -267,7 +267,7 @@ type Hello {
 
 
 def test_it_parses_simple_type_inheriting_interface():
-    body = 'type Hello implements World { field: String }'
+    body = u'type Hello implements World { field: String }'
     assert_node_equal(parse(body), _ast.Document(
         loc=(0, 45),
         definitions=[
@@ -291,7 +291,7 @@ def test_it_parses_simple_type_inheriting_interface():
 
 
 def test_it_parses_simple_type_inheriting_multiple_interfaces():
-    body = 'type Hello implements Wo & rld { field: String }'
+    body = u'type Hello implements Wo & rld { field: String }'
     assert_node_equal(parse(body), _ast.Document(
         loc=(0, 48),
         definitions=[
@@ -316,7 +316,7 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces():
 
 
 def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_ampersand():  # noqa: E501
-    body = 'type Hello implements & Wo & rld { field: String }'
+    body = u'type Hello implements & Wo & rld { field: String }'
     assert_node_equal(parse(body), _ast.Document(
         loc=(0, 50),
         definitions=[
@@ -341,7 +341,7 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_amper
 
 
 def test_it_parses_single_value_enum():
-    body = 'enum Hello { WORLD }'
+    body = u'enum Hello { WORLD }'
     assert_node_equal(parse(body), _doc((0, 20), [
         _ast.EnumTypeDefinition(
             loc=(0, 20),
@@ -358,7 +358,7 @@ def test_it_parses_single_value_enum():
 
 
 def test_it_parses_double_value_enum():
-    body = 'enum Hello { WO, RLD }'
+    body = u'enum Hello { WO, RLD }'
     assert_node_equal(parse(body), _doc((0, 22), [
         _ast.EnumTypeDefinition(
             loc=(0, 22),
@@ -379,7 +379,7 @@ def test_it_parses_double_value_enum():
 
 
 def test_it_parses_simple_interface():
-    body = '''
+    body = u'''
 interface Hello {
   world: String
 }'''
@@ -400,7 +400,7 @@ interface Hello {
 
 
 def test_it_parses_simple_field_with_arg():
-    body = '''
+    body = u'''
 type Hello {
   world(flag: Boolean): String
 }'''
@@ -429,7 +429,7 @@ type Hello {
 
 
 def test_it_parses_simple_field_with_arg_with_default_value():
-    body = '''
+    body = u'''
 type Hello {
   world(flag: Boolean = true): String
 }'''
@@ -459,7 +459,7 @@ type Hello {
 
 
 def test_it_parses_simple_field_with_list_arg():
-    body = '''
+    body = u'''
 type Hello {
   world(things: [String]): String
 }'''
@@ -491,7 +491,7 @@ type Hello {
 
 
 def test_it_parses_simple_field_with_two_args():
-    body = '''
+    body = u'''
 type Hello {
   world(argOne: Boolean, argTwo: Int): String
 }'''
@@ -567,28 +567,28 @@ def test_it_parses_union_with_two_types_and_leading_pipe():
 
 def test_union_fails_with_no_types():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('union Hello = |')
+        parse(u'union Hello = |')
     assert exc_info.value.position == 15
     assert exc_info.value.message == 'Expected Name but found <EOF>'
 
 
 def test_union_fails_with_leading_douple_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('union Hello = || Wo | Rld')
+        parse(u'union Hello = || Wo | Rld')
     assert exc_info.value.position == 15
     assert exc_info.value.message == 'Expected Name but found |'
 
 
 def test_union_fails_with_double_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('union Hello = Wo || Rld')
+        parse(u'union Hello = Wo || Rld')
     assert exc_info.value.position == 18
     assert exc_info.value.message == 'Expected Name but found |'
 
 
 def test_union_fails_with_trailing_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('union Hello = | Wo | Rld |')
+        parse(u'union Hello = | Wo | Rld |')
     assert exc_info.value.position == 26
     assert exc_info.value.message == 'Expected Name but found <EOF>'
 
@@ -604,7 +604,7 @@ def test_it_parses_scalar():
 
 
 def test_it_parses_simple_input_object():
-    body = '''
+    body = u'''
 input Hello {
   world: String
 }'''
@@ -626,7 +626,7 @@ input Hello {
 
 def test_simple_input_object_with_args_should_fail():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('''
+        parse(u'''
       input Hello {
         world(foo: Int): String
       }''')
@@ -637,7 +637,7 @@ def test_simple_input_object_with_args_should_fail():
 
 def test_directive_with_incorrect_locations_fails():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse('''
+        parse(u'''
       directive @foo on FIELD | INCORRECT_LOCATION''')
 
     assert exc_info.value.position == 33
@@ -647,7 +647,7 @@ def test_directive_with_incorrect_locations_fails():
 class TestAllowLegacySdlEmptyFieldsOption(object):
 
     def test_support_type_with_empty_fields(self):
-        body = 'type Hello { }'
+        body = u'type Hello { }'
 
         with pytest.raises(UnexpectedToken) as exc_info:
             parse(body)
@@ -669,7 +669,7 @@ class TestAllowLegacySdlEmptyFieldsOption(object):
 class TestAllowLegacySdlImplementsInterfacesOption(object):
 
     def test_it_works(self):
-        body = 'type Hello implements Wo rld { field: String }'
+        body = u'type Hello implements Wo rld { field: String }'
 
         with pytest.raises(UnexpectedToken) as exc_info:
             parse(body)

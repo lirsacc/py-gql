@@ -61,14 +61,14 @@ SYMBOLS = {
 }
 
 QUOTED_CHARS = {
-    0x0022: '"',
-    0x005c: '\\',
-    0x002f: '/',
-    0x0062: '\u0008',
-    0x0066: '\u000c',
-    0x006e: '\n',
-    0x0072: '\r',
-    0x0074: '\t',
+    0x0022: u'"',
+    0x005c: u'\\',
+    0x002f: u'/',
+    0x0062: u'\u0008',
+    0x0066: u'\u000c',
+    0x006e: u'\n',
+    0x0072: u'\r',
+    0x0074: u'\t',
 }
 
 
@@ -287,8 +287,7 @@ class Lexer(object):
             return self.read_escaped_unicode()
         else:
             raise InvalidEscapeSequence(
-                "\%s" % char, self.position - 1, self.source
-            )
+                u"\%s" % char, self.position - 1, self.source)
 
     def read_escaped_unicode(self):
         """ Advance lexer over a unicode character
@@ -306,15 +305,13 @@ class Lexer(object):
 
         if len(escape) != 4:
             raise InvalidEscapeSequence(
-                '\\u%s' % escape, start - 1, self.source
-            )
+                u'\\u%s' % escape, start - 1, self.source)
 
         try:
-            return chr(int(escape, 16))
-        except ValueError as err:
+            return u'%c' % six.unichr(int(escape, 16))
+        except ValueError:
             raise InvalidEscapeSequence(
-                '\\u%s' % escape, start - 1, self.source
-            )
+                u'\\u%s' % escape, start - 1, self.source)
 
     def read_number(self):
         """ Advance lexer over a number

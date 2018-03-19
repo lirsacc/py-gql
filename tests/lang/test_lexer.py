@@ -10,12 +10,8 @@ on revision 8d1ae25de444a9b544a1fdc98e138ae91b77057c.
 import pytest
 
 from py_gql.exc import (
-    InvalidCharacter,
-    UnexpectedCharacter,
-    NonTerminatedString,
-    InvalidEscapeSequence,
-    UnexpectedEOF,
-)
+    InvalidCharacter, UnexpectedCharacter, NonTerminatedString,
+    InvalidEscapeSequence, UnexpectedEOF)
 from py_gql.lang import Lexer, token
 
 
@@ -27,12 +23,12 @@ def lex_one(source):
 
 def test_it_disallows_uncommon_control_characters():
     with pytest.raises(InvalidCharacter) as exc_info:
-        lex_one("\u0007")
+        lex_one(u"\u0007")
     assert exc_info.value.position == 1
 
 
 def test_it_accepts_bom_header():
-    assert lex_one("\uFEFF foo") == token.Name(2, 5, 'foo')
+    assert lex_one(u"\uFEFF foo") == token.Name(2, 5, 'foo')
 
 
 @pytest.mark.skip('Irrelevant')
@@ -46,7 +42,7 @@ def test_it_can_be_json_stringified_or_util_inspected():
 
 
 def test_it_skips_whitespace_and_comments_1():
-    assert lex_one("""
+    assert lex_one(u"""
 
     foo
 
@@ -55,14 +51,14 @@ def test_it_skips_whitespace_and_comments_1():
 
 
 def test_it_skips_whitespace_and_comments_2():
-    assert lex_one("""
+    assert lex_one(u"""
     #comment
     foo#comment
     """) == token.Name(18, 21, 'foo')
 
 
 def test_it_skips_whitespace_and_comments_3():
-    assert lex_one(",,,foo,,,") == token.Name(3, 6, 'foo')
+    assert lex_one(u",,,foo,,,") == token.Name(3, 6, 'foo')
 
 
 @pytest.mark.skip('Irrelevant (see tests/test_errors.py)')
@@ -81,33 +77,33 @@ def test_it_updates_column_numbers_in_error_for_file_context():
 
 
 @pytest.mark.parametrize("value,expected", [
-    ('"simple"', token.String(0, 8, "simple")),
-    ('" white space "', token.String(0, 15, " white space ")),
-    ('"quote \\""', token.String(0, 10, "quote \"")),
-    ('"escaped \\n\\r\\b\\t\\f"', token.String(0, 20, "escaped \n\r\b\t\f")),
-    ('"slashes \\\\ \\/"', token.String(0, 15, "slashes \\ /")),
-    ('"unicode \\u1234\\u5678\\u90AB\\uCDEF"',
-     token.String(0, 34, "unicode \u1234\u5678\u90AB\uCDEF")),
+    (u'"simple"', token.String(0, 8, "simple")),
+    (u'" white space "', token.String(0, 15, " white space ")),
+    (u'"quote \\""', token.String(0, 10, "quote \"")),
+    (u'"escaped \\n\\r\\b\\t\\f"', token.String(0, 20, "escaped \n\r\b\t\f")),
+    (u'"slashes \\\\ \\/"', token.String(0, 15, "slashes \\ /")),
+    (u'"unicode \\u1234\\u5678\\u90AB\\uCDEF"',
+     token.String(0, 34, u"unicode \u1234\u5678\u90AB\uCDEF")),
 ])
 def test_it_lexes_strings(value, expected):
     assert lex_one(value) == expected
 
 
 @pytest.mark.parametrize("value, err_cls, expected_positon", [
-    ('"', NonTerminatedString, 1),
-    ('"no end quote', NonTerminatedString, 13),
-    ("'single quotes'", UnexpectedCharacter, 0),
-    ('"contains unescaped \u0007 control char"', InvalidCharacter, 20),
-    ('"null-byte is not \u0000 end of file"', InvalidCharacter, 18),
-    ('"multi\nline"', NonTerminatedString, 6),
-    ('"multi\rline"', NonTerminatedString, 6),
-    ('"bad \\z esc"', InvalidEscapeSequence, 6),
-    ('"bad \\x esc"', InvalidEscapeSequence, 6),
-    ('"bad \\u1 esc"', InvalidEscapeSequence, 6),
-    ('"bad \\u0XX1 esc"', InvalidEscapeSequence, 6),
-    ('"bad \\uXXXX esc"', InvalidEscapeSequence, 6),
-    ('"bad \\uFXXX esc"', InvalidEscapeSequence, 6),
-    ('"bad \\uXXXF esc"', InvalidEscapeSequence, 6),
+    (u'"', NonTerminatedString, 1),
+    (u'"no end quote', NonTerminatedString, 13),
+    (u"'single quotes'", UnexpectedCharacter, 0),
+    (u'"contains unescaped \u0007 control char"', InvalidCharacter, 20),
+    (u'"null-byte is not \u0000 end of file"', InvalidCharacter, 18),
+    (u'"multi\nline"', NonTerminatedString, 6),
+    (u'"multi\rline"', NonTerminatedString, 6),
+    (u'"bad \\z esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\x esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\u1 esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\u0XX1 esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\uXXXX esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\uFXXX esc"', InvalidEscapeSequence, 6),
+    (u'"bad \\uXXXF esc"', InvalidEscapeSequence, 6),
 ])
 def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
     with pytest.raises(err_cls) as exc_info:
@@ -116,23 +112,23 @@ def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
 
 
 @pytest.mark.parametrize("value, expected", [
-    ('"""simple"""',
+    (u'"""simple"""',
      token.BlockString(0, 12, "simple")),
-    ('""" white space """',
+    (u'""" white space """',
      token.BlockString(0, 19, " white space ")),
-    ('"""contains " quote"""',
+    (u'"""contains " quote"""',
      token.BlockString(0, 22, "contains \" quote")),
-    ('"""contains \\""" triplequote"""',
+    (u'"""contains \\""" triplequote"""',
      token.BlockString(0, 31, 'contains """ triplequote')),
-    ('"""multi\nline"""',
+    (u'"""multi\nline"""',
      token.BlockString(0, 16, 'multi\nline')),
-    ('"""multi\rline\r\nnormalized"""',
+    (u'"""multi\rline\r\nnormalized"""',
      token.BlockString(0, 28, 'multi\nline\nnormalized')),
-    ('"""unescaped \\n\\r\\b\\t\\f\\u1234"""',
+    (u'"""unescaped \\n\\r\\b\\t\\f\\u1234"""',
      token.BlockString(0, 32, "unescaped \\n\\r\\b\\t\\f\\u1234")),
-    ('"""slashes \\\\ \\/"""',
+    (u'"""slashes \\\\ \\/"""',
      token.BlockString(0, 19, 'slashes \\\\ \\/')),
-    ('''"""
+    (u'''"""
 
         spans
           multiple
@@ -145,10 +141,10 @@ def test_it_lexes_block_strings(value, expected):
 
 
 @pytest.mark.parametrize("value, err_cls, expected_positon", [
-    ('"""', NonTerminatedString, 3),
-    ('"""no end quote', NonTerminatedString, 15),
-    ('"""contains unescaped \u0007 control char"""', InvalidCharacter, 22),
-    ('"""null-byte is not \u0000 end of file"""', InvalidCharacter, 20),
+    (u'"""', NonTerminatedString, 3),
+    (u'"""no end quote', NonTerminatedString, 15),
+    (u'"""contains unescaped \u0007 control char"""', InvalidCharacter, 22),
+    (u'"""null-byte is not \u0000 end of file"""', InvalidCharacter, 20),
 ])
 def test_it_lex_reports_useful_block_string_errors(
         value, err_cls, expected_positon):
@@ -158,37 +154,37 @@ def test_it_lex_reports_useful_block_string_errors(
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('4', token.Integer(0, 1, '4')),
-    ('4.123', token.Float(0, 5, '4.123')),
-    ('-4', token.Integer(0, 2, '-4')),
-    ('9', token.Integer(0, 1, '9')),
-    ('0', token.Integer(0, 1, '0')),
-    ('-4.123', token.Float(0, 6, '-4.123')),
-    ('0.123', token.Float(0, 5, '0.123')),
-    ('123e4', token.Float(0, 5, '123e4')),
-    ('123E4', token.Float(0, 5, '123E4')),
-    ('123e-4', token.Float(0, 6, '123e-4')),
-    ('123e+4', token.Float(0, 6, '123e+4')),
-    ('-123e4', token.Float(0, 6, '-123e4')),
-    ('-123E4', token.Float(0, 6, '-123E4')),
-    ('-123e-4', token.Float(0, 7, '-123e-4')),
-    ('-123e+4', token.Float(0, 7, '-123e+4')),
-    ('-1.123e4567', token.Float(0, 11, '-1.123e4567')),
+    (u'4', token.Integer(0, 1, '4')),
+    (u'4.123', token.Float(0, 5, '4.123')),
+    (u'-4', token.Integer(0, 2, '-4')),
+    (u'9', token.Integer(0, 1, '9')),
+    (u'0', token.Integer(0, 1, '0')),
+    (u'-4.123', token.Float(0, 6, '-4.123')),
+    (u'0.123', token.Float(0, 5, '0.123')),
+    (u'123e4', token.Float(0, 5, '123e4')),
+    (u'123E4', token.Float(0, 5, '123E4')),
+    (u'123e-4', token.Float(0, 6, '123e-4')),
+    (u'123e+4', token.Float(0, 6, '123e+4')),
+    (u'-123e4', token.Float(0, 6, '-123e4')),
+    (u'-123E4', token.Float(0, 6, '-123E4')),
+    (u'-123e-4', token.Float(0, 7, '-123e-4')),
+    (u'-123e+4', token.Float(0, 7, '-123e+4')),
+    (u'-1.123e4567', token.Float(0, 11, '-1.123e4567')),
 ])
 def test_it_lexes_numbers(string, expected):
     assert lex_one(string) == expected
 
 
 @pytest.mark.parametrize("value, err_cls, expected_positon", [
-    ('00', UnexpectedCharacter, 1),
-    ('+1', UnexpectedCharacter, 0),
-    ('1.', UnexpectedEOF, 2),
-    ('1.e1', UnexpectedCharacter, 2),
-    ('.123', UnexpectedCharacter, 2),
-    ('1.A', UnexpectedCharacter, 2),
-    ('-A', UnexpectedCharacter, 1),
-    ('1.0e', UnexpectedEOF, 4),
-    ('1.0eA', UnexpectedCharacter, 4),
+    (u'00', UnexpectedCharacter, 1),
+    (u'+1', UnexpectedCharacter, 0),
+    (u'1.', UnexpectedEOF, 2),
+    (u'1.e1', UnexpectedCharacter, 2),
+    (u'.123', UnexpectedCharacter, 2),
+    (u'1.A', UnexpectedCharacter, 2),
+    (u'-A', UnexpectedCharacter, 1),
+    (u'1.0e', UnexpectedEOF, 4),
+    (u'1.0eA', UnexpectedCharacter, 4),
 ])
 def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):
     with pytest.raises(err_cls) as exc_info:
@@ -197,29 +193,30 @@ def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('!', token.ExclamationMark(0, 1)),
-    ('$', token.Dollar(0, 1)),
-    ('(', token.ParenOpen(0, 1)),
-    (')', token.ParenClose(0, 1)),
-    ('[', token.BracketOpen(0, 1)),
-    (']', token.BracketClose(0, 1)),
-    ('{', token.CurlyOpen(0, 1)),
-    ('}', token.CurlyClose(0, 1)),
-    (':', token.Colon(0, 1)),
-    ('=', token.Equals(0, 1)),
-    ('@', token.At(0, 1)),
-    ('|', token.Pipe(0, 1)),
-    ('...', token.Ellipsis(0, 3)),
+    (u'!', token.ExclamationMark(0, 1)),
+    (u'$', token.Dollar(0, 1)),
+    (u'(', token.ParenOpen(0, 1)),
+    (u')', token.ParenClose(0, 1)),
+    (u'[', token.BracketOpen(0, 1)),
+    (u']', token.BracketClose(0, 1)),
+    (u'{', token.CurlyOpen(0, 1)),
+    (u'}', token.CurlyClose(0, 1)),
+    (u':', token.Colon(0, 1)),
+    (u'=', token.Equals(0, 1)),
+    (u'@', token.At(0, 1)),
+    (u'|', token.Pipe(0, 1)),
+    (u'&', token.Ampersand(0, 1)),
+    (u'...', token.Ellipsis(0, 3)),
 ])
 def test_it_lexes_punctuation(string, expected):
     assert lex_one(string) == expected
 
 
 @pytest.mark.parametrize("value, err_cls, pos", [
-    ('..', UnexpectedEOF, 2),
-    ('?', UnexpectedCharacter, 0),
-    ('\u203B', UnexpectedCharacter, 0),
-    ('\u200b', UnexpectedCharacter, 0),
+    (u'..', UnexpectedEOF, 2),
+    (u'?', UnexpectedCharacter, 0),
+    (u'\u203B', UnexpectedCharacter, 0),
+    (u'\u200b', UnexpectedCharacter, 0),
 ])
 def test_it_lex_reports_useful_unknown_character_error(value, err_cls, pos):
     with pytest.raises(err_cls) as exc_info:
@@ -238,7 +235,7 @@ def test_it_produces_double_linked_list_of_tokens_including_comments():
 
 
 def test_it_lexes_multiple_tokens():
-    assert list(Lexer("""
+    assert list(Lexer(u"""
     query {
         Node (search: "foo") {
             id
