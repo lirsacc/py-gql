@@ -2,11 +2,14 @@
 """ GraphQL AST representations.
 """
 
+import copy
+import json
+
 
 def node_to_dict(node):
     """ Recrusively convert a ``py_gql.lang.ast.Node`` instance to
     a dict that can be later converted to json. Useful for testing and
-    printing in a readable way.
+    printing in a readable / compatible with JS tooling way.
 
     :param node:
         A node instance or any value used inside nodes (list of nodes
@@ -15,9 +18,9 @@ def node_to_dict(node):
     :rtype: dict
     """
     if isinstance(node, Node):
-        d = {attr: node_to_dict(getattr(node, attr)) for attr in node.__slots__}
-        d.update(__kind__=node.__class__.__name__)
-        return d
+        return dict({
+            attr: node_to_dict(getattr(node, attr)) for attr in node.__slots__
+        }, __kind__=node.__class__.__name__)
     elif isinstance(node, list):
         return [node_to_dict(v) for v in node]
     else:
@@ -25,7 +28,7 @@ def node_to_dict(node):
 
 
 class Node(object):
-    __slots__ = ('loc')
+    __slots__ = ('loc',)
     __defaults__ = {}
 
     def __init__(self, *_, **kwargs):
@@ -42,6 +45,9 @@ class Node(object):
                 all((self.__getattribute__(attr) == rhs.__getattribute__(attr)
                     for attr in self.__slots__)))
 
+    def __hash__(self):
+        return id(self)
+
     def __repr__(self):
         return '<%s %s>' % (
             self.__class__.__name__,
@@ -49,12 +55,41 @@ class Node(object):
                        % (attr, self.__getattribute__(attr))
                        for attr in self.__slots__)))
 
+    def __getitem__(self, key, default=None):
+        if key not in self.__slots__:
+            raise KeyError(key)
+        return getattr(self, key, default)
+
+    def __copy__(self):
+        return self.cls(**{k: getattr(self, k) for k in self.__slots__})
+
+    def __deepcopy__(self):
+        return self.cls(**{
+            k: copy.deepcopy(getattr(self, k))
+            for k in self.__slots__
+        })
+
+    def to_dict(self):
+        return node_to_dict(self)
+
+    def to_json(self, **kwargs):
+        kwargs.update(sort_keys=True, check_circular=True)
+        return json.dumps(self.to_dict(), **kwargs)
+
 
 class Name(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar value: str
+    """
     __slots__ = ('loc', 'value')
 
 
 class Document(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar definitions: list[Definition]
+    """
     __slots__ = ('loc', 'definitions')
     __defaults__ = {'definitions': []}
 
@@ -68,6 +103,14 @@ class ExecutableDefinition(Definition):
 
 
 class OperationDefinition(ExecutableDefinition):
+    """
+    :ivar loc: (int, int)
+    :ivar operation: str
+    :ivar name: Name
+    :ivar variable_definitions: list[VariableDefinition]
+    :ivar directives: list[Directive]
+    :ivar selection_set: SelectionSet
+    """
     __slots__ = (
         'loc', 'operation', 'name', 'variable_definitions', 'directives',
         'selection_set')
@@ -76,14 +119,28 @@ class OperationDefinition(ExecutableDefinition):
 
 
 class VariableDefinition(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar variable: Variable
+    :ivar type: Type
+    :ivar default_value: Optional[Value]
+    """
     __slots__ = ('loc', 'variable', 'type', 'default_value')
 
 
 class Variable(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    """
     __slots__ = ('loc', 'name')
 
 
 class SelectionSet(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar selections: list[Selection]
+    """
     __slots__ = ('loc', 'selections')
     __defaults__ = {'selections': []}
 
@@ -93,28 +150,60 @@ class Selection(Node):
 
 
 class Field(Selection):
+    """
+    :ivar loc: (int, int)
+    :ivar alias: Optional[Name]
+    :ivar name: Name
+    :ivar arguments: list[Argument]
+    :ivar directives: list[Directive]
+    :ivar selection_set: Optional[SelectionSet]
+    """
     __slots__ = (
         'loc', 'alias', 'name', 'arguments', 'directives', 'selection_set')
     __defaults__ = {'directives': [], 'arguments': []}
 
 
 class Argument(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    :ivar value: Value
+    """
     __slots__ = ('loc', 'name', 'value')
 
 
-class FragmentSpread(Field):
+class FragmentSpread(Selection):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    :ivar directives: list[Directive]
+    """
     __slots__ = ('loc', 'name', 'directives')
     __defaults__ = {'directives': []}
 
 
-class InlineFragment(Field):
+class InlineFragment(Selection):
+    """
+    :ivar loc: (int, int)
+    :ivar type_condition: Type
+    :ivar directives: list[Directive]
+    :ivar selection_set: SelectionSet
+    """
     __slots__ = ('loc', 'type_condition', 'directives', 'selection_set')
     __defaults__ = {'directives': []}
 
 
 class FragmentDefinition(ExecutableDefinition):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    :ivar variable_definitions: list[VariableDefinition]
+    :ivar type_condition: Type
+    :ivar directives: list[Directive]
+    :ivar selection_set: SelectionSet
+    """
     __slots__ = (
-        'loc', 'name', 'variable_defintions', 'type_condition', 'directives',
+        'loc', 'name', 'variable_definitions', 'type_condition', 'directives',
         'selection_set')
     __defaults__ = {'variable_definitions': [], 'directives': []}
 
@@ -124,44 +213,105 @@ class Value(Node):
 
 
 class IntValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: str
+    """
     __slots__ = ('loc', 'value')
+
+    def __str__(self):
+        return str(self.value)
 
 
 class FloatValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: str
+    """
     __slots__ = ('loc', 'value')
+
+    def __str__(self):
+        return str(self.value)
 
 
 class StringValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: str
+    :ivar block: bool
+    """
     __slots__ = ('loc', 'value', 'block')
     __defaults__ = {'block': False}
 
+    def __str__(self):
+        if self.block:
+            return '"""%s"""' % self.value
+        else:
+            return '"%s"' % self.value
+
 
 class BooleanValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: bool
+    """
     __slots__ = ('loc', 'value')
+
+    def __str__(self):
+        return str(self.value).lower()
 
 
 class NullValue(Value):
-    __slots__ = ('loc')
+    """
+    :ivar loc: (int, int)
+    """
+    def __str__(self):
+        return 'null'
 
 
 class EnumValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: str
+    """
     __slots__ = ('loc', 'value')
+
+    def __str__(self):
+        return str(self.value)
 
 
 class ListValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar value: list[Value]
+    """
     __slots__ = ('loc', 'values')
 
 
 class ObjectValue(Value):
+    """
+    :ivar loc: (int, int)
+    :ivar fields: list[ObjectField]
+    """
     __slots__ = ('loc', 'fields')
     __defaults__ = {'fields': []}
 
 
 class ObjectField(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    :ivar value: Value
+    """
     __slots__ = ('loc', 'name', 'value')
 
 
 class Directive(Node):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    :ivar arguments: list[Argument]
+    """
     __slots__ = ('loc', 'name', 'arguments')
     __defaults__ = {'arguments': []}
 
@@ -171,14 +321,26 @@ class Type(Node):
 
 
 class NamedType(Type):
+    """
+    :ivar loc: (int, int)
+    :ivar name: Name
+    """
     __slots__ = ('loc', 'name')
 
 
 class ListType(Type):
+    """
+    :ivar loc: (int, int)
+    :ivar type: Type
+    """
     __slots__ = ('loc', 'type')
 
 
 class NonNullType(Type):
+    """
+    :ivar loc: (int, int)
+    :ivar type: NamedType|ListType
+    """
     __slots__ = ('loc', 'type')
 
 

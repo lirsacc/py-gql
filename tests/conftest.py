@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-""" """
+""" Global fixtures """
 
 import os
+
 import pytest
 
 
@@ -13,3 +14,21 @@ def fixture_file():
         with open(filepath, 'rb') as f:
             return f.read().decode('utf-8')
     return load
+
+
+@pytest.fixture
+def starwars_schema():
+    from ._star_wars import StarWarsSchema
+    return StarWarsSchema
+
+
+@pytest.fixture
+def raiser():
+    def factory(cls, *args, **kwargs):
+        assert issubclass(cls, Exception)
+
+        def _raiser(*a, **kw):
+            raise cls(*args, **kwargs)
+        return _raiser
+
+    return factory

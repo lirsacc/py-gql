@@ -105,6 +105,8 @@ class Parser(object):
     def __init__(self,
                  source,
                  no_location=False,
+                 allow_type_system=True,
+                 allow_block_strings=True,
                  allow_legacy_sdl_empty_fields=False,
                  allow_legacy_sdl_implements_interfaces=False,
                  experimental_fragment_variables=False):
@@ -117,6 +119,18 @@ class Parser(object):
             By default, the parser creates AST nodes that know the location
             in the source that they correspond to. This configuration flag
             disables that behavior for performance or testing.
+
+        :type allow_type_system: bool
+        :param allow_type_system:
+            By default, the parser will accept schema definition nodes, when
+            only executing GraphQL queries setting this to ``False`` can save
+            operations and remove the need for some validation.
+
+        :type allow_block_strings: bool
+        :param allow_block_strings:
+            Block strings are currently part of the Draft specification
+            and so can be disabled with this flag if the user wants the
+            behaviour of the stable spec.
 
         :type allow_legacy_sdl_empty_fields: bool
         :param allow_legacy_sdl_empty_fields:
@@ -156,6 +170,8 @@ class Parser(object):
         self.lexer = Lexer(source)
 
         self.no_location = no_location
+        self.allow_type_system = allow_type_system
+        self.allow_block_strings = allow_block_strings
         self.allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
         self.allow_legacy_sdl_implements_interfaces = (
             allow_legacy_sdl_implements_interfaces)
@@ -339,11 +355,12 @@ class Parser(object):
         if _is(start, _token.Name):
             if start.value in EXECUTABLE_DEFINITIONS:
                 return self.parse_executable_definition()
-            elif start.value in SCHEMA_DEFINITIONS:
+            elif self.allow_type_system and start.value in SCHEMA_DEFINITIONS:
                 return self.parse_type_system_definition()
         elif _is(start, _token.CurlyOpen):
             return self.parse_executable_definition()
-        elif _is(start, _token.String, _token.BlockString):
+        elif (self.allow_type_system and
+                _is(start, _token.String, _token.BlockString)):
             return self.parse_type_system_definition()
 
         raise UnexpectedToken(str(start), start.start, self.lexer.source)
@@ -524,8 +541,8 @@ class Parser(object):
         start = self.peek()
         return _ast.Argument(
             name=self.parse_name(),
-            value=(self.expect(_token.Colon)
-                   and self.parse_value_literal(False)),
+            value=(self.expect(_token.Colon) and
+                   self.parse_value_literal(False)),
             loc=self.loc(start),
         )
 
@@ -649,6 +666,10 @@ class Parser(object):
         :rtype: py_gql.lang.ast.StringValue
         """
         token = self.advance()
+
+        if not self.allow_block_strings and _is(token, _token.BlockString):
+            raise UnexpectedToken("%s" % token, token.start, self.lexer.source)
+
         return _ast.StringValue(
             value=token.value,
             block=_is(token, _token.BlockString),
@@ -699,8 +720,8 @@ class Parser(object):
         start = self.peek()
         return _ast.ObjectField(
             name=self.parse_name(),
-            value=(self.expect(_token.Colon)
-                   and self.parse_value_literal(const)),
+            value=(self.expect(_token.Colon) and
+                   self.parse_value_literal(const)),
             loc=self.loc(start),
         )
 
@@ -742,14 +763,16 @@ class Parser(object):
         """
         start = self.peek()
         if self.skip(_token.BracketOpen):
-            type_ = self.parse_type_reference()
+            inner_type = self.parse_type_reference()
             self.expect(_token.BracketClose)
-            return _ast.ListType(type=type_, loc=self.loc(start))
+            typ = _ast.ListType(type=inner_type, loc=self.loc(start))
+        else:
+            typ = self.parse_named_type()
 
-        type_ = self.parse_named_type()
         if self.skip(_token.ExclamationMark):
-            return _ast.NonNullType(type=type_, loc=self.loc(start))
-        return type_
+            return _ast.NonNullType(type=typ, loc=self.loc(start))
+
+        return typ
 
     def parse_named_type(self):
         """ NamedType : Name

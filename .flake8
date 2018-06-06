@@ -1,8 +1,14 @@
 [flake8]
 
-max-complexity = 16
+max-complexity = 14
 max-line-length = 80
 doctests = True
+
+import-order-style = pep8
+application-import-names = py_gql
+
+ignore =
+    E731
 
 exclude =
     .git,

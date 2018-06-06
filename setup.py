@@ -21,7 +21,7 @@ def run_setup():
         license_ = f.read()
 
     _requirements = '''
-    six>=1.11.0
+    six >= 1.11.0
     '''
 
     requirements = [
@@ -50,8 +50,8 @@ def run_setup():
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.6',
-            # 'Programming Language :: Python :: 2',
-            # 'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: Implementation :: CPython',
         ],
         # entry_points={

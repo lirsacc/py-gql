@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """ Library excceptions sink. """
 
+from ._utils import cached_property
+
 
 class GraphQLError(Exception):
-    """ Base Exception for the library """
+    """ Base GraphQL exception."""
     pass
 
 
 class GraphQLSyntaxError(GraphQLError):
+    """  Syntax error in the GraphQL document."""
     def __init__(self, msg, position, source):
         """
         :type msg: str
@@ -48,3 +51,74 @@ class InvalidEscapeSequence(GraphQLSyntaxError):
 
 class UnexpectedToken(GraphQLSyntaxError):
     pass
+
+
+class InvalidValue(GraphQLError, ValueError):
+    pass
+
+
+class UnknownEnumValue(InvalidValue):
+    pass
+
+
+class UnknownVariable(InvalidValue):
+    pass
+
+
+class ScalarSerializationError(GraphQLError):
+    pass
+
+
+class ScalarParsingError(InvalidValue):
+    pass
+
+
+class SchemaError(GraphQLError):
+    pass
+
+
+class UnknownType(SchemaError, KeyError):
+    pass
+
+
+class ExecutionError(GraphQLError):
+    def __init__(self, msg):
+        self.msg = msg
+
+
+class DocumentValidationError(ExecutionError):
+    def __init__(self, errors):
+        self.errors = errors
+
+
+class VariableCoercionError(ExecutionError):
+    def __init__(self, errors):
+        assert errors
+        self._errors = errors
+
+    @cached_property
+    def errors(self):
+        return [str(err) if isinstance(err, Exception) else err
+                for err in self._errors]
+
+    def __str__(self):
+        if len(self.errors) == 1:
+            return str(self.errors[0])
+        return str(self.errors)
+
+
+class ResolverError(GraphQLError):
+    def __init__(self, msg):
+        self.message = msg
+
+
+class CoercionError(GraphQLError):
+    def __init__(self, msg, node=None, path=None):
+        self.message = msg
+        self.node = node
+        self.path = path
+
+    def __str__(self):
+        if self.path:
+            return '%s at %s' % (self.message, self.path)
+        return self.message

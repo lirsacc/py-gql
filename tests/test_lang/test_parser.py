@@ -97,7 +97,9 @@ def test_it_parses_multi_bytes_characters():
 
 def test_it_parses_kitchen_sink(fixture_file):
     # assert doesn't raise
-    assert parse(fixture_file('kitchen-sink.graphql'), no_location=True)
+    source = fixture_file('kitchen-sink.graphql')
+    assert parse(source, no_location=True)
+    assert parse(source, no_location=True, allow_type_system=False)
 
 
 @pytest.mark.parametrize("keyword", [
@@ -330,6 +332,11 @@ def test_parse_value_it_parses_block_strings():
     ))
 
 
+def test_parse_value_raises_if_block_strings_are_disabled():
+    with pytest.raises(UnexpectedToken):
+        parse_value(u'""" foo """', allow_block_strings=False)
+
+
 def test_parse_type_it_parses_well_known_types():
     assert_node_equal(parse_type(u'String'), _ast.NamedType(
         loc=(0, 6),
@@ -374,4 +381,67 @@ def test_parse_type_it_parses_nested_types():
                 name=_ast.Name(loc=(1, 7), value='MyType')
             )
         )
+    ))
+
+# Extra tests not in the reference
+# Mostly discovered during testing other parts of the library
+# ------------------------------------------------------------------------------
+
+
+def test_parse_type_it_parses_nested_types_2():
+    assert_node_equal(parse_type(u'[MyType!]!'), _ast.NonNullType(
+        loc=(0, 10),
+        type=_ast.ListType(
+            loc=(0, 9),
+            type=_ast.NonNullType(
+                loc=(1, 8),
+                type=_ast.NamedType(
+                    loc=(1, 7),
+                    name=_ast.Name(loc=(1, 7), value='MyType')
+                )
+            )
+        )
+    ))
+
+
+def test_it_parses_inline_fragment_without_type():
+    assert_node_equal(parse('''
+    fragment validFragment on Pet {
+        ... {
+            name
+        }
+    }
+    '''), _ast.Document(
+        loc=(0, 88),
+        definitions=[
+            _ast.FragmentDefinition(
+                loc=(5, 83),
+                name=_ast.Name(loc=(14, 27), value='validFragment'),
+                type_condition=_ast.NamedType(
+                    loc=(31, 34),
+                    name=_ast.Name(loc=(31, 34), value='Pet')
+                ),
+                variable_definitions=None,
+                selection_set=_ast.SelectionSet(
+                    loc=(35, 83),
+                    selections=[
+                        _ast.InlineFragment(
+                            loc=(45, 77),
+                            selection_set=_ast.SelectionSet(
+                                loc=(49, 77),
+                                selections=[
+                                    _ast.Field(
+                                        loc=(63, 67),
+                                        name=_ast.Name(
+                                            loc=(63, 67),
+                                            value='name'
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
+            )
+        ]
     ))

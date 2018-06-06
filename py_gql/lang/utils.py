@@ -30,44 +30,47 @@ def is_blank(string):
     return not string.strip()
 
 
-def parse_block_string(raw_string):
+def parse_block_string(raw_string,
+                       strip_trailing_newlines=True,
+                       strip_leading_newlines=True):
     r""" Parse a raw string according to the GraphQL spec's BlockStringValue()
-    static algorithm. Similar to Coffeescript's block string, Python's
-    docstring trim or Ruby's strip_heredoc.
+    http://facebook.github.io/graphql/draft/#BlockStringValue() static
+    algorithm. Similar to Coffeescript's block string, Python's docstring trim
+    or Ruby's strip_heredoc.
+
+    See https://github.com/facebook/graphql/pull/327 and
+    http://facebook.github.io/graphql/draft/#sec-String-Value for information
+    on the implementation as this is not in the published spec at the time
+    of writing (in the Draft though).
 
     :type raw_string: str
     :rtype: str
-
-    # These 2 test encapsulates most of the expected behaviour.
-    >>> parse_block_string(
-    ... '\n'
-    ... '    \n'
-    ... '    Hello,\n'
-    ... '      World! \n'
-    ... '\n'
-    ... '    Yours,\n'
-    ... '      GraphQL.   \n'
-    ... '\n'
-    ... '    \n'
-    ... )
-    '    Hello,\n      World! \n    Yours,\n      GraphQL.   '
-
-    >>> parse_block_string(''' simple ''')
-    ' simple '
     """
     lines = LINE_SEPARATOR.split(raw_string)
+    common_indent = None
 
-    while lines and is_blank(lines[0]):
+    for i, line in enumerate(lines):
+        if i == 0:
+            continue
+        indent = leading_whitespace(line)
+        if (indent < len(line) and
+                (common_indent is None or indent < common_indent)):
+            common_indent = indent
+
+    if common_indent:
+        lines = [
+            line[common_indent:]
+            if (len(line) >= common_indent and i > 0) else line
+            for i, line in enumerate(lines)
+        ]
+
+    while strip_leading_newlines and lines and is_blank(lines[0]):
         lines.pop(0)
 
-    while lines and is_blank(lines[len(lines) - 1]):
+    while strip_trailing_newlines and lines and is_blank(lines[-1]):
         lines.pop()
 
-    common_indent = (min((leading_whitespace(line) for line in lines))
-                     if len(lines) > 1 else 0)
-    normalized_lines = [line[common_indent:] for line in lines if line]
-
-    return "\n".join(normalized_lines)
+    return "\n".join(lines)
 
 
 def index_to_loc(body, position):
@@ -175,6 +178,8 @@ def highlight_location(body, position, delta=2):
       4:            id
       5:            name
     """
+    # [REVIEW] Hackish for now, but There mist be a more readable way to write
+    # this
     line, col = index_to_loc(body, position)
     line_index = line - 1
     lines = LINE_SEPARATOR.split(body)

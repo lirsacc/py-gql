@@ -479,8 +479,8 @@ type Hello {
                             (22, 38),
                             _name((22, 28), 'things'),
                             _ast.ListType(
-                               loc=(30, 38),
-                               type=_type((31, 37), 'String'),
+                                loc=(30, 38),
+                                type=_type((31, 37), 'String'),
                             ),
                         )
                     ]
@@ -702,3 +702,10 @@ class TestAllowLegacySdlImplementsInterfacesOption(object):
 def test_it_parses_kitchen_sink(fixture_file):
     # assert doesn't raise
     assert parse(fixture_file('schema-kitchen-sink.graphql'), no_location=True)
+
+
+def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(
+        fixture_file):
+    with pytest.raises(UnexpectedToken):
+        parse(fixture_file('schema-kitchen-sink.graphql'),
+              no_location=True, allow_type_system=False)

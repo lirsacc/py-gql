@@ -31,6 +31,10 @@ def test_it_accepts_bom_header():
     assert lex_one(u"\uFEFF foo") == token.Name(2, 5, 'foo')
 
 
+def test_it_accepts_binary_type():
+    assert lex_one(b"foo") == token.Name(0, 3, 'foo')
+
+
 @pytest.mark.skip('Irrelevant')
 def test_it_records_line_and_column():
     pass
