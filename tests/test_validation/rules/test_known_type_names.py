@@ -8,11 +8,15 @@
 # feature is not implemented.
 
 from py_gql.validation import KnownTypeNamesChecker
+
 from .._test_utils import assert_checker_validation_result as run_test
 
 
 def test_known_type_names_are_valid(schema):
-    run_test(KnownTypeNamesChecker, schema, '''
+    run_test(
+        KnownTypeNamesChecker,
+        schema,
+        """
     query Foo($var: String, $required: [String!]!) {
         user(id: 4) {
             pets { ... on Pet { name }, ...PetFields, ... { name } }
@@ -21,11 +25,15 @@ def test_known_type_names_are_valid(schema):
     fragment PetFields on Pet {
         name
     }
-    ''')
+    """,
+    )
 
 
 def test_unknown_type_names_are_invalid(schema):
-    run_test(KnownTypeNamesChecker, schema, '''
+    run_test(
+        KnownTypeNamesChecker,
+        schema,
+        """
     query Foo($var: JumbledUpLetters) {
         user(id: 4) {
             name
@@ -35,15 +43,20 @@ def test_unknown_type_names_are_invalid(schema):
     fragment PetFields on Peettt {
         name
     }
-    ''', [
-        'Unknown type "JumbledUpLetters"',
-        # 'Unknown type "Badger"',
-        # 'Unknown type "Peettt"',
-    ])
+    """,
+        [
+            'Unknown type "JumbledUpLetters"',
+            # 'Unknown type "Badger"',
+            # 'Unknown type "Peettt"',
+        ],
+    )
 
 
 def test_ignores_type_definitions(schema):
-    run_test(KnownTypeNamesChecker, schema, '''
+    run_test(
+        KnownTypeNamesChecker,
+        schema,
+        """
     type NotInTheSchema {
         field: FooBar
     }
@@ -59,6 +72,6 @@ def test_ignores_type_definitions(schema):
         id
         }
     }
-    ''', [
-        'Unknown type "NotInTheSchema"',
-    ])
+    """,
+        ['Unknown type "NotInTheSchema"'],
+    )

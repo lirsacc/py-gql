@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
 """ Utilities to validate Python values against a schema """
 
-from ..exc import (
-    CoercionError, ScalarParsingError, UnknownEnumValue, InvalidValue)
-from ..lang import ast as _ast, print_ast
-from ..schema import (
-    NonNullType, ScalarType, EnumType, ListType, InputObjectType)
 from .._utils import Path
+from ..exc import CoercionError, InvalidValue, ScalarParsingError, UnknownEnumValue
+from ..lang import ast as _ast, print_ast
+from ..schema import EnumType, InputObjectType, ListType, NonNullType, ScalarType
 from .value_from_ast import typed_value_from_ast
 
 
 def _path(path):
     if not path:
-        return ''
-    return Path(['value']) + path
+        return ""
+    return Path(["value"]) + path
 
 
 def coerce_value(value, typ, node=None, path=None):
@@ -33,8 +31,8 @@ def coerce_value(value, typ, node=None, path=None):
     if isinstance(typ, NonNullType):
         if value is None:
             raise CoercionError(
-                'Expected non-nullable type %s not to be null' % typ,
-                node, _path(path))
+                "Expected non-nullable type %s not to be null" % typ, node, _path(path)
+            )
         typ = typ.type
 
     if value is None:
@@ -53,7 +51,7 @@ def coerce_value(value, typ, node=None, path=None):
             except UnknownEnumValue as err:
                 raise CoercionError(str(err), node, _path(path))
         else:
-            raise CoercionError('Expected type %s' % typ, node, _path(path))
+            raise CoercionError("Expected type %s" % typ, node, _path(path))
 
     if isinstance(typ, ListType):
         return _coerce_list_value(value, typ, node, path)
@@ -74,28 +72,30 @@ def _coerce_list_value(value, typ, node, path):
 
 def _coerce_input_object(value, typ, node, path):
     if not isinstance(value, dict):
-        raise CoercionError(
-            'Expected type %s to be an object' % typ, node, _path(path))
+        raise CoercionError("Expected type %s to be an object" % typ, node, _path(path))
 
     coerced = {}
     for field in typ.fields:
         if field.name not in value:
             if isinstance(field.type, NonNullType):
                 raise CoercionError(
-                    'Field %s of required type %s was not provided'
+                    "Field %s of required type %s was not provided"
                     % (field.name, field.type),
-                    node, _path(path + [field.name]))
+                    node,
+                    _path(path + [field.name]),
+                )
         else:
             coerced[field.name] = coerce_value(
-                value[field.name], field.type,
-                node, path + [field.name]
+                value[field.name], field.type, node, path + [field.name]
             )
 
     for fieldname in value.keys():
         if fieldname not in typ.field_map:
             raise CoercionError(
-                'Field %s is not defined by type %s' % (fieldname, typ),
-                node, _path(path))
+                "Field %s is not defined by type %s" % (fieldname, typ),
+                node,
+                _path(path),
+            )
 
     return coerced
 
@@ -147,7 +147,9 @@ def coerce_argument_values(definition, node, variables=None):
             elif isinstance(argtype, NonNullType):
                 raise CoercionError(
                     'Argument "%s" of required type "%s" was not provided'
-                    % (argname, argtype), node)
+                    % (argname, argtype),
+                    node,
+                )
         else:
             arg = values[argname]
             if isinstance(arg.value, _ast.Variable):
@@ -160,19 +162,18 @@ def coerce_argument_values(definition, node, variables=None):
                     raise CoercionError(
                         'Argument "%s" of required type "%s" was provided the '
                         'missing variable "$%s"' % (argname, argtype, varname),
-                        node)
+                        node,
+                    )
             else:
                 try:
                     coerced_values[argname] = typed_value_from_ast(
-                        arg.value,
-                        argtype,
-                        variables=variables
+                        arg.value, argtype, variables=variables
                     )
                 except InvalidValue as err:
                     raise CoercionError(
                         'Argument "%s" of type "%s" was provided invalid value '
-                        '%s (%s)'
-                        % (argname, argtype, print_ast(arg.value), str(err)),
-                        node)
+                        "%s (%s)" % (argname, argtype, print_ast(arg.value), str(err)),
+                        node,
+                    )
 
     return coerced_values

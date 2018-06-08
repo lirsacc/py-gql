@@ -7,7 +7,7 @@ class Token(object):
     the source elements that make up a GraphQL document.
     """
 
-    __slots__ = ('start', 'end', 'value', '__kind__')
+    __slots__ = ("start", "end", "value", "__kind__")
 
     def __init__(self, start, end, value=None):
         """
@@ -20,27 +20,33 @@ class Token(object):
         self.value = value
 
     def __repr__(self):
-        return ('<Token.%s: value=`%s` at (%d, %d)>'
-                % (self.__class__.__name__, self, self.start, self.end))
+        return "<Token.%s: value=`%s` at (%d, %d)>" % (
+            self.__class__.__name__,
+            self,
+            self.start,
+            self.end,
+        )
 
     def __str__(self):
-        return '%s' % self.value
+        return "%s" % self.value
 
     def __eq__(self, rhs):
-        return (self.__class__ is rhs.__class__ and
-                self.value == rhs.value and
-                self.start == rhs.start and
-                self.end == rhs.end)
+        return (
+            self.__class__ is rhs.__class__
+            and self.value == rhs.value
+            and self.start == rhs.start
+            and self.end == rhs.end
+        )
 
 
 class SOF(Token):
     def __str__(self):
-        return '<SOF>'
+        return "<SOF>"
 
 
 class EOF(Token):
     def __str__(self):
-        return '<EOF>'
+        return "<EOF>"
 
 
 class CharToken(Token):
@@ -49,60 +55,60 @@ class CharToken(Token):
 
 
 class ExclamationMark(CharToken):
-    __char__ = '!'
+    __char__ = "!"
 
 
 class Dollar(CharToken):
-    __char__ = '$'
+    __char__ = "$"
 
 
 class ParenOpen(CharToken):
-    __char__ = '('
+    __char__ = "("
 
 
 class ParenClose(CharToken):
-    __char__ = ')'
+    __char__ = ")"
 
 
 class BracketOpen(CharToken):
-    __char__ = '['
+    __char__ = "["
 
 
 class BracketClose(CharToken):
-    __char__ = ']'
+    __char__ = "]"
 
 
 class CurlyOpen(CharToken):
-    __char__ = '{'
+    __char__ = "{"
 
 
 class CurlyClose(CharToken):
-    __char__ = '}'
+    __char__ = "}"
 
 
 class Colon(CharToken):
-    __char__ = ':'
+    __char__ = ":"
 
 
 class Equals(CharToken):
-    __char__ = '='
+    __char__ = "="
 
 
 class At(CharToken):
-    __char__ = '@'
+    __char__ = "@"
 
 
 class Pipe(CharToken):
-    __char__ = '|'
+    __char__ = "|"
 
 
 class Ampersand(CharToken):
-    __char__ = '&'
+    __char__ = "&"
 
 
 class Ellipsis(Token):
     def __str__(self):
-        return '...'
+        return "..."
 
 
 class Integer(Token):

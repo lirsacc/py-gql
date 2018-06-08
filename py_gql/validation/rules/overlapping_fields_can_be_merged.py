@@ -9,10 +9,10 @@
 
 from collections import namedtuple
 
-from ..._utils import deduplicate, flatten as _flatten, OrderedDict
+from ..._utils import OrderedDict, deduplicate, flatten as _flatten
 from ...exc import UnknownType
 from ...lang import ast as _ast
-from ...schema import ObjectType, InterfaceType, unwrap_type, is_leaf_type
+from ...schema import InterfaceType, ObjectType, is_leaf_type, unwrap_type
 from ...schema.types import WrappingType
 from ..visitors import ValidationVisitor
 
@@ -24,7 +24,7 @@ def _permutations(lst):
     [(1, 2), (1, 3), (2, 3)]
     """
     for i, item_1 in enumerate(lst):
-        for item_2 in lst[i + 1:]:
+        for item_2 in lst[i + 1 :]:
             yield item_1, item_2
 
 
@@ -69,12 +69,10 @@ def _type_from_ast(schema, node):
         return None
 
 
-Context = namedtuple('Context', [
-    'schema',
-    'fields_and_fragments',
-    'compared_fragment_pairs',
-    'fragments',
-])
+Context = namedtuple(
+    "Context",
+    ["schema", "fields_and_fragments", "compared_fragment_pairs", "fragments"],
+)
 
 
 class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
@@ -83,32 +81,30 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
     without ambiguity. """
 
     def __init__(self, *args, **kwargs):
-        super(OverlappingFieldsCanBeMergedChecker, self).__init__(
-            *args,
-            **kwargs
-        )
+        super(OverlappingFieldsCanBeMergedChecker, self).__init__(*args, **kwargs)
         self.ctx = Context(self.schema, {}, set(), {})
 
     def enter_document(self, node):
         # Should happen before visitng any selection set
-        self.ctx.fragments.update({
-            d.name.value: d
-            for d in node.definitions
-            if type(d) is _ast.FragmentDefinition
-        })
+        self.ctx.fragments.update(
+            {
+                d.name.value: d
+                for d in node.definitions
+                if type(d) is _ast.FragmentDefinition
+            }
+        )
 
     def enter_selection_set(self, node):
         conflicts = find_conflicts_within_selection_set(
-            self.ctx,
-            node,
-            self.type_info.parent_type,
+            self.ctx, node, self.type_info.parent_type
         )
 
         for response_name, reason, locs in conflicts:
             self.add_error(
                 'Field(s) "%s" conflict because %s. Use different aliases on '
-                'the fields to fetch both if this was intentional.'
-                % (response_name, reason), list(_flatten(locs)),
+                "the fields to fetch both if this was intentional."
+                % (response_name, reason),
+                list(_flatten(locs)),
             )
 
 
@@ -177,11 +173,7 @@ def find_conflicts_within_selection_set(ctx, selection_set, parent_type):
     # list.
     conflicts = []
 
-    field_map, fragment_names = _fields_and_fragments(
-        ctx,
-        parent_type,
-        selection_set,
-    )
+    field_map, fragment_names = _fields_and_fragments(ctx, parent_type, selection_set)
 
     # (A) Find find all conflicts "within" the fields of this selection set.
     _collect(_conflicts_within(ctx, field_map), conflicts)
@@ -192,9 +184,9 @@ def find_conflicts_within_selection_set(ctx, selection_set, parent_type):
         # by each spread fragment name found.
         _collect(
             _conflicts_between_fields_and_fragment(
-                ctx, False, field_map, fragment_name, compared_fragments,
+                ctx, False, field_map, fragment_name, compared_fragments
             ),
-            conflicts
+            conflicts,
         )
 
     # (C) Then compare this fragment with all other fragments found in this
@@ -202,10 +194,7 @@ def find_conflicts_within_selection_set(ctx, selection_set, parent_type):
     # This compares each item in the list of fragment names to every other
     # item in that same list (except for itself).
     for frag_1, frag_2 in _permutations(fragment_names):
-        _collect(
-            _conflicts_between_fragments(ctx, False, frag_1, frag_2),
-            conflicts
-        )
+        _collect(_conflicts_between_fragments(ctx, False, frag_1, frag_2), conflicts)
 
     return conflicts
 
@@ -223,9 +212,7 @@ def _fields_and_fragments(ctx, parent_type, selection_set):
     # provide that response name. For every response name, if there are
     # multiple fields, they must be compared to find a potential conflict.
     field_map, fragment_names = _collect_fields_and_fragments(
-        ctx,
-        parent_type,
-        selection_set
+        ctx, parent_type, selection_set
     )
 
     ctx.fields_and_fragments[selection_set] = (field_map, fragment_names)
@@ -244,8 +231,9 @@ def _referenced_fields_and_fragments(ctx, fragment):
     return _fields_and_fragments(ctx, fragment_type, fragment.selection_set)
 
 
-def _collect_fields_and_fragments(ctx, parent_type, selection_set,
-                                  node_and_defs=None, fragment_names=None):
+def _collect_fields_and_fragments(
+    ctx, parent_type, selection_set, node_and_defs=None, fragment_names=None
+):
     if node_and_defs is None:
         node_and_defs = OrderedDict()
     if fragment_names is None:
@@ -271,9 +259,7 @@ def _collect_fields_and_fragments(ctx, parent_type, selection_set,
             if response_name not in node_and_defs:
                 node_and_defs[response_name] = []
 
-            node_and_defs[response_name].append(
-                (parent_type, selection, fielddef)
-            )
+            node_and_defs[response_name].append((parent_type, selection, fielddef))
 
         elif kind is _ast.FragmentSpread:
             fragment_names.append(selection.name.value)
@@ -316,8 +302,7 @@ def _conflicts_within(ctx, field_map):
                 yield conflict
 
 
-def _conflicts_between(ctx, parents_mutually_exclusive,
-                       field_map_1, field_map_2):
+def _conflicts_between(ctx, parents_mutually_exclusive, field_map_1, field_map_2):
     """ Collect all Conflicts between two collections of fields. This is
     similar to, but different from the `collectConflictsWithin` function above.
     This check assumes that `collectConflictsWithin` has already been called
@@ -331,18 +316,15 @@ def _conflicts_between(ctx, parents_mutually_exclusive,
         for field_1 in fields_1:
             for field_2 in fields_2:
                 conflict = _find_conflict(
-                    ctx,
-                    parents_mutually_exclusive,
-                    response_name,
-                    field_1,
-                    field_2
+                    ctx, parents_mutually_exclusive, response_name, field_1, field_2
                 )
                 if conflict:
                     yield conflict
 
 
-def _conflicts_between_fields_and_fragment(ctx, mutually_exclusive, field_map,
-                                           fragment_name, compared_fragments):
+def _conflicts_between_fields_and_fragment(
+    ctx, mutually_exclusive, field_map, fragment_name, compared_fragments
+):
     """ Collect all conflicts found between a set of fields and a fragment
     reference including via spreading in any nested fragments. """
     # Memoize so a fragment is not compared for conflicts more than once.
@@ -364,21 +346,19 @@ def _conflicts_between_fields_and_fragment(ctx, mutually_exclusive, field_map,
 
     # (D) First collect any conflicts between the provided collection of fields
     # and the collection of fields represented by the given fragment.
-    for c in _conflicts_between(
-            ctx, mutually_exclusive, field_map, fragment_field_map):
+    for c in _conflicts_between(ctx, mutually_exclusive, field_map, fragment_field_map):
         yield c
 
     # (E) Then collect any conflicts between the provided collection of fields
     # and any fragment names found in the given fragment.
     for fragment in fragment_fragment_names:
         for c in _conflicts_between_fields_and_fragment(
-                ctx, mutually_exclusive, field_map, fragment,
-                compared_fragments):
+            ctx, mutually_exclusive, field_map, fragment, compared_fragments
+        ):
             yield c
 
 
-def _conflicts_between_fragments(ctx, mutually_exclusive,
-                                 fragment_1, fragment_2):
+def _conflicts_between_fragments(ctx, mutually_exclusive, fragment_1, fragment_2):
     """ Collect all conflicts found between two fragments, including via
     spreading in any nested fragments. """
     if (not fragment_1) or (not fragment_2) or fragment_1 == fragment_2:
@@ -410,19 +390,20 @@ def _conflicts_between_fragments(ctx, mutually_exclusive,
     # fragments spread in the second fragment.
     for i, fragment in enumerate(fragments_1):
         for c in _conflicts_between_fragments(
-                ctx, mutually_exclusive, fragment, _at(fragment_2, i)):
+            ctx, mutually_exclusive, fragment, _at(fragment_2, i)
+        ):
             yield c
 
     # (G) Then collect conflicts between the second fragment and any nested
     # fragments spread in the first fragment.
     for i, fragment in enumerate(fragments_2):
         for c in _conflicts_between_fragments(
-                ctx, mutually_exclusive, _at(fragment_1, i), fragment):
+            ctx, mutually_exclusive, _at(fragment_1, i), fragment
+        ):
             yield c
 
 
-def _find_conflict(ctx, parents_mutually_exclusive, response_name,
-                   field_1, field_2):
+def _find_conflict(ctx, parents_mutually_exclusive, response_name, field_1, field_2):
     """ Determines if there is a conflict between two particular fields,
     including comparing their sub-fields.
     """
@@ -437,13 +418,10 @@ def _find_conflict(ctx, parents_mutually_exclusive, response_name,
     # different Object types. Interface or Union types might overlap - if not
     # in the current state of the schema, then perhaps in some future version,
     # thus may not safely diverge.
-    mutually_exclusive = (
-        parents_mutually_exclusive or
-        (
-            parent_1 != parent_2 and
-            isinstance(parent_1, ObjectType) and
-            isinstance(parent_2, ObjectType)
-        )
+    mutually_exclusive = parents_mutually_exclusive or (
+        parent_1 != parent_2
+        and isinstance(parent_1, ObjectType)
+        and isinstance(parent_2, ObjectType)
     )
 
     # The return type for each field.
@@ -471,22 +449,31 @@ def _find_conflict(ctx, parents_mutually_exclusive, response_name,
     # for both collections so fields in a fragment reference are never
     # compared to themselves.
     if node_1.selection_set and node_2.selection_set:
-        subconflicts = _collect(_conflicts_between_subselections(
-            ctx, mutually_exclusive,
-            unwrap_type(type_1), node_1.selection_set,
-            unwrap_type(type_2), node_2.selection_set,
-        ))
+        subconflicts = _collect(
+            _conflicts_between_subselections(
+                ctx,
+                mutually_exclusive,
+                unwrap_type(type_1),
+                node_1.selection_set,
+                unwrap_type(type_2),
+                node_2.selection_set,
+            )
+        )
         if subconflicts:
-            reason = ' and '.join(['subfields "%s" conflict (%s)'
-                                   % (name, reason)
-                                   for name, reason, _ in subconflicts])
+            reason = " and ".join(
+                [
+                    'subfields "%s" conflict (%s)' % (name, reason)
+                    for name, reason, _ in subconflicts
+                ]
+            )
             nodes_1 = [node_1] + [nodes for _, _, (nodes, _) in subconflicts]
             nodes_2 = [node_2] + [nodes for _, _, (_, nodes) in subconflicts]
             return response_name, reason, (nodes_1, nodes_2)
 
 
-def _conflicts_between_subselections(ctx, mutually_exclusive, parent_type_1,
-                                     node_1, parent_type_2, node_2):
+def _conflicts_between_subselections(
+    ctx, mutually_exclusive, parent_type_1, node_1, parent_type_2, node_2
+):
     """ Find all conflicts found between two selection sets, including those
     found via spreading in fragments. Called when determining if conflicts
     exist between the sub-fields of two overlapping fields. """
@@ -495,31 +482,33 @@ def _conflicts_between_subselections(ctx, mutually_exclusive, parent_type_1,
     field_map_2, fragments_2 = _fields_and_fragments(ctx, parent_type_2, node_2)
 
     # (H) First, collect all conflicts between these two collections of field.
-    for c in _conflicts_between(
-            ctx, mutually_exclusive, field_map_1, field_map_2):
+    for c in _conflicts_between(ctx, mutually_exclusive, field_map_1, field_map_2):
         yield c
 
     # (I) Then collect conflicts between the first collection of fields and
     # those referenced by each fragment name associated with the second.
     for fragment in fragments_2:
         for c in _conflicts_between_fields_and_fragment(
-                ctx, mutually_exclusive, field_map_1, fragment, set()):
+            ctx, mutually_exclusive, field_map_1, fragment, set()
+        ):
             yield c
 
     # (I) Then collect conflicts between the second collection of fields and
     # those referenced by each fragment name associated with the first.
     for fragment in fragments_1:
         for c in _conflicts_between_fields_and_fragment(
-                ctx, mutually_exclusive, field_map_2, fragment, set()):
+            ctx, mutually_exclusive, field_map_2, fragment, set()
+        ):
             yield c
 
     # (J) Also collect conflicts between any fragment names by the first and
     # fragment names by the second. This compares each item in the first set of
     # names to each item in the second set of names.
     for fragment_1, fragment_2 in _cross(fragments_1, fragments_2):
-            for c in _conflicts_between_fragments(
-                    ctx, mutually_exclusive, fragment_1, fragment_2):
-                yield c
+        for c in _conflicts_between_fragments(
+            ctx, mutually_exclusive, fragment_1, fragment_2
+        ):
+            yield c
 
 
 def _same_arguments(args_1, args_2):
@@ -536,12 +525,18 @@ def _same_arguments(args_1, args_2):
     s1 = sorted(args_1, key=lambda a: a.name.value)
     s2 = sorted(args_2, key=lambda a: a.name.value)
 
-    return all((
-        (a1.name.value == a2.name.value and
-         # noqa: E721
-         type(a1.value) == type(a2.value) and a1.value.value == a2.value.value)
-        for a1, a2 in zip(s1, s2)
-    ))
+    return all(
+        (
+            (
+                a1.name.value == a2.name.value
+                and
+                # noqa: E721
+                type(a1.value) == type(a2.value)
+                and a1.value.value == a2.value.value
+            )
+            for a1, a2 in zip(s1, s2)
+        )
+    )
 
 
 def _types_conflict(type_1, type_2):
@@ -555,8 +550,7 @@ def _types_conflict(type_1, type_2):
     :rtype: bool
     """
     if isinstance(type_1, WrappingType) or isinstance(type_2, WrappingType):
-        return (type(type_1) != type(type_2) or
-                _types_conflict(type_1.type, type_2.type))
+        return type(type_1) != type(type_2) or _types_conflict(type_1.type, type_2.type)
 
     if is_leaf_type(type_1) or is_leaf_type(type_2):
         return type_1 != type_2

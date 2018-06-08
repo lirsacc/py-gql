@@ -5,11 +5,15 @@
 # flake8: noqa
 
 from .types import (
-    Arg, Argument,
+    Arg,
+    Argument,
     Directive,
-    EnumValue, EnumType,
-    Field, ObjectType,
-    InputField, InputObjectType,
+    EnumValue,
+    EnumType,
+    Field,
+    ObjectType,
+    InputField,
+    InputObjectType,
     InterfaceType,
     is_abstract_type,
     is_composite_type,

@@ -7,17 +7,17 @@ import functools as ft
 
 import six
 
-from ..exc import GraphQLError
 from . import ast as _ast
+from ..exc import GraphQLError
 
 
 class SkipNode(GraphQLError):
     def __init__(self):
-        self.message = ''
+        self.message = ""
 
 
 @six.add_metaclass(abc.ABCMeta)
-class Visitor():
+class Visitor:
     """ Visitor metaclass
 
     [WARN] This doesn't support editing the ast, tracking of the visitor
@@ -74,6 +74,7 @@ def _visiting(func):
     """ Wrap a function to call the provided visitor ``enter`` / ``leave``
     functions before / after processing a node.
     """
+
     @ft.wraps(func)
     def wrapper(visitor, node):
         if node is None:
@@ -280,47 +281,47 @@ def visit_directive_definition(visitor, definition):
 
 
 _HANDLERS = {
-    _ast.Document: 'document',
-    _ast.OperationDefinition: 'operation_definition',
-    _ast.FragmentDefinition: 'fragment_definition',
-    _ast.VariableDefinition: 'variable_definition',
-    _ast.Directive: 'directive',
-    _ast.Argument: 'argument',
-    _ast.SelectionSet: 'selection_set',
-    _ast.Field: 'field',
-    _ast.FragmentSpread: 'fragment_spread',
-    _ast.InlineFragment: 'inline_fragment',
-    _ast.NullValue: 'null_value',
-    _ast.IntValue: 'int_value',
-    _ast.FloatValue: 'float_value',
-    _ast.StringValue: 'string_value',
-    _ast.BooleanValue: 'boolean_value',
-    _ast.EnumValue: 'enum_value',
-    _ast.Variable: 'variable_value',
-    _ast.ListValue: 'list_value',
-    _ast.ObjectValue: 'object_value',
-    _ast.ObjectField: 'object_field',
-    _ast.NamedType: 'named_type',
-    _ast.ListType: 'named_type',
-    _ast.NonNullType: 'named_type',
-    _ast.SchemaDefinition: 'schema_definition',
-    _ast.OperationTypeDefinition: 'operation_type_definition',
-    _ast.ScalarTypeDefinition: 'scalar_type_definition',
-    _ast.ObjectTypeDefinition: 'object_type_definition',
-    _ast.FieldDefinition: 'field_definition',
-    _ast.InputValueDefinition: 'input_value_definition',
-    _ast.InterfaceTypeDefinition: 'interface_type_definition',
-    _ast.UnionTypeDefinition: 'union_type_definition',
-    _ast.EnumTypeDefinition: 'enum_type_definition',
-    _ast.EnumValueDefinition: 'enum_value_definition',
-    _ast.InputObjectTypeDefinition: 'input_object_type_definition',
-    _ast.ScalarTypeExtension: 'scalar_type_extension',
-    _ast.ObjectTypeExtension: 'object_type_extension',
-    _ast.InterfaceTypeExtension: 'interface_type_extension',
-    _ast.UnionTypeExtension: 'union_type_extension',
-    _ast.EnumTypeExtension: 'enum_type_extension',
-    _ast.InputObjectTypeExtension: 'input_object_type_extension',
-    _ast.DirectiveDefinition: 'directive_definition',
+    _ast.Document: "document",
+    _ast.OperationDefinition: "operation_definition",
+    _ast.FragmentDefinition: "fragment_definition",
+    _ast.VariableDefinition: "variable_definition",
+    _ast.Directive: "directive",
+    _ast.Argument: "argument",
+    _ast.SelectionSet: "selection_set",
+    _ast.Field: "field",
+    _ast.FragmentSpread: "fragment_spread",
+    _ast.InlineFragment: "inline_fragment",
+    _ast.NullValue: "null_value",
+    _ast.IntValue: "int_value",
+    _ast.FloatValue: "float_value",
+    _ast.StringValue: "string_value",
+    _ast.BooleanValue: "boolean_value",
+    _ast.EnumValue: "enum_value",
+    _ast.Variable: "variable_value",
+    _ast.ListValue: "list_value",
+    _ast.ObjectValue: "object_value",
+    _ast.ObjectField: "object_field",
+    _ast.NamedType: "named_type",
+    _ast.ListType: "named_type",
+    _ast.NonNullType: "named_type",
+    _ast.SchemaDefinition: "schema_definition",
+    _ast.OperationTypeDefinition: "operation_type_definition",
+    _ast.ScalarTypeDefinition: "scalar_type_definition",
+    _ast.ObjectTypeDefinition: "object_type_definition",
+    _ast.FieldDefinition: "field_definition",
+    _ast.InputValueDefinition: "input_value_definition",
+    _ast.InterfaceTypeDefinition: "interface_type_definition",
+    _ast.UnionTypeDefinition: "union_type_definition",
+    _ast.EnumTypeDefinition: "enum_type_definition",
+    _ast.EnumValueDefinition: "enum_value_definition",
+    _ast.InputObjectTypeDefinition: "input_object_type_definition",
+    _ast.ScalarTypeExtension: "scalar_type_extension",
+    _ast.ObjectTypeExtension: "object_type_extension",
+    _ast.InterfaceTypeExtension: "interface_type_extension",
+    _ast.UnionTypeExtension: "union_type_extension",
+    _ast.EnumTypeExtension: "enum_type_extension",
+    _ast.InputObjectTypeExtension: "input_object_type_extension",
+    _ast.DirectiveDefinition: "directive_definition",
 }
 
 
@@ -337,7 +338,8 @@ class DispatchingVisitor(Visitor):
     If no function is found (``handler`` returns ``None``) for a node, ``enter``
     and / or ``leave`` will noop.
     """
-    def handler(self, node, stage='enter'):
+
+    def handler(self, node, stage="enter"):
         """ Resolve the handler based on the node type and visiting stage.
 
         :type node: _ast.Node
@@ -350,22 +352,23 @@ class DispatchingVisitor(Visitor):
         """
         handler_name = _HANDLERS.get(type(node), None)
         if handler_name is None:
-            raise TypeError('Unknown node type %s', type(node))
-        return getattr(self, '%s_%s' % (stage, handler_name), None)
+            raise TypeError("Unknown node type %s", type(node))
+        return getattr(self, "%s_%s" % (stage, handler_name), None)
 
     def enter(self, node):
-        handler = self.handler(node, 'enter')
+        handler = self.handler(node, "enter")
         if handler is not None:
             handler(node)
 
     def leave(self, node):
-        handler = self.handler(node, 'leave')
+        handler = self.handler(node, "leave")
         if handler is not None:
             handler(node)
 
 
 class ParrallelVisitor(Visitor):
     """ Abstraction to run multiple visitor instances as one. """
+
     def __init__(self, *visitors):
         self.visitors = visitors
 

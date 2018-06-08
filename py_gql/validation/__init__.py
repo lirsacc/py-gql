@@ -79,6 +79,7 @@ SPECIFIED_CHECKERS = (
 
 class ValidationResult(object):
     """ """
+
     def __init__(self, errors):
         self.errors = errors or []
 
@@ -91,7 +92,7 @@ class ValidationResult(object):
         return self.errors
 
     def __str__(self):
-        return '<%s (%s)>' % (type(self).__name__, bool(self))
+        return "<%s (%s)>" % (type(self).__name__, bool(self))
 
 
 def validate_ast(schema, ast_root, validators=None):
@@ -133,13 +134,14 @@ def validate_ast(schema, ast_root, validators=None):
 
     # Type info NEEDS to be first to be accurately used inside other validators
     # so when a validator enters node the type stack has already been updated.
-    validator = ParrallelVisitor(type_info, *[
-        instantiate_validator(validator_, schema, type_info)
-        for validator_ in validators
-    ])
+    validator = ParrallelVisitor(
+        type_info,
+        *[
+            instantiate_validator(validator_, schema, type_info)
+            for validator_ in validators
+        ]
+    )
 
     visit(validator, ast_root)
 
-    return ValidationResult(
-        list(chain(*[v.errors for v in validator.visitors[1:]]))
-    )
+    return ValidationResult(list(chain(*[v.errors for v in validator.visitors[1:]])))

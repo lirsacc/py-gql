@@ -17,29 +17,22 @@ tokenizing the Grahpql source.
 
 import six
 
+from . import token
 from ..exc import (
     InvalidCharacter,
+    InvalidEscapeSequence,
+    NonTerminatedString,
     UnexpectedCharacter,
     UnexpectedEOF,
-    NonTerminatedString,
-    InvalidEscapeSequence,
 )
-from . import token
 from .source import Source
 from .utils import parse_block_string
 
+EOL_CHARS = frozenset([0x000A, 0x000D])  # "\n"  # "\r"
 
-EOL_CHARS = frozenset([
-    0x000A,  # "\n"
-    0x000D,  # "\r"
-])
-
-IGNORED_CHARS = frozenset([
-    0xFEFF,  # BOM
-    0x0009,  # \t
-    0x0020,  # SPACE
-    0x002C,  # ,
-]) | EOL_CHARS
+IGNORED_CHARS = (
+    frozenset([0xFEFF, 0x0009, 0x0020, 0x002C]) | EOL_CHARS  # BOM  # \t  # SPACE  # ,
+)
 
 SYMBOLS = {
     cls.__char__: cls
@@ -62,13 +55,13 @@ SYMBOLS = {
 
 QUOTED_CHARS = {
     0x0022: u'"',
-    0x005c: u'\\',
-    0x002f: u'/',
-    0x0062: u'\u0008',
-    0x0066: u'\u000c',
-    0x006e: u'\n',
-    0x0072: u'\r',
-    0x0074: u'\t',
+    0x005c: u"\\",
+    0x002f: u"/",
+    0x0062: u"\u0008",
+    0x0066: u"\u000c",
+    0x006e: u"\n",
+    0x0072: u"\r",
+    0x0074: u"\t",
 }
 
 
@@ -101,9 +94,7 @@ def is_name_lead(code):
     :type code: int
     :rtype: bool
     """
-    return (code == 0x005f or
-            0x0041 <= code <= 0x005a or
-            0x0061 <= code <= 0x007a)
+    return code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
 
 
 def is_name_character(code):
@@ -120,12 +111,13 @@ class Lexer(object):
     Raises variations of ``py_gql.exc.GQLSyntaxError`` when the source is
     invalid.
     """
-    __slots__ = ('source', 'len', 'done', 'position', 'started',)
+
+    __slots__ = ("source", "len", "done", "position", "started")
 
     def __init__(self, source):
 
         if source is None:
-            raise ValueError('source cannot be None')
+            raise ValueError("source cannot be None")
 
         if isinstance(source, (six.text_type, six.binary_type)):
             source = Source(source)
@@ -142,9 +134,9 @@ class Lexer(object):
         :type raise_on_eof: bool
         :rtype: char|None
         """
-        if (self.done or self.position + count - 1 >= self.len):
+        if self.done or self.position + count - 1 >= self.len:
             if raise_on_eof:
-                raise UnexpectedEOF('', self.position, self.source)
+                raise UnexpectedEOF("", self.position, self.source)
             return None
         return self.source.body[self.position + count - 1]
 
@@ -160,7 +152,7 @@ class Lexer(object):
             raise UnexpectedCharacter(
                 'Expected "%s" but found "%s"' % (expected, char),
                 self.position,
-                self.source
+                self.source,
             )
 
         return char
@@ -214,7 +206,7 @@ class Lexer(object):
             char = self.peek()
 
             if char is None:
-                raise NonTerminatedString('', self.position, self.source)
+                raise NonTerminatedString("", self.position, self.source)
 
             code = ord(char)
             self.advance()
@@ -225,13 +217,13 @@ class Lexer(object):
             elif char == "\\":
                 acc.append(self.read_escape_sequence())
             elif code == 0x000a or code == 0x000d:  # \n or \r
-                raise NonTerminatedString('', self.position - 1, self.source)
+                raise NonTerminatedString("", self.position - 1, self.source)
             elif not is_source_character(code):
                 raise InvalidCharacter(char, self.position - 1, self.source)
             else:
                 acc.append(char)
 
-        raise NonTerminatedString('', self.position, self.source)
+        raise NonTerminatedString("", self.position, self.source)
 
     def read_block_string(self):
         """ Advance lexer over a quoted block string.
@@ -247,7 +239,7 @@ class Lexer(object):
             char = self.peek()
 
             if char is None:
-                raise NonTerminatedString('', self.position, self.source)
+                raise NonTerminatedString("", self.position, self.source)
 
             code = ord(char)
             self.advance()
@@ -258,8 +250,7 @@ class Lexer(object):
                 value = parse_block_string("".join(acc))
                 return token.BlockString(start, self.position, value)
             elif char == "\\":
-                if ((self.peek(), self.peek(2), self.peek(3)) ==
-                        ('"', '"', '"')):
+                if (self.peek(), self.peek(2), self.peek(3)) == ('"', '"', '"'):
                     for _ in range(3):
                         acc.append(self.advance())
                 else:
@@ -269,7 +260,7 @@ class Lexer(object):
             else:
                 acc.append(char)
 
-        raise NonTerminatedString('', self.position, self.source)
+        raise NonTerminatedString("", self.position, self.source)
 
     def read_escape_sequence(self):
         """ Advance lexer over an escape character
@@ -277,7 +268,7 @@ class Lexer(object):
         """
         char = self.advance()
         if char is None:
-            raise NonTerminatedString('', self.position, self.source)
+            raise NonTerminatedString("", self.position, self.source)
 
         code = ord(char)
 
@@ -286,8 +277,7 @@ class Lexer(object):
         elif code == 0x0075:  # unicode character: uXXXX
             return self.read_escaped_unicode()
         else:
-            raise InvalidEscapeSequence(
-                u"\%s" % char, self.position - 1, self.source)
+            raise InvalidEscapeSequence(u"\%s" % char, self.position - 1, self.source)
 
     def read_escaped_unicode(self):
         """ Advance lexer over a unicode character
@@ -297,21 +287,19 @@ class Lexer(object):
         for _ in range(4):
             char = self.advance()
             if char is None:
-                raise NonTerminatedString('', self.position, self.source)
+                raise NonTerminatedString("", self.position, self.source)
             if not char.isalnum():
                 break
 
-        escape = self.source.body[start:self.position]
+        escape = self.source.body[start : self.position]
 
         if len(escape) != 4:
-            raise InvalidEscapeSequence(
-                u'\\u%s' % escape, start - 1, self.source)
+            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self.source)
 
         try:
-            return u'%c' % six.unichr(int(escape, 16))
+            return u"%c" % six.unichr(int(escape, 16))
         except ValueError:
-            raise InvalidEscapeSequence(
-                u'\\u%s' % escape, start - 1, self.source)
+            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self.source)
 
     def read_number(self):
         """ Advance lexer over a number
@@ -344,9 +332,11 @@ class Lexer(object):
 
         end = self.position
         value = self.source.body[start:end]
-        return (token.Float(start, end, value)
-                if is_float
-                else token.Integer(start, end, value))
+        return (
+            token.Float(start, end, value)
+            if is_float
+            else token.Integer(start, end, value)
+        )
 
     def read_over_integer(self):
         """
@@ -359,9 +349,7 @@ class Lexer(object):
             self.advance()
             char = self.peek()
             if char is not None and ord(char) == 0x0030:
-                raise UnexpectedCharacter(
-                    '%s' % char, self.position, self.source
-                )
+                raise UnexpectedCharacter("%s" % char, self.position, self.source)
         else:
             self.read_over_digits()
 
@@ -371,7 +359,7 @@ class Lexer(object):
         char = self.peek(raise_on_eof=True)
         code = ord(char)
         if not is_digit(code):
-            raise UnexpectedCharacter('%s' % char, self.position, self.source)
+            raise UnexpectedCharacter("%s" % char, self.position, self.source)
 
         while True:
             char = self.peek()

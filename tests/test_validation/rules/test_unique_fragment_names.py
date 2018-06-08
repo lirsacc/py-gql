@@ -8,19 +8,27 @@
 # feature is not implemented.
 
 from py_gql.validation import UniqueFragmentNamesChecker
+
 from .._test_utils import assert_checker_validation_result as run_test
 
 
 def test_no_fragments(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_one_fragment(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     {
         ...fragA
     }
@@ -28,11 +36,15 @@ def test_one_fragment(schema):
     fragment fragA on Type {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_many_fragments(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     {
         ...fragA
         ...fragB
@@ -47,11 +59,15 @@ def test_many_fragments(schema):
     fragment fragC on Type {
         fieldC
     }
-    ''')
+    """,
+    )
 
 
 def test_inline_fragments_are_always_unique(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     {
         ...on Type {
             fieldA
@@ -60,22 +76,30 @@ def test_inline_fragments_are_always_unique(schema):
             fieldB
         }
     }
-    ''')
+    """,
+    )
 
 
 def test_fragment_and_operation_named_the_same(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     query Foo {
         ...Foo
     }
     fragment Foo on Type {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_fragments_named_the_same(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     {
         ...fragA
     }
@@ -85,19 +109,22 @@ def test_fragments_named_the_same(schema):
     fragment fragA on Type {
         fieldB
     }
-    ''', [
-        'There can only be one fragment named "fragA"'
-    ])
+    """,
+        ['There can only be one fragment named "fragA"'],
+    )
 
 
 def test_fragments_named_the_same_without_being_referenced(schema):
-    run_test(UniqueFragmentNamesChecker, schema, '''
+    run_test(
+        UniqueFragmentNamesChecker,
+        schema,
+        """
     fragment fragA on Type {
         fieldA
     }
     fragment fragA on Type {
         fieldB
     }
-    ''', [
-        'There can only be one fragment named "fragA"'
-    ])
+    """,
+        ['There can only be one fragment named "fragA"'],
+    )

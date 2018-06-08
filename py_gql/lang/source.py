@@ -6,11 +6,11 @@ import six
 
 class Source(object):
 
-    __slots__ = ('body',)
+    __slots__ = ("body",)
 
     def __init__(self, body):
         if isinstance(body, six.binary_type):
-            body = body.decode('utf8')
+            body = body.decode("utf8")
         self.body = body
 
     def __len__(self):

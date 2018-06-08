@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """ Helpers to work with futures and the concurrent module.
 """
-from concurrent import futures as _f
 import logging as _logging
-
+from concurrent import futures as _f
 
 logger = _logging.getLogger(__name__)
 

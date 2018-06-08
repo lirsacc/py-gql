@@ -6,8 +6,8 @@ All types used in a schema should be instances of
 """
 
 
+from .._utils import OrderedDict, cached_property, lazy
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
-from .._utils import cached_property, lazy, OrderedDict
 from ..lang import ast as _ast
 from ..lang.parser import DIRECTIVE_LOCATIONS
 
@@ -21,7 +21,7 @@ def evaluate_lazy_list(entries):
     elif isinstance(_entries, dict):
         return [lazy(entry) for entry in _entries.values()]
     else:
-        raise TypeError('Expected list or dict of items')
+        raise TypeError("Expected list or dict of items")
 
 
 _UNDEF = object()
@@ -29,13 +29,16 @@ _UNDEF = object()
 
 class Type(object):
     """ Base Type class. """
+
     def __repr__(self):
         return str(self)
 
     def __eq__(self, lhs):
-        return (self is lhs or
-                (isinstance(self, WrappingType) and
-                 self.__class__ == lhs.__class__ and self.type == lhs.type))
+        return self is lhs or (
+            isinstance(self, WrappingType)
+            and self.__class__ == lhs.__class__
+            and self.type == lhs.type
+        )
 
     def __hash__(self):
         return id(self)
@@ -44,6 +47,7 @@ class Type(object):
 class NamedType(Type):
     """ Base Type class.
     """
+
     def __str__(self):
         return self.name
 
@@ -51,6 +55,7 @@ class NamedType(Type):
 class WrappingType(Type):
     """ Represent types which wraps other types.
     """
+
     def __init__(self, typ):
         self._type = typ
 
@@ -68,12 +73,13 @@ class NonNullType(WrappingType):
     fields which you can make a strong guarantee on non-nullability, for example
     usually the id field of a database row will never be null.
     """
+
     def __init__(self, typ):
         assert not isinstance(typ, NonNullType)
         self._type = typ
 
     def __str__(self):
-        return '%s!' % self.type
+        return "%s!" % self.type
 
 
 class ListType(WrappingType):
@@ -83,13 +89,15 @@ class ListType(WrappingType):
     Lists are often created within the context of defining the fields of
     an object type.
     """
+
     def __str__(self):
-        return '[%s]' % self.type
+        return "[%s]" % self.type
 
 
 class InputField(object):
     """ Field of an ``InputType``
     """
+
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
@@ -112,11 +120,10 @@ class InputField(object):
 
     @cached_property
     def required(self):
-        return (isinstance(self.type, NonNullType) and
-                self.default_value is _UNDEF)
+        return isinstance(self.type, NonNullType) and self.default_value is _UNDEF
 
     def __str__(self):
-        return 'InputField(%s: %s)' % (self.name, self.type)
+        return "InputField(%s: %s)" % (self.name, self.type)
 
 
 class InputObjectType(NamedType):
@@ -131,6 +138,7 @@ class InputObjectType(NamedType):
     itself in a field, you can use a lambda expression to supply the
     fields lazily.
     """
+
     def __init__(self, name, fields, description=None):
         """
         :type name: str
@@ -166,17 +174,16 @@ class EnumValue(object):
         elif isinstance(definition, dict):
             return cls(**definition)
         else:
-            raise TypeError('Invalid enum value definition %r' % definition)
+            raise TypeError("Invalid enum value definition %r" % definition)
 
-    def __init__(self, name, value=_UNDEF, deprecation_reason=None,
-                 description=None):
+    def __init__(self, name, value=_UNDEF, deprecation_reason=None, description=None):
         """
         :type name: str
         :type value: Hashable
         :type deprecation_reason: str
         :type description: str
         """
-        assert name not in ('true', 'false', 'null')
+        assert name not in ("true", "false", "null")
         self.name = name
         self.value = value if value is not _UNDEF else name
         self.description = description
@@ -196,6 +203,7 @@ class EnumType(NamedType):
 
     [WARN] Enum values must be hashable for reverse lookup to be possible.
     """
+
     def __init__(self, name, values, description=None):
         """
         :type name: str
@@ -208,8 +216,7 @@ class EnumType(NamedType):
         self.reverse_values = OrderedDict()
         for v in values:
             ev = EnumValue.from_def(v)
-            assert ev.name not in self.values, \
-                'Duplicate enum value %s' % ev.name
+            assert ev.name not in self.values, "Duplicate enum value %s" % ev.name
             self.reverse_values[ev.value] = self.values[ev.name] = ev
 
     def get_value(self, name):
@@ -226,8 +233,7 @@ class EnumType(NamedType):
         try:
             return self.values[name].value
         except KeyError:
-            raise UnknownEnumValue('Invalid name %s for enum %s'
-                                   % (name, self.name))
+            raise UnknownEnumValue("Invalid name %s for enum %s" % (name, self.name))
 
     def get_name(self, value):
         """ Extract the name for a given value.
@@ -243,8 +249,7 @@ class EnumType(NamedType):
         try:
             return self.reverse_values[value].name
         except KeyError:
-            raise UnknownEnumValue('Invalid value %r for enum %s'
-                                   % (value, self.name))
+            raise UnknownEnumValue("Invalid value %r for enum %s" % (value, self.name))
 
 
 class ScalarType(NamedType):
@@ -261,8 +266,8 @@ class ScalarType(NamedType):
     - To raise an error on parsing (input), raise a ``ScalarParsingError``,
     ``ValueError``, or ``TypeError`` in ``parse`` or ``parse_literal``.
     """
-    def __init__(self, name, serialize, parse, parse_literal=None,
-                 description=None):
+
+    def __init__(self, name, serialize, parse, parse_literal=None, description=None):
         """
         :type name: str
         :type serialize: callable
@@ -297,8 +302,7 @@ class ScalarType(NamedType):
                 return self._parse_literal(node, variables or {})
             else:
                 if not isinstance(node, _ast.StringValue):
-                    raise TypeError(
-                        'Invalid literal %s' % type(node).__name__)
+                    raise TypeError("Invalid literal %s" % type(node).__name__)
                 return self._parse(node.value)
         except (ValueError, TypeError) as err:
             raise ScalarParsingError(str(err))
@@ -307,6 +311,7 @@ class ScalarType(NamedType):
 class Argument(object):
     """ Field or Directive argument definition
     """
+
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
@@ -330,11 +335,10 @@ class Argument(object):
 
     @cached_property
     def required(self):
-        return (isinstance(self.type, NonNullType) and
-                self.default_value is _UNDEF)
+        return isinstance(self.type, NonNullType) and self.default_value is _UNDEF
 
     def __str__(self):
-        return 'Argument(%s: %s)' % (self.name, self.type)
+        return "Argument(%s: %s)" % (self.name, self.type)
 
 
 Arg = Argument
@@ -343,8 +347,17 @@ Arg = Argument
 class Field(object):
     """ Member of an ``ObjectType``
     """
-    def __init__(self, name, typ, args=None, description=None,
-                 deprecation_reason=None, resolve=None, subscribe=None):
+
+    def __init__(
+        self,
+        name,
+        typ,
+        args=None,
+        description=None,
+        deprecation_reason=None,
+        resolve=None,
+        subscribe=None,
+    ):
         """
         :type name: str
         :type typ: Type
@@ -381,7 +394,7 @@ class Field(object):
         return {arg.name: arg for arg in self.args}
 
     def __str__(self):
-        return 'Field(%s: %s)' % (self.name, self.type)
+        return "Field(%s: %s)" % (self.name, self.type)
 
 
 class ObjectType(NamedType):
@@ -394,8 +407,10 @@ class ObjectType(NamedType):
     itself in a field, you can use a lambda expression to supply the
     fields lazily.
     """
-    def __init__(self, name, fields, interfaces=None, is_type_of=None,
-                 description=None):
+
+    def __init__(
+        self, name, fields, interfaces=None, is_type_of=None, description=None
+    ):
         """
         :type name: str
         :type fields: callable|dict(str, InputField)|[InputField]
@@ -435,8 +450,8 @@ class InterfaceType(NamedType):
     common across all types, as well as a function to determine which type
     is actually used when the field is resolved.
     """
-    def __init__(self, name, fields, types=None, resolve_type=None,
-                 description=None):
+
+    def __init__(self, name, fields, types=None, resolve_type=None, description=None):
         """
         :type name: str
         :type fields: callable|dict(str, InputField)|[InputField]
@@ -471,6 +486,7 @@ class UnionType(NamedType):
     is used to describe what types are possible as well as providing a function
     to determine which type is actually used when the field is resolved.
     """
+
     def __init__(self, name, types, resolve_type=None, description=None):
         """
         :type name: str
@@ -504,8 +520,7 @@ class Directive(Type):
         :type args: callable|[Argument]|dict(str, Argument)
         :type description: str
         """
-        assert (locations and
-                all([loc in DIRECTIVE_LOCATIONS for loc in locations]))
+        assert locations and all([loc in DIRECTIVE_LOCATIONS for loc in locations])
         self.name = name
         self.description = description
         self.locations = locations
@@ -522,40 +537,39 @@ class Directive(Type):
         return {arg.name: arg for arg in self.args}
 
     def __str__(self):
-        return '@%s' % self.name
+        return "@%s" % self.name
 
 
 def is_input_type(typ):
     """ These types may be used as input types for arguments and directives.
     """
-    return isinstance(unwrap_type(typ),
-                      (ScalarType, EnumType, InputObjectType,))
+    return isinstance(unwrap_type(typ), (ScalarType, EnumType, InputObjectType))
 
 
 def is_output_type(typ):
     """ These types may be used as output types as the result of fields.
     """
-    return isinstance(unwrap_type(typ),
-                      (ScalarType, EnumType, ObjectType,
-                       InterfaceType, UnionType,))
+    return isinstance(
+        unwrap_type(typ), (ScalarType, EnumType, ObjectType, InterfaceType, UnionType)
+    )
 
 
 def is_leaf_type(typ):
     """ These types may describe types which may be leaf values.
     """
-    return isinstance(typ, (ScalarType, EnumType,))
+    return isinstance(typ, (ScalarType, EnumType))
 
 
 def is_composite_type(typ):
     """ These types may describe the parent context of a selection set.
     """
-    return isinstance(typ, (ObjectType, InterfaceType, UnionType,))
+    return isinstance(typ, (ObjectType, InterfaceType, UnionType))
 
 
 def is_abstract_type(typ):
     """ These types may describe the parent context of a selection set.
     """
-    return isinstance(typ, (InterfaceType, UnionType,))
+    return isinstance(typ, (InterfaceType, UnionType))
 
 
 def unwrap_type(typ):

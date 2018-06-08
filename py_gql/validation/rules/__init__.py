@@ -7,11 +7,17 @@ from ...exc import UnknownType
 from ...lang import ast as _ast, print_ast
 from ...lang.visitor import SkipNode
 from ...schema import (
-    is_composite_type, is_input_type, is_leaf_type, unwrap_type, NonNullType)
+    is_composite_type,
+    is_input_type,
+    is_leaf_type,
+    unwrap_type,
+    NonNullType,
+)
 from ..visitors import ValidationVisitor, VariablesCollector
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
 from .overlapping_fields_can_be_merged import (  # noqa: F401
-    OverlappingFieldsCanBeMergedChecker)
+    OverlappingFieldsCanBeMergedChecker
+)
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
@@ -20,15 +26,18 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
 
     Unnecessary if parser was run with ``allow_type_system=False``.
     """
+
     def enter_document(self, node):
         for definition in node.definitions:
             if not isinstance(definition, _ast.ExecutableDefinition):
                 self.add_error(
                     'Definition "%s" is not executable'
-                    % ('schema'
-                       if isinstance(definition, _ast.SchemaDefinition)
-                       else definition.name.value),
-                    definition
+                    % (
+                        "schema"
+                        if isinstance(definition, _ast.SchemaDefinition)
+                        else definition.name.value
+                    ),
+                    definition,
                 )
                 raise SkipNode()
 
@@ -36,6 +45,7 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
 class UniqueOperationNameChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all defined operations have
     unique names. """
+
     def __init__(self, *args, **kwargs):
         super(UniqueOperationNameChecker, self).__init__(*args, **kwargs)
         self.names = set()
@@ -52,18 +62,16 @@ class LoneAnonymousOperationChecker(ValidationVisitor):
     """ A GraphQL document is only valid if when it contains an anonymous
     operation (the query short-hand) that it contains only that one
     operation definition. """
+
     def enter_document(self, node):
         operation_definitions = [
-            d
-            for d in node.definitions
-            if isinstance(d, _ast.OperationDefinition)
+            d for d in node.definitions if isinstance(d, _ast.OperationDefinition)
         ]
 
         has_anonymous = any((d.name is None for d in operation_definitions))
         if has_anonymous and len(operation_definitions) > 1:
             self.add_error(
-                'The anonymous operation must be the only defined operation.',
-                node
+                "The anonymous operation must be the only defined operation.", node
             )
             raise SkipNode()
 
@@ -71,13 +79,14 @@ class LoneAnonymousOperationChecker(ValidationVisitor):
 class SingleFieldSubscriptionsChecker(ValidationVisitor):
     """ A GraphQL subscription is valid only if it contains a single
     root field. """
+
     def enter_operation_definition(self, node):
-        if node.operation == 'subscription':
+        if node.operation == "subscription":
             if len(node.selection_set.selections) != 1:
                 self.add_error(
                     'Subscription "%s" must select only one top level field.'
-                    % (node.name.value if node.name else ''),
-                    node
+                    % (node.name.value if node.name else ""),
+                    node,
                 )
 
 
@@ -100,20 +109,23 @@ class KnownTypeNamesChecker(ValidationVisitor):
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
             # [TODO] Implement suggestion list?
-            self.add_error('Unknown type "%s"' % err.message, node)
+            self.add_error('Unknown type "%s"' % str(err), node)
 
 
 class FragmentsOnCompositeTypesChecker(ValidationVisitor):
     """ Fragments use a type condition to determine if they apply, since
     fragments can only be spread into a composite type (object, interface, or
     union), the type condition must also be a composite type. """
+
     def enter_inline_fragment(self, node):
         if node.type_condition:
             typ = self.schema.get_type_from_literal(node.type_condition)
             if not is_composite_type(typ):
                 self.add_error(
-                    'Fragment type condition cannot be on non-composite '
-                    'type "%s"' % (typ.name), node)
+                    "Fragment type condition cannot be on non-composite "
+                    'type "%s"' % (typ.name),
+                    node,
+                )
                 raise SkipNode()
 
     def enter_fragment_definition(self, node):
@@ -121,13 +133,16 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
         if not is_composite_type(typ):
             self.add_error(
                 'Fragment "%s" type condition cannot be on non-composite '
-                'type "%s"' % (node.name.value, typ.name), node)
+                'type "%s"' % (node.name.value, typ.name),
+                node,
+            )
             raise SkipNode()
 
 
 class VariablesAreInputTypesChecker(ValidationVisitor):
     """ A GraphQL operation is only valid if all the variables it defines are of
     input types (scalar, enum, or input object). """
+
     def enter_variable_definition(self, node):
         try:
             typ = self.schema.get_type_from_literal(node.type)
@@ -135,30 +150,36 @@ class VariablesAreInputTypesChecker(ValidationVisitor):
             typ = None
         if not is_input_type(typ):
             self.add_error(
-                'Variable "$%s" must be input type' % node.variable.name.value,
-                node)
+                'Variable "$%s" must be input type' % node.variable.name.value, node
+            )
 
 
 class ScalarLeafsChecker(ValidationVisitor):
     """ A GraphQL document is valid only if all leaf fields (fields without
     sub selections) are of scalar or enum types. """
+
     def enter_field(self, node):
         typ = self.type_info.type
 
         if is_leaf_type(unwrap_type(typ)) and node.selection_set:
             self.add_error(
                 'Field "%s" cannot have a selection as type "%s" has no '
-                'fields' % (node.name.value, typ), node)
+                "fields" % (node.name.value, typ),
+                node,
+            )
 
         if is_composite_type(unwrap_type(typ)) and not node.selection_set:
             self.add_error(
                 'Field "%s" of type "%s" must have a subselection'
-                % (node.name.value, typ), node)
+                % (node.name.value, typ),
+                node,
+            )
 
 
 class FieldsOnCorrectTypeChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all fields selected are defined by
     the parent type, or are an allowed meta field such as __typename. """
+
     def enter_field(self, node):
         if self.type_info.parent_type is None:
             return
@@ -168,12 +189,15 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
             # [TODO] Implement suggestion list?
             self.add_error(
                 'Cannot query field "%s" on type "%r"'
-                % (node.name.value, self.type_info.parent_type), node)
+                % (node.name.value, self.type_info.parent_type),
+                node,
+            )
 
 
 class UniqueFragmentNamesChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all defined fragments have unique
     names. """
+
     def __init__(self, *args, **kwargs):
         super(UniqueFragmentNamesChecker, self).__init__(*args, **kwargs)
         self._names = set()
@@ -181,25 +205,25 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
     def enter_fragment_definition(self, node):
         name = node.name.value
         if name in self._names:
-            self.add_error(
-                'There can only be one fragment named "%s"' % name,
-                node
-            )
+            self.add_error('There can only be one fragment named "%s"' % name, node)
         self._names.add(name)
 
 
 class KnownFragmentNamesChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all `...Fragment` fragment spreads
     refer to fragments defined in the same document. """
+
     def __init__(self, *args, **kwargs):
         super(KnownFragmentNamesChecker, self).__init__(*args, **kwargs)
 
     def enter_document(self, node):
-        self._fragment_names = set([
-            definition.name.value
-            for definition in node.definitions
-            if type(definition) == _ast.FragmentDefinition
-        ])
+        self._fragment_names = set(
+            [
+                definition.name.value
+                for definition in node.definitions
+                if type(definition) == _ast.FragmentDefinition
+            ]
+        )
 
     def enter_fragment_spread(self, node):
         name = node.name.value
@@ -211,6 +235,7 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all fragment definitions are spread
     within operations, or spread within other fragments spread within
     operations. """
+
     def __init__(self, *args, **kwargs):
         super(NoUnusedFragmentsChecker, self).__init__(*args, **kwargs)
         self._fragments = set()
@@ -226,55 +251,69 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
         unused = self._fragments - self._used_fragments
         if unused:
             self.add_error(
-                'Unused fragment(s) %s'
-                % ', '.join(['"%s"' % n for n in sorted(unused)]))
+                "Unused fragment(s) %s"
+                % ", ".join(['"%s"' % n for n in sorted(unused)])
+            )
 
 
 class PossibleFragmentSpreadsChecker(ValidationVisitor):
     """ A fragment spread is only valid if the type condition could ever
     possibly be true: if there is a non-empty intersection of the possible
     parent types, and possible types which pass the type condition. """
+
     def __init__(self, *args, **kwargs):
         super(PossibleFragmentSpreadsChecker, self).__init__(*args, **kwargs)
         self._fragment_types = dict()
 
     def enter_document(self, node):
-        self._fragment_types.update({
-            definition.name.value: self.schema.get_type_from_literal(
-                definition.type_condition)
-            for definition in node.definitions
-            if type(definition) == _ast.FragmentDefinition
-        })
+        self._fragment_types.update(
+            {
+                definition.name.value: self.schema.get_type_from_literal(
+                    definition.type_condition
+                )
+                for definition in node.definitions
+                if type(definition) == _ast.FragmentDefinition
+            }
+        )
 
     def enter_fragment_spread(self, node):
         name = node.name.value
         frag_type = self._fragment_types.get(name, None)
         parent_type = self.type_info.type
 
-        if (is_composite_type(frag_type) and
-                is_composite_type(parent_type) and
-                not self.schema.overlap(frag_type, parent_type)):
+        if (
+            is_composite_type(frag_type)
+            and is_composite_type(parent_type)
+            and not self.schema.overlap(frag_type, parent_type)
+        ):
             self.add_error(
                 'Fragment "%s" cannot be spread here as types "%s" and "%s"'
-                ' do not overlap.' % (name, frag_type, parent_type), node)
+                " do not overlap." % (name, frag_type, parent_type),
+                node,
+            )
             raise SkipNode()
 
     def enter_inline_fragment(self, node):
         typ = self.type_info.type
         parent_type = self.type_info.parent_type
 
-        if (is_composite_type(typ) and
-                is_composite_type(parent_type) and
-                not self.schema.overlap(typ, parent_type)):
+        if (
+            is_composite_type(typ)
+            and is_composite_type(parent_type)
+            and not self.schema.overlap(typ, parent_type)
+        ):
             self.add_error(
                 'Inline fragment cannot be spread here as types "%s" and "%s"'
-                ' do not overlap.' % (typ, parent_type), node)
+                " do not overlap." % (typ, parent_type),
+                node,
+            )
             raise SkipNode()
 
 
 class NoFragmentCyclesChecker(ValidationVisitor):
     """ A GraphQL Document is only valid if fragment definitions are not cyclic.
     """
+
     def __init__(self, *args, **kwargs):
         super(NoFragmentCyclesChecker, self).__init__(*args, **kwargs)
         self._spreads = OrderedDict()
@@ -294,14 +333,14 @@ class NoFragmentCyclesChecker(ValidationVisitor):
         if self._current is not None:
             if self._current and name == self._current:
                 self.add_error(
-                    'Cannot spread fragment "%s" withing itself' % name, node)
+                    'Cannot spread fragment "%s" withing itself' % name, node
+                )
                 raise SkipNode()
 
             if name not in self._spreads[self._current]:
                 self._spreads[self._current].append(name)
 
     def leave_document(self, node):
-
         def _search(outer, acc=None, path=None):
             acc, path = acc or dict(), path or []
 
@@ -335,12 +374,15 @@ class NoFragmentCyclesChecker(ValidationVisitor):
 
                 self.add_error(
                     'Cannot spread fragment "%s" withing itself (via: %s)'
-                    % (outer, ' > '.join(path)), node)
+                    % (outer, " > ".join(path)),
+                    node,
+                )
 
 
 class UniqueVariableNamesChecker(ValidationVisitor):
     """ A GraphQL operation is only valid if all its variables are uniquely
     named. """
+
     def enter_operation_definition(self, node):
         self._variables = set()
 
@@ -357,6 +399,7 @@ class UniqueVariableNamesChecker(ValidationVisitor):
 class NoUndefinedVariablesChecker(VariablesCollector):
     """ A GraphQL operation is only valid if all variables encountered, both
     directly and via fragment spreads, are defined by that operation. """
+
     def leave_document(self, node):
         self._flatten_fragments()
 
@@ -368,11 +411,10 @@ class NoUndefinedVariablesChecker(VariablesCollector):
                     if var not in defined:
                         self.add_error(
                             'Variable "$%s" from fragment "%s" is not defined '
-                            'on %s operation'
-                            % (var,
-                               fragment,
-                               '"%s"' % op if op != '' else 'anonymous'),
-                            node)
+                            "on %s operation"
+                            % (var, fragment, '"%s"' % op if op != "" else "anonymous"),
+                            node,
+                        )
 
         for op, variables in self._op_variables.items():
             defined = self._op_defined_variables[op]
@@ -380,12 +422,15 @@ class NoUndefinedVariablesChecker(VariablesCollector):
                 if var not in defined:
                     self.add_error(
                         'Variable "$%s" is not defined on %s operation'
-                        % (var, '"%s"' % op if op != '' else 'anonymous'), node)
+                        % (var, '"%s"' % op if op != "" else "anonymous"),
+                        node,
+                    )
 
 
 class NoUnusedVariablesChecker(VariablesCollector):
     """ A GraphQL operation is only valid if all variables defined by an
     operation are used, either directly or within a spread fragment. """
+
     def leave_document(self, node):
         self._flatten_fragments()
         used_variables = DefaultOrderedDict(set)
@@ -470,37 +515,39 @@ class KnownDirectivesChecker(ValidationVisitor):
         kind = type(ancestor)
         if kind is _ast.OperationDefinition:
             return {
-                'query': 'QUERY',
-                'mutation': 'MUTATION',
-                'subscription': 'SUBSCRIPTION',
-            }.get(ancestor.operation, 'QUERY')
+                "query": "QUERY",
+                "mutation": "MUTATION",
+                "subscription": "SUBSCRIPTION",
+            }.get(ancestor.operation, "QUERY")
 
         if kind is _ast.InputValueDefinition:
             parent = self._ancestors[-2]
-            return ('INPUT_FIELD_DEFINITION'
-                    if type(parent) is _ast.InputObjectTypeDefinition
-                    else 'ARGUMENT_DEFINITION')
+            return (
+                "INPUT_FIELD_DEFINITION"
+                if type(parent) is _ast.InputObjectTypeDefinition
+                else "ARGUMENT_DEFINITION"
+            )
 
         return {
-            _ast.Field: 'FIELD',
-            _ast.FragmentSpread: 'FRAGMENT_SPREAD',
-            _ast.InlineFragment: 'INLINE_FRAGMENT',
-            _ast.FragmentDefinition: 'FRAGMENT_DEFINITION',
-            _ast.SchemaDefinition: 'SCHEMA',
-            _ast.ScalarTypeDefinition: 'SCALAR',
-            _ast.ScalarTypeExtension: 'SCALAR',
-            _ast.ObjectTypeDefinition: 'OBJECT',
-            _ast.ObjectTypeExtension: 'OBJECT',
-            _ast.FieldDefinition: 'FIELD_DEFINITION',
-            _ast.InterfaceTypeDefinition: 'INTERFACE',
-            _ast.InterfaceTypeExtension: 'INTERFACE',
-            _ast.UnionTypeDefinition: 'UNION',
-            _ast.UnionTypeExtension: 'UNION',
-            _ast.EnumTypeDefinition: 'ENUM',
-            _ast.EnumTypeExtension: 'ENUM',
-            _ast.EnumValueDefinition: 'ENUM_VALUE',
-            _ast.InputObjectTypeDefinition: 'INPUT_OBJECT',
-            _ast.InputObjectTypeExtension: 'INPUT_OBJECT',
+            _ast.Field: "FIELD",
+            _ast.FragmentSpread: "FRAGMENT_SPREAD",
+            _ast.InlineFragment: "INLINE_FRAGMENT",
+            _ast.FragmentDefinition: "FRAGMENT_DEFINITION",
+            _ast.SchemaDefinition: "SCHEMA",
+            _ast.ScalarTypeDefinition: "SCALAR",
+            _ast.ScalarTypeExtension: "SCALAR",
+            _ast.ObjectTypeDefinition: "OBJECT",
+            _ast.ObjectTypeExtension: "OBJECT",
+            _ast.FieldDefinition: "FIELD_DEFINITION",
+            _ast.InterfaceTypeDefinition: "INTERFACE",
+            _ast.InterfaceTypeExtension: "INTERFACE",
+            _ast.UnionTypeDefinition: "UNION",
+            _ast.UnionTypeExtension: "UNION",
+            _ast.EnumTypeDefinition: "ENUM",
+            _ast.EnumTypeExtension: "ENUM",
+            _ast.EnumValueDefinition: "ENUM_VALUE",
+            _ast.InputObjectTypeDefinition: "INPUT_OBJECT",
+            _ast.InputObjectTypeExtension: "INPUT_OBJECT",
         }[kind]
 
     def enter_directive(self, node):
@@ -512,8 +559,8 @@ class KnownDirectivesChecker(ValidationVisitor):
             location = self._current_location()
             if location not in schema_directive.locations:
                 self.add_error(
-                    'Directive "@%s" may not be used on %s'
-                    % (name, location), node)
+                    'Directive "@%s" may not be used on %s' % (name, location), node
+                )
 
 
 class UniqueDirectivesPerLocationChecker(ValidationVisitor):
@@ -554,7 +601,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                     self.add_error(
                         'Unknown argument "%s" on field "%s" of type "%s"'
                         % (name, field_def.name, self.type_info.parent_type),
-                        arg
+                        arg,
                     )
 
     def enter_directive(self, node):
@@ -564,8 +611,11 @@ class KnownArgumentNamesChecker(ValidationVisitor):
             for arg in node.arguments:
                 name = arg.name.value
                 if name not in known:
-                    self.add_error('Unknown argument "%s" on directive "@%s"'
-                                   % (name, directive_def.name), arg)
+                    self.add_error(
+                        'Unknown argument "%s" on directive "@%s"'
+                        % (name, directive_def.name),
+                        arg,
+                    )
 
 
 class UniqueArgumentNamesChecker(ValidationVisitor):
@@ -588,6 +638,7 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
     """ A field or directive is only valid if all required (non-null) field
     arguments have been provided.
     """
+
     # Validate on leave to allow for deeper errors to appear first.
     # TODO: Should this be done in other places.
 
@@ -603,8 +654,9 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
             for arg in self._missing_args(field_def.args, node):
                 self.add_error(
                     'Field "%s" argument "%s" of type %s is required but '
-                    'not provided' % (field_def.name, arg.name, arg.type),
-                    node)
+                    "not provided" % (field_def.name, arg.name, arg.type),
+                    node,
+                )
 
     def leave_directive(self, node):
         directive_def = self.type_info.directive
@@ -612,8 +664,9 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
             for arg in self._missing_args(directive_def.args, node):
                 self.add_error(
                     'Directive "@%s" argument "%s" of type %s is required but '
-                    'not provided' % (directive_def.name, arg.name, arg.type),
-                    node)
+                    "not provided" % (directive_def.name, arg.name, arg.type),
+                    node,
+                )
 
 
 class VariablesDefaultValueAllowedChecker(ValidationVisitor):
@@ -628,8 +681,8 @@ class VariablesDefaultValueAllowedChecker(ValidationVisitor):
         if isinstance(input_type, NonNullType) and node.default_value:
             self.add_error(
                 'Variable "$%s" of type %s is required and will not use the '
-                'default value' % (node.variable.name.value, input_type),
-                node
+                "default value" % (node.variable.name.value, input_type),
+                node,
             )
 
 
@@ -661,16 +714,17 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
 
                     real_type = (
                         vartype
-                        if (isinstance(vartype, NonNullType) or
-                            not vardef.default_value)
+                        if (
+                            isinstance(vartype, NonNullType) or not vardef.default_value
+                        )
                         else NonNullType(vartype)
                     )
                     if not self.schema.is_subtype(real_type, input_type):
                         self.add_error(
                             'Variable "$%s" of type %s used in position '
-                            'expecting type %s'
+                            "expecting type %s"
                             % (varname, print_ast(vardef.type), input_type),
-                            varnode
+                            varnode,
                         )
 
 
@@ -678,6 +732,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
     """ A GraphQL input object value is only valid if all supplied fields are
     uniquely named.
     """
+
     def __init__(self, *args, **kwargs):
         super(UniqueInputFieldNamesChecker, self).__init__(*args, **kwargs)
         self._stack = []
@@ -693,6 +748,6 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
         parent, names = self._stack[-1]
         if fieldname in names:
             self.add_error(
-                'There can be only one input field named %s.' % fieldname,
-                node)
+                "There can be only one input field named %s." % fieldname, node
+            )
         names.add(fieldname)

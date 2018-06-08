@@ -16,6 +16,7 @@ class GraphQLError(Exception):
 
 class GraphQLSyntaxError(GraphQLError):
     """  Syntax error in the GraphQL document."""
+
     def __init__(self, msg, position, source):
         """
         :type msg: str
@@ -28,8 +29,8 @@ class GraphQLSyntaxError(GraphQLError):
 
     def __str__(self):
         from py_gql.lang.utils import highlight_location
-        return (self.message + "\n" +
-                highlight_location(self.source.body, self.position))
+
+        return self.message + "\n" + highlight_location(self.source.body, self.position)
 
     __repr__ = __str__
 
@@ -102,8 +103,7 @@ class VariableCoercionError(ExecutionError):
 
     @cached_property
     def errors(self):
-        return [str(err) if isinstance(err, Exception) else err
-                for err in self._errors]
+        return [str(err) if isinstance(err, Exception) else err for err in self._errors]
 
     def __str__(self):
         if len(self.errors) == 1:
@@ -124,5 +124,5 @@ class CoercionError(GraphQLError):
 
     def __str__(self):
         if self.path:
-            return '%s at %s' % (self.message, self.path)
+            return "%s at %s" % (self.message, self.path)
         return self.message

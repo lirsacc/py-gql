@@ -19,7 +19,7 @@ def leading_whitespace(string):
     >>> leading_whitespace('   foo')
     3
     """
-    return len(string) - len(LEADING_WS.sub('', string))
+    return len(string) - len(LEADING_WS.sub("", string))
 
 
 def is_blank(string):
@@ -30,9 +30,9 @@ def is_blank(string):
     return not string.strip()
 
 
-def parse_block_string(raw_string,
-                       strip_trailing_newlines=True,
-                       strip_leading_newlines=True):
+def parse_block_string(
+    raw_string, strip_trailing_newlines=True, strip_leading_newlines=True
+):
     r""" Parse a raw string according to the GraphQL spec's BlockStringValue()
     http://facebook.github.io/graphql/draft/#BlockStringValue() static
     algorithm. Similar to Coffeescript's block string, Python's docstring trim
@@ -53,14 +53,12 @@ def parse_block_string(raw_string,
         if i == 0:
             continue
         indent = leading_whitespace(line)
-        if (indent < len(line) and
-                (common_indent is None or indent < common_indent)):
+        if indent < len(line) and (common_indent is None or indent < common_indent):
             common_indent = indent
 
     if common_indent:
         lines = [
-            line[common_indent:]
-            if (len(line) >= common_indent and i > 0) else line
+            line[common_indent:] if (len(line) >= common_indent and i > 0) else line
             for i, line in enumerate(lines)
         ]
 
@@ -107,7 +105,7 @@ def index_to_loc(body, position):
     for offset, char in enumerate(body):
         if offset == position:
             return (lines + 1, cols + 1)
-        elif char == '\n':
+        elif char == "\n":
             lines += 1
             cols = 0
         else:
@@ -149,9 +147,9 @@ def loc_to_index(body, loc):
             if len(body) >= index + col - 1:
                 return index + col - 1
             break
-        if char == '\n':
+        if char == "\n":
             lines += 1
-    raise IndexError('%s:%s' % (lineo, col))
+    raise IndexError("%s:%s" % (lineo, col))
 
 
 def highlight_location(body, position, delta=2):
@@ -194,14 +192,15 @@ def highlight_location(body, position, delta=2):
         return " ".join(range(pad_len - len(str(l + 1)))) + str(l + 1)
 
     output = ["(%d:%d):" % (line, col)]
-    output.extend([
-        ws(2) + lineno(l) + ":" + lines[l]
-        for l in range(min_line, line_index)
-    ])
+    output.extend(
+        [ws(2) + lineno(l) + ":" + lines[l] for l in range(min_line, line_index)]
+    )
     output.append(ws(2) + lineno(line_index) + ":" + lines[line_index])
-    output.append(ws(2) + ws(len(str(max_line + 1)) + col) + "^",)
-    output.extend([
-        ws(2) + lineno(l) + ":" + lines[l]
-        for l in range(line_index + 1, max_line + 1)
-    ])
+    output.append(ws(2) + ws(len(str(max_line + 1)) + col) + "^")
+    output.extend(
+        [
+            ws(2) + lineno(l) + ":" + lines[l]
+            for l in range(line_index + 1, max_line + 1)
+        ]
+    )
     return "\n".join(output)

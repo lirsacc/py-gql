@@ -17,26 +17,56 @@ import functools as ft
 import six
 
 from .._utils import (
-    find_one, OrderedDict, DefaultOrderedDict, flatten, is_iterable, Path)
-from ..exc import (InvalidValue, CoercionError, ScalarSerializationError,
-                   UnknownEnumValue, ExecutionError, DocumentValidationError,
-                   VariableCoercionError, ResolverError)
+    find_one,
+    OrderedDict,
+    DefaultOrderedDict,
+    flatten,
+    is_iterable,
+    Path,
+)
+from ..exc import (
+    InvalidValue,
+    CoercionError,
+    ScalarSerializationError,
+    UnknownEnumValue,
+    ExecutionError,
+    DocumentValidationError,
+    VariableCoercionError,
+    ResolverError,
+)
 from ..lang import ast as _ast, print_ast
-from ..schema import (NonNullType, SkipDirective, IncludeDirective,
-                      is_abstract_type, ListType, ScalarType, EnumType,
-                      ObjectType, InterfaceType, UnionType, Schema)
+from ..schema import (
+    NonNullType,
+    SkipDirective,
+    IncludeDirective,
+    is_abstract_type,
+    ListType,
+    ScalarType,
+    EnumType,
+    ObjectType,
+    InterfaceType,
+    UnionType,
+    Schema,
+)
 from ..schema.introspection import schema_field, type_field, type_name_field
-from ..utilities import (typed_value_from_ast, coerce_value,
-                         coerce_argument_values)
+from ..utilities import typed_value_from_ast, coerce_value, coerce_argument_values
 from ..validation import validate_ast
 from ._utils import ExecutionContext, ResolutionContext, directive_arguments
 from .executors import DefaultExecutor, Executor
 from . import _concurrency
 
 
-def execute(schema, ast, executor=None, variables=None, operation_name=None,
-            initial_value=None, validators=None, context=None,
-            _skip_validation=False):
+def execute(
+    schema,
+    ast,
+    executor=None,
+    variables=None,
+    operation_name=None,
+    initial_value=None,
+    validators=None,
+    context=None,
+    _skip_validation=False,
+):
     """
     :type schema: py_gql.schema.Schema
     :param schema: Schema to execute the query against
@@ -73,10 +103,11 @@ def execute(schema, ast, executor=None, variables=None, operation_name=None,
     """
     # This can raise and should as it is a §ogrammer error that
     # should not be exposed
-    assert isinstance(schema, Schema) and schema.validate(), 'Invalid schema'
-    assert isinstance(ast, _ast.Document), 'Expected document'
-    assert variables is None or isinstance(variables, dict), \
-        'Variables must be a dictionnary'
+    assert isinstance(schema, Schema) and schema.validate(), "Invalid schema"
+    assert isinstance(ast, _ast.Document), "Expected document"
+    assert variables is None or isinstance(
+        variables, dict
+    ), "Variables must be a dictionnary"
     assert executor is None or isinstance(executor, Executor)
 
     executor = executor or DefaultExecutor()
@@ -101,17 +132,19 @@ def execute(schema, ast, executor=None, variables=None, operation_name=None,
     coerced_variables = coerce_variable_values(schema, operation, variables)
 
     object_type = {
-        'query': schema.query_type,
-        'mutation': schema.mutation_type,
-        'subscription': schema.subscription_type,
+        "query": schema.query_type,
+        "mutation": schema.mutation_type,
+        "subscription": schema.subscription_type,
     }[operation.operation]
 
     if object_type is None:
         raise ExecutionError(
-            "Schema doesn't support %s operation" % operation.operation)
+            "Schema doesn't support %s operation" % operation.operation
+        )
 
     ctx = ExecutionContext(
-        schema, ast, coerced_variables, fragments, executor, operation, context)
+        schema, ast, coerced_variables, fragments, executor, operation, context
+    )
 
     # While it would be more python-ic to raise in case of validation error,
     # the natural flow would be to interrupt processing but the spec
@@ -140,21 +173,22 @@ def get_operation(document, operation_name):
     ]
 
     if not operations:
-        raise ExecutionError('Must provide an operation')
+        raise ExecutionError("Must provide an operation")
 
     if not operation_name:
         if len(operations) == 1:
             return operations[0]
         else:
-            raise ExecutionError('Operation name is required when document '
-                                 'contains multiple operation definitions')
+            raise ExecutionError(
+                "Operation name is required when document "
+                "contains multiple operation definitions"
+            )
 
     operation = find_one(operations, lambda o: o.name.value == operation_name)
     if operation is not None:
         return operation
     else:
-        raise ExecutionError('No operation "%s" found in document'
-                             % operation_name)
+        raise ExecutionError('No operation "%s" found in document' % operation_name)
 
 
 def coerce_variable_values(schema, operation, variables=None):
@@ -185,8 +219,7 @@ def coerce_variable_values(schema, operation, variables=None):
             if var_def.default_value is not None:
                 try:
                     coerced[name] = typed_value_from_ast(
-                        var_def.default_value,
-                        var_type,
+                        var_def.default_value, var_type
                     )
                 except InvalidValue as err:
                     errors.append(
@@ -240,10 +273,7 @@ def collect_fields(ctx, object_type, selections, visited_fragments=None):
 
     def _collect_fragment_fields(fragment_selections):
         fragment_grouped_fields = collect_fields(
-            ctx,
-            object_type,
-            fragment_selections,
-            visited_fragments
+            ctx, object_type, fragment_selections, visited_fragments
         )
         for key, gf in fragment_grouped_fields.items():
             grouped_fields[key].extend(gf)
@@ -253,9 +283,7 @@ def collect_fields(ctx, object_type, selections, visited_fragments=None):
             if not _include_selection(selection, ctx.variables):
                 continue
 
-            key = (selection.alias.value
-                   if selection.alias
-                   else selection.name.value)
+            key = selection.alias.value if selection.alias else selection.name.value
             grouped_fields[key].append(selection)
 
         elif isinstance(selection, _ast.InlineFragment):
@@ -321,38 +349,39 @@ def fragment_type_applies(schema, fragment, object_type):
 def _include_selection(node, variables=None):
     skip = directive_arguments(SkipDirective, node, variables=variables)
     include = directive_arguments(IncludeDirective, node, variables=variables)
-    skipped = skip is not None and skip['if']
-    included = include is None or include['if']
+    skipped = skip is not None and skip["if"]
+    included = include is None or include["if"]
     return (not skipped) and included
 
 
 def _field_def(schema, parent_type, name):
-    if name in ('__schema', '__type', '__typename'):
-        if name == '__schema' and schema.query_type == parent_type:
+    if name in ("__schema", "__type", "__typename"):
+        if name == "__schema" and schema.query_type == parent_type:
             return schema_field
-        elif name == '__type' and schema.query_type == parent_type:
+        elif name == "__type" and schema.query_type == parent_type:
             return type_field
-        elif name == '__typename':
+        elif name == "__typename":
             return type_name_field
     return parent_type.field_map.get(name, None)
 
 
 def _resolve_type(value, context, schema, abstract_type):
-    if callable(getattr(abstract_type, 'resolve_type', None)):
+    if callable(getattr(abstract_type, "resolve_type", None)):
         return abstract_type.resolve_type(value, context=context, schema=schema)
-    elif hasattr(value, '__graphql_type__') and value.__graphql_type__:
+    elif hasattr(value, "__graphql_type__") and value.__graphql_type__:
         return value.__graphql_type__
     else:
         possible_types = schema.get_possible_types(abstract_type)
         for typ in possible_types:
-            if callable(getattr(typ, 'is_type_of', None)):
+            if callable(getattr(typ, "is_type_of", None)):
                 if typ.is_type_of(value, context=context, schema=schema):
                     return typ
         return None
 
 
-def _defer_field(ctx, object_type, object_value, field_def, nodes, path,
-                 on_success, on_error):
+def _defer_field(
+    ctx, object_type, object_value, field_def, nodes, path, on_success, on_error
+):
 
     # REVIEW: Should this still happen ?
     def _evaluate_lazy_resolver(value):
@@ -364,20 +393,11 @@ def _defer_field(ctx, object_type, object_value, field_def, nodes, path,
         _concurrency.chain(
             _concurrency.deferred(None),
             lambda _: resolve_field(
-                ctx,
-                object_type,
-                object_value,
-                field_def,
-                nodes,
-                path
+                ctx, object_type, object_value, field_def, nodes, path
             ),
             _evaluate_lazy_resolver,
             lambda resolved_value: complete_value(
-                ctx,
-                field_def.type,
-                nodes,
-                resolved_value,
-                path
+                ctx, field_def.type, nodes, resolved_value, path
             ),
             on_success,
         ),
@@ -415,16 +435,23 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
         field_path = path + key
         _handle_success, _handle_error = _handlers(key, nodes, field_path)
 
-        deferred_fields.append(_defer_field(
-            ctx, object_type, object_value, field_def, nodes, field_path,
-            _handle_success, _handle_error
-        ))
+        deferred_fields.append(
+            _defer_field(
+                ctx,
+                object_type,
+                object_value,
+                field_def,
+                nodes,
+                field_path,
+                _handle_success,
+                _handle_error,
+            )
+        )
 
     return _concurrency.chain(_concurrency.all_(deferred_fields), OrderedDict)
 
 
-def execute_selections_serially(ctx, selections, object_type, object_value,
-                                path=None):
+def execute_selections_serially(ctx, selections, object_type, object_value, path=None):
     """
     """
     try:
@@ -458,14 +485,19 @@ def execute_selections_serially(ctx, selections, object_type, object_value,
         steps.append(
             ft.partial(
                 _defer_field,
-                ctx, object_type, object_value, field_def, nodes, field_path,
-                _handle_success, _handle_error
+                ctx,
+                object_type,
+                object_value,
+                field_def,
+                nodes,
+                field_path,
+                _handle_success,
+                _handle_error,
             )
         )
 
     return _concurrency.chain(
-        _concurrency.serial(steps),
-        lambda _: OrderedDict(resolved_fields)
+        _concurrency.serial(steps), lambda _: OrderedDict(resolved_fields)
     )
 
 
@@ -484,8 +516,16 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
     field_name = nodes[0].name.value
 
     info = ResolutionContext(
-        field_def, parent_type, path, ctx.schema, ctx.variables, ctx.fragments,
-        ctx.operation, nodes, ctx.executor)
+        field_def,
+        parent_type,
+        path,
+        ctx.schema,
+        ctx.variables,
+        ctx.fragments,
+        ctx.operation,
+        nodes,
+        ctx.executor,
+    )
 
     args = coerce_argument_values(field_def, nodes[0], ctx.variables)
 
@@ -494,31 +534,18 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
             field_value = parent_value.get(field_name, None)
             if callable(field_value):
                 return ctx.executor.submit(
-                    field_value,
-                    parent_value,
-                    args,
-                    ctx.context,
-                    info
+                    field_value, parent_value, args, ctx.context, info
                 )
             return _concurrency.deferred(field_value)
         else:
             attr_value = getattr(parent_value, field_name, None)
             # Call methods / support lazy evaluation
             if callable(attr_value):
-                return ctx.executor.submit(
-                    attr_value,
-                    args,
-                    ctx.context,
-                    info
-                )
+                return ctx.executor.submit(attr_value, args, ctx.context, info)
             return _concurrency.deferred(attr_value)
     else:
         return ctx.executor.submit(
-            field_def.resolve,
-            parent_value,
-            args,
-            ctx.context,
-            info
+            field_def.resolve, parent_value, args, ctx.context, info
         )
 
 
@@ -533,16 +560,12 @@ def complete_value(ctx, field_type, nodes, resolved_value, path, serial=False):
         # explicitely if the query lead to this behaviour ?
         def _handle_null(value):
             if value is None:
-                ctx.add_error(
-                    'Field "%s" is not nullable' % path, nodes[0], path
-                )
+                ctx.add_error('Field "%s" is not nullable' % path, nodes[0], path)
             return _concurrency.deferred(value)
 
         return _concurrency.chain(
-            complete_value(
-                ctx, field_type.type, nodes, resolved_value, path, serial
-            ),
-            _handle_null
+            complete_value(ctx, field_type.type, nodes, resolved_value, path, serial),
+            _handle_null,
         )
 
     if resolved_value is None:
@@ -558,8 +581,8 @@ def complete_value(ctx, field_type, nodes, resolved_value, path, serial=False):
             serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:
             raise RuntimeError(
-                'Field "%s" cannot be serialized as "%s": %s'
-                % (path, field_type, err))
+                'Field "%s" cannot be serialized as "%s": %s' % (path, field_type, err)
+            )
         else:
             return _concurrency.deferred(serialized)
 
@@ -568,8 +591,8 @@ def complete_value(ctx, field_type, nodes, resolved_value, path, serial=False):
             serialized = field_type.get_name(resolved_value)
         except UnknownEnumValue as err:
             raise RuntimeError(
-                'Field "%s" cannot be serialized as "%s": %s'
-                % (path, field_type, err))
+                'Field "%s" cannot be serialized as "%s": %s' % (path, field_type, err)
+            )
         else:
             return _concurrency.deferred(serialized)
 
@@ -583,33 +606,34 @@ def _complete_list_value(ctx, item_type, nodes, list_value, path, serial):
     # Compared to ref implementation, this does not support lazy evaluation
     # of list entries. Maybe once the Future based interface is done.
     if not is_iterable(list_value, False):
-        raise RuntimeError('Field "%s" is a list type and resolved value '
-                           'should be iterable' % path)
+        raise RuntimeError(
+            'Field "%s" is a list type and resolved value ' "should be iterable" % path
+        )
 
     if not serial:
-        return _concurrency.all_([
-            complete_value(ctx, item_type, nodes, entry, path + i)
-            for i, entry in enumerate(list_value)
-        ])
+        return _concurrency.all_(
+            [
+                complete_value(ctx, item_type, nodes, entry, path + i)
+                for i, entry in enumerate(list_value)
+            ]
+        )
     else:
         results = []
         steps = [
             lambda: _concurrency.chain(
                 complete_value(ctx, item_type, nodes, entry, path + i, serial),
-                results.append
+                results.append,
             )
             for i, entry in enumerate(list_value)
         ]
         return _concurrency.chain(
-            _concurrency.serial(steps),
-            lambda _: _concurrency.deferred(results)
+            _concurrency.serial(steps), lambda _: _concurrency.deferred(results)
         )
 
 
 def _complete_object_value(ctx, field_type, nodes, object_value, path, serial):
     if isinstance(field_type, (InterfaceType, UnionType)):
-        runtime_type = _resolve_type(
-            object_value, ctx.context, ctx.schema, field_type)
+        runtime_type = _resolve_type(object_value, ctx.context, ctx.schema, field_type)
 
         if isinstance(runtime_type, six.string_types):
             runtime_type = ctx.schema.get_type(runtime_type, None)
@@ -617,15 +641,16 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path, serial):
         if not isinstance(runtime_type, ObjectType):
             raise RuntimeError(
                 'Abstract type "%s" must resolve to an ObjectType at runtime '
-                'for field "%s". Received "%s".'
-                % (field_type, path, runtime_type))
+                'for field "%s". Received "%s".' % (field_type, path, runtime_type)
+            )
 
         # Backup check in case of badly implemented `resolve_type`,
         # `is_type_of`
         if not ctx.schema.is_possible_type(field_type, runtime_type):
             raise RuntimeError(
                 'Runtime ObjectType "%s" is not a possible type for '
-                'field "%s" of type "%s".' % (runtime_type, path, field_type))
+                'field "%s" of type "%s".' % (runtime_type, path, field_type)
+            )
 
     else:
         runtime_type = field_type
@@ -639,19 +664,13 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path, serial):
 
 
 def _execute(ctx, operation, object_type, initial_value):
-    if operation.operation == 'query':
+    if operation.operation == "query":
         return execute_selections(
-            ctx,
-            operation.selection_set.selections,
-            object_type,
-            initial_value,
+            ctx, operation.selection_set.selections, object_type, initial_value
         )
-    elif operation.operation == 'mutation':
+    elif operation.operation == "mutation":
         return execute_selections_serially(
-            ctx,
-            operation.selection_set.selections,
-            object_type,
-            initial_value,
+            ctx, operation.selection_set.selections, object_type, initial_value
         )
     else:
-        raise NotImplementedError('%s not supported' % operation.operation)
+        raise NotImplementedError("%s not supported" % operation.operation)

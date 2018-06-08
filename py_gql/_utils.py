@@ -4,6 +4,7 @@
 import collections as _collections
 import contextlib as _contextlib
 import sys as _sys
+
 import six as _six
 
 
@@ -32,6 +33,7 @@ class cached_property(property):
     **Warning** This requires the class to have a ``__dict__`` attribute,
     so no class using __slots__.
     """
+
     def __init__(self, func, name=None, doc=None):
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
@@ -72,6 +74,7 @@ def deduplicate(iterable, key=None):
     [1, 2]
     """
     if key is None:
+
         def key(x):
             return x
 
@@ -118,7 +121,7 @@ def find_one(iterable, predicate):
     return maybe_first((entry for entry in iterable if predicate(entry)), None)
 
 
-if _sys.version >= '3.7':  # flake8: noqa
+if _sys.version >= "3.7":  # flake8: noqa
     # Take advantage that dicts are guaranteed ordred from 3.7 onward
     OrderedDict = dict
     DefaultOrderedDict = _collections.defaultdict
@@ -127,10 +130,11 @@ else:
 
     class DefaultOrderedDict(OrderedDict):
         """ OrderedDict with default values """
+
         # Source: http://stackoverflow.com/a/6190500/562769
         def __init__(self, default_factory=None, *a, **kw):
             if default_factory is not None and not callable(default_factory):
-                raise TypeError('first argument must be callable')
+                raise TypeError("first argument must be callable")
             OrderedDict.__init__(self, *a, **kw)
             self.default_factory = default_factory
 
@@ -150,7 +154,7 @@ else:
             if self.default_factory is None:
                 args = tuple()
             else:
-                args = self.default_factory,
+                args = (self.default_factory,)
             return type(self), args, None, None, self.items()
 
         def copy(self):
@@ -161,15 +165,13 @@ else:
 
         def __deepcopy__(self, memo):
             import copy
-            return type(self)(
-                self.default_factory,
-                copy.deepcopy(self.items())
-            )
+
+            return type(self)(self.default_factory, copy.deepcopy(self.items()))
 
         def __repr__(self):
-            return 'OrderedDefaultDict(%s, %s)' % (
+            return "OrderedDefaultDict(%s, %s)" % (
                 self.default_factory,
-                OrderedDict.__repr__(self)
+                OrderedDict.__repr__(self),
             )
 
 
@@ -237,7 +239,7 @@ class Path(object):
     ['foo', 0, 'bar']
     """
 
-    __slots__ = ('_entries')
+    __slots__ = "_entries"
 
     def __init__(self, entries=None):
         self._entries = list(entries) if entries is not None else []
@@ -270,18 +272,18 @@ class Path(object):
         >>> str(Path(['foo', 0, 'bar']))
         'foo[0].bar'
         """
-        path_str = ''
+        path_str = ""
         for entry in self._entries:
             if isinstance(entry, int):
                 path_str += "[%s]" % entry
             else:
                 path_str += ".%s" % entry
-        return path_str.lstrip('.')
+        return path_str.lstrip(".")
 
     def __repr__(self):
         if not self._entries:
-            return '<%s empty>' % (self.__class__.__name__)
-        return '<%s %s>' % (self.__class__.__name__, self)
+            return "<%s empty>" % (self.__class__.__name__)
+        return "<%s %s>" % (self.__class__.__name__, self)
 
     def __eq__(self, lhs):
         """

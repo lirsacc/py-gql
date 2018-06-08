@@ -13,9 +13,17 @@ JSON objects in a more complex demo.
 
 from py_gql.exc import ResolverError
 from py_gql.schema import (
-    EnumType, EnumValue, InterfaceType, Field, NonNullType, String, ListType,
-    ObjectType, Arg, Schema)
-
+    Arg,
+    EnumType,
+    EnumValue,
+    Field,
+    InterfaceType,
+    ListType,
+    NonNullType,
+    ObjectType,
+    Schema,
+    String,
+)
 
 luke = {
     'type': 'Human',

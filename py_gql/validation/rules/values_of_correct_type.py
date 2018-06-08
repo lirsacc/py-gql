@@ -2,10 +2,9 @@
 """
 """
 
-from ...exc import UnknownEnumValue, ScalarParsingError
+from ...exc import ScalarParsingError, UnknownEnumValue
 from ...lang.visitor import SkipNode
-from ...schema import (
-    unwrap_type, NonNullType, ScalarType, EnumType, InputObjectType)
+from ...schema import EnumType, InputObjectType, NonNullType, ScalarType, unwrap_type
 from ...schema.scalars import SPECIFIED_SCALAR_TYPES
 from ..visitors import ValidationVisitor
 
@@ -23,9 +22,9 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
     # should be caught by other validators.
 
     def _report_bad_value(self, input_type, node, extra=None):
-        msg = 'Expected type %s, found %s' % (input_type, node)
+        msg = "Expected type %s, found %s" % (input_type, node)
         if extra:
-            msg += ' (%s)' % extra
+            msg += " (%s)" % extra
         self.add_error(msg, node)
 
     def _check_scalar(self, node):
@@ -78,9 +77,9 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         for field_def in named_type.fields:
             if field_def.required and field_def.name not in input_fields:
                 self.add_error(
-                    'Required field %s.%s of type %s was not provided'
+                    "Required field %s.%s of type %s was not provided"
                     % (named_type.name, field_def.name, field_def.type),
-                    node
+                    node,
                 )
 
     def enter_object_field(self, node):
@@ -88,7 +87,6 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         field_type = self.type_info.input_type
         if field_type is None and isinstance(parent_type, InputObjectType):
             self.add_error(
-                'Field %s is not defined by type %s'
-                % (node.name.value, parent_type),
-                node
+                "Field %s is not defined by type %s" % (node.name.value, parent_type),
+                node,
             )

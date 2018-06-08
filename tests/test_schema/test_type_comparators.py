@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 
 
+from py_gql.schema.scalars import Float, Int, String
 from py_gql.schema.schema import Schema
-from py_gql.schema.scalars import Int, Float, String
 from py_gql.schema.types import (
-    ListType, NonNullType, ObjectType, Field, UnionType, InterfaceType)
+    Field,
+    InterfaceType,
+    ListType,
+    NonNullType,
+    ObjectType,
+    UnionType,
+)
 
 
 def test_references_are_equal():
@@ -35,7 +41,7 @@ def test_non_null_is_not_equal_to_list():
     assert not NonNullType(Int) == ListType(Int)
 
 
-_schema = Schema(ObjectType('Query', [Field('field', String)]))
+_schema = Schema(ObjectType("Query", [Field("field", String)]))
 
 
 def test_same_referaence_is_subtype():
@@ -67,31 +73,31 @@ def test_list_of_non_null_is_subtype_of_list_of_nullable():
 
 
 def test_member_is_subtype_of_union():
-    member = ObjectType('Object', [Field('field', String)])
-    union = UnionType('Union', [member])
-    schema = Schema(ObjectType('Query', [Field('field', union)]))
+    member = ObjectType("Object", [Field("field", String)])
+    union = UnionType("Union", [member])
+    schema = Schema(ObjectType("Query", [Field("field", union)]))
     assert schema.is_subtype(member, union)
 
 
 def test_not_member_is_not_subtype_of_union():
-    member = ObjectType('Object', [Field('field', String)])
-    not_member = ObjectType('Object2', [Field('field', String)])
-    union = UnionType('Union', [member])
-    schema = Schema(ObjectType('Query', [Field('field', union)]))
+    member = ObjectType("Object", [Field("field", String)])
+    not_member = ObjectType("Object2", [Field("field", String)])
+    union = UnionType("Union", [member])
+    schema = Schema(ObjectType("Query", [Field("field", union)]))
     assert not schema.is_subtype(not_member, union)
 
 
 def test_implementation_is_subtype_of_interface():
-    iface = InterfaceType('Iface', [Field('field', String)])
-    impl = ObjectType('Object', [Field('field', String)], [iface])
-    schema = Schema(ObjectType('Query', [Field('field', impl)]))
+    iface = InterfaceType("Iface", [Field("field", String)])
+    impl = ObjectType("Object", [Field("field", String)], [iface])
+    schema = Schema(ObjectType("Query", [Field("field", impl)]))
     assert schema.is_subtype(impl, iface)
 
 
 def test_not_implementation_is_not_subtype_of_interface():
-    iface = InterfaceType('Iface', [Field('field', String)])
-    impl = ObjectType('Object', [Field('field', String)])
-    schema = Schema(ObjectType('Query', [Field('field', impl)]))
+    iface = InterfaceType("Iface", [Field("field", String)])
+    impl = ObjectType("Object", [Field("field", String)])
+    schema = Schema(ObjectType("Query", [Field("field", impl)]))
     assert not schema.is_subtype(impl, iface)
 
 
@@ -104,35 +110,32 @@ def test_int_and_float_do_not_overlap():
 
 
 def test_disjoint_unions_do_not_overlap():
-    member1 = ObjectType('Object1', [Field('field', String)])
-    member2 = ObjectType('Object2', [Field('field', String)])
-    union1 = UnionType('Union', [member2])
-    union2 = UnionType('Union', [member1])
-    schema = Schema(ObjectType('Query', [
-        Field('field1', union1),
-        Field('field2', union2)
-    ]))
+    member1 = ObjectType("Object1", [Field("field", String)])
+    member2 = ObjectType("Object2", [Field("field", String)])
+    union1 = UnionType("Union", [member2])
+    union2 = UnionType("Union", [member1])
+    schema = Schema(
+        ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
+    )
     assert not schema.overlap(union1, union2)
 
 
 def test_common_unions_not_overlap():
-    member1 = ObjectType('Object1', [Field('field', String)])
-    member2 = ObjectType('Object2', [Field('field', String)])
-    union1 = UnionType('Union', [member2])
-    union2 = UnionType('Union', [member1, member2])
-    schema = Schema(ObjectType('Query', [
-        Field('field1', union1),
-        Field('field2', union2)
-    ]))
+    member1 = ObjectType("Object1", [Field("field", String)])
+    member2 = ObjectType("Object2", [Field("field", String)])
+    union1 = UnionType("Union", [member2])
+    union2 = UnionType("Union", [member1, member2])
+    schema = Schema(
+        ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
+    )
     assert schema.overlap(union1, union2)
 
 
 def test_union_and_interface_with_common_types_overlap():
-    iface = InterfaceType('Iface', [Field('field', String)])
-    impl = ObjectType('Object', [Field('field', String)], [iface])
-    union = UnionType('Union', [impl])
-    schema = Schema(ObjectType('Query', [
-        Field('field1', union),
-        Field('field2', iface)
-    ]))
+    iface = InterfaceType("Iface", [Field("field", String)])
+    impl = ObjectType("Object", [Field("field", String)], [iface])
+    union = UnionType("Union", [impl])
+    schema = Schema(
+        ObjectType("Query", [Field("field1", union), Field("field2", iface)])
+    )
     assert schema.overlap(iface, union)

@@ -8,24 +8,34 @@
 # feature is not implemented.
 
 from py_gql.validation import VariablesAreInputTypesChecker
+
 from .._test_utils import assert_checker_validation_result as run_test
 
 
 def test_input_types_are_valid(schema):
-    run_test(VariablesAreInputTypesChecker, schema, '''
+    run_test(
+        VariablesAreInputTypesChecker,
+        schema,
+        """
     query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
         field(a: $a, b: $b, c: $c)
     }
-    ''')
+    """,
+    )
 
 
 def test_output_types_are_invalid(schema):
-    run_test(VariablesAreInputTypesChecker, schema, '''
+    run_test(
+        VariablesAreInputTypesChecker,
+        schema,
+        """
     query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {
         field(a: $a, b: $b, c: $c)
     }
-    ''', [
-        'Variable "$a" must be input type',
-        'Variable "$b" must be input type',
-        'Variable "$c" must be input type',
-    ])
+    """,
+        [
+            'Variable "$a" must be input type',
+            'Variable "$b" must be input type',
+            'Variable "$c" must be input type',
+        ],
+    )

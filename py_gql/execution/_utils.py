@@ -8,11 +8,20 @@ class ExecutionContext(object):
     """
     """
 
-    __slots__ = ('schema', 'document', 'variables', 'fragments', 'executor',
-                 'operation', '_errors', 'context')
+    __slots__ = (
+        "schema",
+        "document",
+        "variables",
+        "fragments",
+        "executor",
+        "operation",
+        "_errors",
+        "context",
+    )
 
-    def __init__(self, schema, document, variables, fragments, executor,
-                 operation, context):
+    def __init__(
+        self, schema, document, variables, fragments, executor, operation, context
+    ):
         """
         """
         self.schema = schema
@@ -36,12 +45,31 @@ class ResolutionContext(object):
     """ ResolutionContext will be passed to custom resolver function to expose
     some of the data used in the execution process. """
 
-    __slots__ = ('field_def', 'parent_type', 'path', 'schema', 'variables',
-                 'fragments', 'operation', 'nodes', '_directive_values',
-                 'executor')
+    __slots__ = (
+        "field_def",
+        "parent_type",
+        "path",
+        "schema",
+        "variables",
+        "fragments",
+        "operation",
+        "nodes",
+        "_directive_values",
+        "executor",
+    )
 
-    def __init__(self, field_def, parent_type, path, schema, variables,
-                 fragments, operation, nodes, executor):
+    def __init__(
+        self,
+        field_def,
+        parent_type,
+        path,
+        schema,
+        variables,
+        fragments,
+        operation,
+        nodes,
+        executor,
+    ):
         self.field_def = field_def
         self.parent_type = parent_type
         self.path = path
@@ -72,9 +100,7 @@ class ResolutionContext(object):
         definition = self.schema.directives[directive_name]
         values = {}
         for node in self.nodes:
-            values.update(
-                directive_arguments(definition, node, self.variables) or {}
-            )
+            values.update(directive_arguments(definition, node, self.variables) or {})
         self._directive_values[directive_name] = values
         return values
 
@@ -98,10 +124,10 @@ def directive_arguments(definition, node, variables=None):
 
     :rtype: dict
     """
-    directive = find_one(
-        node.directives,
-        lambda d: d.name.value == definition.name
-    )
+    directive = find_one(node.directives, lambda d: d.name.value == definition.name)
 
-    return (coerce_argument_values(definition, directive, variables)
-            if directive is not None else None)
+    return (
+        coerce_argument_values(definition, directive, variables)
+        if directive is not None
+        else None
+    )

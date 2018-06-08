@@ -5,10 +5,9 @@ In large part ported from the JS implementation and adapted to
 work with the schema / types implementation we have.
 """
 
-from ..exc import UnknownVariable, InvalidValue
+from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
-from ..schema.types import (
-    NonNullType, ListType, InputObjectType, EnumType, ScalarType)
+from ..schema.types import EnumType, InputObjectType, ListType, NonNullType, ScalarType
 
 
 def untyped_value_from_ast(node, variables=None):
@@ -39,8 +38,7 @@ def untyped_value_from_ast(node, variables=None):
         return node.value
     elif kind == _ast.ListValue:
         return [
-            untyped_value_from_ast(item, variables=variables)
-            for item in node.values
+            untyped_value_from_ast(item, variables=variables) for item in node.values
         ]
     elif kind == _ast.ObjectValue:
         return {
@@ -53,7 +51,7 @@ def untyped_value_from_ast(node, variables=None):
             raise UnknownVariable(varname)
         return variables[varname]
 
-    raise TypeError('Unexpected node %s' % node.__class__)
+    raise TypeError("Unexpected node %s" % node.__class__)
 
 
 def typed_value_from_ast(node, type_, variables=None):
@@ -85,7 +83,7 @@ def typed_value_from_ast(node, type_, variables=None):
     kind = type(node)
     if isinstance(type_, NonNullType):
         if kind == _ast.NullValue:
-            raise InvalidValue('Expected non null value.')
+            raise InvalidValue("Expected non null value.")
         else:
             type_ = type_.type
 
@@ -108,24 +106,23 @@ def typed_value_from_ast(node, type_, variables=None):
         # [WARN] The ref implementation nullifies nullable missing entries
         # => check spec for this behaviour.
         return [
-            typed_value_from_ast(item, type_.type, variables)
-            for item in node.values
+            typed_value_from_ast(item, type_.type, variables) for item in node.values
         ]
 
     if isinstance(type_, InputObjectType):
         if kind != _ast.ObjectValue:
-            raise InvalidValue('Expected Object but got %s' % kind.__name__)
+            raise InvalidValue("Expected Object but got %s" % kind.__name__)
         return _extract_input_object(node, type_, variables)
 
     if isinstance(type_, EnumType):
         if kind != _ast.EnumValue:
-            raise InvalidValue('Expected EnumValue')
+            raise InvalidValue("Expected EnumValue")
         return type_.get_value(node.value)
 
     if isinstance(type_, ScalarType):
         return type_.parse_literal(node, variables)
 
-    raise TypeError('Invalid type for input coercion %s' % type_)
+    raise TypeError("Invalid type for input coercion %s" % type_)
 
 
 def _extract_input_object(node, type_, variables):
@@ -137,13 +134,11 @@ def _extract_input_object(node, type_, variables):
             if field.has_default_value:
                 coerced[name] = field.default_value
             elif isinstance(field.type, NonNullType):
-                raise InvalidValue('Missing field %s' % name)
+                raise InvalidValue("Missing field %s" % name)
             # [WARN] As-is missing field will remain missing in the
             # resulting object, not sure if that's what the spec says.
         else:
             value = node_fields[name].value
-            coerced[name] = typed_value_from_ast(
-                value, field.type, variables
-            )
+            coerced[name] = typed_value_from_ast(value, field.type, variables)
 
     return coerced

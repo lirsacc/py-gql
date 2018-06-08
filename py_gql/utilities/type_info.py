@@ -4,26 +4,22 @@ traversing an ast.
 """
 
 
-from py_gql.exc import UnknownType, UnknownEnumValue
 from py_gql._utils import find_one
+from py_gql.exc import UnknownEnumValue, UnknownType
 from py_gql.lang.visitor import DispatchingVisitor
 from py_gql.schema import (
     EnumType,
     InputObjectType,
     InterfaceType,
+    ListType,
+    ObjectType,
     is_composite_type,
     is_input_type,
     is_output_type,
-    ListType,
     nullable_type,
-    ObjectType,
     unwrap_type,
 )
-from py_gql.schema.introspection import (
-    schema_field,
-    type_field,
-    type_name_field,
-)
+from py_gql.schema.introspection import schema_field, type_field, type_name_field
 
 
 def _peek(lst, count=1, default=None):
@@ -64,9 +60,17 @@ class TypeInfoVisitor(DispatchingVisitor):
     nodes in order for the information provided to be accurate donwstream.
     """
 
-    slots = ('_schema', '_type_stack', '_input_type_stack', '_get_field_def_fn',
-             '_parent_type_stack', '_field_stack', 'directive', 'argument',
-             'enum_value')
+    slots = (
+        "_schema",
+        "_type_stack",
+        "_input_type_stack",
+        "_get_field_def_fn",
+        "_parent_type_stack",
+        "_field_stack",
+        "directive",
+        "argument",
+        "enum_value",
+    )
 
     def __init__(self, schema, _get_field_def=None):
         self._schema = schema
@@ -103,8 +107,11 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def _get_field_def(self, node):
         parent_type = self.parent_type
-        return (self._get_field_def_fn(self._schema, parent_type, node)
-                if parent_type else None)
+        return (
+            self._get_field_def_fn(self._schema, parent_type, node)
+            if parent_type
+            else None
+        )
 
     def _type_from_ast(self, type_node):
         try:
@@ -139,9 +146,9 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def enter_operation_definition(self, node):
         typ = {
-            'query': self._schema.query_type,
-            'mutation': self._schema.mutation_type,
-            'subscription': self._schema.subscription_type,
+            "query": self._schema.query_type,
+            "mutation": self._schema.mutation_type,
+            "subscription": self._schema.subscription_type,
         }.get(node.operation, None)
         self._type_stack.append(typ if isinstance(typ, ObjectType) else None)
 
@@ -159,10 +166,7 @@ class TypeInfoVisitor(DispatchingVisitor):
     def enter_inline_fragment(self, node):
         if node.type_condition:
             self._type_stack.append(
-                _or_none(
-                    self._type_from_ast(node.type_condition),
-                    is_output_type
-                )
+                _or_none(self._type_from_ast(node.type_condition), is_output_type)
             )
         else:
             self._type_stack.append(_or_none(self.type, is_output_type))
@@ -198,8 +202,7 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def enter_list_value(self, node):
         list_type = nullable_type(self.input_type)
-        item_type = (unwrap_type(list_type)
-                     if isinstance(list_type, ListType) else None)
+        item_type = unwrap_type(list_type) if isinstance(list_type, ListType) else None
         self._input_type_stack.append(_or_none(item_type, is_input_type))
 
     def leave_list_value(self, node):
@@ -211,9 +214,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             name = node.name.value
             field_def = find_one(object_type.fields, lambda f: f.name == name)
             self._input_type_stack.append(
-                field_def.type
-                if field_def and is_input_type(field_def.type)
-                else None
+                field_def.type if field_def and is_input_type(field_def.type) else None
             )
         else:
             self._input_type_stack.append(None)

@@ -2,26 +2,25 @@
 """ Schema definition. """
 
 from .._utils import cached_property
-from ..exc import UnknownType, SchemaError
+from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
-from .introspection import __Schema__
 from .directives import SPECIFIED_DIRECTIVES
+from .introspection import __Schema__
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
     InputObjectType,
     InterfaceType,
-    is_abstract_type,
     ListType,
     NonNullType,
     ObjectType,
     Type,
     UnionType,
-    unwrap_type,
     WrappingType,
+    is_abstract_type,
+    unwrap_type,
 )
 from .validation import validate_schema
-
 
 _unset = object()
 
@@ -33,8 +32,14 @@ class Schema(object):
     query and mutation (optional). A schema definition is then supplied to the
     validator and executor. """
 
-    def __init__(self, query_type=None, mutation_type=None,
-                 subscription_type=None, directives=None, types=None):
+    def __init__(
+        self,
+        query_type=None,
+        mutation_type=None,
+        subscription_type=None,
+        directives=None,
+        types=None,
+    ):
         """
         :type query_type: py_gql.schema.types.ObjectType
         :param query_type:
@@ -89,18 +94,22 @@ class Schema(object):
 
     @cached_property
     def types(self):
-        return {name: t for name, t in self._type_map.items()
-                if not isinstance(t, Directive)}
+        return {
+            name: t
+            for name, t in self._type_map.items()
+            if not isinstance(t, Directive)
+        }
 
     @cached_property
     def directives(self):
-        return {name: t for name, t in self._type_map.items()
-                if isinstance(t, Directive)}
+        return {
+            name: t for name, t in self._type_map.items() if isinstance(t, Directive)
+        }
 
     @cached_property
     def implementations(self):
         impls = {}
-        for name, typ in self.types.items():
+        for typ in self.types.values():
             if isinstance(typ, ObjectType):
                 for iface in typ.interfaces:
                     impls[iface.name] = impls.get(iface.name, []) + [typ]
@@ -153,7 +162,7 @@ class Schema(object):
             t = self.get_type(ast_node.name.value)
             self._literal_types_cache[ast_node] = t
             return t
-        raise TypeError('Invalid type node %r' % ast_node)
+        raise TypeError("Invalid type node %r" % ast_node)
 
     def get_possible_types(self, typ):
         """ Get the possible implementations of an abstract type.
@@ -177,7 +186,7 @@ class Schema(object):
             self._possible_types[typ] = self.implementations.get(typ.name, [])
             return self._possible_types[typ]
 
-        raise TypeError('Not an abstract type: %s' % typ)
+        raise TypeError("Not an abstract type: %s" % typ)
 
     def is_possible_type(self, abstract_type, possible_type):
         """ Check that ``possible_type`` is a possible realization of
@@ -207,9 +216,11 @@ class Schema(object):
         if typ == super_type:
             return True
 
-        if (isinstance(typ, WrappingType) and
-                isinstance(super_type, WrappingType) and
-                type(typ) == type(super_type)):
+        if (
+            isinstance(typ, WrappingType)
+            and isinstance(super_type, WrappingType)
+            and type(typ) == type(super_type)
+        ):
             return self.is_subtype(typ.type, super_type.type)
 
         if isinstance(typ, NonNullType):
@@ -218,9 +229,11 @@ class Schema(object):
         if isinstance(typ, ListType):
             return False
 
-        return (is_abstract_type(super_type) and
-                isinstance(typ, ObjectType) and
-                self.is_possible_type(super_type, typ))
+        return (
+            is_abstract_type(super_type)
+            and isinstance(typ, ObjectType)
+            and self.is_possible_type(super_type, typ)
+        )
 
     def overlap(self, rhs, lhs):
         """ Provided two composite types, determine if they "overlap". Two
@@ -243,8 +256,9 @@ class Schema(object):
             lhs_types = self.get_possible_types(lhs)
             return any((typ in lhs_types for typ in rhs_types))
 
-        return ((is_abstract_type(rhs) and self.is_possible_type(rhs, lhs)) or
-                (is_abstract_type(lhs) and self.is_possible_type(lhs, rhs)))
+        return (is_abstract_type(rhs) and self.is_possible_type(rhs, lhs)) or (
+            is_abstract_type(lhs) and self.is_possible_type(lhs, rhs)
+        )
 
 
 def _build_type_map(types, _type_map=None):
@@ -255,16 +269,16 @@ def _build_type_map(types, _type_map=None):
     :rtype: dict[str, py_gql.schema.Type]
     """
     type_map = _type_map or {}
-    for typ in (types or []):
+    for typ in types or []:
         if not typ:
             continue
 
         typ = unwrap_type(typ)
 
-        if not (isinstance(typ, Type) and hasattr(typ, 'name')):
+        if not (isinstance(typ, Type) and hasattr(typ, "name")):
             raise SchemaError(
-                'Expected named types but got "%s" of type %s'
-                % (typ, type(typ)))
+                'Expected named types but got "%s" of type %s' % (typ, type(typ))
+            )
 
         name = typ.name
         if name in type_map:

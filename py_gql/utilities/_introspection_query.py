@@ -3,7 +3,7 @@
 
 def introspection_query(description=True):
     """ Generic introspection query """
-    return '''
+    return """
     query IntrospectionQuery {
         __schema {
             queryType { name }
@@ -102,4 +102,6 @@ def introspection_query(description=True):
             }
         }
     }
-    ''' % {'description_field': '' if not description else 'description'}
+    """ % {
+        "description_field": "" if not description else "description"
+    }

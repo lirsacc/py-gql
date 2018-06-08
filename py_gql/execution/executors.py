@@ -3,7 +3,6 @@
 """
 from concurrent import futures as _f
 
-
 Executor = _f.Executor
 
 

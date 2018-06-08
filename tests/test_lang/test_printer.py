@@ -1,68 +1,99 @@
 # -*- coding: utf-8 -*-
 
-from py_gql.lang import ast as _ast, print_ast, parse
+from py_gql.lang import ast as _ast, parse, print_ast
 from py_gql.lang.utils import parse_block_string
-
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def test_minimal_ast():
-    assert print_ast(_ast.Field(name=_ast.Name(value='foo'))) == 'foo'
+    assert print_ast(_ast.Field(name=_ast.Name(value="foo"))) == "foo"
 
 
 def test_query_operation_without_name():
-    assert print_ast(parse('query { id, name }')) == dedent('''
+    assert print_ast(parse("query { id, name }")) == dedent(
+        """
     {
       id
       name
     }
-    ''')
+    """
+    )
 
 
 def test_query_operation_without_name_and_artifacts():
-    assert print_ast(parse('''
+    assert (
+        print_ast(
+            parse(
+                """
         query ($foo: TestType) @testDirective { id, name }
-    ''')) == dedent('''
+    """
+            )
+        )
+        == dedent(
+            """
     query ($foo: TestType) @testDirective {
       id
       name
     }
-    ''')
+    """
+        )
+    )
 
 
 def test_mutation_operation_without_name():
-    assert print_ast(parse('mutation { id, name }')) == dedent('''
+    assert print_ast(parse("mutation { id, name }")) == dedent(
+        """
     mutation {
       id
       name
     }
-    ''')
+    """
+    )
 
 
 def test_mutation_operation_without_name_and_artifacts():
-    assert print_ast(parse('''
+    assert (
+        print_ast(
+            parse(
+                """
         mutation ($foo: TestType) @testDirective { id, name }
-    ''')) == dedent('''
+    """
+            )
+        )
+        == dedent(
+            """
     mutation ($foo: TestType) @testDirective {
       id
       name
     }
-    ''')
+    """
+        )
+    )
 
 
 def test_block_string_single_line_with_leading_space():
-    assert print_ast(parse('''
+    assert (
+        print_ast(
+            parse(
+                '''
         { field(arg: """    space-led value""") }
-    ''')) == dedent('''
+    '''
+            )
+        )
+        == dedent(
+            '''
     {
       field(arg: """    space-led value""")
     }
-    ''')
+    '''
+        )
+    )
 
 
 def test_block_string_string_with_a_first_line_indentation():
-    ast = parse('''
+    ast = parse(
+        '''
         {
           field(arg: """
                 first
@@ -70,9 +101,11 @@ def test_block_string_string_with_a_first_line_indentation():
             indentation
           """)
         }
-    ''')
+    '''
+    )
     print(print_ast(ast))
-    assert print_ast(ast) == dedent('''
+    assert print_ast(ast) == dedent(
+        '''
     {
       field(arg: """
             first
@@ -80,41 +113,52 @@ def test_block_string_string_with_a_first_line_indentation():
         indentation
       """)
     }
-    ''')
+    '''
+    )
 
 
 def test_block_string_single_line_with_leading_space_and_quotation():
-    ast = parse('''
+    ast = parse(
+        '''
     {
       field(arg: """    space-led value "quoted string"
       """)
     }
-    ''')
-    assert print_ast(ast) == dedent('''
+    '''
+    )
+    assert print_ast(ast) == dedent(
+        '''
     {
       field(arg: """    space-led value "quoted string"
       """)
     }
-    ''')
+    '''
+    )
 
 
 # NOTE: Experimental
 def test_fragment_defined_variables():
-    ast = parse('''
+    ast = parse(
+        """
     fragment Foo($a: ComplexType, $b: Boolean = false) on TestType {
         id
     }
-    ''', experimental_fragment_variables=True)
-    assert print_ast(ast) == dedent('''
+    """,
+        experimental_fragment_variables=True,
+    )
+    assert print_ast(ast) == dedent(
+        """
     fragment Foo($a: ComplexType, $b: Boolean = false) on TestType {
       id
     }
-    ''')
+    """
+    )
 
 
 def test_kitchen_sink(fixture_file):
-    ks = fixture_file('kitchen-sink.graphql')
-    assert print_ast(parse(ks)) == dedent('''
+    ks = fixture_file("kitchen-sink.graphql")
+    assert print_ast(parse(ks)) == dedent(
+        '''
 query queryName($foo: ComplexType, $site: Site = MOBILE) {
   whoever123is: node(id: [123, 456]) {
     id
@@ -167,12 +211,14 @@ fragment frag on Friend {
   unnamed(truthy: true, falsey: false, nullish: null)
   query
 }
-''')
+'''
+    )
 
 
 def test_schema_kitchen_sink(fixture_file):
-    ks = fixture_file('schema-kitchen-sink.graphql')
-    assert print_ast(parse(ks)) == dedent('''
+    ks = fixture_file("schema-kitchen-sink.graphql")
+    assert print_ast(parse(ks)) == dedent(
+        '''
 schema{
   query: QueryType
   mutation: MutationType
@@ -279,4 +325,5 @@ directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 directive @include2(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-''')
+'''
+    )

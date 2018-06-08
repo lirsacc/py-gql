@@ -8,29 +8,45 @@
 # feature is not implemented.
 
 from py_gql.validation import UniqueOperationNameChecker
+
 from .._test_utils import assert_checker_validation_result as run_test
 
 
 def test_no_operations(schema):
-    run_test(UniqueOperationNameChecker, schema, '''fragment fragA on Type {
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """fragment fragA on Type {
         field
-    }''')
+    }""",
+    )
 
 
 def test_one_anon_operation(schema):
-    run_test(UniqueOperationNameChecker, schema, '''{
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """{
         field
-    }''')
+    }""",
+    )
 
 
 def test_one_named_operation(schema):
-    run_test(UniqueOperationNameChecker, schema, '''query {
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """query {
         field
-    }''')
+    }""",
+    )
 
 
 def test_multiple_operations(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         field
     }
@@ -38,11 +54,15 @@ def test_multiple_operations(schema):
     query Bar {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_multiple_operations_of_different_types(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         field
     }
@@ -54,22 +74,30 @@ def test_multiple_operations_of_different_types(schema):
     subscription Baz {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_fragment_and_operation_named_the_same(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         ...Foo
     }
     fragment Foo on Type {
         field
     }
-    ''')
+    """,
+    )
 
 
 def test_multiple_operations_of_same_name(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         fieldA
     }
@@ -77,11 +105,16 @@ def test_multiple_operations_of_same_name(schema):
     query Foo {
         fieldB
     }
-    ''', ['Duplicate operation "Foo".'])
+    """,
+        ['Duplicate operation "Foo".'],
+    )
 
 
 def test_multiple_ops_of_same_name_of_different_types_mutation(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         fieldA
     }
@@ -89,11 +122,16 @@ def test_multiple_ops_of_same_name_of_different_types_mutation(schema):
     mutation Foo {
         fieldB
     }
-    ''', ['Duplicate operation "Foo".'])
+    """,
+        ['Duplicate operation "Foo".'],
+    )
 
 
 def test_multiple_ops_of_same_name_of_different_types_subscription(schema):
-    run_test(UniqueOperationNameChecker, schema, '''
+    run_test(
+        UniqueOperationNameChecker,
+        schema,
+        """
     query Foo {
         fieldA
     }
@@ -101,4 +139,6 @@ def test_multiple_ops_of_same_name_of_different_types_subscription(schema):
     subscription Foo {
         fieldB
     }
-    ''', ['Duplicate operation "Foo".'])
+    """,
+        ['Duplicate operation "Foo".'],
+    )

@@ -8,35 +8,51 @@
 # feature is not implemented.
 
 from py_gql.validation import UniqueInputFieldNamesChecker
+
 from .._test_utils import assert_checker_validation_result as run_test
 
 
 def test_input_object_with_fields(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg: { f: true })
     }
-    ''')
+    """,
+    )
 
 
 def test_same_input_object_within_two_args(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg1: { f: true }, arg2: { f: true })
     }
-    ''')
+    """,
+    )
 
 
 def test_multiple_input_object_fields(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg: { f1: "value", f2: "value", f3: "value" })
     }
-    ''')
+    """,
+    )
 
 
 def test_allows_for_nested_input_objects_with_similar_fields(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg: {
             deep: {
@@ -48,25 +64,36 @@ def test_allows_for_nested_input_objects_with_similar_fields(schema):
             id: 1
         })
     }
-    ''')
+    """,
+    )
 
 
 def test_duplicate_input_object_fields(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg: { f1: "value", f1: "value" })
     }
-    ''', [
-        'There can be only one input field named f1.',
-    ], [(41, 52)])
+    """,
+        ["There can be only one input field named f1."],
+        [(41, 52)],
+    )
 
 
 def test_many_duplicate_input_object_fields(schema):
-    run_test(UniqueInputFieldNamesChecker, schema, '''
+    run_test(
+        UniqueInputFieldNamesChecker,
+        schema,
+        """
     {
         field(arg: { f1: "value", f1: "value", f1: "value" })
     }
-    ''', [
-        'There can be only one input field named f1.',
-        'There can be only one input field named f1.',
-    ], [(41, 52), (54, 65)])
+    """,
+        [
+            "There can be only one input field named f1.",
+            "There can be only one input field named f1.",
+        ],
+        [(41, 52), (54, 65)],
+    )

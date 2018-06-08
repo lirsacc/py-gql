@@ -15,15 +15,15 @@ from .types import ScalarType
 def _typed_coerce(coerce, *types):
     def _coerce(node, variables):
         if type(node) not in types:
-            raise TypeError(
-                'Invalid literal %s' % node.__class__.__name__)
+            raise TypeError("Invalid literal %s" % node.__class__.__name__)
         return coerce(node.value)
+
     return _coerce
 
 
 Boolean = ScalarType(
-    'Boolean',
-    description='The `Boolean` scalar type represents `true` or `false`.',
+    "Boolean",
+    description="The `Boolean` scalar type represents `true` or `false`.",
     serialize=bool,
     parse=bool,
     parse_literal=_typed_coerce(bool, _ast.BooleanValue),
@@ -33,17 +33,18 @@ Boolean = ScalarType(
 # Spec says -2^31 to 2^31... use floats to get larger numbers.
 MAX_INT = 2147483647
 MIN_INT = -2147483648
-EXPONENT_RE = re.compile(r'1e\d+')
+EXPONENT_RE = re.compile(r"1e\d+")
 
 
 def coerce_int(maybe_int):
     """ Spec compliant int conversion. """
-    if maybe_int == '':
+    if maybe_int == "":
         raise ValueError(
-            'Int cannot represent non 32-bit signed integer: (empty string)')
+            "Int cannot represent non 32-bit signed integer: (empty string)"
+        )
 
     if maybe_int is None:
-        raise ValueError('Int cannot represent non 32-bit signed integer: None')
+        raise ValueError("Int cannot represent non 32-bit signed integer: None")
 
     if isinstance(maybe_int, six.string_types):
         try:
@@ -52,40 +53,38 @@ def coerce_int(maybe_int):
             else:
                 numeric = int(maybe_int, 10)
         except ValueError:
-            raise ValueError(
-                'Int cannot represent non-integer value: %s' % maybe_int)
+            raise ValueError("Int cannot represent non-integer value: %s" % maybe_int)
     else:
         numeric = int(maybe_int)
         if numeric != maybe_int:
-            raise ValueError(
-                'Int cannot represent non-integer value: %s' % maybe_int)
+            raise ValueError("Int cannot represent non-integer value: %s" % maybe_int)
 
     if not (MIN_INT < numeric < MAX_INT):
         raise ValueError(
-            'Int cannot represent non 32-bit signed integer: %s' % maybe_int)
+            "Int cannot represent non 32-bit signed integer: %s" % maybe_int
+        )
 
     return numeric
 
 
 def coerce_float(maybe_float):
     """ Spec compliant float conversion. """
-    if maybe_float == '':
-        raise ValueError(
-            'Float cannot represent non numeric value: (empty string)')
+    if maybe_float == "":
+        raise ValueError("Float cannot represent non numeric value: (empty string)")
     if maybe_float is None:
-        raise ValueError('Float cannot represent non numeric value: None')
+        raise ValueError("Float cannot represent non numeric value: None")
     try:
         return float(maybe_float)
     except ValueError:
-        raise ValueError(
-            'Float cannot represent non numeric value: %s' % maybe_float)
+        raise ValueError("Float cannot represent non numeric value: %s" % maybe_float)
 
 
 Int = ScalarType(
-    'Int',
+    "Int",
     description=(
-        'The `Int` scalar type represents non-fractional signed whole numeric '
-        'values. Int can represent values between -(2^31) and 2^31 - 1. '),
+        "The `Int` scalar type represents non-fractional signed whole numeric "
+        "values. Int can represent values between -(2^31) and 2^31 - 1. "
+    ),
     serialize=coerce_int,
     parse=coerce_int,
     parse_literal=_typed_coerce(coerce_int, _ast.IntValue),
@@ -93,15 +92,15 @@ Int = ScalarType(
 
 
 Float = ScalarType(
-    'Float',
+    "Float",
     description=(
-        'The `Float` scalar type represents signed double-precision '
-        'fractional values as specified by '
-        '[IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).'),
+        "The `Float` scalar type represents signed double-precision "
+        "fractional values as specified by "
+        "[IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point)."
+    ),
     serialize=coerce_float,
     parse=coerce_float,
-    parse_literal=_typed_coerce(
-        coerce_float, _ast.FloatValue, _ast.IntValue),
+    parse_literal=_typed_coerce(coerce_float, _ast.FloatValue, _ast.IntValue),
 )
 
 
@@ -118,11 +117,12 @@ def _serialize_string(value):
 
 
 String = ScalarType(
-    'String',
+    "String",
     description=(
-        'The `String` scalar type represents textual data, represented as '
-        'UTF-8 character sequences. The String type is most often used by '
-        'GraphQL to represent free-form human-readable text.'),
+        "The `String` scalar type represents textual data, represented as "
+        "UTF-8 character sequences. The String type is most often used by "
+        "GraphQL to represent free-form human-readable text."
+    ),
     serialize=_serialize_string,
     parse=_parse_string,
     parse_literal=_typed_coerce(_parse_string, _ast.StringValue),
@@ -130,24 +130,24 @@ String = ScalarType(
 
 
 ID = ScalarType(
-    'ID',
+    "ID",
     description=(
-        'The `ID` scalar type represents a unique identifier, often used to '
-        'refetch an object or as key for a cache. The ID type appears in a '
-        'JSON response as a String; however, it is not intended to be '
-        'human-readable. When expected as an input type, any string (such '
+        "The `ID` scalar type represents a unique identifier, often used to "
+        "refetch an object or as key for a cache. The ID type appears in a "
+        "JSON response as a String; however, it is not intended to be "
+        "human-readable. When expected as an input type, any string (such "
         'as `"4"`) or integer (such as `4`) input value will be accepted as '
-        'an ID.'),
+        "an ID."
+    ),
     serialize=six.text_type,
     parse=six.text_type,
-    parse_literal=_typed_coerce(
-        six.text_type, _ast.StringValue, _ast.IntValue),
+    parse_literal=_typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue),
 )
 
 
 # These are the types which are part of the spec and will always be available
 # in any spec compliant GraphQL server.
-SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID,)
+SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID)
 
 # Further down are common types for your convenience but which will 1) not
 # be available by default 2) not be available in other GraphQL servers a-priori.
@@ -169,10 +169,11 @@ def _parse_uuid(maybe_uuid):
 
 
 UUID = ScalarType(
-    'UUID',
+    "UUID",
     description=(
-        'The `UUID` scalar type represents a UUID as specified in [RFC 4122]'
-        '[https://tools.ietf.org/html/rfc4122]'),
+        "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
+        "[https://tools.ietf.org/html/rfc4122]"
+    ),
     serialize=_serialize_uuid,
     parse=_parse_uuid,
     parse_literal=_typed_coerce(_parse_uuid, _ast.StringValue),
@@ -200,8 +201,10 @@ class RegexType(ScalarType):
         def _parse(value):
             string_value = _serialize_string(value)
             if not self.regex.match(string_value):
-                raise ValueError('"%s" does not match pattern "%s"'
-                                 % (string_value, self.regex.pattern))
+                raise ValueError(
+                    '"%s" does not match pattern "%s"'
+                    % (string_value, self.regex.pattern)
+                )
             return string_value
 
         self._parse = _parse

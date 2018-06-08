@@ -2,7 +2,7 @@
 """
 """
 
-from .._utils import deduplicate, DefaultOrderedDict, OrderedDict
+from .._utils import DefaultOrderedDict, OrderedDict, deduplicate
 from ..lang import ast as _ast
 from ..lang.visitor import DispatchingVisitor
 
@@ -14,6 +14,7 @@ class ValidationVisitor(DispatchingVisitor):
     :ivar type_info: py_gql.utilities.TypeInfoVisitor
     :ivar errors: List[Tuple[str, Optional[py_gql.lang.ast.Node]]]
     """
+
     def __init__(self, schema, type_info):
         """
         :type schema: py_gql.schema.Schema
@@ -48,6 +49,7 @@ class VariablesCollector(ValidationVisitor):
 
     Most validation must happen in leave_document though.
     """
+
     def __init__(self, *args, **kwargs):
         super(VariablesCollector, self).__init__(*args, **kwargs)
 
@@ -62,7 +64,7 @@ class VariablesCollector(ValidationVisitor):
         self._in_var_def = False
 
     def enter_operation_definition(self, node):
-        self._op = node.name.value if node.name else ''
+        self._op = node.name.value if node.name else ""
 
     def leave_operation_definition(self, node):
         self._op = None

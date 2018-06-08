@@ -2,9 +2,9 @@
 
 import pytest
 
-from py_gql.lang import parse
 from py_gql.execution import execute
-from py_gql.execution.executors import ThreadPoolExecutor, SyncExecutor
+from py_gql.execution.executors import SyncExecutor, ThreadPoolExecutor
+from py_gql.lang import parse
 
 
 def _dict(value):
@@ -20,10 +20,15 @@ def _simplify_errors(errors):
     return [(str(err), node.loc, str(path)) for err, node, path in errors]
 
 
-def check_execution(schema, query,
-                    expected_data=None, expected_errors=None,
-                    expected_exc=None, expected_msg=None,
-                    **ex_kwargs):
+def check_execution(
+    schema,
+    query,
+    expected_data=None,
+    expected_errors=None,
+    expected_exc=None,
+    expected_msg=None,
+    **ex_kwargs
+):
 
     doc = parse(query)
 
@@ -37,6 +42,7 @@ def check_execution(schema, query,
         data, errors = execute(schema, doc, **ex_kwargs)
 
         import pprint
+
         pprint.pprint(_dict(data))
         pprint.pprint(_dict(expected_data))
         pprint.pprint(_simplify_errors(errors))
@@ -49,7 +55,4 @@ def check_execution(schema, query,
 
 
 # Default executors under tests
-TESTED_EXECUTORS = [
-    (SyncExecutor, {}),
-    (ThreadPoolExecutor, {'max_workers': 10})
-]
+TESTED_EXECUTORS = [(SyncExecutor, {}), (ThreadPoolExecutor, {"max_workers": 10})]
