@@ -1,17 +1,16 @@
 # Dependencies for local development
 
-black ~= 18
+black == 18.6b2
 flake8 ~= 3.5
 flake8-bugbear ~= 18.2
 flake8-import-order ~= 0.17
 invoke ~= 1.0
-pytest ~= 3.4
-pytest-cov ~= 2.5
-pytest-mock ~= 1.10
 tox ~= 3.0
 isort ~= 4.3
 
 # Fix conflict with pep8
 pycodestyle < 2.4
+
+-r test-requirements.txt
 
 -e .
