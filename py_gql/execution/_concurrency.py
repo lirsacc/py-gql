@@ -123,6 +123,14 @@ def chain(previous, *funcs):
     return result
 
 
+def serial(steps):
+    def _step(original):
+        # Need to force a scope chnage
+        return lambda _: original()
+
+    return chain(deferred(None), *[_step(step) for step in steps])
+
+
 def except_(future, error_cls, func=lambda x: None):
     """ Except for futures.
 

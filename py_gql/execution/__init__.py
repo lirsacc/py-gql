@@ -12,6 +12,7 @@ NOTE: The resolver interface is mirrored on graphql-js but that might change
 """
 
 import json
+import functools as ft
 
 import six
 
@@ -351,6 +352,33 @@ def _resolve_type(value, context, schema, abstract_type):
         return None
 
 
+def _defer_field(ctx, object_type, object_value, field_def, nodes, path,
+                 on_success, on_error):
+    return _concurrency.except_(
+        _concurrency.chain(
+            _concurrency.deferred(None),
+            lambda _: resolve_field(
+                ctx,
+                object_type,
+                object_value,
+                field_def,
+                nodes,
+                path
+            ),
+            lambda resolved_value: complete_value(
+                ctx,
+                field_def.type,
+                nodes,
+                resolved_value,
+                path
+            ),
+            on_success,
+        ),
+        (CoercionError, ResolverError),
+        on_error,
+    )
+
+
 def execute_selections(ctx, selections, object_type, object_value, path=None):
     """
     """
@@ -362,45 +390,76 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
     deferred_fields = []
     path = path or Path()
 
-    for key, nodes in fields.items():
-        field_def = _field_def(ctx.schema, object_type, nodes[0].name.value)
-
-        # [REVIEW] Shouldn't this be left to raise ? Given that the AST has
-        # been validated anyways
-        if field_def is None:
-            continue
-
-        field_path = path + key
-
+    def _handlers(key, nodes, field_path):
         def _handle_error(err):
             ctx.add_error(err, nodes[0], field_path)
             return (key, None)
 
-        deferred_fields.append(_concurrency.except_(
-            _concurrency.chain(
-                _concurrency.deferred(None),
-                lambda _: resolve_field(
-                    ctx,
-                    object_type,
-                    object_value,
-                    field_def,
-                    nodes,
-                    field_path
-                ),
-                lambda resolved_value: complete_value(
-                    ctx,
-                    field_def.type,
-                    nodes,
-                    resolved_value,
-                    field_path
-                ),
-                lambda completed: _concurrency.deferred((key, completed)),
-            ),
-            (CoercionError, ResolverError),
-            _handle_error,
+        def _handle_success(completed):
+            return _concurrency.deferred((key, completed))
+
+        return _handle_success, _handle_error
+
+    for key, nodes in fields.items():
+        field_def = _field_def(ctx.schema, object_type, nodes[0].name.value)
+        if field_def is None:
+            continue
+
+        field_path = path + key
+        _handle_success, _handle_error = _handlers(key, nodes, field_path)
+
+        deferred_fields.append(_defer_field(
+            ctx, object_type, object_value, field_def, nodes, field_path,
+            _handle_success, _handle_error
         ))
 
     return _concurrency.chain(_concurrency.all_(deferred_fields), OrderedDict)
+
+
+def execute_selections_serially(ctx, selections, object_type, object_value,
+                                path=None):
+    """
+    """
+    try:
+        fields = collect_fields(ctx, object_type, selections)
+    except (InvalidValue, CoercionError) as err:
+        raise ExecutionError.new(err)
+
+    resolved_fields = []
+    steps = []
+
+    path = path or Path()
+
+    def _handlers(key, nodes, field_path):
+        def _handle_error(err):
+            ctx.add_error(err, nodes[0], field_path)
+            resolved_fields.append((key, None))
+
+        def _handle_success(completed):
+            resolved_fields.append((key, completed))
+
+        return _handle_success, _handle_error
+
+    for key, nodes in fields.items():
+        field_def = _field_def(ctx.schema, object_type, nodes[0].name.value)
+        if field_def is None:
+            continue
+
+        field_path = path + key
+        _handle_success, _handle_error = _handlers(key, nodes, field_path)
+
+        steps.append(
+            ft.partial(
+                _defer_field,
+                ctx, object_type, object_value, field_def, nodes, field_path,
+                _handle_success, _handle_error
+            )
+        )
+
+    return _concurrency.chain(
+        _concurrency.serial(steps),
+        lambda _: OrderedDict(resolved_fields)
+    )
 
 
 def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
@@ -456,7 +515,7 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
         )
 
 
-def complete_value(ctx, field_type, nodes, resolved_value, path):
+def complete_value(ctx, field_type, nodes, resolved_value, path, serial=False):
     """
     """
     if isinstance(field_type, NonNullType):
@@ -473,7 +532,9 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
             return _concurrency.deferred(value)
 
         return _concurrency.chain(
-            complete_value(ctx, field_type.type, nodes, resolved_value, path),
+            complete_value(
+                ctx, field_type.type, nodes, resolved_value, path, serial
+            ),
             _handle_null
         )
 
@@ -482,7 +543,8 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
 
     if isinstance(field_type, ListType):
         return _complete_list_value(
-            ctx, field_type.type, nodes, resolved_value, path)
+            ctx, field_type.type, nodes, resolved_value, path, serial
+        )
 
     if isinstance(field_type, ScalarType):
         try:
@@ -506,22 +568,38 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
 
     if isinstance(field_type, (ObjectType, InterfaceType, UnionType)):
         return _complete_object_value(
-            ctx, field_type, nodes, resolved_value, path)
+            ctx, field_type, nodes, resolved_value, path, serial
+        )
 
 
-def _complete_list_value(ctx, item_type, nodes, list_value, path):
+def _complete_list_value(ctx, item_type, nodes, list_value, path, serial):
     # Compared to ref implementation, this does not support lazy evaluation
     # of list entries. Maybe once the Future based interface is done.
     if not is_iterable(list_value, False):
         raise RuntimeError('Field "%s" is a list type and resolved value '
                            'should be iterable' % path)
-    return _concurrency.all_([
-        complete_value(ctx, item_type, nodes, entry, path + i)
-        for i, entry in enumerate(list_value)
-    ])
+
+    if not serial:
+        return _concurrency.all_([
+            complete_value(ctx, item_type, nodes, entry, path + i)
+            for i, entry in enumerate(list_value)
+        ])
+    else:
+        results = []
+        steps = [
+            lambda: _concurrency.chain(
+                complete_value(ctx, item_type, nodes, entry, path + i, serial),
+                results.append
+            )
+            for i, entry in enumerate(list_value)
+        ]
+        return _concurrency.chain(
+            _concurrency.serial(steps),
+            lambda _: _concurrency.deferred(results)
+        )
 
 
-def _complete_object_value(ctx, field_type, nodes, object_value, path):
+def _complete_object_value(ctx, field_type, nodes, object_value, path, serial):
     if isinstance(field_type, (InterfaceType, UnionType)):
         runtime_type = _resolve_type(
             object_value, ctx.context, ctx.schema, field_type)
@@ -546,12 +624,23 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path):
         runtime_type = field_type
 
     selections = list(flatten((f.selection_set.selections for f in nodes)))
+    if serial:
+        return execute_selections_serially(
+            ctx, selections, runtime_type, object_value, path
+        )
     return execute_selections(ctx, selections, runtime_type, object_value, path)
 
 
 def _execute(ctx, operation, object_type, initial_value):
-    if operation.operation in ('query', 'mutation'):
+    if operation.operation == 'query':
         return execute_selections(
+            ctx,
+            operation.selection_set.selections,
+            object_type,
+            initial_value,
+        )
+    elif operation.operation == 'mutation':
+        return execute_selections_serially(
             ctx,
             operation.selection_set.selections,
             object_type,
