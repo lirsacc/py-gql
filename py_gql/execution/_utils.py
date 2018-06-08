@@ -8,10 +8,10 @@ class ExecutionContext(object):
     """
     """
 
-    __slots__ = ('schema', 'document', 'variables', 'fragments',
+    __slots__ = ('schema', 'document', 'variables', 'fragments', 'executor',
                  'operation', '_errors', 'context')
 
-    def __init__(self, schema, document, variables, fragments,
+    def __init__(self, schema, document, variables, fragments, executor,
                  operation, context):
         """
         """
@@ -19,6 +19,7 @@ class ExecutionContext(object):
         self.document = document
         self.variables = variables
         self.fragments = fragments
+        self.executor = executor
         self.operation = operation
         self.context = context
         self._errors = []

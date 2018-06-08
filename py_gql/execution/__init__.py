@@ -29,9 +29,11 @@ from ..utilities import (typed_value_from_ast, coerce_value,
                          coerce_argument_values)
 from ..validation import validate_ast
 from ._utils import ExecutionContext, ResolutionContext, directive_arguments
+from .executor import DefaultExecutor, Executor
+from . import _concurrency
 
 
-def execute(schema, ast, variables=None, operation_name=None,
+def execute(schema, ast, executor=None, variables=None, operation_name=None,
             initial_value=None, validators=None, context=None,
             _skip_validation=False):
     """
@@ -40,6 +42,9 @@ def execute(schema, ast, variables=None, operation_name=None,
 
     :type ast: py_gql.lang.ast.Document
     :param ast:
+
+    :type executor:
+    :param executor:
 
     :type variables:
     :param variables:
@@ -55,7 +60,7 @@ def execute(schema, ast, variables=None, operation_name=None,
         Custom application-specific execution context. Use this to pass in
         anything your resolver require.
         Limits on the type(s) used here will depend on your own resolver
-        implementations.
+        implementations and the executor you use.
 
     :type validators: List[py_gql.validation.ValidationVisitor]
     :param validators:
@@ -71,6 +76,9 @@ def execute(schema, ast, variables=None, operation_name=None,
     assert isinstance(ast, _ast.Document), 'Expected document'
     assert variables is None or isinstance(variables, dict), \
         'Variables must be a dictionnary'
+    assert executor is None or isinstance(executor, Executor)
+
+    executor = executor or DefaultExecutor()
 
     variables = variables or dict()
 
@@ -102,21 +110,16 @@ def execute(schema, ast, variables=None, operation_name=None,
             "Schema doesn't support %s operation" % operation.operation)
 
     ctx = ExecutionContext(
-        schema,
-        ast,
-        coerced_variables,
-        fragments,
-        operation,
-        context
-    )
+        schema, ast, coerced_variables, fragments, executor, operation, context)
 
     # While it would be more python-ic to raise in case of validation error,
     # the natural flow would be to interrupt processing but the spec
     # (http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability)
     # says that we should null field and return all errors. Maybe we can
     # re-evaluate the interpretation later.
-    #
-    return _execute(ctx, operation, object_type, initial_value), ctx.errors
+    future = _execute(ctx, operation, object_type, initial_value)
+    result = _concurrency.consume(future)
+    return result, ctx.errors
 
 
 def get_operation(document, operation_name):
@@ -356,7 +359,7 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
     except (InvalidValue, CoercionError) as err:
         raise ExecutionError.new(err)
 
-    response_map = OrderedDict()
+    deferred_fields = []
     path = path or Path()
 
     for key, nodes in fields.items():
@@ -369,28 +372,48 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
 
         field_path = path + key
 
-        try:
-            resolved_value = resolve_field(
-                ctx,
-                object_type,
-                object_value,
-                field_def,
-                nodes,
-                field_path
-            )
-        except (ResolverError, CoercionError) as err:
+        def _handle_error(err):
             ctx.add_error(err, nodes[0], field_path)
-            response_map[key] = None
-            continue
+            return (key, None)
 
-        response_map[key] = complete_value(
-            ctx, field_def.type, nodes, resolved_value, field_path)
+        deferred_fields.append(_concurrency.except_(
+            _concurrency.chain(
+                _concurrency.deferred(None),
+                lambda _: resolve_field(
+                    ctx,
+                    object_type,
+                    object_value,
+                    field_def,
+                    nodes,
+                    field_path
+                ),
+                lambda resolved_value: complete_value(
+                    ctx,
+                    field_def.type,
+                    nodes,
+                    resolved_value,
+                    field_path
+                ),
+                lambda completed: _concurrency.deferred((key, completed)),
+            ),
+            (CoercionError, ResolverError),
+            _handle_error,
+        ))
 
-    return response_map
+    return _concurrency.chain(_concurrency.all_(deferred_fields), OrderedDict)
 
 
 def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
-    """
+    """ Execute a field resolver in the current executor and expose
+    result as a Future.
+
+    Lookup of order for the resolver function is:
+
+        1. field definition
+        2. item in the root value, executed in the executor if callable
+           returned as is otherwise
+        3. attribute of the root value, executed in the executor if callable
+           (method, parent value is not passed) returned as is otherwise
     """
     field_name = nodes[0].name.value
 
@@ -400,42 +423,62 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
 
     args = coerce_argument_values(field_def, nodes[0], ctx.variables)
 
-    if field_def.resolve is None:  # Default -> inspect `parent_value`
+    if field_def.resolve is None:
         if isinstance(parent_value, dict):
-            value = parent_value.get(field_name, None)
-            if callable(value):
-                return value(parent_value, args, ctx.context, info)
-            return value
+            field_value = parent_value.get(field_name, None)
+            if callable(field_value):
+                return ctx.executor.submit(
+                    field_value,
+                    parent_value,
+                    args,
+                    ctx.context,
+                    info
+                )
+            return _concurrency.deferred(field_value)
         else:
-            value = getattr(parent_value, field_name, None)
-            if callable(value):
-                return value(args, ctx.context, info)
-            return value
+            attr_value = getattr(parent_value, field_name, None)
+            # Call methods / support lazy evaluation
+            if callable(attr_value):
+                return ctx.executor.submit(
+                    attr_value,
+                    args,
+                    ctx.context,
+                    info
+                )
+            return _concurrency.deferred(attr_value)
     else:
-        value = field_def.resolve(parent_value, args, ctx.context, info)
-        if callable(value):
-            return value()
-        else:
-            return value
+        return ctx.executor.submit(
+            field_def.resolve,
+            parent_value,
+            args,
+            ctx.context,
+            info
+        )
 
 
 def complete_value(ctx, field_type, nodes, resolved_value, path):
     """
     """
     if isinstance(field_type, NonNullType):
-        completed_result = complete_value(
-            ctx, field_type.type, nodes, resolved_value, path)
-        if completed_result is None:
-            # REVIEW:
-            # - Error is different than ref implementation
-            # - Shouldn't this be a RuntimeError ? As in the developer should
-            # never return a null non nullable field and instead reais
-            # explicitely if the query lead to this behaviour ?
-            ctx.add_error('Field "%s" is not nullable' % path, nodes[0], path)
-        return completed_result
+        # REVIEW:
+        # - Error is different than ref implementation
+        # - Shouldn't this be a RuntimeError ? As in the developer should
+        # never return a null non nullable field and instead reais
+        # explicitely if the query lead to this behaviour ?
+        def _handle_null(value):
+            if value is None:
+                ctx.add_error(
+                    'Field "%s" is not nullable' % path, nodes[0], path
+                )
+            return _concurrency.deferred(value)
+
+        return _concurrency.chain(
+            complete_value(ctx, field_type.type, nodes, resolved_value, path),
+            _handle_null
+        )
 
     if resolved_value is None:
-        return None
+        return _concurrency.deferred(None)
 
     if isinstance(field_type, ListType):
         return _complete_list_value(
@@ -443,19 +486,23 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
 
     if isinstance(field_type, ScalarType):
         try:
-            return field_type.serialize(resolved_value)
+            serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:
             raise RuntimeError(
                 'Field "%s" cannot be serialized as "%s": %s'
                 % (path, field_type, err))
+        else:
+            return _concurrency.deferred(serialized)
 
     if isinstance(field_type, EnumType):
         try:
-            return field_type.get_name(resolved_value)
+            serialized = field_type.get_name(resolved_value)
         except UnknownEnumValue as err:
             raise RuntimeError(
                 'Field "%s" cannot be serialized as "%s": %s'
                 % (path, field_type, err))
+        else:
+            return _concurrency.deferred(serialized)
 
     if isinstance(field_type, (ObjectType, InterfaceType, UnionType)):
         return _complete_object_value(
@@ -468,10 +515,10 @@ def _complete_list_value(ctx, item_type, nodes, list_value, path):
     if not is_iterable(list_value, False):
         raise RuntimeError('Field "%s" is a list type and resolved value '
                            'should be iterable' % path)
-    return [
+    return _concurrency.all_([
         complete_value(ctx, item_type, nodes, entry, path + i)
         for i, entry in enumerate(list_value)
-    ]
+    ])
 
 
 def _complete_object_value(ctx, field_type, nodes, object_value, path):
