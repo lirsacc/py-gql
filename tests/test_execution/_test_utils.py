@@ -4,7 +4,7 @@ import pytest
 
 from py_gql.lang import parse
 from py_gql.execution import execute
-from py_gql.execution.executor import ThreadPoolExecutor, SyncExecutor
+from py_gql.execution.executors import ThreadPoolExecutor, SyncExecutor
 
 
 def _dict(value):

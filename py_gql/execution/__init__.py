@@ -30,7 +30,7 @@ from ..utilities import (typed_value_from_ast, coerce_value,
                          coerce_argument_values)
 from ..validation import validate_ast
 from ._utils import ExecutionContext, ResolutionContext, directive_arguments
-from .executor import DefaultExecutor, Executor
+from .executors import DefaultExecutor, Executor
 from . import _concurrency
 
 
