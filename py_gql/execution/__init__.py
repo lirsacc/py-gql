@@ -118,8 +118,7 @@ def execute(schema, ast, executor=None, variables=None, operation_name=None,
     # (http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability)
     # says that we should null field and return all errors. Maybe we can
     # re-evaluate the interpretation later.
-    future = _execute(ctx, operation, object_type, initial_value)
-    result = _concurrency.consume(future)
+    result = _execute(ctx, operation, object_type, initial_value).result()
     return result, ctx.errors
 
 
@@ -354,6 +353,13 @@ def _resolve_type(value, context, schema, abstract_type):
 
 def _defer_field(ctx, object_type, object_value, field_def, nodes, path,
                  on_success, on_error):
+
+    # REVIEW: Should this still happen ?
+    def _evaluate_lazy_resolver(value):
+        if callable(value):
+            return _concurrency.deferred(value())
+        return _concurrency.deferred(value)
+
     return _concurrency.except_(
         _concurrency.chain(
             _concurrency.deferred(None),
@@ -365,6 +371,7 @@ def _defer_field(ctx, object_type, object_value, field_def, nodes, path,
                 nodes,
                 path
             ),
+            _evaluate_lazy_resolver,
             lambda resolved_value: complete_value(
                 ctx,
                 field_def.type,
@@ -478,7 +485,7 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
 
     info = ResolutionContext(
         field_def, parent_type, path, ctx.schema, ctx.variables, ctx.fragments,
-        ctx.operation, nodes)
+        ctx.operation, nodes, ctx.executor)
 
     args = coerce_argument_values(field_def, nodes[0], ctx.variables)
 

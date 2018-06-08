@@ -4,9 +4,7 @@
 from concurrent import futures as _f
 
 
-class Executor(_f.Executor):
-    """ Base graphql executor class """
-    pass
+Executor = _f.Executor
 
 
 class SyncExecutor(Executor):
@@ -32,3 +30,4 @@ class SyncExecutor(Executor):
 
 
 DefaultExecutor = SyncExecutor
+ThreadPoolExecutor = _f.ThreadPoolExecutor

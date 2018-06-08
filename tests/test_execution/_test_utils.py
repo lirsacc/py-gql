@@ -4,7 +4,7 @@ import pytest
 
 from py_gql.lang import parse
 from py_gql.execution import execute
-from py_gql.utilities import introspection_query  # noqa
+from py_gql.execution.executor import ThreadPoolExecutor, SyncExecutor
 
 
 def _dict(value):
@@ -46,3 +46,10 @@ def check_execution(schema, query,
 
         if expected_errors is not None:
             assert _simplify_errors(errors) == expected_errors
+
+
+# Default executors under tests
+TESTED_EXECUTORS = [
+    (SyncExecutor, {}),
+    (ThreadPoolExecutor, {'max_workers': 10})
+]

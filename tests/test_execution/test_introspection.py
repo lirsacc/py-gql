@@ -11,7 +11,8 @@ from py_gql.schema import (
     ObjectType, Field, String, ListType, Schema, InputObjectType, InputField,
     Arg, EnumType, EnumValue)
 from py_gql.execution import execute
-from ._test_utils import check_execution, introspection_query
+from py_gql.utilities import introspection_query
+from ._test_utils import check_execution
 
 
 # Star Wars schema related tests. These are simpler than other tests down

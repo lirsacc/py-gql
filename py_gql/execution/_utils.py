@@ -37,10 +37,11 @@ class ResolutionContext(object):
     some of the data used in the execution process. """
 
     __slots__ = ('field_def', 'parent_type', 'path', 'schema', 'variables',
-                 'fragments', 'operation', 'nodes', '_directive_values')
+                 'fragments', 'operation', 'nodes', '_directive_values',
+                 'executor')
 
     def __init__(self, field_def, parent_type, path, schema, variables,
-                 fragments, operation, nodes):
+                 fragments, operation, nodes, executor):
         self.field_def = field_def
         self.parent_type = parent_type
         self.path = path
@@ -49,6 +50,7 @@ class ResolutionContext(object):
         self.fragments = fragments
         self.operation = operation
         self.nodes = nodes
+        self.executor = executor
 
         self._directive_values = {}
 

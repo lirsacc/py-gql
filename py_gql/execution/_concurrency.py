@@ -14,8 +14,8 @@ def deferred(value):
     :type value: any
     :param value: Original value
 
-    :rtype: concurrent.futures.Future
-    :rturns: Value wrapped in a ``Future``
+    :rtype: ``concurrent.futures.Future``
+    :returns: Value wrapped in a ``Future``
 
     >>> deferred = deferred(1)
     >>> deferred.result(), deferred.done()
@@ -27,14 +27,28 @@ def deferred(value):
 
 
 def ensure_deferred(maybe_future):
-    """ """
+    """ Make sure an object is deferred as a ``Future`` if not already.
+
+    :type maybe_future: any
+    :param maybe_future: Original value
+
+    :rtype: ``concurrent.futures.Future``
+    :returns: Value wrapped in a ``Future`` if not alrady the case
+    """
     if isinstance(maybe_future, _f.Future):
         return maybe_future
     return deferred(maybe_future)
 
 
 def all_(futures):
-    """ Create a Future from a list of futures.
+    """ Create a Future from a list of futures that resolves only when all
+    futures have resolved.
+
+    :type futures: list[concurrent.futures.Future]
+    :param futures: List of futures.
+
+    :rtype: concurrent.futures.Future
+    :returns: Single future
 
     >>> futures = [_f.Future() for _ in range(10)]
     >>> lst = all_(futures)
@@ -48,7 +62,8 @@ def all_(futures):
         return deferred([])
 
     result = _f.Future()
-    results_list = [None] * len(futures)
+    _undef = object()
+    results_list = [_undef] * len(futures)
 
     def cancel_remaining():
         for f in futures:
@@ -70,7 +85,7 @@ def all_(futures):
             else:
                 results_list[index] = res
 
-            if len(futures) == len(results_list):
+            if all(x is not _undef for x in results_list):
                 result.set_result(results_list)
 
         return callback
@@ -161,9 +176,3 @@ def except_(future, error_cls, func=lambda x: None):
     result.set_running_or_notify_cancel()
     future.add_done_callback(callback)
     return result
-
-
-def consume(future):
-    while isinstance(future, _f.Future):
-        future = future.result(2)
-    return future
