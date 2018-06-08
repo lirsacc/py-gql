@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ execution tests related to abstract types (Interface, Union) """
+from __future__ import unicode_literals
 
 
 from py_gql.schema import (
@@ -394,7 +395,7 @@ def test_it_can_introspect_on_union_and_intersection_types():
             'kind': 'INTERFACE',
             'name': 'Named',
             'possibleTypes': [
-                {'name': 'Person'}, {'name': 'Dog'}, {'name': 'Cat'}
+                {'name': 'Cat'}, {'name': 'Dog'}, {'name': 'Person'}
             ]
         },
         'Pet': {
@@ -404,7 +405,7 @@ def test_it_can_introspect_on_union_and_intersection_types():
             'interfaces': None,
             'kind': 'UNION',
             'name': 'Pet',
-            'possibleTypes': [{'name': 'Dog'}, {'name': 'Cat'}]
+            'possibleTypes': [{'name': 'Cat'}, {'name': 'Dog'}]
         }
     }, [])
 

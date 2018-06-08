@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ tests related to introspection queries """
+from __future__ import unicode_literals
 
 import json
 
@@ -1048,56 +1049,7 @@ def test_intropsection_query():
             ],
             'directives': [
                 {
-                    'name':
-                    'include',
-                    'locations': [
-                        'FIELD',
-                        'FRAGMENT_SPREAD',
-                        'INLINE_FRAGMENT'
-                    ],
-                    'args': [
-                        {
-                            'defaultValue': None,
-                            'name': 'if',
-                            'type': {
-                                'kind': 'NON_NULL',
-                                'name': None,
-                                'ofType': {
-                                    'kind': 'SCALAR',
-                                    'name': 'Boolean',
-                                    'ofType': None,
-                                },
-                            },
-                        },
-                    ],
-                },
-                {
-                    'name':
-                    'skip',
-                    'locations': [
-                        'FIELD',
-                        'FRAGMENT_SPREAD',
-                        'INLINE_FRAGMENT'
-                    ],
-                    'args': [
-                        {
-                            'defaultValue': None,
-                            'name': 'if',
-                            'type': {
-                                'kind': 'NON_NULL',
-                                'name': None,
-                                'ofType': {
-                                    'kind': 'SCALAR',
-                                    'name': 'Boolean',
-                                    'ofType': None,
-                                },
-                            },
-                        },
-                    ],
-                },
-                {
-                    'name':
-                    'deprecated',
+                    'name': 'deprecated',
                     'locations': ['FIELD_DEFINITION', 'ENUM_VALUE'],
                     'args': [
                         {
@@ -1107,6 +1059,52 @@ def test_intropsection_query():
                                 'kind': 'SCALAR',
                                 'name': 'String',
                                 'ofType': None,
+                            },
+                        },
+                    ],
+                },
+                {
+                    'name': 'include',
+                    'locations': [
+                        'FIELD',
+                        'FRAGMENT_SPREAD',
+                        'INLINE_FRAGMENT'
+                    ],
+                    'args': [
+                        {
+                            'defaultValue': None,
+                            'name': 'if',
+                            'type': {
+                                'kind': 'NON_NULL',
+                                'name': None,
+                                'ofType': {
+                                    'kind': 'SCALAR',
+                                    'name': 'Boolean',
+                                    'ofType': None,
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    'name': 'skip',
+                    'locations': [
+                        'FIELD',
+                        'FRAGMENT_SPREAD',
+                        'INLINE_FRAGMENT'
+                    ],
+                    'args': [
+                        {
+                            'defaultValue': None,
+                            'name': 'if',
+                            'type': {
+                                'kind': 'NON_NULL',
+                                'name': None,
+                                'ofType': {
+                                    'kind': 'SCALAR',
+                                    'name': 'Boolean',
+                                    'ofType': None,
+                                },
                             },
                         },
                     ],

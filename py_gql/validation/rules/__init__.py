@@ -97,12 +97,10 @@ class KnownTypeNamesChecker(ValidationVisitor):
 
     def enter_named_type(self, node):
         try:
-            print(print_ast(node))
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
             # [TODO] Implement suggestion list?
-            print('error')
-            self.add_error('Unknown type "%s"' % err.args[0], node)
+            self.add_error('Unknown type "%s"' % err.message, node)
 
 
 class FragmentsOnCompositeTypesChecker(ValidationVisitor):

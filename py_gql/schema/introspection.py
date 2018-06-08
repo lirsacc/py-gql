@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """ GaphQL types related to introspection queries that
 should be present in all spec compliant servers. """
+from __future__ import unicode_literals
 
 import json
 
@@ -59,7 +60,10 @@ __Schema__ = ObjectType(
             'directives',
             NonNullType(ListType(NonNullType(__Directive__))),
             description='A list of all directives supported by this server.',
-            resolve=lambda schema, *a, **kw: schema.directives.values()
+            resolve=lambda schema, *a, **kw: list(sorted(
+                schema.directives.values(),
+                key=lambda d: d.name,
+            ))
         )
     ],
 )
@@ -234,7 +238,12 @@ __Type__ = ObjectType(
             'possibleTypes',
             ListType(NonNullType(__Type__)),
             resolve=lambda typ, a, c, info: (
-                info.schema.get_possible_types(typ)
+                list(
+                    sorted(
+                        info.schema.get_possible_types(typ),
+                        key=lambda t: t.name
+                    )
+                )
                 if is_abstract_type(typ)
                 else None
             )

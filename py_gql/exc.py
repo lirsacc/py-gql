@@ -6,7 +6,12 @@ from ._utils import cached_property
 
 class GraphQLError(Exception):
     """ Base GraphQL exception."""
-    pass
+
+    def __init__(self, msg):
+        self.message = msg
+
+    def __str__(self):
+        return self.message
 
 
 class GraphQLSyntaxError(GraphQLError):
@@ -82,8 +87,7 @@ class UnknownType(SchemaError, KeyError):
 
 
 class ExecutionError(GraphQLError):
-    def __init__(self, msg):
-        self.msg = msg
+    pass
 
 
 class DocumentValidationError(ExecutionError):

@@ -204,7 +204,7 @@ def coerce_variable_values(schema, operation, variables=None):
             except (InvalidValue, CoercionError) as err:
                 errors.append(
                     'Variable "$%s" got invalid value %s (%s)'
-                    % (name, json.dumps(variables[name]), err)
+                    % (name, json.dumps(variables[name], sort_keys=True), err)
                 )
 
     if errors:

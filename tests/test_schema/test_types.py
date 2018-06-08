@@ -140,31 +140,31 @@ class TestRegexType(object):
         assert t.parse('a_b') == 'a_b'
 
     def test_accepts_compiled_regex(self):
-        p = re.compile(r'[a-d]+', re.RegexFlag.IGNORECASE)
+        p = re.compile(r'[a-d]+', re.IGNORECASE)
         t = RegexType('RE', p)
         assert t.parse('aD') == 'aD'
 
     def test_parse_fail(self):
-        p = re.compile(r'^[a-d]+$', re.RegexFlag.IGNORECASE)
+        p = re.compile(r'^[a-d]+$', re.IGNORECASE)
         t = RegexType('RE', p)
         with pytest.raises(ScalarParsingError) as exc_info:
             t.parse('aF')
         assert str(exc_info.value) == '"aF" does not match pattern "^[a-d]+$"'
 
     def test_parse_literal_ok(self):
-        p = re.compile(r'^[a-d]+$', re.RegexFlag.IGNORECASE)
+        p = re.compile(r'^[a-d]+$', re.IGNORECASE)
         t = RegexType('RE', p)
         assert t.parse_literal(parse_value('"aBcD"')) == 'aBcD'
 
     def test_parse_literal_fail(self):
-        p = re.compile(r'^[a-d]+$', re.RegexFlag.IGNORECASE)
+        p = re.compile(r'^[a-d]+$', re.IGNORECASE)
         t = RegexType('RE', p)
         with pytest.raises(ScalarParsingError) as exc_info:
             t.parse_literal(parse_value('"aF"'))
         assert str(exc_info.value) == '"aF" does not match pattern "^[a-d]+$"'
 
     def test_parse_literal_non_string(self):
-        p = re.compile(r'^[a-d]+$', re.RegexFlag.IGNORECASE)
+        p = re.compile(r'^[a-d]+$', re.IGNORECASE)
         t = RegexType('RE', p)
         with pytest.raises(ScalarParsingError) as exc_info:
             t.parse_literal(parse_value('1'))

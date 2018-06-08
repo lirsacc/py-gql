@@ -12,7 +12,8 @@ from . import ast as _ast
 
 
 class SkipNode(GraphQLError):
-    pass
+    def __init__(self):
+        self.message = ''
 
 
 @six.add_metaclass(abc.ABCMeta)

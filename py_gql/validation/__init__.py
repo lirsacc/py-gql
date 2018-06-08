@@ -85,6 +85,8 @@ class ValidationResult(object):
     def __bool__(self):
         return not self.errors
 
+    __nonzero__ = __bool__
+
     def __iter__(self):
         return self.errors
 

@@ -22,6 +22,7 @@ def run_setup():
 
     _requirements = '''
     six >= 1.11.0
+    futures >= 3.1.1
     '''
 
     requirements = [

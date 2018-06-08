@@ -328,6 +328,8 @@ class Path(object):
         """
         return bool(self._entries)
 
+    __nonzero__ = __bool__
+
 
 @_contextlib.contextmanager
 def capture_exceptions(cls, cb=None):

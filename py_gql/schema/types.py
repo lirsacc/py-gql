@@ -7,7 +7,7 @@ All types used in a schema should be instances of
 
 
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
-from .._utils import cached_property, lazy
+from .._utils import cached_property, lazy, OrderedDict
 from ..lang import ast as _ast
 from ..lang.parser import DIRECTIVE_LOCATIONS
 
@@ -204,8 +204,8 @@ class EnumType(NamedType):
         """
         self.name = name
         self.description = description
-        self.values = {}
-        self.reverse_values = {}
+        self.values = OrderedDict()
+        self.reverse_values = OrderedDict()
         for v in values:
             ev = EnumValue.from_def(v)
             assert ev.name not in self.values, \

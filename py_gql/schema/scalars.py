@@ -187,7 +187,7 @@ class RegexType(ScalarType):
         """
         self.name = name
 
-        if isinstance(regex, six.text_type):
+        if isinstance(regex, six.string_types):
             self.regex = re.compile(regex)
         else:
             self.regex = regex
