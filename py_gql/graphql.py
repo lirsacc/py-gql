@@ -1,34 +1,53 @@
 # -*- coding: utf-8 -*-
-""" This is the main entrypoint for parsing a query and
-validating + executing it against a given schema.
+""" Main GraphQL entrypoint encapsulating query processing from start to finish.
 """
 
-# from .lang import parse
-# from .validation import validate
-# from .execution import execute
+import json
+
+from .exc import DocumentValidationError, GraphQLSyntaxError
+from .execution import execute
+from .lang import parse
+from .validation import SPECIFIED_CHECKERS, validate_ast
 
 
-# def graphql(schema, query='', ctx=None, root_value=None,
-#             variable_values=None, operation_name=None):
-#     """ This is the main entrypoint for parsing a query and
-#     validating + executing it against a given schema.
+def graphql(
+    schema,
+    document,
+    variables,
+    operation_name=None,
+    initial_value=None,
+    validators=None,
+    validation_cache={},
+    context=None,
+    executor=None,
+):
+    """ Execute a graphql query against a schema.
+    """
 
-#     :type schema: py_gql.schema.Schema
-#     :param schema:
-#         The root GraphQL schema
+    try:
+        ast = parse(document)
+    except GraphQLSyntaxError as err:
+        raise
 
-#     :type query: str|py_gql.lang.Source
-#     :param query:
-#         The GraphQL document
+    if validators or validators is None:
+        if validation_cache and (schema, document) in validation_cache:
+            validation_result = validation_cache[(schema, document)]
+        else:
+            validation_result = validate_ast(schema, ast, validators=validators)
+            if validation_cache:
+                validation_cache[(schema, document)] = validation_result
 
-#     :type ctx: dict
-#     :param ctx:
-#         Execution context to forward to resolver functions
+        if not validation_result:
+            raise DocumentValidationError(validation_result.errors)
 
-#     :rtype: dict
-#     :returns:
-#         The resolved result for the query
-#     """
-#     ast = parse(query)
-#     validate(schema, ast)
-#     return execute(schema, ast, ctx=ctx)
+    try:
+        result, execution_errors = execute(
+            schema,
+            ast,
+            executor=executor,
+            initial_value=initial_value,
+            context=context,
+            variables=variables,
+        )
+    except Exception as err:
+        raise

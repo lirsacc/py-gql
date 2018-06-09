@@ -5,7 +5,9 @@ from ..utilities import coerce_argument_values
 
 
 class ExecutionContext(object):
-    """
+    """ Container to be passed around **internally** during the execution.
+    Unless you are implementing a custom execution function you should not need to
+    refer tot his class.
     """
 
     __slots__ = (
@@ -23,6 +25,23 @@ class ExecutionContext(object):
         self, schema, document, variables, fragments, executor, operation, context
     ):
         """
+        :type schema: py_gql.schema.Schema
+        :param schema:
+
+        :type document: py_gql.lang.ast.Document
+        :param document:
+
+        :type variables: dict
+        :param variables: Coerced variables
+
+        :type fragments: dict[str, py_gql.lang.ast.FragmentDefinition]
+        :param fragments:
+
+        :type operation: py_gql.lang.ast.OperationDefinition
+        :param operation:
+
+        :type context: any
+        :param context:
         """
         self.schema = schema
         self.document = document
@@ -34,16 +53,37 @@ class ExecutionContext(object):
         self._errors = []
 
     def add_error(self, msg, node, path):
+        """ Register a localized execution error.
+
+        :type msg: str|Exception
+        :param msg: The error
+
+        :type node: py_gql.lang.ast.Node
+        :param node: The node corresponding to this error
+
+        :type path: py_gql._utils.Path
+        :param path: The traversal path where this error was occuring
+        """
         self._errors.append((msg, node, path))
 
     @property
     def errors(self):
+        """ Get a copy of the errors without the risk of modifying the internal
+        structure.
+
+        :rtype: list[tuple[str|Exception, py_gql.lang.ast.Node, py_gql._utils.Path]]
+        """
         return self._errors[:]
 
 
-class ResolutionContext(object):
-    """ ResolutionContext will be passed to custom resolver function to expose
-    some of the data used in the execution process. """
+# REVIEW: Maybe this exposes too much?
+class ResolveInfo(object):
+    """ ResolveInfo will be passed to custom resolver function to expose
+    some of the data used in the execution process as well as some common helper
+    functions.
+
+    WARN: Interface will surely change as the resolver definitions get fined-tuned.
+    """
 
     __slots__ = (
         "field_def",
@@ -70,6 +110,36 @@ class ResolutionContext(object):
         nodes,
         executor,
     ):
+        """
+        :type field_def: py_gql.schema.Field
+        :param field_def: Type definition for the field being resolved
+
+        :type parent_type: py_gql.schema.ObjectType
+        :param parent_type: ObjectType definition where the field originated from
+
+        :type path: py_gql._utils.Path
+        :param path: Current traversal path
+
+        :type schema: py_gql.schema.Schema
+        :param schema:
+
+        :type variables: dict
+        :param variables: Coerced variables
+
+        :type fragments: dict[str, py_gql.lang.ast.FragmentDefinition]
+        :param fragments:
+
+        :type operation: py_gql.lang.ast.OperationDefinition
+        :param operation:
+
+        :type node: list[py_gql.lang.ast.Node]
+        :param node: The nodes corresponding to the field
+
+        :type executor: py_gql.execution.executors.Executor
+        :param executor: The current executor
+            Use this if you need to submit call other resover / fetcher functions
+            inside an exsiting resolver.
+        """
         self.field_def = field_def
         self.parent_type = parent_type
         self.path = path
@@ -86,13 +156,12 @@ class ResolutionContext(object):
         """ Extract directive argument values for given directive name.
 
         :type directive_name: str
-        :param directive_name:
-            Directive name. This assumes validation has run and the directive
-            exists in the schema as well as in a valid position.
+        :param directive_name: Directive name.
+            This assumes validation has run and the directive exists in the schema
+            as well as in a valid position.
 
         :rtype: dict
-        :returns:
-            The arguments to the directive
+        :returns: The arguments to the directive
         """
         if directive_name in self._directive_values:
             return self._directive_values[directive_name]
@@ -110,17 +179,13 @@ def directive_arguments(definition, node, variables=None):
     definition.
 
     :type definition: py_gql.schema.Directive
-    :param definition:
-        Field or Directive definition from which to extract argument
-        definitions.
+    :param definition: Field or Directive definition from which to extract arguments
 
     :type node: py_gql.lang.ast.Field
-    :param node:
-        Ast node
+    :param node: Ast node
 
     :type variables: Optional[dict]
-    :param variables:
-        Coerced variable values
+    :param variables: Coerced variable values
 
     :rtype: dict
     """

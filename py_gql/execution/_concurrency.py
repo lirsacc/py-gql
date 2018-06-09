@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-""" Helpers to work with futures and the concurrent module.
-"""
-import logging as _logging
+""" Helpers to work with futures and the concurrent module. """
+
 from concurrent import futures as _f
 
-logger = _logging.getLogger(__name__)
+
+def is_deferred(value):
+    return isinstance(value, _f.Future)
 
 
 def deferred(value):
@@ -137,10 +138,47 @@ def chain(previous, *funcs):
     return result
 
 
+def unwrap(future):
+    """ Resolve nested futures until a non future is resolved or an exception is raised.
+
+    >>> f1 = _f.Future()
+    >>> f2 = _f.Future()
+    >>> f3 = _f.Future()
+
+    >>> nested = unwrap(f1)
+    >>> f1.set_result(f2)
+    >>> nested.running()
+    True
+    >>> f2.set_result(f3)
+    >>> nested.running()
+    True
+    >>> f3.set_result(42)
+    >>> nested.result()
+    42
+    """
+    result = _f.Future()
+
+    def callback(future):
+        try:
+            res = future.result()
+        except _f.CancelledError:
+            result.cancel()
+        except Exception as err:
+            result.set_exception(err)
+        else:
+            if isinstance(res, _f.Future):
+                res.add_done_callback(callback)
+            else:
+                result.set_result(res)
+
+    result.set_running_or_notify_cancel()
+    future.add_done_callback(callback)
+    return result
+
+
 def serial(steps):
     def _step(original):
-        # Need to force a scope chnage
-        return lambda _: original()
+        return lambda _: original()  # Need to force a scope chnage
 
     return chain(deferred(None), *[_step(step) for step in steps])
 

@@ -219,7 +219,7 @@ def test_default_resolution_evaluates_methods(exe_cls, exe_kwargs):
             schema,
             "{ test(addend1: 80) }",
             initial_value=root,
-            context={"addend2": 9},
+            context_value={"addend2": 9},
             executor=executor,
             expected_data={"test": 789},
             expected_errors=[],
@@ -341,7 +341,7 @@ def test_forwarded_resolver_arguments(mocker, exe_cls, exe_kwargs):
         data, errors = execute(
             schema,
             doc,
-            context=context,
+            context_value=context,
             initial_value=root,
             variables={"var": 123},
             executor=executor,
