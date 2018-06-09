@@ -464,7 +464,6 @@ def test_it_executes_union_types():
         },
         [],
         initial_value=_JOHN,
-        _skip_validation=True,
     )
 
 
@@ -522,7 +521,6 @@ def test_it_executes_interface_types():
         },
         [],
         initial_value=_JOHN,
-        _skip_validation=True,
     )
 
 
@@ -552,7 +550,6 @@ def test_it_executes_interface_types_using_inline_fragments():
         },
         [],
         initial_value=_JOHN,
-        _skip_validation=True,
     )
 
 

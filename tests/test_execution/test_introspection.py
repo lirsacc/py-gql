@@ -4,11 +4,6 @@ from __future__ import unicode_literals
 
 import json
 
-import pytest
-
-from py_gql.exc import DocumentValidationError
-from py_gql.execution import execute
-from py_gql.lang import parse
 from py_gql.schema import (
     Arg,
     EnumType,
@@ -1206,7 +1201,6 @@ def test_intropsection_query():
             }
         },
         expected_errors=[],
-        _skip_validation=True,
     )
 
 
@@ -1505,12 +1499,18 @@ def test_it_respects_the_include_deprecated_parameter_for_enum_values():
 def test_it_fails_as_expected_on_the_type_root_field_without_an_arg():
     test_type = ObjectType("TestType", [Field("testField", String)])
     schema = Schema(test_type)
-    with pytest.raises(DocumentValidationError) as exc_info:
-        execute(schema, parse("{ __type { name } }"))
-
-    assert [msg for msg, _ in exc_info.value.errors] == [
-        'Field "__type" argument "name" of type String! is required ' "but not provided"
-    ]
+    check_execution(
+        schema,
+        "{ __type { name } }",
+        expected_data={"__type": None},
+        expected_errors=[
+            (
+                'Argument "name" of required type "String!" was not provided',
+                (2, 17),
+                "__type",
+            )
+        ],
+    )
 
 
 def test_it_exposes_descriptions_on_types_and_fields():

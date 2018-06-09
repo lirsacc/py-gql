@@ -3,12 +3,7 @@
 
 import pytest
 
-from py_gql.exc import (
-    DocumentValidationError,
-    ExecutionError,
-    ResolverError,
-    SchemaError,
-)
+from py_gql.exc import ExecutionError, ResolverError, SchemaError
 from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
@@ -46,21 +41,21 @@ def test_expects_document(starwars_schema):
     assert str(exc_info.value) == "Expected document"
 
 
-def test_raises_on_validation_error(starwars_schema):
-    with pytest.raises(DocumentValidationError):
-        execute(
+def test_raises_on_missing_operation(starwars_schema):
+    with pytest.raises(ExecutionError) as exc_info:
+        check_execution(
             starwars_schema,
-            parse(
-                """
-        fragment a on Character {
-            ...b
-        }
-        fragment b on Character {
-            ...a
-        }
-        """
-            ),
+            """
+            fragment a on Character {
+                ...b
+            }
+            fragment b on Character {
+                ...a
+            }
+            """,
         )
+
+    assert "Must provide an operation" in str(exc_info.value)
 
 
 def _test_schema(field):
@@ -95,11 +90,8 @@ def test_it_uses_named_operation_if_name_is_provided():
 
 def test_raises_if_no_operation_is_provided():
     with pytest.raises(ExecutionError) as exc_info:
-        execute(
-            _test_schema(String),
-            parse("fragment Example on Query { test }"),
-            _skip_validation=True,
-        )
+        # This is an *invalid* query, but it should be an *executable* query.
+        execute(_test_schema(String), parse("fragment Example on Query { test }"))
     assert str(exc_info.value) == "Must provide an operation"
 
 
@@ -623,6 +615,7 @@ def test_full_response_path_is_included_on_error(raiser, exe_cls, exe_kwargs):
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
 def test_it_does_not_include_illegal_fields(mocker, exe_cls, exe_kwargs):
     """ ...even if you skip validation """
+    # This is an *invalid* query, but it should be an *executable* query.
     doc = parse(
         """
     mutation M {
@@ -639,9 +632,7 @@ def test_it_does_not_include_illegal_fields(mocker, exe_cls, exe_kwargs):
     }
 
     with exe_cls(**exe_kwargs) as executor:
-        result, _ = execute(
-            schema, doc, initial_value=root, _skip_validation=True, executor=executor
-        )
+        result, _ = execute(schema, doc, initial_value=root, executor=executor)
     assert result == {}
 
     assert not root["thisIsIllegalDontIncludeMe"].call_count
@@ -754,26 +745,12 @@ def _complex_schema():
 
 
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_execution_raises_on_validation_failure(_complex_schema, exe_cls, exe_kwargs):
-    schema, doc = _complex_schema
-
-    with pytest.raises(DocumentValidationError) as exc_info:
-        with exe_cls(**exe_kwargs) as executor:
-            execute(schema, doc, executor=executor)
-
-    assert len(exc_info.value.errors) == 2
-    assert [(msg, [n.loc for n in nodes]) for msg, nodes in exc_info.value.errors] == [
-        ('Cannot query field "hidden" on type "Article"', [(590, 596)]),
-        ('Cannot query field "notdefined" on type "Article"', [(606, 616)]),
-    ]
-
-
-@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
 def test_executes_correctly_without_validation(_complex_schema, exe_cls, exe_kwargs):
+    # This is an *invalid* query, but it should be an *executable* query.
     schema, doc = _complex_schema
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(schema, doc, _skip_validation=True, executor=executor)
+        data, errors = execute(schema, doc, executor=executor)
 
     assert data == {
         "article": {
@@ -815,9 +792,10 @@ def test_executes_correctly_without_validation(_complex_schema, exe_cls, exe_kwa
 def test_result_is_ordered_according_to_query(_complex_schema, exe_cls, exe_kwargs):
     """ check that deep iteration order of keys in result corresponds to order
     of appearance in query accounting for fragment use """
+    # This is an *invalid* query, but it should be an *executable* query.
     schema, doc = _complex_schema
     with exe_cls(**exe_kwargs) as executor:
-        data, _ = execute(schema, doc, _skip_validation=True, executor=executor)
+        data, _ = execute(schema, doc, executor=executor)
 
     def _extract_keys_in_order(d):
         if not isinstance(d, dict):

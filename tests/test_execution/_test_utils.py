@@ -4,7 +4,7 @@ import pytest
 
 from py_gql.execution import execute
 from py_gql.execution.executors import SyncExecutor, ThreadPoolExecutor
-from py_gql.lang import parse
+from py_gql.lang import ast as _ast, parse
 
 
 def _dict(value):
@@ -30,7 +30,10 @@ def check_execution(
     **ex_kwargs
 ):
 
-    doc = parse(query)
+    if isinstance(query, _ast.Document):
+        doc = query
+    else:
+        doc = parse(query)
 
     if expected_exc is not None:
         with pytest.raises(expected_exc) as exc_info:

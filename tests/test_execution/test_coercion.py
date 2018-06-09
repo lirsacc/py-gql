@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from py_gql.exc import DocumentValidationError, VariableCoercionError
+from py_gql.exc import VariableCoercionError
 from py_gql.schema import (
     Arg,
     Field,
@@ -349,7 +349,7 @@ def test_allows_nullable_inputs_to_be_omitted_in_a_variable():
 
 
 def test_allows_nullable_inputs_to_be_omitted_in_an_unlisted_variable():
-    # The query is not valid but should execute
+    # This is an *invalid* query, but it should be an *executable* query.
     check_execution(
         _SCHEMA,
         """
@@ -359,7 +359,6 @@ def test_allows_nullable_inputs_to_be_omitted_in_an_unlisted_variable():
         """,
         expected_data={"fieldWithNullableStringInput": "null"},
         expected_errors=[],
-        _skip_validation=True,
     )
 
 
@@ -472,16 +471,22 @@ def test_allows_non_nullable_inputs_to_be_set_to_a_value_directly():
 
 
 def test_reports_error_for_missing_non_nullable_inputs():
-    with pytest.raises(DocumentValidationError) as exc_info:
-        check_execution(_SCHEMA, "{ fieldWithNonNullableStringInput }")
-
-    assert exc_info.value.errors[0][0] == (
-        'Field "fieldWithNonNullableStringInput" argument "input" of type '
-        "String! is required but not provided"
+    check_execution(
+        _SCHEMA,
+        "{ fieldWithNonNullableStringInput }",
+        expected_data={"fieldWithNonNullableStringInput": None},
+        expected_errors=[
+            (
+                'Argument "input" of required type "String!" was not provided',
+                (2, 33),
+                "fieldWithNonNullableStringInput",
+            )
+        ],
     )
 
 
 def test_reports_error_for_missing_non_nullable_inputs_no_validation():
+    # This is an *invalid* query, but it should be an *executable* query.
     check_execution(
         _SCHEMA,
         """
@@ -497,7 +502,6 @@ def test_reports_error_for_missing_non_nullable_inputs_no_validation():
                 "fieldWithNonNullableStringInput",
             )
         ],
-        _skip_validation=True,
     )
 
 
@@ -519,6 +523,7 @@ def test_reports_error_for_array_passed_into_string_input():
 
 
 def test_reports_error_for_non_provided_variables_for_non_nullable_inputs():
+    # This is an *invalid* query, but it should be an *executable* query.
     check_execution(
         _SCHEMA,
         """
@@ -536,8 +541,6 @@ def test_reports_error_for_non_provided_variables_for_non_nullable_inputs():
                 "fieldWithNonNullableStringInput",
             )
         ],
-        # Default rules will would prevent this from executing
-        _skip_validation=True,
     )
 
 
@@ -677,7 +680,7 @@ def test_does_not_allow_non_null_lists_of_non_nulls_to_contain_null():
 
 
 def test_does_not_allow_invalid_types_to_be_used_as_values():
-    with pytest.raises(DocumentValidationError) as exc_info:
+    with pytest.raises(VariableCoercionError) as exc_info:
         check_execution(
             _SCHEMA,
             """
@@ -687,30 +690,24 @@ def test_does_not_allow_invalid_types_to_be_used_as_values():
             variables={"input": ["A", "B"]},
         )
 
-    assert [msg for msg, _ in exc_info.value.errors] == [
-        'Variable "$input" must be input type',
-        'Variable "$input" of type TestType! used in position expecting type '
-        "TestInputObject",
-    ]
+    assert (
+        'Variable "$input" expected value of type "TestType!" which cannot be used as '
+        "an input type." in str(exc_info.value)
+    )
 
 
 def test_does_not_allow_unknown_types_to_be_used_as_values():
-    with pytest.raises(DocumentValidationError) as exc_info:
+    with pytest.raises(VariableCoercionError) as exc_info:
         check_execution(
             _SCHEMA,
             """
         query ($input: UnknownType!) {
-          fieldWithObjectInput(input: $input)
+            fieldWithObjectInput(input: $input)
         }""",
             variables={"input": "whoknows"},
         )
 
-    assert [msg for msg, _ in exc_info.value.errors] == [
-        'Unknown type "UnknownType"',
-        'Variable "$input" must be input type',
-        'Variable "$input" of type UnknownType! used in position expecting '
-        "type TestInputObject",
-    ]
+    assert 'Unknown type "UnknownType!" for variable "$input"' in str(exc_info.value)
 
 
 def test_argument_default_values_when_no_argument_provided():
@@ -736,9 +733,17 @@ def test_argument_default_values_when_omitted_variable_provided():
 
 
 def test_argument_default_value_when_argument_cannot_be_coerced():
-    with pytest.raises(DocumentValidationError) as exc_info:
-        check_execution(_SCHEMA, "{ fieldWithDefaultArgumentValue(input: WRONG_TYPE) }")
-
-    assert [msg for msg, _ in exc_info.value.errors] == [
-        "Expected type String, found WRONG_TYPE"
-    ]
+    # This is an *invalid* query, but it should be an *executable* query.
+    check_execution(
+        _SCHEMA,
+        "{ fieldWithDefaultArgumentValue(input: WRONG_TYPE) }",
+        expected_data={"fieldWithDefaultArgumentValue": None},
+        expected_errors=[
+            (
+                'Argument "input" of type "String" was provided invalid value WRONG_TYPE '
+                "(Invalid literal EnumValue)",
+                (2, 50),
+                "fieldWithDefaultArgumentValue",
+            )
+        ],
+    )

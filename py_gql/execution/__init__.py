@@ -30,9 +30,9 @@ from ..exc import (
     ScalarSerializationError,
     UnknownEnumValue,
     ExecutionError,
-    DocumentValidationError,
     VariableCoercionError,
     ResolverError,
+    UnknownType,
 )
 from ..lang import ast as _ast, print_ast
 from ..schema import (
@@ -47,10 +47,10 @@ from ..schema import (
     InterfaceType,
     UnionType,
     Schema,
+    is_input_type,
 )
 from ..schema.introspection import schema_field, type_field, type_name_field
 from ..utilities import typed_value_from_ast, coerce_value, coerce_argument_values
-from ..validation import validate_ast
 from ._utils import ExecutionContext, ResolutionContext, directive_arguments
 from .executors import DefaultExecutor, Executor
 from . import _concurrency
@@ -63,9 +63,7 @@ def execute(
     variables=None,
     operation_name=None,
     initial_value=None,
-    validators=None,
     context=None,
-    _skip_validation=False,
 ):
     """
     :type schema: py_gql.schema.Schema
@@ -92,14 +90,6 @@ def execute(
         anything your resolver require.
         Limits on the type(s) used here will depend on your own resolver
         implementations and the executor you use.
-
-    :type validators: List[py_gql.validation.ValidationVisitor]
-    :param validators:
-        List of custom validators to use **instead** of the specified ones.
-
-    :type _skip_validation: bool
-    :param _skip_validation:
-        Set to `True` to skip document validation.
     """
     # This can raise and should as it is a §ogrammer error that
     # should not be exposed
@@ -111,16 +101,7 @@ def execute(
     assert executor is None or isinstance(executor, Executor)
 
     executor = executor or DefaultExecutor()
-
     variables = variables or dict()
-
-    # REVIEW: Should this be part of the execution code ? It makes a few tests
-    # awkward and could very well be part of another entry point.
-    if not _skip_validation:
-        validation_result = validate_ast(schema, ast, validators=validators)
-        if not validation_result:
-            raise DocumentValidationError(validation_result.errors)
-
     operation = get_operation(ast, operation_name)
 
     fragments = {
@@ -214,7 +195,25 @@ def coerce_variable_values(schema, operation, variables=None):
 
     for var_def in operation.variable_definitions:
         name = var_def.variable.name.value
-        var_type = schema.get_type_from_literal(var_def.type)
+
+        try:
+            var_type = schema.get_type_from_literal(var_def.type)
+        except UnknownType as err:
+            errors.append(
+                'Unknown type "%s" for variable "$%s"' % (print_ast(var_def.type), name)
+            )
+            continue
+
+        # This duplicates validation rules.
+        # REVIEW: Identify validation rules that are unnecessary given the default
+        # parsing / execution to save some cycles.
+        if not is_input_type(var_type):
+            errors.append(
+                'Variable "$%s" expected value of type "%s" which cannot be used as '
+                "an input type." % (name, print_ast(var_def.type))
+            )
+            continue
+
         if name not in variables:
             if var_def.default_value is not None:
                 try:
