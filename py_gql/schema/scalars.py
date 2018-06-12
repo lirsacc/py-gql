@@ -215,3 +215,22 @@ class RegexType(ScalarType):
         self._parse = _parse
         self._serialize = _parse
         self._parse_literal = _typed_coerce(_parse, _ast.StringValue)
+
+
+class DefaultCustomScalar(ScalarType):
+    """ Default string based behaviour for scalar types derived from schema SDL.
+    This will be essentially take everything and transform it into a string.
+    """
+
+    def __init__(self, name, description=None):
+        self.name = name
+        self.description = description
+        self._serialize = String._serialize
+        self._parse = String._parse
+        self._parse_literal = _typed_coerce(
+            String._parse,
+            _ast.StringValue,
+            _ast.FloatValue,
+            _ast.IntValue,
+            _ast.BooleanValue,
+        )

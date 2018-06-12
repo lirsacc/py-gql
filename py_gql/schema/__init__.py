@@ -33,3 +33,4 @@ from .directives import IncludeDirective, SkipDirective, DeprecatedDirective
 from .schema import Schema
 from .validation import validate_schema
 from .printer import print_schema
+from ._schema_from_ast import schema_from_ast

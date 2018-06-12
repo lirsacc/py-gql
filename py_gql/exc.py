@@ -194,3 +194,7 @@ class ResolverError(GraphQLLocatedError):
         if self.extensions:
             d["extensions"] = dict(self.extensions)
         return d
+
+
+class SDLError(GraphQLLocatedError):
+    pass
