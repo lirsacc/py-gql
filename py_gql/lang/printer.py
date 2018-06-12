@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Converting AST and values into nicely formatted strings.
+""" Converting AST and values into nicely, standardised formatted strings.
 """
 
 import json

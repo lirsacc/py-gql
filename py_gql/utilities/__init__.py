@@ -3,6 +3,7 @@
 
 # flake8: noqa
 
+from ._ast_node_from_value import ast_node_from_value
 from ._coerce_value import (
     coerce_argument_values,
     coerce_value,

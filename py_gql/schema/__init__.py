@@ -32,3 +32,4 @@ from .scalars import Int, Float, ID, UUID, String, Boolean, RegexType
 from .directives import IncludeDirective, SkipDirective, DeprecatedDirective
 from .schema import Schema
 from .validation import validate_schema
+from .printer import print_schema
