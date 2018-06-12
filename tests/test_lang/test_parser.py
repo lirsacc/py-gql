@@ -35,8 +35,13 @@ def test_it_asserts_that_a_source_to_parse_was_provided():
             'Expected "on" but found Type',
         ),
         (u"{ field: {} }", UnexpectedToken, 9, "Expected Name but found {"),
-        (u"notanoperation Foo { field }", UnexpectedToken, 0, "notanoperation"),
-        (u"...", UnexpectedToken, 0, "..."),
+        (
+            u"notanoperation Foo { field }",
+            UnexpectedToken,
+            0,
+            "Unexpected notanoperation",
+        ),
+        (u"...", UnexpectedToken, 0, "Unexpected ..."),
     ],
 )
 def test_it_provides_useful_errors(value, error_cls, position, message):
@@ -64,14 +69,14 @@ def test_it_parses_constant_default_values():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"query Foo($x: Complex = { a: { b: [ $var ] } }) { field }")
     assert exc_info.value.position == 36
-    assert exc_info.value.message == "$"
+    assert exc_info.value.message == "Unexpected $"
 
 
 def test_it_does_not_accept_fragments_named_on():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"fragment on on on { on }")
     assert exc_info.value.position == 9
-    assert exc_info.value.message == "on"
+    assert exc_info.value.message == "Unexpected on"
 
 
 def test_it_does_not_accept_fragments_spread_of_on():

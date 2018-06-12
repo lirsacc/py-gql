@@ -27,6 +27,9 @@ def evaluate_lazy_list(entries):
 _UNDEF = object()
 
 
+_RESERVED_NAMES = ("String", "Int", "Float", "ID", "Boolean")
+
+
 class Type(object):
     """ Base Type class. """
 
@@ -108,6 +111,7 @@ class InputField(object):
         :type default_value: any
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.default_value = default_value
@@ -145,6 +149,7 @@ class InputObjectType(NamedType):
         :type fields: dict(str, InputField)|[InputField]|callable
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._fields = fields
@@ -184,6 +189,7 @@ class EnumValue(object):
         :type description: str
         """
         assert name not in ("true", "false", "null")
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.value = value if value is not _UNDEF else name
         self.description = description
@@ -210,6 +216,7 @@ class EnumType(NamedType):
         :type values: [EnumValue|str|Tuple[str, Hashable]|dict]
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self.values = OrderedDict()
@@ -267,7 +274,15 @@ class ScalarType(NamedType):
     ``ValueError``, or ``TypeError`` in ``parse`` or ``parse_literal``.
     """
 
-    def __init__(self, name, serialize, parse, parse_literal=None, description=None):
+    def __init__(
+        self,
+        name,
+        serialize,
+        parse,
+        parse_literal=None,
+        description=None,
+        _specififed=False,
+    ):
         """
         :type name: str
         :type serialize: callable
@@ -275,6 +290,7 @@ class ScalarType(NamedType):
         :type parse_literal: callable
         :type description: str
         """
+        assert _specififed or name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._serialize = serialize
@@ -286,14 +302,14 @@ class ScalarType(NamedType):
         try:
             return self._serialize(value)
         except (ValueError, TypeError) as err:
-            raise ScalarSerializationError(str(err))
+            raise ScalarSerializationError(str(err)) from err
 
     def parse(self, value):
         """ Transform a GraphQL value in a valid Python value """
         try:
             return self._parse(value)
         except (ValueError, TypeError) as err:
-            raise ScalarParsingError(str(err))
+            raise ScalarParsingError(str(err)) from err
 
     def parse_literal(self, node, variables=None):
         """ Transform an AST node in a valid Python value """
@@ -305,7 +321,7 @@ class ScalarType(NamedType):
                     raise TypeError("Invalid literal %s" % type(node).__name__)
                 return self._parse(node.value)
         except (ValueError, TypeError) as err:
-            raise ScalarParsingError(str(err))
+            raise ScalarParsingError(str(err), [node]) from err
 
 
 class Argument(object):
@@ -322,6 +338,7 @@ class Argument(object):
         :type default_value: any
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.default_value = default_value
@@ -370,6 +387,7 @@ class Field(object):
         assert resolve is None or callable(resolve)
         assert subscribe is None or callable(subscribe)
 
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.description = description
@@ -418,6 +436,7 @@ class ObjectType(NamedType):
         :type is_type_of: callable|type
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._fields = fields
@@ -458,6 +477,7 @@ class InterfaceType(NamedType):
         :type types: callable|[Type]|dict(str, Type)
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._types = types
@@ -493,6 +513,7 @@ class UnionType(NamedType):
         :type types: callable|[Type]|dict(str, Type)
         :type description: str
         """
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._types = types
@@ -521,6 +542,7 @@ class Directive(Type):
         :type description: str
         """
         assert locations and all([loc in DIRECTIVE_LOCATIONS for loc in locations])
+        assert name not in _RESERVED_NAMES, name
         self.name = name
         self.description = description
         self.locations = locations

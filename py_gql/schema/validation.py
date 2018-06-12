@@ -119,6 +119,7 @@ def validate_root_types(schema):
     """
     :type schema: py_gql.schema.Schema
     """
+    _assert(schema.query_type is not None, "Must provide Query type")
     if schema.query_type is not None:
         _assert(
             isinstance(schema.query_type, ObjectType),

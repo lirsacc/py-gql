@@ -18,6 +18,7 @@ tokenizing the Grahpql source.
 import six
 
 from . import token
+from .._string_utils import ensure_unicode, parse_block_string
 from ..exc import (
     InvalidCharacter,
     InvalidEscapeSequence,
@@ -25,8 +26,6 @@ from ..exc import (
     UnexpectedCharacter,
     UnexpectedEOF,
 )
-from .source import Source
-from .utils import parse_block_string
 
 EOL_CHARS = frozenset([0x000A, 0x000D])  # "\n"  # "\r"
 
@@ -119,10 +118,7 @@ class Lexer(object):
         if source is None:
             raise ValueError("source cannot be None")
 
-        if isinstance(source, (six.text_type, six.binary_type)):
-            source = Source(source)
-
-        self.source = source
+        self.source = ensure_unicode(source)
         self.len = len(source)
         self.done = False
         self.started = False
@@ -136,9 +132,9 @@ class Lexer(object):
         """
         if self.done or self.position + count - 1 >= self.len:
             if raise_on_eof:
-                raise UnexpectedEOF("", self.position, self.source)
+                raise UnexpectedEOF(self.position, self.source)
             return None
-        return self.source.body[self.position + count - 1]
+        return self.source[self.position + count - 1]
 
     def advance(self, expected=None):
         """
@@ -291,7 +287,7 @@ class Lexer(object):
             if not char.isalnum():
                 break
 
-        escape = self.source.body[start : self.position]
+        escape = self.source[start : self.position]
 
         if len(escape) != 4:
             raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self.source)
@@ -331,7 +327,7 @@ class Lexer(object):
             self.read_over_integer()
 
         end = self.position
-        value = self.source.body[start:end]
+        value = self.source[start:end]
         return (
             token.Float(start, end, value)
             if is_float
@@ -382,7 +378,7 @@ class Lexer(object):
                 break
 
         end = self.position
-        value = self.source.body[start:end]
+        value = self.source[start:end]
         return token.Name(start, end, value)
 
     def __iter__(self):

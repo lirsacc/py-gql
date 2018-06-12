@@ -169,7 +169,7 @@ else:
             return type(self)(self.default_factory, copy.deepcopy(self.items()))
 
         def __repr__(self):
-            return "OrderedDefaultDict(%s, %s)" % (
+            return "DefaultOrderedDict(%s, %s)" % (
                 self.default_factory,
                 OrderedDict.__repr__(self),
             )
@@ -235,6 +235,9 @@ class Path(object):
     >>> Path(['foo', 0, 'bar'])
     <Path foo[0].bar>
 
+    >>> Path()
+    <Path empty>
+
     >>> list(Path(['foo', 0, 'bar']))
     ['foo', 0, 'bar']
     """
@@ -244,7 +247,7 @@ class Path(object):
     def __init__(self, entries=None):
         self._entries = list(entries) if entries is not None else []
 
-    def __add__(self, other_path):
+    def __add__(self, other):
         """
         >>> Path(['foo', 0, 'bar']) + 'baz'
         <Path foo[0].bar.baz>
@@ -257,15 +260,19 @@ class Path(object):
 
         >>> Path(['foo', 0, 'bar']) + ['baz', 1]
         <Path foo[0].bar.baz[1]>
+
+        >>> Path() + object()
+        Traceback (most recent call last):
+            ...
+        TypeError
         """
-        if isinstance(other_path, (_six.string_types, int)):
-            return self.__class__(self._entries + [other_path])
-        elif isinstance(other_path, list):
-            return self.__class__(self._entries + other_path)
-        elif isinstance(other_path, Path):
-            return self.__class__(self._entries + other_path._entries)
-        else:
-            raise TypeError()
+        if isinstance(other, (_six.string_types, int)):
+            return self.__class__(self._entries + [other])
+        elif isinstance(other, list):
+            return self.__class__(self._entries + other)
+        elif isinstance(other, Path):
+            return self.__class__(self._entries + other._entries)
+        raise TypeError(other)
 
     def __str__(self):
         """
@@ -285,7 +292,7 @@ class Path(object):
             return "<%s empty>" % (self.__class__.__name__)
         return "<%s %s>" % (self.__class__.__name__, self)
 
-    def __eq__(self, lhs):
+    def __eq__(self, other):
         """
         >>> Path(['foo', 0, 'bar']) == ['foo', 0, 'bar']
         True
@@ -295,15 +302,19 @@ class Path(object):
 
         >>> Path(['foo', 0, 'bar']) == Path(['foo', 0, 'bar'])
         True
+
+        >>> Path() == object()
+        Traceback (most recent call last):
+            ...
+        TypeError
         """
-        if isinstance(lhs, list):
-            return self._entries == lhs
-        if isinstance(lhs, _six.string_types):
-            return str(self) == lhs
-        elif isinstance(lhs, Path):
-            return self._entries == lhs._entries
-        else:
-            raise TypeError()
+        if isinstance(other, list):
+            return self._entries == other
+        if isinstance(other, _six.string_types):
+            return str(self) == other
+        elif isinstance(other, Path):
+            return self._entries == other._entries
+        raise TypeError(other)
 
     def __getitem__(self, index):
         """
@@ -331,30 +342,3 @@ class Path(object):
         return bool(self._entries)
 
     __nonzero__ = __bool__
-
-
-@_contextlib.contextmanager
-def capture_exceptions(cls, cb=None):
-    """ Capture all exception
-
-    Args:
-        cls (type|tuple[type]): Exception class(es) to ignore
-        cb (callable, optional): Optional processor for the capture exceptions
-
-    Usage:
-
-        >>> capture = []
-        >>> with capture_exceptions(ValueError, capture.append):
-        ...     int('not int')
-        >>> capture
-        [ValueError("invalid literal for int() with base 10: 'not int'",)]
-
-        >>> with capture_exceptions(ValueError):
-        ...     int('not int')
-
-    """
-    try:
-        yield
-    except cls as err:
-        if callable(cb):
-            cb(err)

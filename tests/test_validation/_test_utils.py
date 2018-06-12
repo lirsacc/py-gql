@@ -16,7 +16,7 @@ def _ensure_list(value):
 def assert_validation_result(
     schema, source, expected_msgs=None, expected_locs=None, checkers=None
 ):
-    # Prints ar ehere so we can more easily debug when running pytest with -v
+    # Prints are here so we can more easily debug when running pytest with -v
     expected_msgs = expected_msgs or []
     expected_locs = expected_locs or []
 
@@ -24,8 +24,8 @@ def assert_validation_result(
     result = validate_ast(schema, parse(source), checkers)
     errors = result.errors
 
-    msgs = [msg for msg, _ in errors]
-    locs = [[node.loc for node in nodes] for _, nodes in errors]
+    msgs = [str(err) for err in errors]
+    locs = [[node.loc for node in err.nodes] for err in errors]
 
     print(" [msgs] ", msgs)
     print(" [locs] ", locs)

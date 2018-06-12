@@ -2,7 +2,7 @@
 """ Validation of GraphQL (query) documents.
 
 - Use `validate_ast` to confirm that a GraphQL document is correct.
-- This only validates query documents not IDL / type system definitions.
+- This only validates query documents not SDL documents.
 - Each validator is a custom vistor which checks one semantic rule defined by
   the spec. They do not cross reference each other and assume that the others
   validators are passing though they should not break and just silently ignore
@@ -143,5 +143,4 @@ def validate_ast(schema, ast_root, validators=None):
     )
 
     visit(validator, ast_root)
-
     return ValidationResult(list(chain(*[v.errors for v in validator.visitors[1:]])))

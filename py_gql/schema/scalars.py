@@ -27,6 +27,7 @@ Boolean = ScalarType(
     serialize=bool,
     parse=bool,
     parse_literal=_typed_coerce(bool, _ast.BooleanValue),
+    _specififed=True,
 )
 
 
@@ -88,6 +89,7 @@ Int = ScalarType(
     serialize=coerce_int,
     parse=coerce_int,
     parse_literal=_typed_coerce(coerce_int, _ast.IntValue),
+    _specififed=True,
 )
 
 
@@ -101,6 +103,7 @@ Float = ScalarType(
     serialize=coerce_float,
     parse=coerce_float,
     parse_literal=_typed_coerce(coerce_float, _ast.FloatValue, _ast.IntValue),
+    _specififed=True,
 )
 
 
@@ -126,6 +129,7 @@ String = ScalarType(
     serialize=_serialize_string,
     parse=_parse_string,
     parse_literal=_typed_coerce(_parse_string, _ast.StringValue),
+    _specififed=True,
 )
 
 
@@ -142,6 +146,7 @@ ID = ScalarType(
     serialize=six.text_type,
     parse=six.text_type,
     parse_literal=_typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue),
+    _specififed=True,
 )
 
 
@@ -194,7 +199,7 @@ class RegexType(ScalarType):
             self.regex = regex
 
         if description is None:
-            self.description = 'String matching pattern "%s"' % self.regex
+            self.description = "String matching pattern /%s/" % self.regex.pattern
         else:
             self.description = description
 

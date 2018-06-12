@@ -2,13 +2,14 @@
 """ Library excceptions sink. """
 
 from ._utils import cached_property
+from ._string_utils import highlight_location, index_to_loc
 
 
 class GraphQLError(Exception):
     """ Base GraphQL exception."""
 
-    def __init__(self, msg):
-        self.message = msg
+    def __init__(self, message):
+        self.message = message
 
     def __str__(self):
         return self.message
@@ -17,22 +18,28 @@ class GraphQLError(Exception):
 class GraphQLSyntaxError(GraphQLError):
     """  Syntax error in the GraphQL document."""
 
+    __slots__ = "message", "position", "source"
+
     def __init__(self, msg, position, source):
         """
         :type msg: str
         :type position: int
-        :type source: py_gql.lang.source.Source
+        :type source: str
         """
         self.message = msg
         self.source = source
         self.position = position
 
+    @cached_property
+    def highlighted(self):
+        return self.message + "\n" + highlight_location(self.source, self.position)
+
     def __str__(self):
-        from py_gql.lang.utils import highlight_location
+        return self.highlighted
 
-        return self.message + "\n" + highlight_location(self.source.body, self.position)
-
-    __repr__ = __str__
+    def to_json(self):
+        line, col = index_to_loc(self.source, self.position)
+        return {"message": str(self), "locations": [{"line": line, "columne": col}]}
 
 
 class InvalidCharacter(GraphQLSyntaxError):
@@ -44,7 +51,14 @@ class UnexpectedCharacter(GraphQLSyntaxError):
 
 
 class UnexpectedEOF(GraphQLSyntaxError):
-    pass
+    def __init__(self, position, source):
+        """
+        :type position: int
+        :type source: str
+        """
+        self.message = "Unexpected <EOF>"
+        self.source = source
+        self.position = position
 
 
 class NonTerminatedString(GraphQLSyntaxError):
@@ -56,10 +70,56 @@ class InvalidEscapeSequence(GraphQLSyntaxError):
 
 
 class UnexpectedToken(GraphQLSyntaxError):
-    pass
+    def __init__(self, msg, position, source):
+        """
+        :type msg: str
+        :type position: int
+        :type source: str
+        """
+        self.message = msg
+        self.source = source
+        self.position = position
 
 
-class InvalidValue(GraphQLError, ValueError):
+class GraphQLLocatedError(GraphQLError):
+    """ GraphQL exception that can be traced back to a specific node / set of nodes """
+
+    __slots__ = "message", "nodes", "path"
+
+    def __init__(self, message, nodes=None, path=None):
+        self.message = message
+        self.path = path
+
+        if not nodes:
+            self.nodes = []
+        elif not isinstance(nodes, list):
+            self.nodes = [nodes]
+        else:
+            self.nodes = nodes[:]
+
+    def __str__(self):
+        return self.message
+
+    def to_json(self):
+        kv = (
+            ("message", str(self)),
+            (
+                "locations",
+                [
+                    {"line": line, "column": col}
+                    for line, col in (
+                        index_to_loc(node.source, node.loc[0])
+                        for node in self.nodes
+                        if node.loc and node.source
+                    )
+                ],
+            ),
+            ("path", list(self.path) if self.path is not None else None),
+        )
+        return {k: v for k, v in kv if v}
+
+
+class InvalidValue(GraphQLLocatedError, ValueError):
     pass
 
 
@@ -71,7 +131,7 @@ class UnknownVariable(InvalidValue):
     pass
 
 
-class ScalarSerializationError(GraphQLError):
+class ScalarSerializationError(GraphQLError, ValueError):
     pass
 
 
@@ -87,23 +147,22 @@ class UnknownType(SchemaError, KeyError):
     pass
 
 
-class ExecutionError(GraphQLError):
+class ValidationError(GraphQLLocatedError):
     pass
 
 
-class DocumentValidationError(ExecutionError):
+class ExecutionError(GraphQLError):
+    def to_json(self):
+        return {"message": str(self)}
+
+
+class VariableCoercionError(GraphQLLocatedError):
+    pass
+
+
+class VariablesCoercionError(GraphQLError):
     def __init__(self, errors):
         self.errors = errors
-
-
-class VariableCoercionError(ExecutionError):
-    def __init__(self, errors):
-        assert errors
-        self._errors = errors
-
-    @cached_property
-    def errors(self):
-        return [str(err) if isinstance(err, Exception) else err for err in self._errors]
 
     def __str__(self):
         if len(self.errors) == 1:
@@ -111,18 +170,27 @@ class VariableCoercionError(ExecutionError):
         return str(self.errors)
 
 
-class ResolverError(GraphQLError):
-    def __init__(self, msg):
-        self.message = msg
+class CoercionError(GraphQLLocatedError):
 
+    __slots__ = "message", "nodes", "path", "value_path"
 
-class CoercionError(GraphQLError):
-    def __init__(self, msg, node=None, path=None):
-        self.message = msg
-        self.node = node
-        self.path = path
+    def __init__(self, msg, node=None, path=None, value_path=None):
+        super(CoercionError, self).__init__(msg, node, path)
+        self.value_path = value_path
 
     def __str__(self):
-        if self.path:
-            return "%s at %s" % (self.message, self.path)
+        if self.value_path:
+            return "%s at %s" % (self.message, self.value_path)
         return self.message
+
+
+class ResolverError(GraphQLLocatedError):
+    def __init__(self, msg, node=None, path=None, extensions=None):
+        super(ResolverError, self).__init__(msg, node, path)
+        self.extensions = extensions
+
+    def to_json(self):
+        d = super(ResolverError, self).to_json()
+        if self.extensions:
+            d["extensions"] = dict(self.extensions)
+        return d

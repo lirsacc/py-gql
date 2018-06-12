@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-""" Utilities to work with syntax objects. """
+""" Work with strings """
 
 import re
 
+import six
+
+
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
 LEADING_WS = re.compile(r"^[\t\s]*")
+
+
+def ensure_unicode(string):
+    if isinstance(string, six.binary_type):
+        return string.decode("utf8")
+    return string
 
 
 def leading_whitespace(string):
@@ -204,3 +213,43 @@ def highlight_location(body, position, delta=2):
         ]
     )
     return "\n".join(output)
+
+
+def _split_words_with_boundaries(string, word_boundaries):
+    """
+    >>> list(_split_words_with_boundaries("ab cd -ef_gh", " -_"))
+    ['ab', ' ', 'cd', ' ', '-', 'ef', '_', 'gh']
+    """
+    stack = []
+    for char in string:
+        if char in word_boundaries:
+            if stack:
+                yield "".join(stack)
+            yield char
+            stack[:] = []
+        else:
+            stack.append(char)
+
+    if stack:
+        yield "".join(stack)
+
+
+def wrapped_lines(lines, max_len, word_boundaries=" -_"):
+    """ Generator of wrapped strings in a source iterator to a given length.
+    """
+    for line in lines:
+        if len(line) <= max_len:
+            yield line
+            continue
+
+        wrapped = ""
+
+        for entry in _split_words_with_boundaries(line, word_boundaries):
+            if len(wrapped + entry) > max_len:
+                yield wrapped
+                wrapped = ""
+            if entry != " " or wrapped:
+                wrapped += entry
+
+        if wrapped:
+            yield wrapped

@@ -3,7 +3,7 @@
 """
 
 from .._utils import DefaultOrderedDict, OrderedDict, deduplicate
-from ..lang import ast as _ast
+from ..exc import ValidationError
 from ..lang.visitor import DispatchingVisitor
 
 
@@ -31,12 +31,7 @@ class ValidationVisitor(DispatchingVisitor):
         :type message: str
         :type nodes: Optional[py_gql.lang.ast.Node|List[py_gql.lang.ast_node]]
         """
-        if nodes is None:
-            nodes = []
-        if isinstance(nodes, _ast.Node):
-            nodes = [nodes]
-
-        self.errors.append((message, nodes))
+        self.errors.append(ValidationError(message, nodes))
 
 
 class VariablesCollector(ValidationVisitor):

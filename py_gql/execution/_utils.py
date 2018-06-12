@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from .._utils import find_one
-from ..utilities import coerce_argument_values
+import six
+
+from ..exc import ResolverError, CoercionError
+from ..utilities import directive_arguments
 
 
 class ExecutionContext(object):
@@ -52,11 +54,11 @@ class ExecutionContext(object):
         self.context = context
         self._errors = []
 
-    def add_error(self, msg, node, path):
+    def add_error(self, err, node=None, path=None):
         """ Register a localized execution error.
 
-        :type msg: str|Exception
-        :param msg: The error
+        :type err: str|Exception
+        :param err: The error
 
         :type node: py_gql.lang.ast.Node
         :param node: The node corresponding to this error
@@ -64,7 +66,16 @@ class ExecutionContext(object):
         :type path: py_gql._utils.Path
         :param path: The traversal path where this error was occuring
         """
-        self._errors.append((msg, node, path))
+        if isinstance(err, six.string_types):
+            err = ResolverError(err, node, path)
+        elif isinstance(err, (ResolverError, CoercionError)):
+            if node:
+                if err.nodes and node not in err.nodes:
+                    err.nodes.append(node)
+                elif not err.nodes:
+                    err.nodes = [node]
+            err.path = path if path is not None else err.path
+        self._errors.append((err, node, path))
 
     @property
     def errors(self):
@@ -172,27 +183,3 @@ class ResolveInfo(object):
             values.update(directive_arguments(definition, node, self.variables) or {})
         self._directive_values[directive_name] = values
         return values
-
-
-def directive_arguments(definition, node, variables=None):
-    """ Extract directive argument given a field node and a directive
-    definition.
-
-    :type definition: py_gql.schema.Directive
-    :param definition: Field or Directive definition from which to extract arguments
-
-    :type node: py_gql.lang.ast.Field
-    :param node: Ast node
-
-    :type variables: Optional[dict]
-    :param variables: Coerced variable values
-
-    :rtype: dict
-    """
-    directive = find_one(node.directives, lambda d: d.name.value == definition.name)
-
-    return (
-        coerce_argument_values(definition, directive, variables)
-        if directive is not None
-        else None
-    )

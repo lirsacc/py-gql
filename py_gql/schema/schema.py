@@ -80,9 +80,15 @@ class Schema(object):
         if types:
             self._types.extend(types)
 
-        self._directives = list(SPECIFIED_DIRECTIVES)
+        self._directives = []
         if directives:
             self._directives.extend(directives)
+        _directive_names = set(
+            (d.name for d in self._directives if isinstance(d, Directive))
+        )
+        for d in SPECIFIED_DIRECTIVES:
+            if d.name not in _directive_names:
+                self._directives.append(d)
 
         self._possible_types = {}
         self._is_valid = None

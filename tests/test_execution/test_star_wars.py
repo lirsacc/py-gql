@@ -314,3 +314,23 @@ def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
     assert str(err) == "secretBackstory is secret."
     assert path == ["mainHero", "story"]
     assert node.loc == (81, 103)
+
+
+def test_error_on_missing_argument(starwars_schema):
+    data, errors = execute(
+        starwars_schema,
+        parse(
+            """
+            {
+                luke: human {
+                    name
+                }
+            }
+            """
+        ),
+    )
+    assert data == {"luke": None}
+    assert len(errors) == 1
+    err, node, path = errors[0]
+    assert str(err) == 'Argument "id" of required type "String!" was not provided'
+    assert path == ["luke"]

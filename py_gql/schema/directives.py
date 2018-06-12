@@ -19,11 +19,13 @@ SkipDirective = Directive(
     "skip",
     description=(
         "Directs the executor to skip this field or fragment when the `if` "
-        "argument is true.",
+        "argument is true."
     ),
     locations=["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
     args=[Argument("if", NonNullType(Boolean), description="Skipped when true")],
 )
+
+DEFAULT_DEPRECATION = "No longer supported"
 
 DeprecatedDirective = Directive(
     "deprecated",
@@ -33,7 +35,7 @@ DeprecatedDirective = Directive(
         Argument(
             "reason",
             String,
-            default_value="No longer supported",
+            default_value=DEFAULT_DEPRECATION,
             description=(
                 "Explains why this element was deprecated, usually also "
                 "including a suggestion for how to access supported "

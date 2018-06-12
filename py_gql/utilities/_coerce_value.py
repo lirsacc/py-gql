@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Utilities to validate Python values against a schema """
 
-from .._utils import Path
+from .._utils import Path, find_one
 from ..exc import CoercionError, InvalidValue, ScalarParsingError, UnknownEnumValue
 from ..lang import ast as _ast, print_ast
 from ..schema import EnumType, InputObjectType, ListType, NonNullType, ScalarType
@@ -31,7 +31,9 @@ def coerce_value(value, typ, node=None, path=None):
     if isinstance(typ, NonNullType):
         if value is None:
             raise CoercionError(
-                "Expected non-nullable type %s not to be null" % typ, node, _path(path)
+                "Expected non-nullable type %s not to be null" % typ,
+                node,
+                value_path=_path(path),
             )
         typ = typ.type
 
@@ -42,16 +44,16 @@ def coerce_value(value, typ, node=None, path=None):
         try:
             return typ.parse(value)
         except ScalarParsingError as err:
-            raise CoercionError(str(err), node, _path(path))
+            raise CoercionError(str(err), node, value_path=_path(path))
 
     if isinstance(typ, EnumType):
         if isinstance(value, str):
             try:
                 return typ.get_value(value)
             except UnknownEnumValue as err:
-                raise CoercionError(str(err), node, _path(path))
+                raise CoercionError(str(err), node, value_path=_path(path))
         else:
-            raise CoercionError("Expected type %s" % typ, node, _path(path))
+            raise CoercionError("Expected type %s" % typ, node, value_path=_path(path))
 
     if isinstance(typ, ListType):
         return _coerce_list_value(value, typ, node, path)
@@ -72,7 +74,9 @@ def _coerce_list_value(value, typ, node, path):
 
 def _coerce_input_object(value, typ, node, path):
     if not isinstance(value, dict):
-        raise CoercionError("Expected type %s to be an object" % typ, node, _path(path))
+        raise CoercionError(
+            "Expected type %s to be an object" % typ, node, value_path=_path(path)
+        )
 
     coerced = {}
     for field in typ.fields:
@@ -82,7 +86,7 @@ def _coerce_input_object(value, typ, node, path):
                     "Field %s of required type %s was not provided"
                     % (field.name, field.type),
                     node,
-                    _path(path + [field.name]),
+                    value_path=_path(path + [field.name]),
                 )
         else:
             coerced[field.name] = coerce_value(
@@ -94,7 +98,7 @@ def _coerce_input_object(value, typ, node, path):
             raise CoercionError(
                 "Field %s is not defined by type %s" % (fieldname, typ),
                 node,
-                _path(path),
+                value_path=_path(path),
             )
 
     return coerced
@@ -177,3 +181,27 @@ def coerce_argument_values(definition, node, variables=None):
                     )
 
     return coerced_values
+
+
+def directive_arguments(definition, node, variables=None):
+    """ Extract directive argument given a field node and a directive
+    definition.
+
+    :type definition: py_gql.schema.Directive
+    :param definition: Field or Directive definition from which to extract arguments
+
+    :type node: py_gql.lang.ast.Field
+    :param node: Ast node
+
+    :type variables: Optional[dict]
+    :param variables: Coerced variable values
+
+    :rtype: dict
+    """
+    directive = find_one(node.directives, lambda d: d.name.value == definition.name)
+
+    return (
+        coerce_argument_values(definition, directive, variables)
+        if directive is not None
+        else None
+    )

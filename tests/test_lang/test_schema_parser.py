@@ -225,7 +225,7 @@ def test_extension_without_anything_throws():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"extend type Hello")
     assert exc_info.value.position == 17
-    assert exc_info.value.message == "<EOF>"
+    assert exc_info.value.message == "Unexpected <EOF>"
 
 
 def test_extension_do_not_include_descriptions_0():
@@ -238,7 +238,7 @@ def test_extension_do_not_include_descriptions_0():
       }"""
         )
     assert exc_info.value.position == 27
-    assert exc_info.value.message == "extend"
+    assert exc_info.value.message == "Unexpected extend"
 
 
 def test_extension_do_not_include_descriptions_1():
@@ -250,7 +250,7 @@ def test_extension_do_not_include_descriptions_1():
       }"""
         )
     assert exc_info.value.position == 14
-    assert exc_info.value.message == "Description"
+    assert exc_info.value.message == "Unexpected Description"
 
 
 def test_it_parses_simple_non_null_type():
@@ -751,7 +751,7 @@ class TestAllowLegacySdlImplementsInterfacesOption(object):
             parse(body)
 
         assert exc_info.value.position == 25
-        assert exc_info.value.message == "rld"
+        assert exc_info.value.message == "Unexpected rld"
 
         assert_node_equal(
             parse(body, allow_legacy_sdl_implements_interfaces=True),

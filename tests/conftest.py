@@ -9,16 +9,19 @@ import pytest
 @pytest.fixture
 def fixture_file():
     """ Helper to load fixture files by name. """
+
     def load(name):
-        filepath = os.path.join(os.path.dirname(__file__), '_fixtures', name)
-        with open(filepath, 'rb') as f:
-            return f.read().decode('utf-8')
+        filepath = os.path.join(os.path.dirname(__file__), "_fixtures", name)
+        with open(filepath, "rb") as f:
+            return f.read().decode("utf-8")
+
     return load
 
 
 @pytest.fixture
 def starwars_schema():
     from ._star_wars import StarWarsSchema
+
     return StarWarsSchema
 
 
@@ -29,6 +32,7 @@ def raiser():
 
         def _raiser(*a, **kw):
             raise cls(*args, **kwargs)
+
         return _raiser
 
     return factory

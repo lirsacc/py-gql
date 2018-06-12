@@ -11,15 +11,19 @@ def node_to_dict(node):
     a dict that can be later converted to json. Useful for testing and
     printing in a readable / compatible with JS tooling way.
 
-    :param node:
-        A node instance or any value used inside nodes (list of nodes
+    :type node: any
+    :param node: A node instance or any value used inside nodes (list of nodes
         and primitive values)
 
     :rtype: dict
     """
     if isinstance(node, Node):
         return dict(
-            {attr: node_to_dict(getattr(node, attr)) for attr in node.__slots__},
+            {
+                attr: node_to_dict(getattr(node, attr))
+                for attr in node.__slots__
+                if attr != "source"
+            },
             __kind__=node.__class__.__name__,
         )
     elif isinstance(node, list):
@@ -29,7 +33,14 @@ def node_to_dict(node):
 
 
 class Node(object):
-    __slots__ = ("loc",)
+    """ AST node.
+
+    All subclasses encode the language elements describe in
+    http://facebook.github.io/graphql/#sec-Language (Schema language related node are
+    still part of the draft spec (10 Jun 2018)).
+    """
+
+    __slots__ = ("source", "loc")
     __defaults__ = {}
 
     def __init__(self, *_, **kwargs):
@@ -56,6 +67,7 @@ class Node(object):
                 (
                     "%s=%s" % (attr, self.__getattribute__(attr))
                     for attr in self.__slots__
+                    if attr != "source"
                 )
             ),
         )
@@ -85,7 +97,7 @@ class Name(Node):
     :ivar value: str
     """
 
-    __slots__ = ("loc", "value")
+    __slots__ = ("source", "loc", "value")
 
 
 class Document(Node):
@@ -94,7 +106,7 @@ class Document(Node):
     :ivar definitions: list[Definition]
     """
 
-    __slots__ = ("loc", "definitions")
+    __slots__ = ("source", "loc", "definitions")
     __defaults__ = {"definitions": []}
 
 
@@ -135,7 +147,7 @@ class VariableDefinition(Node):
     :ivar default_value: Optional[Value]
     """
 
-    __slots__ = ("loc", "variable", "type", "default_value")
+    __slots__ = ("source", "loc", "variable", "type", "default_value")
 
 
 class Variable(Node):
@@ -144,7 +156,7 @@ class Variable(Node):
     :ivar name: Name
     """
 
-    __slots__ = ("loc", "name")
+    __slots__ = ("source", "loc", "name")
 
 
 class SelectionSet(Node):
@@ -153,7 +165,7 @@ class SelectionSet(Node):
     :ivar selections: list[Selection]
     """
 
-    __slots__ = ("loc", "selections")
+    __slots__ = ("source", "loc", "selections")
     __defaults__ = {"selections": []}
 
 
@@ -171,7 +183,15 @@ class Field(Selection):
     :ivar selection_set: Optional[SelectionSet]
     """
 
-    __slots__ = ("loc", "alias", "name", "arguments", "directives", "selection_set")
+    __slots__ = (
+        "source",
+        "loc",
+        "alias",
+        "name",
+        "arguments",
+        "directives",
+        "selection_set",
+    )
     __defaults__ = {"directives": [], "arguments": []}
 
 
@@ -182,7 +202,7 @@ class Argument(Node):
     :ivar value: Value
     """
 
-    __slots__ = ("loc", "name", "value")
+    __slots__ = ("source", "loc", "name", "value")
 
 
 class FragmentSpread(Selection):
@@ -192,7 +212,7 @@ class FragmentSpread(Selection):
     :ivar directives: list[Directive]
     """
 
-    __slots__ = ("loc", "name", "directives")
+    __slots__ = ("source", "loc", "name", "directives")
     __defaults__ = {"directives": []}
 
 
@@ -204,7 +224,7 @@ class InlineFragment(Selection):
     :ivar selection_set: SelectionSet
     """
 
-    __slots__ = ("loc", "type_condition", "directives", "selection_set")
+    __slots__ = ("source", "loc", "type_condition", "directives", "selection_set")
     __defaults__ = {"directives": []}
 
 
@@ -239,7 +259,7 @@ class IntValue(Value):
     :ivar value: str
     """
 
-    __slots__ = ("loc", "value")
+    __slots__ = ("source", "loc", "value")
 
     def __str__(self):
         return str(self.value)
@@ -251,7 +271,7 @@ class FloatValue(Value):
     :ivar value: str
     """
 
-    __slots__ = ("loc", "value")
+    __slots__ = ("source", "loc", "value")
 
     def __str__(self):
         return str(self.value)
@@ -264,7 +284,7 @@ class StringValue(Value):
     :ivar block: bool
     """
 
-    __slots__ = ("loc", "value", "block")
+    __slots__ = ("source", "loc", "value", "block")
     __defaults__ = {"block": False}
 
     def __str__(self):
@@ -280,7 +300,7 @@ class BooleanValue(Value):
     :ivar value: bool
     """
 
-    __slots__ = ("loc", "value")
+    __slots__ = ("source", "loc", "value")
 
     def __str__(self):
         return str(self.value).lower()
@@ -301,7 +321,7 @@ class EnumValue(Value):
     :ivar value: str
     """
 
-    __slots__ = ("loc", "value")
+    __slots__ = ("source", "loc", "value")
 
     def __str__(self):
         return str(self.value)
@@ -313,7 +333,7 @@ class ListValue(Value):
     :ivar value: list[Value]
     """
 
-    __slots__ = ("loc", "values")
+    __slots__ = ("source", "loc", "values")
 
 
 class ObjectValue(Value):
@@ -322,7 +342,7 @@ class ObjectValue(Value):
     :ivar fields: list[ObjectField]
     """
 
-    __slots__ = ("loc", "fields")
+    __slots__ = ("source", "loc", "fields")
     __defaults__ = {"fields": []}
 
 
@@ -333,7 +353,7 @@ class ObjectField(Node):
     :ivar value: Value
     """
 
-    __slots__ = ("loc", "name", "value")
+    __slots__ = ("source", "loc", "name", "value")
 
 
 class Directive(Node):
@@ -343,7 +363,7 @@ class Directive(Node):
     :ivar arguments: list[Argument]
     """
 
-    __slots__ = ("loc", "name", "arguments")
+    __slots__ = ("source", "loc", "name", "arguments")
     __defaults__ = {"arguments": []}
 
 
@@ -357,7 +377,7 @@ class NamedType(Type):
     :ivar name: Name
     """
 
-    __slots__ = ("loc", "name")
+    __slots__ = ("source", "loc", "name")
 
 
 class ListType(Type):
@@ -366,7 +386,7 @@ class ListType(Type):
     :ivar type: Type
     """
 
-    __slots__ = ("loc", "type")
+    __slots__ = ("source", "loc", "type")
 
 
 class NonNullType(Type):
@@ -375,7 +395,7 @@ class NonNullType(Type):
     :ivar type: NamedType|ListType
     """
 
-    __slots__ = ("loc", "type")
+    __slots__ = ("source", "loc", "type")
 
 
 class TypeSystemDefinition(Definition):
@@ -383,12 +403,12 @@ class TypeSystemDefinition(Definition):
 
 
 class SchemaDefinition(TypeSystemDefinition):
-    __slots__ = ("loc", "directives", "operation_types")
+    __slots__ = ("source", "loc", "directives", "operation_types")
     __defaults__ = {"directives": [], "operation_types": []}
 
 
 class OperationTypeDefinition(Node):
-    __slots__ = ("loc", "operation", "type")
+    __slots__ = ("source", "loc", "operation", "type")
 
 
 class TypeDefinition(TypeSystemDefinition):
@@ -396,47 +416,71 @@ class TypeDefinition(TypeSystemDefinition):
 
 
 class ScalarTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "directives")
+    __slots__ = ("source", "loc", "description", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class ObjectTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "interfaces", "directives", "fields")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "interfaces",
+        "directives",
+        "fields",
+    )
     __defaults__ = {"interfaces": [], "directives": [], "fields": []}
 
 
 class FieldDefinition(Node):
-    __slots__ = ("loc", "description", "name", "arguments", "type", "directives")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "arguments",
+        "type",
+        "directives",
+    )
     __defaults__ = {"arguments": [], "directives": []}
 
 
 class InputValueDefinition(Node):
-    __slots__ = ("loc", "description", "name", "type", "default_value", "directives")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "type",
+        "default_value",
+        "directives",
+    )
     __defaults__ = {"directives": []}
 
 
 class InterfaceTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "directives", "fields")
+    __slots__ = ("source", "loc", "description", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class UnionTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "directives", "types")
+    __slots__ = ("source", "loc", "description", "name", "directives", "types")
     __defaults__ = {"directives": [], "types": []}
 
 
 class EnumTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "directives", "values")
+    __slots__ = ("source", "loc", "description", "name", "directives", "values")
     __defaults__ = {"directives": [], "values": []}
 
 
 class EnumValueDefinition(Node):
-    __slots__ = ("loc", "description", "name", "directives")
+    __slots__ = ("source", "loc", "description", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class InputObjectTypeDefinition(TypeDefinition):
-    __slots__ = ("loc", "description", "name", "directives", "fields")
+    __slots__ = ("source", "loc", "description", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
@@ -445,35 +489,35 @@ class TypeExtension(TypeSystemDefinition):
 
 
 class ScalarTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "directives")
+    __slots__ = ("source", "loc", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class ObjectTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "interfaces", "directives", "fields")
+    __slots__ = ("source", "loc", "name", "interfaces", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class InterfaceTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "directives", "fields")
+    __slots__ = ("source", "loc", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class UnionTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "directives", "types")
+    __slots__ = ("source", "loc", "name", "directives", "types")
     __defaults__ = {"directives": [], "types": []}
 
 
 class EnumTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "directives", "values")
+    __slots__ = ("source", "loc", "name", "directives", "values")
     __defaults__ = {"directives": [], "values": []}
 
 
 class InputObjectTypeExtension(TypeExtension):
-    __slots__ = ("loc", "name", "directives", "fields")
+    __slots__ = ("source", "loc", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class DirectiveDefinition(TypeSystemDefinition):
-    __slots__ = ("loc", "description", "name", "arguments", "locations")
+    __slots__ = ("source", "loc", "description", "name", "arguments", "locations")
     __defaults__ = {"arguments": [], "locations": []}

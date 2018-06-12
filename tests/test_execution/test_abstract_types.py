@@ -302,14 +302,14 @@ def test_type_resolution_supports_object_attribute():
     )
 
     class Dog(object):
-        __graphql_type__ = DogType
+        __typename__ = DogType
 
         def __init__(self, name, woofs):
             self.name = name
             self.woofs = woofs
 
     class Cat(object):
-        __graphql_type__ = "Cat"
+        __typename__ = "Cat"
 
         def __init__(self, name, meows):
             self.name = name

@@ -3,7 +3,7 @@
 
 import pytest
 
-from py_gql.exc import ExecutionError, ResolverError, SchemaError
+from py_gql.exc import ExecutionError, ResolverError
 from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
@@ -26,13 +26,7 @@ from ._test_utils import TESTED_EXECUTORS, check_execution
 def test_raises_if_no_schema_is_provided():
     with pytest.raises(AssertionError) as exc_info:
         execute(None, parse("{ field }"))
-    assert str(exc_info.value) == "Invalid schema"
-
-
-def test_raises_if_invalid_schema_is_provided():
-    with pytest.raises(SchemaError) as exc_info:
-        execute(Schema(String), parse("{ field }"))
-    assert str(exc_info.value) == 'Query must be ObjectType but got "String"'
+    assert str(exc_info.value) == "Expected Schema object"
 
 
 def test_expects_document(starwars_schema):
@@ -55,7 +49,7 @@ def test_raises_on_missing_operation(starwars_schema):
             """,
         )
 
-    assert "Must provide an operation" in str(exc_info.value)
+    assert "Expected at least one operation" in str(exc_info.value)
 
 
 def _test_schema(field):
@@ -92,7 +86,7 @@ def test_raises_if_no_operation_is_provided():
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
         execute(_test_schema(String), parse("fragment Example on Query { test }"))
-    assert str(exc_info.value) == "Must provide an operation"
+    assert str(exc_info.value) == "Expected at least one operation"
 
 
 def test_raises_if_no_operation_name_is_provided_along_multiple_operations():

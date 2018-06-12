@@ -20,6 +20,7 @@ from ..exc import (
     UnknownEnumValue,
     ExecutionError,
     VariableCoercionError,
+    VariablesCoercionError,
     ResolverError,
     UnknownType,
 )
@@ -91,7 +92,7 @@ def execute(
         should work.
     """
     # Programmer errors
-    assert isinstance(schema, Schema) and schema.validate(), "Invalid schema"
+    assert isinstance(schema, Schema), "Expected Schema object"
     assert isinstance(ast, _ast.Document), "Expected document"
     assert variables is None or isinstance(
         variables, dict
@@ -162,7 +163,7 @@ def get_operation(document, operation_name):
     ]
 
     if not operations:
-        raise ExecutionError("Must provide an operation")
+        raise ExecutionError("Expected at least one operation")
 
     if not operation_name:
         if len(operations) == 1:
@@ -208,7 +209,11 @@ def coerce_variable_values(schema, operation, variables=None):
             var_type = schema.get_type_from_literal(var_def.type)
         except UnknownType as err:
             errors.append(
-                'Unknown type "%s" for variable "$%s"' % (print_ast(var_def.type), name)
+                VariableCoercionError(
+                    'Unknown type "%s" for variable "$%s"'
+                    % (print_ast(var_def.type), name),
+                    [var_def],
+                )
             )
             continue
 
@@ -217,8 +222,11 @@ def coerce_variable_values(schema, operation, variables=None):
         # parsing / execution to save some cycles.
         if not is_input_type(var_type):
             errors.append(
-                'Variable "$%s" expected value of type "%s" which cannot be used as '
-                "an input type." % (name, print_ast(var_def.type))
+                VariableCoercionError(
+                    'Variable "$%s" expected value of type "%s" which cannot be used '
+                    "as an input type." % (name, print_ast(var_def.type)),
+                    [var_def],
+                )
             )
             continue
 
@@ -229,26 +237,36 @@ def coerce_variable_values(schema, operation, variables=None):
                         var_def.default_value, var_type
                     )
                 except InvalidValue as err:
+                    print(err)
                     errors.append(
-                        'Variable "$%s" got invalid default value %s (%s)'
-                        % (name, print_ast(var_def.default_value), err)
+                        VariableCoercionError(
+                            'Variable "$%s" got invalid default value %s (%s)'
+                            % (name, print_ast(var_def.default_value), err),
+                            [var_def],
+                        )
                     )
             elif isinstance(var_type, NonNullType):
                 errors.append(
-                    'Variable "$%s" of required type "%s" was not provided.'
-                    % (name, var_type)
+                    VariableCoercionError(
+                        'Variable "$%s" of required type "%s" was not provided.'
+                        % (name, var_type),
+                        [var_def],
+                    )
                 )
         else:
             try:
                 coerced[name] = coerce_value(variables[name], var_type)
             except (InvalidValue, CoercionError) as err:
                 errors.append(
-                    'Variable "$%s" got invalid value %s (%s)'
-                    % (name, json.dumps(variables[name], sort_keys=True), err)
+                    VariableCoercionError(
+                        'Variable "$%s" got invalid value %s (%s)'
+                        % (name, json.dumps(variables[name], sort_keys=True), err),
+                        [var_def],
+                    )
                 )
 
     if errors:
-        raise VariableCoercionError(errors)
+        raise VariablesCoercionError(errors)
 
     return coerced
 
@@ -379,8 +397,10 @@ def _field_def(schema, parent_type, name):
 def _resolve_type(value, context, schema, abstract_type):
     if callable(getattr(abstract_type, "resolve_type", None)):
         return abstract_type.resolve_type(value, context=context, schema=schema)
-    elif hasattr(value, "__graphql_type__") and value.__graphql_type__:
-        return value.__graphql_type__
+    if isinstance(value, dict) and value.get("__typename__"):
+        return value["__typename__"]
+    elif hasattr(value, "__typename__") and value.__typename__:
+        return value.__typename__
     else:
         possible_types = schema.get_possible_types(abstract_type)
         for typ in possible_types:
@@ -418,11 +438,7 @@ def _defer_field(
 
 
 def execute_selections(ctx, selections, object_type, object_value, path=None):
-    try:
-        fields = collect_fields(ctx, object_type, selections)
-    except (InvalidValue, CoercionError) as err:
-        raise ExecutionError.new(err)
-
+    fields = collect_fields(ctx, object_type, selections)
     deferred_fields = []
     path = path or Path()
 
@@ -461,11 +477,7 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
 
 
 def execute_selections_serially(ctx, selections, object_type, object_value, path=None):
-    try:
-        fields = collect_fields(ctx, object_type, selections)
-    except (InvalidValue, CoercionError) as err:
-        raise ExecutionError.new(err)
-
+    fields = collect_fields(ctx, object_type, selections)
     resolved_fields = []
     steps = []
 
