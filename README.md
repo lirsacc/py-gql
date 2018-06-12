@@ -1,68 +1,73 @@
-PyGQL
-=====
+# PyGQL
 
 > Implementation of GraphQL primitives for Python.
+>
+> This library should always track the latest version of the [spec](http://facebook.github.io/graphql/).
 
-**WARNING: This is not production ready**
+**:construction: WIP! Do not use this in production :construction:**
 
-This is for now a learning project born out of frustration with graphql-core and Graphene. The main goals for me are in order of importance:
+This is for now a learning project born out of some frustrations with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work and on personal projects. While they work fairly well and we still run with them in production I figured I could tackle the following goals better by starting this.
 
-1. personnally get a deeper understanding of GraphQL by implementing the spec.
+1.  personnally get a deeper understanding of GraphQL by implementing the spec.
 
-2. experiment and provide a (albeit subjectively) nicer interface for Python (aiming for something in between graphql-core and Graphene) which tracks the most recent graphql spec (graphql-core doesn't, e.g. `null` support which has been in limbo for a while) and doesn't expose non Python concepts like returning `undefined` to denote an exception
+2.  experiment and provide a (albeit subjectively) nicer interface for Python (aiming for something in between graphql-core and Graphene) which tracks the most recent graphql spec (~~graphql-core doesn't, e.g. `null` support which has been in limbo for a while~~, glad to see that doesn't seem to be the case anynmore) and doesn't expose Javascript idioms like returning `undefined` to denote an exception
 
-3. solve some performance issue we encountered with graphql-core at work (mostly handling of large result sets and making solving the N+1 issue easier + adding some hooks where we were missing them)
+3.  solve some performance issue we encountered with graphql-core at work (mostly handling of large result sets and making solving the N+1 issue easier + adding some hooks where we were missing them)
 
-4. (optional) Some kind of sqlalchemy integration / automation for simple table objects (i.e. not relying on the ORM which I tend to not use), most likely as a separate module / extra require
+4.  (later) Some convenience helpers for generating schemas and generally making working with GraphQL easier. One candidate is [sqlalchemy](https://www.sqlalchemy.org/) integration.
 
-Regardless of points 2 / 3 I am not trying to diminish the work that went into Graphene / graphql-core (which we still use in production) but figured this would be a nice approach at addressing these pet peeves coupled with 1 which I wanted to do anyways. The interface is not meant to be as high level as graphene and provide abstraction around regular classes but mostly meant to work with standard dicts.
+For now, this is largely based on the [GraphQL JS](https://github.com/graphql/graphql-js) implementation and extensive test suite as the first goal is to get a working library covering the current spec and working synchronously. As such naming and implementation might be similar and there are some comments documenting the divergences; but it is not supposed to be a 1-1 port and the internals / api are meant to be iterated upon and diverge more over time once the current spec is implemented.
 
-For now, this is largely based on the [GraphQL JS](https://github.com/graphql/graphql-js) implementation and extensive test suite as the first goal is to get a working library covering the current spec and working synchronously. As such naming and implementation might be similar and there are some comments documenting the divergences; but it is not supposed to be a 1-1 port and the internals / api are meant to be iterated upon and diverge more over time once the current spec (and some of the draft spec) is implemented. 
+## TODO
 
-This library should always track the latest version of the [spec](http://facebook.github.io/graphql/) which is currently the [October 2016](http://facebook.github.io/graphql/October2016) version.
+-   [x] First heads down dev round = synchronous version of the spec that supports resolving complex queries ([8ea52113c280](https://github.com/lirsacc/py-gql/tree/8ea52113c280)).
 
+-   **Spec review**
 
-Note on IDL / Schema definitions
---------------------------------
+    -   [ ] Make sure we still match the newly releases spec ([June 2018](http://facebook.github.io/graphql/June2018/)), should already be the case but tehe latest changes may not have made it through
 
-At the time of writing (25 May 2018) the Schema definition language or IDL is part of the [working draft](http://facebook.github.io/graphql/draft) and not the current spec. Support for it in this library is partial and not guaranteed. Currently supported features are:
+    -   [ ] Go over TODO/WARN/REVIEW comments and review marked behaviour
 
-- parsing such documents into AST nodes (behind a flag)
-- traversing the resulting AST
-- validating the resulting AST according to the working draft 
+    -   [ ] Review all skipped / xfail tests and resolve issue
 
-There is currently no mechanism to generate an executable schema from such an AST but most of the tools to implement this should be available.
+-   **Execution / Consuming a GraphQL schema**
 
-TODO
-----
+    -   [x] Figure out the interface and implement custom execution + support async / parallel resolution of fields. (Done with the `ThreadPoolExecutor` and nested dispatch, still need interface for asyncio)
+    -   [ ] Make subscriptions work in a spec compatible way without forcing user in a given observable library
+    -   [ ] Support custom directives
+    -   [ ] Figure a way to hook into the library (middlewares could be one, decorator on resolvers could also be nice). Main targets for this are custom dircetives and authorization / contextual schemas.
+    -   [ ] Implement asyncio executor and entry point
+    -   [ ] Review error handling as not all errors provide suggestions (not critical but nice to have) or exact source location.
+    -   [ ] Benchmark / trace execution to identify bottlenecks and compare with graphql-core. The first implementation was aimed at correctness and understanding of the specification and not necessarily performance.
+    -   [ ] Setup automated benchmark for execution, parsing, etc. to catch regressions
+    -   [ ] Implement custom validators (e.g. query depth) and types (Date, Datetime, etc.)
+    -   [ ] Provide a nicer interface for resolvers and returning / chaining `Future` objects
 
-- [ ] First heads down dev round = synchronous version of the spec that supports resolving complex queries.
+-   **SDL support**
 
-- [ ] Go over TODO/WARN/REVIEW comments and review marked behaviour
+    -   [x] Implement schema generation
+    -   [ ] Support custom schema directives
+    -   [ ] Support full type extension
 
-- [ ] Review all skipped / xfail tests and resolve issue
+-   **Documentation**
 
-- [ ] Review error handling as not all errors provide suggestions (not critical but nice to have) or exact source location.
+    -   [ ] Set up sphinx to generate some basic documentation
+    -   [ ] Clean up docstrings and standardise on one format so Sphinx can generate consistent docs
+    -   [ ] Write some usage examples and readable docs
 
-- Execution
-  - Figure out the interface and implement custom execution + support async / parallel resolution of fields. 
-    - Currently thinking of going with something based on the `concurrent.{Future|Executor}` concepts.
-    - Current targetis executing resolvers in threads and in the event loop (`asyncio`, `trio`, etc.)
-  - Evaluate solution to expose subsciption behaviour
-  - Figure a way to hook into the library (middlewares could be one, decorator on resolvers could also be nice). Main targets for this are custom dircetives and authorization / contextual schemas.
+## Examples
 
-- Documentation
-    - [ ] Set up sphinx to generate some basic documentation
-    - [ ] Clean up docstrings and standardise on one format so Sphinx can generate docs
-    - [ ] Write some usage examples and readable docs
+Refer to the respective `README.md` in each directory for specific instructions.
 
-- [ ] Benchmark / trace execution to identify bottlenecks, compare with graphql-core. The first implementation was aimed at correctness and understanding of the specification and not necessarily performance.
+To install the dependencies for **all** the examples (should not conflict), run: `pip install -r examples/**/requirements.txt`.
 
+**List of examples:**
 
-Development
------------
+-   [SWAPI Proxy](./examples/swapi-proxy): A graphql server example which proxies all requests to [SWPAPI](https://swapi.co) and generates the runtime schema from an SDL.
 
-- Create a virtualenv: `python3 -m venv $WORKON_HOME/py-gql`.
-- Initially you can install the dependencies with `pip install -r dev-requirements.txt` and then just run `inv deps`.
-- All dev tasks are run with [`invoke`](http://www.pyinvoke.org/), use `inv -l` to list all available tasks.
-- Tests are run with [`pytest`](https://docs.pytest.org/en/latest/) and live in the `tests` directory.
+## Development
+
+-   Create a virtualenv: `python3 -m venv $WORKON_HOME/py-gql`.
+-   Initially you can install the dependencies with `pip install -r dev-requirements.txt` and then just run `inv deps`.
+-   All dev tasks are run with [`invoke`](http://www.pyinvoke.org/), use `inv -l` to list all available tasks.
+-   Tests are run with [`pytest`](https://docs.pytest.org/en/latest/) and live in the `tests` directory.

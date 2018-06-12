@@ -1,0 +1,201 @@
+type Query {
+    film(id: Int!): Film
+    all_films(search: String): [Film]
+    planet(id: Int!): Planet
+    all_planets(search: String): [Planet]
+    person(id: Int!): Person
+    all_people(search: String): [Person]
+}
+
+interface Object {
+    """
+    The id of this person.
+    """
+    id: Int!
+    """
+    the ISO 8601 date format of the time that this resource was created.
+    """
+    created: String
+    """
+    the ISO 8601 date format of the time that this resource was edited.
+    """
+    edited: String
+}
+
+"""
+A single person
+"""
+type Person implements Object {
+    """
+    The id of this person.
+    """
+    id: Int!
+    """
+    The name of this person.
+    """
+    name: String
+    """
+    The birth year of the person, using the in-universe standard of BBY or ABY - Before the Battle of Yavin or After the Battle of Yavin. The Battle of Yavin is a battle that occurs at the end of Star Wars episode IV: A New Hope.
+    """
+    birth_year: String
+    """
+    The eye color of this person. Will be "unknown" if not known or "n/a" if the person does not have an eye.
+    """
+    eye_color: String
+    """
+    The gender of this person. Either "Male", "Female" or "unknown", "n/a" if the person does not have a gender.
+    """
+    gender: String
+    """
+    The hair color of this person. Will be "unknown" if not known or "n/a" if the person does not have hair.
+    """
+    hair_color: String
+    """
+    The height of the person in centimeters.
+    """
+    height: String
+    """
+    The mass of the person in kilograms.
+    """
+    mass: String
+    """
+    The skin color of this person.
+    """
+    skin_color: String
+    """
+    The planet that this person was born on or inhabits.
+    """
+    homeworld: Planet
+    """
+    An array of film resource URLs that this person has been in.
+    """
+    films: [Film]
+    # """
+    # An array of species resource URLs that this person belongs to.
+    # """
+    # species: Array
+    # """
+    # An array of starship resource URLs that this person has piloted.
+    # """
+    # starships: Array
+    # """
+    # An array of vehicle resource URLs that this person has piloted.
+    # """
+    # vehicles: Array
+    """
+    the ISO 8601 date format of the time that this resource was created.
+    """
+    created: String
+    """
+    the ISO 8601 date format of the time that this resource was edited.
+    """
+    edited: String
+}
+
+"""
+A single film
+"""
+type Film implements Object {
+    """
+    The id of this film.
+    """
+    id: Int!
+    """
+    The title of this film
+    """
+    title: String
+    """
+    The episode number of this film
+    """
+    episode_id: Int
+    """
+    The opening paragraphs at the beginning of this film
+    """
+    opening_crawl: String
+    """
+    The name of the director of this film.
+    """
+    director: String
+    """
+    The name(s) of the producer(s) of this film. Comma separated.
+    """
+    producer: String
+    """
+    The ISO 8601 date format of film release at original creator country.
+    """
+    release_date: String
+    """
+    An array of planets that are in this film.
+    """
+    planets: [Planet]
+    """
+    The ISO 8601 date format of the time that this resource was created.
+    """
+    created: String
+    """
+    The ISO 8601 date format of the time that this resource was edited.
+    """
+    edited: String
+}
+
+"""
+A single planet
+"""
+type Planet implements Object {
+    """
+    The id of this planet.
+    """
+    id: Int!
+    """
+    The name of this planet.
+    """
+    name: String
+    """
+    The diameter of this planet in kilometers.
+    """
+    diameter: String
+    """
+    The number of standard hours it takes for this planet to complete a single rotation on its axis.
+    """
+    rotation_period: String
+    """
+    The number of standard days it takes for this planet to complete a single orbit of its local star.
+    """
+    orbital_period: String
+    """
+    A number denoting the gravity of this planet, where "1" is normal or 1 standard G. "2" is twice or 2 standard Gs. "0.5" is half or 0.5 standard Gs.
+    """
+    gravity: String
+    """
+    The average population of sentient beings inhabiting this planet.
+    """
+    population: String
+    """
+    The climate of this planet. Comma separated if diverse.
+    """
+    climate: String
+    """
+    The terrain of this planet. Comma separated if diverse.
+    """
+    terrain: String
+    """
+    The percentage of the planet surface that is naturally occurring water or bodies of water.
+    """
+    surface_water: String
+    """
+    An array of People that live on this planet.
+    """
+    residents: [Person]
+    """
+    An array of Film that this planet has appeared in.
+    """
+    films: [Film]
+    """
+    the ISO 8601 date format of the time that this resource was created.
+    """
+    created: String
+    """
+    the ISO 8601 date format of the time that this resource was edited.
+    """
+    edited: String
+}
