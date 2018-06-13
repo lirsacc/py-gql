@@ -405,6 +405,20 @@ def test_input_object():
     )
 
 
+def test_input_object_with_default_value():
+    _check(
+        """
+        input Input {
+            int: Int = 42
+        }
+
+        type Query {
+            field(in: Input): String
+        }
+        """
+    )
+
+
 def test_simple_argument_field_with_default():
     _check(
         """
@@ -867,3 +881,37 @@ def test_inject_resolvers_as_callable():
     )
 
     assert schema.query_type.fields[0].resolve() == "foo"
+
+
+def test_ignores_unused_extensions():
+    schema_from_ast(
+        """
+        type Query {
+            one: Int
+        }
+
+        extend type Object {
+            one: Int
+        }
+        """
+    )
+
+
+def test_raise_on_unused_extensions_with_flag():
+    with pytest.raises(SDLError) as exc_info:
+        schema_from_ast(
+            """
+            type Query {
+                one: Int
+            }
+
+            extend type Object {
+                one: Int
+            }
+            """,
+            _raise_on_unknown_extension=True,
+        )
+    assert exc_info.value.to_json() == {
+        "locations": [{"column": 13, "line": 6}],
+        "message": 'Cannot extend unknown type "Object"',
+    }

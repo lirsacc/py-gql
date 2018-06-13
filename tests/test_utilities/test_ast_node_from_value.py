@@ -123,7 +123,7 @@ def test_ast_node_from_value_with_list_types(value, input_type, expected):
 
 
 InputObject = InputObjectType(
-    "MyInputObj", [InputField("foo", Float), InputField("bar", Enum)]
+    "MyInputObj", [InputField("foo", Float), InputField("bar", NonNullType(Enum))]
 )
 
 
@@ -166,6 +166,8 @@ InputObject = InputObjectType(
                 ]
             ),
         ),
+        (42, ValueError('Value of type "MyInputObj" must be a dict')),
+        ({}, ValueError('Field "bar" of type "MyInputObj" is required')),
     ],
 )
 def test_ast_node_from_value_with_objects(value, expected):

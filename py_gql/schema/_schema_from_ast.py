@@ -5,15 +5,18 @@ import collections
 
 import six
 
-from .. import schema as _schema
 from ..exc import SDLError
 from ..lang import ast as _ast, parse
-from ..schema.directives import DeprecatedDirective
-from ..schema.scalars import SPECIFIED_SCALAR_TYPES, DefaultCustomScalar
+from . import types as _schema
+from .schema import Schema
+from .directives import DeprecatedDirective
+from .scalars import SPECIFIED_SCALAR_TYPES, DefaultCustomScalar
 from ..utilities import typed_value_from_ast, directive_arguments
 
 
-def schema_from_ast(ast, resolvers=None, known_types=None):  # noqa
+def schema_from_ast(
+    ast, resolvers=None, known_types=None, _raise_on_unknown_extension=False
+):
     """ Build a valid schema from a parsed AST
 
     The schema is validate at the end to ensure not invalid schema gets created.
@@ -35,8 +38,12 @@ def schema_from_ast(ast, resolvers=None, known_types=None):  # noqa
         override the extracted type without checking.
 
     WARN: Type extensions are ~~not supported yet~~ partially supported:
-        - Supported: InterfaceType, ObjectType, UnionType, EnumType, InputTypeExtension
+        - Supported: InterfaceType, ObjectType, UnionType, EnumType,
+          InputTypeExtension
         - Not supported (silently ignored): ScalarTypeExtension
+        - Extensions on unknown types are silently ignored.
+        - Extension validation is shared between this module and the schema
+          validation which is enforced at the end of this function anyways.
 
     WARN: Directives on type definitions and extensions are not suported yet
 
@@ -51,20 +58,24 @@ def schema_from_ast(ast, resolvers=None, known_types=None):  # noqa
         ast.definitions
     )
 
+    type_names = set(type_nodes.keys())
+    if _raise_on_unknown_extension:
+        for type_name, ext_node in extension_nodes.items():
+            if type_name not in type_names:
+                raise SDLError('Cannot extend unknown type "%s"' % type_name, ext_node)
+
     # Second pass = translate types in schema object
-    builder = _TypeMapBuilder(type_nodes, extension_nodes, known_types)
-    types = builder()
-    directives = builder.build_directives(directive_nodes)
+    builder = _TypeMapBuilder(
+        type_nodes,
+        directive_nodes,
+        extension_nodes,
+        known_types=known_types,
+        resolvers=resolvers,
+    )
+    types, directives = builder()
     operation_types = _operation_types(schema_definition, types)
 
-    for type in types.values():
-        if isinstance(type, _schema.ObjectType):
-            for field in type.fields:
-                field.resolve = field.resolve or _infer_resolver(
-                    resolvers, type.name, field.name
-                )
-
-    schema = _schema.Schema(
+    schema = Schema(
         query_type=operation_types.get("query"),
         mutation_type=operation_types.get("mutation"),
         subscription_type=operation_types.get("subscription"),
@@ -125,8 +136,7 @@ def _operation_types(schema_definition, type_map):
                 )
             if type_name not in type_map:
                 raise SDLError(
-                    "%s type %s not found in document"
-                    % (op, type_name),
+                    "%s type %s not found in document" % (op, type_name),
                     [schema_definition, opdef],
                 )
             operation_types[op] = type_map[type_name]
@@ -134,11 +144,25 @@ def _operation_types(schema_definition, type_map):
 
 
 class _TypeMapBuilder(object):
-    def __init__(self, type_nodes, extension_nodes, known_types=None):
+    """ Build a type map from a collection of nodes.
+    """
+
+    def __init__(
+        self,
+        type_nodes,
+        directive_nodes,
+        extension_nodes,
+        known_types=None,
+        resolvers=None,
+    ):
+        """
+        """
         self._type_nodes = type_nodes
+        self._directive_nodes = directive_nodes
         self._extension_nodes = extension_nodes
         self._cache = {}
         self._stack = []
+        self._resolvers = resolvers
 
         for type in known_types or []:
             self._cache[type.name] = type
@@ -147,13 +171,15 @@ class _TypeMapBuilder(object):
             self._cache[type.name] = type
 
     def __call__(self):
-        return {type.name: type for type in self.build_types(self._type_nodes.values())}
-
-    def build_directives(self, directive_defs):
-        return {
-            directive_def.name.value: self.build_directive(directive_def)
-            for directive_def in directive_defs.values()
+        """ Actually build types and directives. """
+        types = {
+            type.name: type for type in self.build_types(self._type_nodes.values())
         }
+        directives = {
+            directive_def.name.value: self.build_directive(directive_def)
+            for directive_def in self._directive_nodes.values()
+        }
+        return types, directives
 
     def ref(self, type_name):
         return lambda: self._cache[type_name]
@@ -217,6 +243,7 @@ class _TypeMapBuilder(object):
             return self.scalar_type(type_def)
         if isinstance(type_def, _ast.InputObjectTypeDefinition):
             return self.input_object_type(type_def)
+        raise TypeError(type(type_def))
 
     def object_type(self, node):
         t = _schema.ObjectType(
@@ -229,20 +256,49 @@ class _TypeMapBuilder(object):
                 else None
             ),
         )
+
+        field_names = set(f.name.value for f in node.fields)
+        iface_names = set(i.name.value for i in node.interfaces)
+
         for ext in self._extension_nodes[t.name]:
             if not isinstance(ext, _ast.ObjectTypeExtension):
                 raise SDLError(
-                    "Expected an ObjectTypeExtension node for ObjectType %s" % t.name,
+                    'Expected an ObjectTypeExtension node for ObjectType "%s" but got %s'
+                    % (t.name, type(ext).__name__),
                     [node],
                 )
-            t.fields.extend(
+
+            for ext_field in ext.fields:
+                if ext_field.name.value in field_names:
+                    raise SDLError(
+                        'Duplicate field "%s" when extending type "%s"'
+                        % (ext_field.name.value, t.name),
+                        [ext_field],
+                    )
+                field_names.add(ext_field.name.value)
+
+            for iface_field in ext.interfaces:
+                if iface_field.name.value in iface_names:
+                    raise SDLError(
+                        'Interface "%s" already implemented for type "%s"'
+                        % (iface_field.name.value, t.name),
+                        [iface_field],
+                    )
+                iface_names.add(iface_field.name.value)
+
+            t._fields.extend(
                 [self.object_field(field_node) for field_node in ext.fields]
             )
-            t.interfaces.extend(
+
+            t._interfaces.extend(
                 [self.build_type(iface) for iface in ext.interfaces]
                 if ext.interfaces
-                else None
+                else []
             )
+
+        for field in t._fields:
+            field.resolve = _infer_resolver(self._resolvers, t.name, field.name)
+
         return t
 
     def interface_type(self, node):
@@ -251,14 +307,27 @@ class _TypeMapBuilder(object):
             description=(node.description.value if node.description else None),
             fields=[self.object_field(field_node) for field_node in node.fields],
         )
+
+        field_names = set(f.name.value for f in node.fields)
+
         for ext in self._extension_nodes[t.name]:
             if not isinstance(ext, _ast.InterfaceTypeExtension):
                 raise SDLError(
-                    "Expected an InterfaceTypeExtension node for InterfaceType %s"
-                    % t.name,
+                    'Expected an InterfaceTypeExtension node for InterfaceType "%s" but got %s'
+                    % (t.name, type(ext).__name__),
                     [node],
                 )
-            t.fields.extend(
+
+            for ext_field in ext.fields:
+                if ext_field.name.value in field_names:
+                    raise SDLError(
+                        'Duplicate field "%s" when extending interface "%s"'
+                        % (ext_field.name.value, t.name),
+                        [ext_field],
+                    )
+                field_names.add(ext_field.name.value)
+
+            t._fields.extend(
                 [self.object_field(field_node) for field_node in ext.fields]
             )
         return t
@@ -289,13 +358,27 @@ class _TypeMapBuilder(object):
     def enum_type(self, node):
         values = [self.enum_value(v) for v in node.values]
         name = node.name.value
+
+        known_values = set(v.name for v in values)
         for ext in self._extension_nodes[name]:
-            if not isinstance(ext, _ast.UnionTypeExtension):
+            if not isinstance(ext, _ast.EnumTypeExtension):
                 raise SDLError(
-                    "Expected an UnionTypeExtension node for UnionType %s" % name,
+                    'Expected an EnumTypeExtension node for EnumType "%s" but got %s'
+                    % (name, type(ext).__name__),
                     [node],
                 )
+
+            for value in ext.values:
+                if value.name.value in known_values:
+                    raise SDLError(
+                        'Duplicate enum value "%s" when extending EnumType "%s"'
+                        % (value.name.value, name),
+                        [value],
+                    )
+                known_values.add(value.name.value)
+
             values.extend([self.enum_value(v) for v in ext.values])
+
         return _schema.EnumType(
             name=name,
             description=(node.description.value if node.description else None),
@@ -316,13 +399,15 @@ class _TypeMapBuilder(object):
             description=(node.description.value if node.description else None),
             types=[self.build_type(type) for type in node.types],
         )
+
         for ext in self._extension_nodes[t.name]:
             if not isinstance(ext, _ast.UnionTypeExtension):
                 raise SDLError(
-                    "Expected an UnionTypeExtension node for UnionType %s" % t.name,
+                    'Expected an UnionTypeExtension node for UnionType "%s" but got %s'
+                    % (t.name, type(ext).__name__),
                     [node],
                 )
-            t.types.extend([self.build_type(type) for type in ext.types])
+            t._types.extend([self.build_type(type) for type in ext.types])
         return t
 
     def scalar_type(self, node):
@@ -332,11 +417,36 @@ class _TypeMapBuilder(object):
         )
 
     def input_object_type(self, node):
-        return _schema.InputObjectType(
+        t = _schema.InputObjectType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
             fields=[self.input_field(field_node) for field_node in node.fields],
         )
+
+        field_names = set(f.name.value for f in node.fields)
+
+        for ext in self._extension_nodes[t.name]:
+            if not isinstance(ext, _ast.InputObjectTypeExtension):
+                raise SDLError(
+                    'Expected an InputObjectTypeExtension node for InputObjectType "%s" but got %s'
+                    % (t.name, type(ext).__name__),
+                    [node],
+                )
+
+            for ext_field in ext.fields:
+                if ext_field.name.value in field_names:
+                    raise SDLError(
+                        'Duplicate field "%s" when extending input object "%s"'
+                        % (ext_field.name.value, t.name),
+                        [ext_field],
+                    )
+                field_names.add(ext_field.name.value)
+
+            t._fields.extend(
+                [self.input_field(field_node) for field_node in ext.fields]
+            )
+
+        return t
 
     def input_field(self, node):
         type = self.build_type(node.type)
@@ -358,5 +468,7 @@ def _infer_resolver(resolvers, type_name, field_name):
     if callable(resolvers):
         return resolvers(type_name, field_name)
     elif isinstance(resolvers, dict):
+        if type_name in resolvers and isinstance(resolvers[type_name], dict):
+            return resolvers[type_name].get(field_name)
         return resolvers.get("%s.%s" % (type_name, field_name))
     return None
