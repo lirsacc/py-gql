@@ -42,6 +42,8 @@ def single_resource_resolver(resource):
 def nested_single_resource_resolver(key, resource):
     @swapi_caller
     def resolve(obj, args, ctx, info):
+        if obj is None:
+            return None
         id = int(obj[key].split("/")[-2])
         return info.executor.submit(swapi.fetch_one, resource, id)
 
@@ -59,6 +61,8 @@ def resource_resolver(resource):
 def nested_list_resolver(key, resource):
     @swapi_caller
     def resolve(obj, args, ctx, info):
+        if obj is None:
+            return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
         return _concurrency.all_(
             [info.executor.submit(swapi.fetch_one, resource, id) for id in ids]
@@ -67,31 +71,25 @@ def nested_list_resolver(key, resource):
     return resolve
 
 
-single_fields = {"Query.person": "people", "Person.homeworld": "planets"}
-list_fields = {"Planet.residents": "people"}
-resources = ("films", "people", "planets")
-
-
-def infer_resolver(typename, fieldname):
-    path = typename + "." + fieldname
-    if typename == "Query" and fieldname.startswith("all_"):
-        resource = fieldname.split("_")[-1]
-        if resource in resources:
-            return resource_resolver(resource)
-        elif path in single_fields:
-            return single_resource_resolver(single_fields[path])
-        elif fieldname + "s" in resources:
-            return single_resource_resolver(fieldname)
-    elif path in single_fields:
-        return nested_single_resource_resolver(fieldname, single_fields[path])
-    elif fieldname + "s" in resources:
-        return nested_single_resource_resolver(fieldname, fieldname + "s")
-    elif path in list_fields:
-        return nested_list_resolver(fieldname, list_fields[path])
-    elif fieldname in resources:
-        return nested_list_resolver(fieldname, fieldname)
-    return None
-
+RESOLVERS = {
+    "Query": {
+        "film": single_resource_resolver("films"),
+        "all_films": resource_resolver("films"),
+        "planet": single_resource_resolver("planets"),
+        "all_planets": resource_resolver("planets"),
+        "person": single_resource_resolver("people"),
+        "all_people": resource_resolver("people"),
+    },
+    "Film": {"planets": nested_list_resolver("planets", "planets")},
+    "Planet": {
+        "residents": nested_list_resolver("residents", "people"),
+        "films": nested_list_resolver("films", "films"),
+    },
+    "Person": {
+        "homeworld": nested_single_resource_resolver("homeworld", "planets"),
+        "films": nested_list_resolver("films", "films"),
+    },
+}
 
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
-    schema = schema_from_ast(f.read(), resolvers=infer_resolver)
+    schema = schema_from_ast(f.read(), resolvers=RESOLVERS)
