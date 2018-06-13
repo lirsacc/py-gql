@@ -40,7 +40,12 @@ from ..schema import (
     is_input_type,
 )
 from ..schema.introspection import schema_field, type_field, type_name_field
-from ..utilities import typed_value_from_ast, coerce_value, coerce_argument_values
+from ..utilities import (
+    typed_value_from_ast,
+    coerce_value,
+    coerce_argument_values,
+    default_resolver,
+)
 from ._utils import ExecutionContext, ResolveInfo, directive_arguments
 from .executors import DefaultExecutor, Executor
 from . import _concurrency
@@ -422,6 +427,7 @@ def _defer_field(
 ):
     return _concurrency.except_(
         _concurrency.chain(
+            # FIXME: Scope hoisting issue, need to fix and remove one step
             _concurrency.deferred(None),
             lambda _: resolve_field(
                 ctx, object_type, object_value, field_def, nodes, path
@@ -522,18 +528,7 @@ def execute_selections_serially(ctx, selections, object_type, object_value, path
 
 def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
     """ Execute a field resolver in the current executor and expose
-    result as a Future.
-
-    Lookup of order for the resolver function is:
-
-        1. field definition
-        2. item in the root value, executed in the executor if callable
-           returned as is otherwise
-        3. attribute of the root value, executed in the executor if callable
-           (method, parent value is not passed) returned as is otherwise
-    """
-    field_name = nodes[0].name.value
-
+    result as a Future. """
     info = ResolveInfo(
         field_def,
         parent_type,
@@ -545,27 +540,9 @@ def resolve_field(ctx, parent_type, parent_value, field_def, nodes, path):
         nodes,
         ctx.executor,
     )
-
     args = coerce_argument_values(field_def, nodes[0], ctx.variables)
-
-    if field_def.resolve is None:
-        if isinstance(parent_value, dict):
-            field_value = parent_value.get(field_name, None)
-            if callable(field_value):
-                return ctx.executor.submit(
-                    field_value, parent_value, args, ctx.context, info
-                )
-            return _concurrency.deferred(field_value)
-        else:
-            attr_value = getattr(parent_value, field_name, None)
-            # Call methods / support lazy evaluation
-            if callable(attr_value):
-                return ctx.executor.submit(attr_value, args, ctx.context, info)
-            return _concurrency.deferred(attr_value)
-    else:
-        return ctx.executor.submit(
-            field_def.resolve, parent_value, args, ctx.context, info
-        )
+    resolver = field_def.resolve or default_resolver
+    return ctx.executor.submit(resolver, parent_value, args, ctx.context, info)
 
 
 def complete_value(ctx, field_type, nodes, resolved_value, path):
@@ -653,5 +630,5 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path):
     else:
         runtime_type = field_type
 
-    selections = list(flatten((f.selection_set.selections for f in nodes)))
+    selections = list(flatten(f.selection_set.selections for f in nodes))
     return execute_selections(ctx, selections, runtime_type, object_value, path)

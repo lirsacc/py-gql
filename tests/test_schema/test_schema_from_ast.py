@@ -2,11 +2,11 @@
 
 import pytest
 
-from py_gql.exc import SDLError
 from py_gql._string_utils import parse_block_string
+from py_gql.exc import SDLError
 from py_gql.execution import execute
 from py_gql.lang import parse
-from py_gql.schema import print_schema, schema_from_ast, UUID
+from py_gql.schema import UUID, print_schema, schema_from_ast
 from py_gql.schema.directives import SPECIFIED_DIRECTIVES
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
@@ -853,7 +853,22 @@ def test_inject_custom_types():
     assert schema.types["UUID"] is UUID
 
 
-def test_inject_resolvers_as_map():
+def test_inject_resolvers():
+    resolvers = {"Query": {"foo": lambda *_: "foo"}}
+
+    schema = schema_from_ast(
+        """
+        type Query {
+            foo: String
+        }
+        """,
+        resolvers=resolvers,
+    )
+
+    assert schema.query_type.fields[0].resolve() == "foo"
+
+
+def test_inject_resolvers_as_flat_map():
     resolvers = {"Query.foo": lambda *_: "foo"}
 
     schema = schema_from_ast(

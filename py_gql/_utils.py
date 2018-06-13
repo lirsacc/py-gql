@@ -342,3 +342,34 @@ class Path(object):
         return bool(self._entries)
 
     __nonzero__ = __bool__
+
+
+def nested_key(obj, *keys, default=MISSING):
+    """ Safely extract nested key from dicts and lists.
+
+    >>> source = {'foo': {'bar': [{}, {}, {'baz': 42}]}}
+
+    >>> nested_key(source, 'foo', 'bar', 2, 'baz')
+    42
+
+    >>> nested_key(source, 'foo', 'bar', 10, 'baz')
+    Traceback (most recent call last):
+        ...
+    IndexError: list index out of range
+
+    >>> nested_key(source, 'foo', 'bar', 10, 'baz', default=None) is None
+    True
+
+    >>> nested_key(source, 'foo', 'baz', default=None) is None
+    True
+
+    """
+    for key in keys:
+        try:
+            obj = obj[key]
+        except (KeyError, IndexError):
+            if default is not MISSING:
+                return default
+            else:
+                raise
+    return obj

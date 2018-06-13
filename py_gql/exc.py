@@ -198,3 +198,11 @@ class ResolverError(GraphQLLocatedError):
 
 class SDLError(GraphQLLocatedError):
     pass
+
+
+class TypeExtensionError(SDLError):
+    pass
+
+
+class SchemaDirectiveError(SDLError):
+    pass

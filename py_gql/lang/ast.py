@@ -50,10 +50,11 @@ class Node(object):
             self.__setattr__(attr, kwargs.get(attr, self.__defaults__.get(attr, None)))
 
     def __eq__(self, rhs):
-        return type(rhs) == self.__class__ and all(
+        return type(rhs) == type(self) and all(
             (
                 self.__getattribute__(attr) == rhs.__getattribute__(attr)
                 for attr in self.__slots__
+                if attr != "source"
             )
         )
 

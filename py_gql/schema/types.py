@@ -28,7 +28,7 @@ def evaluate_lazy_list(entries):
 _UNDEF = object()
 
 
-_RESERVED_NAMES = ("String", "Int", "Float", "ID", "Boolean")
+RESERVED_NAMES = ("String", "Int", "Float", "ID", "Boolean")
 
 
 class Type(object):
@@ -60,8 +60,9 @@ class WrappingType(Type):
     """ Represent types which wraps other types.
     """
 
-    def __init__(self, typ):
+    def __init__(self, typ, node=None):
         self._type = typ
+        self.node = node
 
     @cached_property
     def type(self):
@@ -78,9 +79,10 @@ class NonNullType(WrappingType):
     usually the id field of a database row will never be null.
     """
 
-    def __init__(self, typ):
+    def __init__(self, typ, node=None):
         assert not isinstance(typ, NonNullType)
         self._type = typ
+        self.node = node
 
     def __str__(self):
         return "%s!" % self.type
@@ -105,19 +107,20 @@ class InputField(object):
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
-    def __init__(self, name, typ, default_value=_UNDEF, description=None):
+    def __init__(self, name, typ, default_value=_UNDEF, description=None, node=None):
         """
         :type name: str
         :type typ: Type
         :type default_value: any
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.default_value = default_value
         self.description = description
         self.has_default_value = self.default_value is not _UNDEF
+        self.node = node
 
     @cached_property
     def type(self):
@@ -144,16 +147,17 @@ class InputObjectType(NamedType):
     fields lazily.
     """
 
-    def __init__(self, name, fields, description=None):
+    def __init__(self, name, fields, description=None, nodes=None):
         """
         :type name: str
         :type fields: dict(str, InputField)|[InputField]|callable
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._fields = fields
+        self.nodes = [] if nodes is None else nodes
 
     @cached_property
     def fields(self):
@@ -182,7 +186,9 @@ class EnumValue(object):
         else:
             raise TypeError("Invalid enum value definition %r" % definition)
 
-    def __init__(self, name, value=_UNDEF, deprecation_reason=None, description=None):
+    def __init__(
+        self, name, value=_UNDEF, deprecation_reason=None, description=None, node=None
+    ):
         """
         :type name: str
         :type value: Hashable
@@ -190,12 +196,13 @@ class EnumValue(object):
         :type description: str
         """
         assert name not in ("true", "false", "null")
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.value = value if value is not _UNDEF else name
         self.description = description
         self.deprecated = bool(deprecation_reason)
         self.deprecation_reason = deprecation_reason
+        self.node = node
 
     def __str__(self):
         return self.name
@@ -211,15 +218,16 @@ class EnumType(NamedType):
     [WARN] Enum values must be hashable for reverse lookup to be possible.
     """
 
-    def __init__(self, name, values, description=None):
+    def __init__(self, name, values, description=None, nodes=None):
         """
         :type name: str
         :type values: [EnumValue|str|Tuple[str, Hashable]|dict]
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
+        self.nodes = [] if nodes is None else nodes
         self.values = OrderedDict()
         self.reverse_values = OrderedDict()
         for v in values:
@@ -282,6 +290,7 @@ class ScalarType(NamedType):
         parse,
         parse_literal=None,
         description=None,
+        nodes=None,
         _specififed=False,
     ):
         """
@@ -291,12 +300,13 @@ class ScalarType(NamedType):
         :type parse_literal: callable
         :type description: str
         """
-        assert _specififed or name not in _RESERVED_NAMES, name
+        assert _specififed or name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._serialize = serialize
         self._parse = parse
         self._parse_literal = parse_literal
+        self.nodes = [] if nodes is None else nodes
 
     def serialize(self, value):
         """ Transform a Python value in a JSON serializable one """
@@ -332,20 +342,20 @@ class Argument(object):
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
-    def __init__(self, name, typ, default_value=_UNDEF, description=None):
+    def __init__(self, name, typ, default_value=_UNDEF, description=None, node=None):
         """
         :type name: str
         :type typ: Type
         :type default_value: any
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.default_value = default_value
         self.description = description
-
         self.has_default_value = self.default_value is not _UNDEF
+        self.node = node
 
     @cached_property
     def type(self):
@@ -375,6 +385,7 @@ class Field(object):
         deprecation_reason=None,
         resolve=None,
         subscribe=None,
+        node=None,
     ):
         """
         :type name: str
@@ -388,7 +399,7 @@ class Field(object):
         assert resolve is None or callable(resolve)
         assert subscribe is None or callable(subscribe)
 
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self._type = typ
         self.description = description
@@ -397,6 +408,7 @@ class Field(object):
         self.resolve = resolve
         self.subscribe = subscribe
         self._args = args
+        self.node = node
 
     @cached_property
     def type(self):
@@ -428,7 +440,13 @@ class ObjectType(NamedType):
     """
 
     def __init__(
-        self, name, fields, interfaces=None, is_type_of=None, description=None
+        self,
+        name,
+        fields,
+        interfaces=None,
+        is_type_of=None,
+        description=None,
+        nodes=None,
     ):
         """
         :type name: str
@@ -437,11 +455,12 @@ class ObjectType(NamedType):
         :type is_type_of: callable|type
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._fields = fields
         self._interfaces = interfaces
+        self.nodes = [] if nodes is None else nodes
 
         assert is_type_of is None or callable(is_type_of)
         if isinstance(is_type_of, type):
@@ -471,18 +490,21 @@ class InterfaceType(NamedType):
     is actually used when the field is resolved.
     """
 
-    def __init__(self, name, fields, types=None, resolve_type=None, description=None):
+    def __init__(
+        self, name, fields, types=None, resolve_type=None, description=None, nodes=None
+    ):
         """
         :type name: str
         :type fields: callable|dict(str, InputField)|[InputField]
         :type types: callable|[Type]|dict(str, Type)
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._types = types
         self._fields = fields
+        self.nodes = [] if nodes is None else nodes
 
         assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
@@ -508,16 +530,17 @@ class UnionType(NamedType):
     to determine which type is actually used when the field is resolved.
     """
 
-    def __init__(self, name, types, resolve_type=None, description=None):
+    def __init__(self, name, types, resolve_type=None, description=None, nodes=None):
         """
         :type name: str
         :type types: callable|[Type]|dict(str, Type)
         :type description: str
         """
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self._types = types
+        self.nodes = [] if nodes is None else nodes
 
         assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
@@ -535,7 +558,7 @@ class Directive(Type):
     these directly.
     """
 
-    def __init__(self, name, locations, args=None, description=None):
+    def __init__(self, name, locations, args=None, description=None, node=None):
         """
         :type name: str
         :type locations: [str]
@@ -543,11 +566,12 @@ class Directive(Type):
         :type description: str
         """
         assert locations and all([loc in DIRECTIVE_LOCATIONS for loc in locations])
-        assert name not in _RESERVED_NAMES, name
+        assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
         self.locations = locations
         self._args = args
+        self.node = node
 
     @cached_property
     def args(self):

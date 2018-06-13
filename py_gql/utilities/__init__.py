@@ -13,4 +13,4 @@ from ._coerce_value import (
 from ._introspection_query import introspection_query
 from .type_info import TypeInfoVisitor
 from .value_from_ast import untyped_value_from_ast, typed_value_from_ast
-
+from ._default_resolver import default_resolver

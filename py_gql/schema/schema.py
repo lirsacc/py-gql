@@ -39,6 +39,7 @@ class Schema(object):
         subscription_type=None,
         directives=None,
         types=None,
+        node=None,
     ):
         """
         :type query_type: py_gql.schema.types.ObjectType
@@ -62,6 +63,9 @@ class Schema(object):
         :param types:
             List of additional types on top of the types infered from the
             root types.
+
+        :type node: py_gql.lang.ast.Node
+        :param node: AST node for the schema if applicable
         """
         self.query_type = query_type
         self.mutation_type = mutation_type
@@ -69,6 +73,7 @@ class Schema(object):
 
         self._types = [query_type, mutation_type, subscription_type]
         self._types.append(__Schema__)
+        self.node = node
 
         # NOTE: This is the notion of the specified types being always
         # available. As a result of this line, intropection queries will always

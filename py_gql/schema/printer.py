@@ -5,12 +5,13 @@ from __future__ import unicode_literals
 
 import operator as op
 
-from .._string_utils import wrapped_lines, leading_whitespace
+from .._string_utils import leading_whitespace, wrapped_lines
 from ..lang import print_ast
 from ..utilities import ast_node_from_value
-from .directives import SPECIFIED_DIRECTIVES, DEFAULT_DEPRECATION
+from .directives import DEFAULT_DEPRECATION, SPECIFIED_DIRECTIVES
 from .introspection import is_introspection_type
 from .scalars import SPECIFIED_SCALAR_TYPES, String
+from .schema import Schema
 from .types import (
     EnumType,
     InputObjectType,
@@ -19,7 +20,6 @@ from .types import (
     ScalarType,
     UnionType,
 )
-from .schema import Schema
 
 
 def print_schema(schema, **opts):

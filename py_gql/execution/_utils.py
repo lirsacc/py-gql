@@ -2,7 +2,7 @@
 
 import six
 
-from ..exc import ResolverError, CoercionError
+from ..exc import CoercionError, ResolverError
 from ..utilities import directive_arguments
 
 

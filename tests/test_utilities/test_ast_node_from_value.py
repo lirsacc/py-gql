@@ -5,11 +5,11 @@ import pytest
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
     ID,
-    InputObjectType,
-    InputField,
     Boolean,
     EnumType,
     Float,
+    InputField,
+    InputObjectType,
     Int,
     ListType,
     NonNullType,

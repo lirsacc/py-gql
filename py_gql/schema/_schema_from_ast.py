@@ -5,24 +5,32 @@ import collections
 
 import six
 
-from ..exc import SDLError
-from ..lang import ast as _ast, parse
 from . import types as _schema
-from .schema import Schema
+from .._utils import is_iterable, nested_key
+from ..exc import SDLError, TypeExtensionError
+from ..lang import ast as _ast, parse
+from ..utilities import directive_arguments, typed_value_from_ast
 from .directives import DeprecatedDirective
 from .scalars import SPECIFIED_SCALAR_TYPES, DefaultCustomScalar
-from ..utilities import typed_value_from_ast, directive_arguments
+from .schema import Schema
 
 
 def schema_from_ast(
-    ast, resolvers=None, known_types=None, _raise_on_unknown_extension=False
+    document,
+    resolvers=None,
+    known_types=None,
+    schema_directives=None,
+    _raise_on_unknown_extension=False,
 ):
-    """ Build a valid schema from a parsed AST
+    """ Build a valid schema from a schema definition.
 
     The schema is validate at the end to ensure not invalid schema gets created.
 
-    :type ast: py_gql.lang.ast.Document|str
-    :param ast: Parse AST
+    :type document: py_gql.lang.ast.Document|str|List[str]
+    :param document: Schema definition AST(s)
+        A document will be used as is while a string or multiple string will
+        be parsed first (potentially raising appropriate exceptions). List of
+        strings will be combined as a single SDL.
 
     :type resolvers: dict|callable
     :param resolvers: Used to infer field resolvers
@@ -31,8 +39,8 @@ def schema_from_ast(
         it with the `{type_name}.{field_name}` argument and use the return value
         if it is callable.
 
-    :type known_types: dict
-    :param known_types: User supplied dictionnary of known types
+    :type known_types: list
+    :param known_types: User supplied list of known types
         Use this to specify some custom implementation for scalar, enums, etc.
         WARN: In case of object types, interfaces, etc. the supplied type will
         override the extracted type without checking.
@@ -50,29 +58,41 @@ def schema_from_ast(
     WARN: Doesn't support comments-based description
     """
 
-    if isinstance(ast, six.string_types):
-        ast = parse(ast, allow_type_system=True)
+    if isinstance(document, six.string_types):
+        ast = parse(document, allow_type_system=True)
+    elif isinstance(document, _ast.Document):
+        ast = document
+    elif is_iterable(document, False):
+        document = parse("\n".join(document), allow_type_system=True)
+    else:
+        raise TypeError(type(document))
 
     # First pass = parse and extract relevant informaton
-    schema_definition, type_nodes, extension_nodes, directive_nodes = _extract_type(
+    schema_definition, type_nodes, extension_nodes, directive_nodes = _extract_types(
         ast.definitions
     )
 
-    type_names = set(type_nodes.keys())
     if _raise_on_unknown_extension:
+        type_names = set(type_nodes.keys())
+        if known_types:
+            type_names |= set((t.name for t in known_types))
+
         for type_name, ext_node in extension_nodes.items():
             if type_name not in type_names:
                 raise SDLError('Cannot extend unknown type "%s"' % type_name, ext_node)
 
-    # Second pass = translate types in schema object
-    builder = _TypeMapBuilder(
-        type_nodes,
-        directive_nodes,
-        extension_nodes,
-        known_types=known_types,
-        resolvers=resolvers,
+    # Second pass = translate types in schema object and apply extensions
+    types, directives = _build_types_and_directives(
+        type_nodes, directive_nodes, extension_nodes, known_types=known_types
     )
-    types, directives = builder()
+
+    # TODO: Should we do the same for resolve_type on Union and Interface ?
+    # Third pass associate resolvers
+    for schema_type in types.values():
+        if isinstance(schema_type, _schema.ObjectType):
+            for field in schema_type.fields:
+                field.resolve = _infer_resolver(resolvers, schema_type.name, field.name)
+
     operation_types = _operation_types(schema_definition, types)
 
     schema = Schema(
@@ -81,13 +101,44 @@ def schema_from_ast(
         subscription_type=operation_types.get("subscription"),
         types=types.values(),
         directives=directives.values(),
+        node=schema_definition,
     )
 
-    assert schema.validate()
+    schema.validate()
+
     return schema
 
 
-def _extract_type(definitions):
+def _deprecation_reason(node):
+    args = directive_arguments(DeprecatedDirective, node, {})
+    return args.get("reason") if args else None
+
+
+def _infer_resolver(resolvers, type_name, field_name):
+    if callable(resolvers):
+        return resolvers(type_name, field_name)
+    elif isinstance(resolvers, dict):
+        flat_key = "%s.%s" % (type_name, field_name)
+        if flat_key in resolvers:
+            return resolvers[flat_key]
+        return nested_key(resolvers, type_name, field_name, default=None)
+    return None
+
+
+def _extract_types(definitions):
+    """ Extract types, directives and extensions from a list of definition nodes
+
+    :type definitions: List[py_gql.lang.ast.Definition]
+    :param definitions: AST nodes
+
+    :rtype: Tuple[
+        Optional[py_gql.lang.ast.SchemaDefinition],
+        Mapping[str, py_gql.lang.ast.TypeDefinition],
+        Mapping[str, py_gql.lang.ast.TypeExtension],
+        Mapping[str, py_gql.lang.ast.DirectiveDefinition],
+    ]
+    :returns: schema_definition, type_definitions, type_extensions, directive_definitions
+    """
     schema_definition = None
     types = {}
     extensions = collections.defaultdict(list)
@@ -120,6 +171,8 @@ def _extract_type(definitions):
 
 
 def _operation_types(schema_definition, type_map):
+    """ Extract operation types from a schema_definiton and a type map.
+    """
     if schema_definition is None:
         return {
             k: type_map.get(k.capitalize(), None)
@@ -143,332 +196,547 @@ def _operation_types(schema_definition, type_map):
         return operation_types
 
 
-class _TypeMapBuilder(object):
-    """ Build a type map from a collection of nodes.
-    """
+class Ref(object):
+    def __init__(self, type_name, cache):
+        self._type_name = type_name
+        self._cache = cache
 
-    def __init__(
-        self,
-        type_nodes,
-        directive_nodes,
-        extension_nodes,
-        known_types=None,
-        resolvers=None,
-    ):
-        """
-        """
-        self._type_nodes = type_nodes
-        self._directive_nodes = directive_nodes
-        self._extension_nodes = extension_nodes
-        self._cache = {}
-        self._stack = []
-        self._resolvers = resolvers
-
-        for type in known_types or []:
-            self._cache[type.name] = type
-
-        for type in SPECIFIED_SCALAR_TYPES:
-            self._cache[type.name] = type
+    def __str__(self):
+        return "Ref(%s)" % self._type_name
 
     def __call__(self):
-        """ Actually build types and directives. """
-        types = {
-            type.name: type for type in self.build_types(self._type_nodes.values())
-        }
-        directives = {
-            directive_def.name.value: self.build_directive(directive_def)
-            for directive_def in self._directive_nodes.values()
-        }
-        return types, directives
+        return self._cache[self._type_name]
 
-    def ref(self, type_name):
-        return lambda: self._cache[type_name]
 
-    def build_directive(self, node):
+def _build_types_and_directives(  # noqa
+    type_nodes, directive_nodes, extension_nodes, known_types=None
+):
+    """ Build types from source nodes:
+
+    - Build type map
+    - Build directive map
+    - Associate reference node to types
+    - Apply type extensions
+
+    :type type_nodes: Mapping[str, py_gql.lang.ast.TypeDefinition]
+    :param type_nodes: Type definitions
+
+    :type directive_nodes: Mapping[str, py_gql.lang.ast.DirectiveDefinition]
+    :param directive_nodes: Directive definitions
+
+    :type extension_nodes: Mapping[str, py_gql.lang.ast.TypeExtension]
+    :param extension_nodes: Directive definitions
+
+    :type known_types: List[py_gql.schema.Type]
+    :param known_types: List of knonw types used to inject custom implementations
+        Most useful for scalars and enums but can be used for
+        WARN: Extensions will be applied to these types as well and the resulting types
+        may not be the same objects that were provided. Do not rely on type identity.
+
+    :rtype: Tuple[Mapping[str, py_gql.schema.Type], Mapping[str, py_gql.schema.Directive]]
+    :returns: (type_map, directive_map)
+    """
+    _cache = {}
+    _known_types = {t.name: t for t in (known_types or [])}
+
+    for _type in SPECIFIED_SCALAR_TYPES:
+        _cache[_type.name] = _type
+
+    def build_directive(node):
+        """
+        :type node: py_gql.lang.ast.DirectiveDefinition
+        :param node:
+
+        :rtype: py_gql.schema.Directive
+        """
         return _schema.Directive(
             name=node.name.value,
             description=(node.description.value if node.description else None),
             locations=[loc.value for loc in node.locations],
             args=(
-                [self.argument(arg) for arg in node.arguments]
+                [input_value(arg, _schema.Argument) for arg in node.arguments]
                 if node.arguments
                 else None
             ),
+            node=node,
         )
 
-    def build_types(self, type_nodes):
-        return [self.build_type(type_node) for type_node in type_nodes]
+    def build_type(type_node):
+        """
+        :type type_node: py_gql.lang.ast.TypeSystemDefinition
+        :param type_node:
 
-    def build_type(self, type_node):
+        :rtype: py_gql.schema.Type|Ref
+        """
         if isinstance(type_node, _ast.ListType):
-            return _schema.ListType(self.build_type(type_node.type))
+            return _schema.ListType(build_type(type_node.type), node=type_node)
 
         if isinstance(type_node, _ast.NonNullType):
-            return _schema.NonNullType(self.build_type(type_node.type))
+            return _schema.NonNullType(build_type(type_node.type), node=type_node)
 
         type_name = type_node.name.value
 
-        if type_name in self._cache:
-            return self._cache[type_name]
+        if type_name in _cache:
+            return _cache[type_name]
 
-        self._stack.append(type_name)
+            return _cache[type_name]
 
         if isinstance(type_node, _ast.NamedType):
-            type_def = self._type_nodes.get(type_name)
+            type_def = type_nodes.get(type_name) or _known_types.get(type_name)
             if type_def is None:
                 raise SDLError("Type %s not found in document" % type_name, type_node)
-            if type_name in self._stack:
-                # Leverage the ususal lazy evaluation of fields and types
-                # to prevent recursion issues
-                return self.ref(type_name)
-            self._cache[type_name] = self.build_type(type_def)
+            # Leverage the ususal lazy evaluation of fields and types
+            # to prevent recursion issues
+            return Ref(type_name, _cache)
         elif isinstance(type_node, _ast.TypeDefinition):
-            self._cache[type_name] = self.type_from_definition(type_node)
+            if type_name in _known_types:
+                _cache[type_name] = _known_types[type_name]
+            else:
+                _cache[type_name] = type_from_definition(type_node)
         else:
             raise TypeError(type(type_node))
 
-        self._stack.pop()
-        return self._cache[type_name]
+        return _cache[type_name]
 
-    def type_from_definition(self, type_def):
+    def type_from_definition(type_def):
+        """
+        :type type_node: py_gql.lang.ast.TypeDefinition
+        :param type_node:
+
+        :rtype: py_gql.schema.Type
+        """
         if isinstance(type_def, _ast.ObjectTypeDefinition):
-            return self.object_type(type_def)
+            return object_type(type_def)
         if isinstance(type_def, _ast.InterfaceTypeDefinition):
-            return self.interface_type(type_def)
+            return interface_type(type_def)
         if isinstance(type_def, _ast.EnumTypeDefinition):
-            return self.enum_type(type_def)
+            return enum_type(type_def)
         if isinstance(type_def, _ast.UnionTypeDefinition):
-            return self.union_type(type_def)
+            return union_type(type_def)
         if isinstance(type_def, _ast.ScalarTypeDefinition):
-            return self.scalar_type(type_def)
+            return scalar_type(type_def)
         if isinstance(type_def, _ast.InputObjectTypeDefinition):
-            return self.input_object_type(type_def)
+            return input_object_type(type_def)
         raise TypeError(type(type_def))
 
-    def object_type(self, node):
-        t = _schema.ObjectType(
+    def object_type(node):
+        """
+        :type type_node: py_gql.lang.ast.ObjectTypeDefinition
+        :param type_node:
+
+        :rtype: py_gql.schema.ObjectType
+        """
+        return _schema.ObjectType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
-            fields=[self.object_field(field_node) for field_node in node.fields],
+            fields=[object_field(field_node) for field_node in node.fields],
             interfaces=(
-                [self.build_type(iface) for iface in node.interfaces]
+                [build_type(iface) for iface in node.interfaces]
                 if node.interfaces
                 else None
             ),
+            nodes=[node],
         )
 
-        field_names = set(f.name.value for f in node.fields)
-        iface_names = set(i.name.value for i in node.interfaces)
+    def interface_type(node):
+        """
+        :type type_node: py_gql.lang.ast.InterfaceTypeDefinition
+        :param type_node:
 
-        for ext in self._extension_nodes[t.name]:
-            if not isinstance(ext, _ast.ObjectTypeExtension):
-                raise SDLError(
-                    'Expected an ObjectTypeExtension node for ObjectType "%s" but got %s'
-                    % (t.name, type(ext).__name__),
-                    [node],
-                )
-
-            for ext_field in ext.fields:
-                if ext_field.name.value in field_names:
-                    raise SDLError(
-                        'Duplicate field "%s" when extending type "%s"'
-                        % (ext_field.name.value, t.name),
-                        [ext_field],
-                    )
-                field_names.add(ext_field.name.value)
-
-            for iface_field in ext.interfaces:
-                if iface_field.name.value in iface_names:
-                    raise SDLError(
-                        'Interface "%s" already implemented for type "%s"'
-                        % (iface_field.name.value, t.name),
-                        [iface_field],
-                    )
-                iface_names.add(iface_field.name.value)
-
-            t._fields.extend(
-                [self.object_field(field_node) for field_node in ext.fields]
-            )
-
-            t._interfaces.extend(
-                [self.build_type(iface) for iface in ext.interfaces]
-                if ext.interfaces
-                else []
-            )
-
-        for field in t._fields:
-            field.resolve = _infer_resolver(self._resolvers, t.name, field.name)
-
-        return t
-
-    def interface_type(self, node):
-        t = _schema.InterfaceType(
+        :rtype: py_gql.schema.InterfaceType
+        """
+        return _schema.InterfaceType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
-            fields=[self.object_field(field_node) for field_node in node.fields],
+            fields=[object_field(field_node) for field_node in node.fields],
+            nodes=[node],
         )
 
-        field_names = set(f.name.value for f in node.fields)
+    def object_field(node):
+        """
+        :type type_node: py_gql.lang.ast.FieldDefinition
+        :param type_node:
 
-        for ext in self._extension_nodes[t.name]:
-            if not isinstance(ext, _ast.InterfaceTypeExtension):
-                raise SDLError(
-                    'Expected an InterfaceTypeExtension node for InterfaceType "%s" but got %s'
-                    % (t.name, type(ext).__name__),
-                    [node],
-                )
-
-            for ext_field in ext.fields:
-                if ext_field.name.value in field_names:
-                    raise SDLError(
-                        'Duplicate field "%s" when extending interface "%s"'
-                        % (ext_field.name.value, t.name),
-                        [ext_field],
-                    )
-                field_names.add(ext_field.name.value)
-
-            t._fields.extend(
-                [self.object_field(field_node) for field_node in ext.fields]
-            )
-        return t
-
-    def object_field(self, node):
+        :rtype: py_gql.schema.Field
+        """
         return _schema.Field(
             node.name.value,
-            self.build_type(node.type),
+            build_type(node.type),
             description=(node.description.value if node.description else None),
             args=(
-                [self.argument(arg) for arg in node.arguments]
+                [input_value(arg, _schema.Argument) for arg in node.arguments]
                 if node.arguments
                 else None
             ),
             deprecation_reason=_deprecation_reason(node),
+            node=node,
         )
 
-    def argument(self, node):
-        type = self.build_type(node.type)
-        kwargs = dict(
-            description=(node.description.value if node.description else None)
-        )
-        if node.default_value is not None:
-            kwargs["default_value"] = typed_value_from_ast(node.default_value, type)
+    def enum_type(node):
+        """
+        :type type_node: py_gql.lang.ast.EnumTypeDefinition
+        :param type_node:
 
-        return _schema.Argument(node.name.value, type, **kwargs)
-
-    def enum_type(self, node):
-        values = [self.enum_value(v) for v in node.values]
-        name = node.name.value
-
-        known_values = set(v.name for v in values)
-        for ext in self._extension_nodes[name]:
-            if not isinstance(ext, _ast.EnumTypeExtension):
-                raise SDLError(
-                    'Expected an EnumTypeExtension node for EnumType "%s" but got %s'
-                    % (name, type(ext).__name__),
-                    [node],
-                )
-
-            for value in ext.values:
-                if value.name.value in known_values:
-                    raise SDLError(
-                        'Duplicate enum value "%s" when extending EnumType "%s"'
-                        % (value.name.value, name),
-                        [value],
-                    )
-                known_values.add(value.name.value)
-
-            values.extend([self.enum_value(v) for v in ext.values])
-
+        :rtype: py_gql.schema.EnumType
+        """
         return _schema.EnumType(
-            name=name,
+            name=node.name.value,
             description=(node.description.value if node.description else None),
-            values=values,
+            values=[enum_value(v) for v in node.values],
+            nodes=[node],
         )
 
-    def enum_value(self, node):
+    def enum_value(node):
+        """
+        :type type_node: py_gql.lang.ast.EnumValueDefinition
+        :param type_node:
+
+        :rtype: py_gql.schema.EnumValue
+        """
         return _schema.EnumValue(
             name=node.name.value,
             description=(node.description.value if node.description else None),
             value=node.name.value,
             deprecation_reason=_deprecation_reason(node),
+            node=node,
         )
 
-    def union_type(self, node):
-        t = _schema.UnionType(
+    def union_type(node):
+        """
+        :type type_node: py_gql.lang.ast.UnionTypeDefinition
+        :param type_node:
+
+        :rtype: py_gql.schema.UnionType
+        """
+        return _schema.UnionType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
-            types=[self.build_type(type) for type in node.types],
+            types=[build_type(type) for type in node.types],
+            nodes=[node],
         )
 
-        for ext in self._extension_nodes[t.name]:
-            if not isinstance(ext, _ast.UnionTypeExtension):
-                raise SDLError(
-                    'Expected an UnionTypeExtension node for UnionType "%s" but got %s'
-                    % (t.name, type(ext).__name__),
-                    [node],
-                )
-            t._types.extend([self.build_type(type) for type in ext.types])
-        return t
+    def scalar_type(node):
+        """
+        :type type_node: py_gql.lang.ast.ScalarypeDefinition
+        :param type_node:
 
-    def scalar_type(self, node):
+        :rtype: py_gql.schema.Scalarype
+        """
         return DefaultCustomScalar(
             name=node.name.value,
             description=(node.description.value if node.description else None),
+            nodes=[node],
         )
 
-    def input_object_type(self, node):
-        t = _schema.InputObjectType(
+    def input_object_type(node):
+        """
+        :type type_node: py_gql.lang.ast.InputObjectTypeDefinition
+        :param type_node:
+
+        :rtype: py_gql.schema.InputObjectType
+        """
+        return _schema.InputObjectType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
-            fields=[self.input_field(field_node) for field_node in node.fields],
+            fields=[
+                input_value(field_node, _schema.InputField)
+                for field_node in node.fields
+            ],
+            nodes=[node],
         )
 
-        field_names = set(f.name.value for f in node.fields)
+    def input_value(node, cls):
+        """
+        :type type_node: py_gql.lang.ast.InputValueDefinition
+        :param type_node:
 
-        for ext in self._extension_nodes[t.name]:
-            if not isinstance(ext, _ast.InputObjectTypeExtension):
-                raise SDLError(
-                    'Expected an InputObjectTypeExtension node for InputObjectType "%s" but got %s'
-                    % (t.name, type(ext).__name__),
-                    [node],
-                )
+        :type cls: type
+        :param cls: Argument or InputField
 
-            for ext_field in ext.fields:
-                if ext_field.name.value in field_names:
-                    raise SDLError(
-                        'Duplicate field "%s" when extending input object "%s"'
-                        % (ext_field.name.value, t.name),
-                        [ext_field],
-                    )
-                field_names.add(ext_field.name.value)
-
-            t._fields.extend(
-                [self.input_field(field_node) for field_node in ext.fields]
-            )
-
-        return t
-
-    def input_field(self, node):
-        type = self.build_type(node.type)
+        :rtype: py_gql.schema.Argument|py_gql.schema.InputField
+        """
+        type = build_type(node.type)
         kwargs = dict(
-            description=(node.description.value if node.description else None)
+            description=(node.description.value if node.description else None),
+            node=node,
         )
         if node.default_value is not None:
             kwargs["default_value"] = typed_value_from_ast(node.default_value, type)
 
-        return _schema.InputField(node.name.value, type, **kwargs)
+        return cls(node.name.value, type, **kwargs)
 
+    def extend(schema_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.Type
+        :param schema_type:
 
-def _deprecation_reason(node):
-    args = directive_arguments(DeprecatedDirective, node, {})
-    return args.get("reason") if args else None
+        :type extension_node: py_gql.lang.ast.TypeExtension
+        :param extension_node:
 
+        :rtype: py_gql.schema.Type
+        :returns: Extended type
+        """
+        if isinstance(schema_type, _schema.ObjectType):
+            return extend_object(schema_type, extension_node)
+        if isinstance(schema_type, _schema.InterfaceType):
+            return extend_interface(schema_type, extension_node)
+        if isinstance(schema_type, _schema.EnumType):
+            return extend_enum(schema_type, extension_node)
+        if isinstance(schema_type, _schema.UnionType):
+            return extend_union(schema_type, extension_node)
+        if isinstance(schema_type, _schema.InputObjectType):
+            return extend_input_object(schema_type, extension_node)
+        if isinstance(schema_type, _schema.ScalarType):
+            return extend_scalar(schema_type, extension_node)
+        raise TypeError(type(schema_type))
 
-def _infer_resolver(resolvers, type_name, field_name):
-    if callable(resolvers):
-        return resolvers(type_name, field_name)
-    elif isinstance(resolvers, dict):
-        if type_name in resolvers and isinstance(resolvers[type_name], dict):
-            return resolvers[type_name].get(field_name)
-        return resolvers.get("%s.%s" % (type_name, field_name))
-    return None
+    def extend_object(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.ObjectType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.ObjectTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.ObjectType
+        """
+        if not isinstance(extension_node, _ast.ObjectTypeExtension):
+            raise TypeExtensionError(
+                'Expected ObjectTypeExtension for ObjectType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        field_names = set(f.name for f in source_type.fields)
+        fields = source_type.fields[:]
+        iface_names = set(i.name for i in source_type.interfaces)
+        ifaces = source_type.interfaces[:] if source_type.interfaces else []
+
+        for ext_field in extension_node.fields:
+            if ext_field.name.value in field_names:
+                raise TypeExtensionError(
+                    'Duplicate field "%s" when extending type "%s"'
+                    % (ext_field.name.value, source_type.name),
+                    [ext_field],
+                )
+            field_names.add(ext_field.name.value)
+            fields.append(object_field(ext_field))
+
+        for ext_iface in extension_node.interfaces:
+            if ext_iface.name.value in iface_names:
+                raise TypeExtensionError(
+                    'Interface "%s" already implemented for type "%s"'
+                    % (ext_iface.name.value, source_type.name),
+                    [ext_iface],
+                )
+            iface_names.add(ext_iface.name.value)
+            ifaces.append(build_type(ext_iface))
+
+        return _schema.ObjectType(
+            name=source_type.name,
+            description=source_type.description,
+            fields=fields,
+            interfaces=ifaces if ifaces else None,
+            nodes=source_type.nodes + [extension_node],
+        )
+
+    def extend_interface(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.InterfaceType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.InterfaceTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.InterfaceType
+        """
+        if not isinstance(extension_node, _ast.InterfaceTypeExtension):
+            raise TypeExtensionError(
+                'Expected InterfaceTypeExtension for InterfaceType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        field_names = set(f.name for f in source_type.fields)
+        fields = source_type.fields[:]
+
+        for ext_field in extension_node.fields:
+            if ext_field.name.value in field_names:
+                raise TypeExtensionError(
+                    'Duplicate field "%s" when extending interface "%s"'
+                    % (ext_field.name.value, source_type.name),
+                    [ext_field],
+                )
+            field_names.add(ext_field.name.value)
+            fields.append(object_field(ext_field))
+
+        return _schema.InterfaceType(
+            name=source_type.name,
+            description=source_type.description,
+            fields=fields,
+            nodes=source_type.nodes + [extension_node],
+        )
+
+    def extend_enum(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.EnumType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.EnumTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.EnumType
+        """
+        if not isinstance(extension_node, _ast.EnumTypeExtension):
+            raise TypeExtensionError(
+                'Expected EnumTypeExtension for EnumType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        values = list(source_type.values.values())
+        known_values = set(ev.name for ev in values)
+
+        for value in extension_node.values:
+            if value.name.value in known_values:
+                raise TypeExtensionError(
+                    'Duplicate enum value "%s" when extending EnumType "%s"'
+                    % (value.name.value, source_type.name),
+                    [value],
+                )
+            values.append(enum_value(value))
+            known_values.add(value.name.value)
+
+        return _schema.EnumType(
+            source_type.name,
+            values=values,
+            description=source_type.description,
+            nodes=source_type.nodes + [extension_node],
+        )
+
+    def extend_union(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.UnionType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.UnionTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.UnionType
+        """
+        if not isinstance(extension_node, _ast.UnionTypeExtension):
+            raise TypeExtensionError(
+                'Expected UnionTypeExtension for UnionType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        type_names = set(t.name for t in source_type.types)
+        types = list(source_type.types)
+
+        for new_type in extension_node.types:
+            if new_type.name.value in type_names:
+                raise TypeExtensionError(
+                    'Duplicate type "%s" when extending EnumType "%s"'
+                    % (new_type.name.value, source_type.name),
+                    [new_type],
+                )
+            types.append(build_type(new_type))
+
+        return _schema.UnionType(
+            source_type.name, types=types, nodes=source_type.nodes + [extension_node]
+        )
+
+    def extend_input_object(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.InputObjectType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.InputObjectTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.InputObjectType
+        """
+        if not isinstance(extension_node, _ast.InputObjectTypeExtension):
+            raise TypeExtensionError(
+                'Expected InputObjectTypeExtension for InputObjectType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        field_names = set(f.name for f in source_type.fields)
+        fields = source_type.fields[:]
+
+        for ext_field in extension_node.fields:
+            if ext_field.name.value in field_names:
+                raise TypeExtensionError(
+                    'Duplicate field "%s" when extending input object "%s"'
+                    % (ext_field.name.value, source_type.name),
+                    [ext_field],
+                )
+            field_names.add(ext_field.name.value)
+            fields.append(input_value(ext_field, _schema.InputField))
+
+        return _schema.InputObjectType(
+            name=source_type.name,
+            description=source_type.description,
+            fields=fields,
+            nodes=source_type.nodes + [extension_node],
+        )
+
+    def extend_scalar(source_type, extension_node):
+        """
+        :type schema_type: py_gql.schema.ScalarType
+        :param schema_type:
+
+        :type extension_node: py_gql.lang.ast.ScalarTypeExtension
+        :param extension_node:
+
+        :rtype: py_gql.schema.ScalarType
+        """
+        print("extend scalar", source_type)
+        if not isinstance(extension_node, _ast.ScalarTypeExtension):
+            raise TypeExtensionError(
+                'Expected ScalarTypeExtension for ScalarType "%s" but got %s'
+                % (source_type.name, type(extension_node).__name__),
+                [extension_node],
+            )
+
+        if source_type.name in _schema.RESERVED_NAMES:
+            raise TypeExtensionError(
+                "Cannot extend specified scalar %s" % (source_type.name),
+                [extension_node],
+            )
+
+        return _schema.ScalarType(
+            source_type.name,
+            source_type._serialize,
+            source_type._parse,
+            source_type._parse_literal,
+            description=source_type.description,
+            nodes=source_type.nodes + [extension_node],
+        )
+
+    types = {
+        type_node.name.value: build_type(type_node) for type_node in type_nodes.values()
+    }
+
+    for schema_type in known_types or []:
+        if schema_type.name not in types:
+            _cache[schema_type.name] = types[schema_type.name] = schema_type
+
+    for type_name, exts in extension_nodes.items():
+        if type_name not in types:
+            continue
+
+        for extension_node in exts:
+            _cache[type_name] = types[type_name] = extend(
+                _cache[type_name], extension_node
+            )
+
+    directives = {
+        directive_def.name.value: build_directive(directive_def)
+        for directive_def in directive_nodes.values()
+    }
+
+    return types, directives

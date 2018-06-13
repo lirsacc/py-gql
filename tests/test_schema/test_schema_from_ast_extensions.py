@@ -2,9 +2,19 @@
 
 import pytest
 
-from py_gql.exc import SDLError
 from py_gql._string_utils import parse_block_string
-from py_gql.schema import print_schema, schema_from_ast
+from py_gql._utils import flatten
+from py_gql.exc import SDLError
+from py_gql.lang import ast as _ast
+from py_gql.schema import (
+    UUID,
+    Field,
+    ObjectType,
+    Schema,
+    String,
+    print_schema,
+    schema_from_ast,
+)
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
@@ -62,6 +72,36 @@ def test_object_type_extension():
     )
 
 
+def test_injected_object_type_extension():
+    Foo = ObjectType("Foo", [Field("one", String)])
+    schema = schema_from_ast(
+        """
+        type Query {
+            foo: Foo
+        }
+
+        extend type Foo {
+            two: Int
+        }
+        """,
+        known_types=[Foo],
+    )
+    assert print_schema(schema, indent="    ") == dedent(
+        """
+        type Foo {
+            one: String
+            two: Int
+        }
+
+        type Query {
+            foo: Foo
+        }
+        """
+    )
+
+    assert schema.types["Foo"] is not Foo
+
+
 def test_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
         schema_from_ast(
@@ -103,9 +143,9 @@ def test_object_type_extension_bad_extension():
             """
         )
     assert exc_info.value.to_json() == {
-        "locations": [{"column": 13, "line": 3}],
+        "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected an ObjectTypeExtension node for ObjectType "
+            "Expected ObjectTypeExtension for ObjectType "
             '"Object" but got InputObjectTypeExtension'
         ),
     }
@@ -171,9 +211,9 @@ def test_interface_type_extension_bad_extension():
             """
         )
     assert exc_info.value.to_json() == {
-        "locations": [{"column": 13, "line": 3}],
+        "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected an InterfaceTypeExtension node for InterfaceType "
+            "Expected InterfaceTypeExtension for InterfaceType "
             '"IFace" but got ObjectTypeExtension'
         ),
     }
@@ -265,8 +305,8 @@ def test_enum_extension_bad_extension():
         )
 
     assert exc_info.value.to_json() == {
-        "locations": [{"column": 13, "line": 6}],
-        "message": 'Expected an EnumTypeExtension node for EnumType "Foo" but got '
+        "locations": [{"column": 13, "line": 12}],
+        "message": 'Expected EnumTypeExtension for EnumType "Foo" but got '
         "ObjectTypeExtension",
     }
 
@@ -331,9 +371,184 @@ def test_input_object_type_extension_bad_extension():
             """
         )
     assert exc_info.value.to_json() == {
-        "locations": [{"column": 13, "line": 3}],
+        "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected an InputObjectTypeExtension node for InputObjectType "
+            "Expected InputObjectTypeExtension for InputObjectType "
             '"Foo" but got ObjectTypeExtension'
         ),
     }
+
+
+def test_union_type_extension():
+    assert (
+        print_schema(
+            schema_from_ast(
+                """
+                type Query {
+                    foo: Foo
+                }
+
+                type Bar {
+                    bar: Int
+                }
+
+                type Baz {
+                    baz: Int
+                }
+
+                union Foo = Bar
+
+                extend union Foo = Baz
+                """
+            ),
+            indent="    ",
+        )
+        == dedent(
+            """
+            type Bar {
+                bar: Int
+            }
+
+            type Baz {
+                baz: Int
+            }
+
+            union Foo = Bar | Baz
+
+            type Query {
+                foo: Foo
+            }
+            """
+        )
+    )
+
+
+def test_union_type_extension_duplicate_type():
+    with pytest.raises(SDLError) as exc_info:
+        schema_from_ast(
+            """
+            type Query {
+                foo: Foo
+            }
+
+            type Bar {
+                bar: Int
+            }
+
+            type Baz {
+                baz: Int
+            }
+
+            union Foo = Bar
+
+            extend union Foo = Bar
+            """
+        )
+
+    assert exc_info.value.to_json() == {
+        "locations": [{"column": 32, "line": 16}],
+        "message": 'Duplicate type "Bar" when extending EnumType "Foo"',
+    }
+
+
+def test_union_type_extension_bad_extension():
+    with pytest.raises(SDLError) as exc_info:
+        schema_from_ast(
+            """
+            type Query {
+                foo: Foo
+            }
+
+            type Bar {
+                bar: Int
+            }
+
+            type Baz {
+                baz: Int
+            }
+
+            union Foo = Bar
+
+            extend type Foo {
+                one: Int
+            }
+            """
+        )
+
+    assert exc_info.value.to_json() == {
+        "locations": [{"column": 13, "line": 16}],
+        "message": 'Expected UnionTypeExtension for UnionType "Foo" but got ObjectTypeExtension',
+    }
+
+
+def test_scalar_type_extension():
+    schema = schema_from_ast(
+        """
+        directive @protected on SCALAR
+
+        type Query {
+            foo: Foo
+        }
+
+        scalar Foo
+
+        extend scalar Foo @protected
+        """
+    )
+
+    assert print_schema(schema, indent="    ") == dedent(
+        """
+        directive @protected on SCALAR
+
+        scalar Foo
+
+        type Query {
+            foo: Foo
+        }
+        """
+    )
+
+    assert list(flatten(n.directives for n in schema.types["Foo"].nodes)) == [
+        _ast.Directive(
+            loc=(140, 150),
+            name=_ast.Name(loc=(141, 150), value="protected"),
+            arguments=[],
+        )
+    ]
+
+
+def test_injected_scalar_type_extension():
+    schema = schema_from_ast(
+        """
+        directive @protected on SCALAR
+
+        type Query {
+            foo: UUID
+        }
+
+        extend scalar UUID @protected
+        """,
+        known_types=[UUID],
+    )
+
+    assert print_schema(schema, indent="    ", include_descriptions=False) == dedent(
+        """
+        directive @protected on SCALAR
+
+        type Query {
+            foo: UUID
+        }
+
+        scalar UUID
+        """
+    )
+
+    assert list(flatten(n.directives for n in schema.types["UUID"].nodes)) == [
+        _ast.Directive(
+            loc=(122, 132),
+            name=_ast.Name(loc=(123, 132), value="protected"),
+            arguments=[],
+        )
+    ]
+
+    assert schema.types["UUID"] is not UUID

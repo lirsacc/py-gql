@@ -222,15 +222,18 @@ class DefaultCustomScalar(ScalarType):
     This will be essentially take everything and transform it into a string.
     """
 
-    def __init__(self, name, description=None):
-        self.name = name
-        self.description = description
-        self._serialize = String._serialize
-        self._parse = String._parse
-        self._parse_literal = _typed_coerce(
+    def __init__(self, name, description=None, **kw):
+        super(DefaultCustomScalar, self).__init__(
+            name,
+            String._serialize,
             String._parse,
-            _ast.StringValue,
-            _ast.FloatValue,
-            _ast.IntValue,
-            _ast.BooleanValue,
+            _typed_coerce(
+                String._parse,
+                _ast.StringValue,
+                _ast.FloatValue,
+                _ast.IntValue,
+                _ast.BooleanValue,
+            ),
+            description=description,
+            **kw,
         )
