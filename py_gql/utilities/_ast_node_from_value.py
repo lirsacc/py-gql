@@ -51,7 +51,7 @@ def ast_node_from_value(value, input_type):  # noqa
 
     if isinstance(input_type, InputObjectType):
         if not isinstance(value, dict):
-            raise ValueError('Value of type "%s" must be a dict')
+            raise ValueError('Value of type "%s" must be a dict' % input_type)
 
         field_nodes = []
         for field_def in input_type.fields:

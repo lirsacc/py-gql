@@ -5,6 +5,7 @@ All types used in a schema should be instances of
 ``py_gql.schema.types.Type``.
 """
 
+import six
 
 from .._utils import OrderedDict, cached_property, lazy
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
@@ -302,14 +303,14 @@ class ScalarType(NamedType):
         try:
             return self._serialize(value)
         except (ValueError, TypeError) as err:
-            raise ScalarSerializationError(str(err)) from err
+            six.raise_from(ScalarSerializationError(str(err)), err)
 
     def parse(self, value):
         """ Transform a GraphQL value in a valid Python value """
         try:
             return self._parse(value)
         except (ValueError, TypeError) as err:
-            raise ScalarParsingError(str(err)) from err
+            six.raise_from(ScalarParsingError(str(err)), err)
 
     def parse_literal(self, node, variables=None):
         """ Transform an AST node in a valid Python value """
@@ -321,7 +322,7 @@ class ScalarType(NamedType):
                     raise TypeError("Invalid literal %s" % type(node).__name__)
                 return self._parse(node.value)
         except (ValueError, TypeError) as err:
-            raise ScalarParsingError(str(err), [node]) from err
+            six.raise_from(ScalarParsingError(str(err), [node]), err)
 
 
 class Argument(object):

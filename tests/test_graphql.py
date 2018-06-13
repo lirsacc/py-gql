@@ -85,7 +85,10 @@ def test_correct_response_on_argument_validation_error(starwars_schema):
     assert graphql(starwars_schema, query, {}).response() == {
         "errors": [
             {
-                "message": 'Field "human" argument "id" of type String! is required but not provided',
+                "message": (
+                    'Field "human" argument "id" of type String! '
+                    "is required but not provided"
+                ),
                 "locations": [{"line": 3, "column": 9}],
             }
         ]
