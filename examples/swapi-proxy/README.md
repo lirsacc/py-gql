@@ -1,5 +1,9 @@
 # SWAPI + Flask GraphQL proxy
 
+```
+./run
+```
+
 This example demonstrates:
 
 -   Usage of `ThreadPoolExecutor` for parallel fetching and nested usage of the
