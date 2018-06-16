@@ -7,7 +7,7 @@
 # Tests related to suggestion list are kept for reference but skipped as this
 # feature is not implemented.
 
-from py_gql.validation import VariablesAreInputTypesChecker
+from py_gql.validation.rules import VariablesAreInputTypesChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
 

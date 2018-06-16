@@ -8,7 +8,7 @@ from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import execute
 from .lang import parse
 from .schema import Schema
-from .validation import SPECIFIED_CHECKERS, validate_ast
+from .validation import SPECIFIED_RULES, validate_ast
 
 
 def graphql(
@@ -61,7 +61,7 @@ def graphql(
     try:
         ast = parse(document, allow_type_system=False)
 
-        validators = SPECIFIED_CHECKERS if validators is None else validators
+        validators = SPECIFIED_RULES if validators is None else validators
         validation_result = validate_ast(schema, ast, validators=validators)
 
         if not validation_result:

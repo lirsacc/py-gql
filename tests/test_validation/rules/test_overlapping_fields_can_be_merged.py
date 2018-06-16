@@ -9,7 +9,7 @@
 
 import pytest
 
-from py_gql.validation import OverlappingFieldsCanBeMergedChecker
+from py_gql.validation.rules import OverlappingFieldsCanBeMergedChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
 

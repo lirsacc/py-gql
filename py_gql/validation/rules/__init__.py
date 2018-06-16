@@ -15,9 +15,7 @@ from ...schema import (
 )
 from ..visitors import ValidationVisitor, VariablesCollector
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
-from .overlapping_fields_can_be_merged import (  # noqa: F401
-    OverlappingFieldsCanBeMergedChecker
-)
+from .overlapping_fields_can_be_merged import OverlappingFieldsCanBeMergedChecker  # noqa: F401
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
