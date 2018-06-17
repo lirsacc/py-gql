@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-""" Utilities to work with GraphQL documents and syntax trees.
-(Parsing and validating GraphQL source files).
+"""
+This modules encapsulates all operations related to working with GraphQL source
+files. It is used internally by the :func:`py_gql.graphql` entrypoint and the
+schema builder.
 """
 
 # flake8: noqa
@@ -15,3 +17,6 @@
 from .lexer import Lexer
 from .parser import Parser, parse, parse_type, parse_value
 from .printer import print_ast
+
+
+__all__ = ["Lexer", "Parser", "parse", "parse_type", "parse_value", "print_ast"]

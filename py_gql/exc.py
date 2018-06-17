@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
-""" Library excceptions sink. """
+""" All exceptions for this library are defined here.
+
+Exception classes that expose a ``to_json`` method, such as
+:class:`GraphQLLocatedError` or :class:`ResolverError` should be suitable for
+exposing to consumers of your GraphQL API.
+"""
 
 from ._utils import cached_property
 from ._string_utils import highlight_location, index_to_loc
 
 
 class GraphQLError(Exception):
-    """ Base GraphQL exception."""
+    """ Base GraphQL exception from which all other inherit """
 
     def __init__(self, message):
         self.message = message
@@ -16,15 +21,18 @@ class GraphQLError(Exception):
 
 
 class GraphQLSyntaxError(GraphQLError):
-    """  Syntax error in the GraphQL document."""
-
-    __slots__ = "message", "position", "source"
+    """ Raised when the GraphQL document being parsed is invalid."""
 
     def __init__(self, msg, position, source):
         """
         :type msg: str
+        :param msg: Text of the exception
+
         :type position: int
+        :param position: 0-index position locating the syntax error
+
         :type source: str
+        :param source: Source string from which the syntax error originated
         """
         self.message = msg
         self.source = source
@@ -32,12 +40,21 @@ class GraphQLSyntaxError(GraphQLError):
 
     @cached_property
     def highlighted(self):
-        return self.message + "\n" + highlight_location(self.source, self.position)
+        """ Message followed by a view of the source document pointing at the exact
+        location of the error """
+        if self.source is not None:
+            return self.message + "\n" + highlight_location(self.source, self.position)
+        return self.message
 
     def __str__(self):
         return self.highlighted
 
     def to_json(self):
+        """ Convert the exception to a dictionnary that can be serialized to JSON
+        and exposed in a graphql response
+
+        :rtype: dict
+        """
         line, col = index_to_loc(self.source, self.position)
         return {"message": str(self), "locations": [{"line": line, "columne": col}]}
 
@@ -54,7 +71,10 @@ class UnexpectedEOF(GraphQLSyntaxError):
     def __init__(self, position, source):
         """
         :type position: int
+        :param position: 0-index position locating the syntax error
+
         :type source: str
+        :param source: Source string from which the syntax error originated
         """
         self.message = "Unexpected <EOF>"
         self.source = source
@@ -70,23 +90,24 @@ class InvalidEscapeSequence(GraphQLSyntaxError):
 
 
 class UnexpectedToken(GraphQLSyntaxError):
-    def __init__(self, msg, position, source):
-        """
-        :type msg: str
-        :type position: int
-        :type source: str
-        """
-        self.message = msg
-        self.source = source
-        self.position = position
+    pass
 
 
 class GraphQLLocatedError(GraphQLError):
-    """ GraphQL exception that can be traced back to a specific node / set of nodes """
-
-    __slots__ = "message", "nodes", "path"
+    """ Raised when the error can be traced back to specific position in the document
+    """
 
     def __init__(self, message, nodes=None, path=None):
+        """
+        :type message: str
+        :param message: Text of the exception
+
+        :type nodes: Optional[Union[List[py_gql.lang.ast.Node], py_gql.lang.ast.Node]]
+        :param nodes: Node or nodes relevant to the exception
+
+        :type path: py_gql.utilities.Path
+        :param path: Location of the error in the execution chain
+        """
         self.message = message
         self.path = path
 
@@ -101,6 +122,11 @@ class GraphQLLocatedError(GraphQLError):
         return self.message
 
     def to_json(self):
+        """ Convert the exception to a dictionnary that can be serialized to JSON
+        and exposed in a graphql response
+
+        :rtype: dict
+        """
         kv = (
             ("message", str(self)),
             (
@@ -171,9 +197,6 @@ class VariablesCoercionError(GraphQLError):
 
 
 class CoercionError(GraphQLLocatedError):
-
-    __slots__ = "message", "nodes", "path", "value_path"
-
     def __init__(self, msg, node=None, path=None, value_path=None):
         super(CoercionError, self).__init__(msg, node, path)
         self.value_path = value_path
@@ -185,11 +208,37 @@ class CoercionError(GraphQLLocatedError):
 
 
 class ResolverError(GraphQLLocatedError):
+    """ Raised when an expected error happens during field resolution.
+
+    Subclass or raise this exception directly for use in your own
+    resolvers in order for them to report errors instead of crashing execution.
+    If your exception exposes an ``extensions`` attribute it will be included in the
+    serialized version without the need to override :meth:`to_json`.
+    """
+
     def __init__(self, msg, node=None, path=None, extensions=None):
+        """
+        :type message: str
+        :param message: Text of the exception
+
+        :type node: Optional[py_gql.lang.ast.Node]
+        :param node: Node relevant to the exception
+
+        :type path: py_gql.utilities.Path
+        :param path: Location of the error in the execution chain
+
+        :type extensions: Optional[dict]
+        :param extensions: Any custom error information you want in the response
+        """
         super(ResolverError, self).__init__(msg, node, path)
         self.extensions = extensions
 
     def to_json(self):
+        """ Convert the exception to a dictionnary that can be serialized to JSON
+        and exposed in a graphql response
+
+        :rtype: dict
+        """
         d = super(ResolverError, self).to_json()
         if self.extensions:
             d["extensions"] = dict(self.extensions)

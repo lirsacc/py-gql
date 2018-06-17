@@ -16,24 +16,27 @@ from ..schema import (
     ScalarType,
     is_input_type,
 )
-from ..schema.scalars import DefaultCustomScalar
+from ..schema.scalars import SPECIFIED_SCALAR_TYPES
 
 _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 
 
 def ast_node_from_value(value, input_type):  # noqa
-    """ Infer an ast Node for a Python value given a given input type.
+    """ Infer an ast Node for a Python value given an input type.
 
     :type value: any
-    :param value:
+    :param value: Any python value that can be transformed into a node
 
     :type input_type: py_gql.schema.Type
-    :param input_type:
+    :param input_type: Input type to consider
 
     :rtype: py_gql.lang.ast.Node
-    :returns:
+
+    :Raises:
+
+        ``ValueError`` when coercion into a node fails
     """
-    assert is_input_type(input_type)
+    assert is_input_type(input_type), "Only supports input types"
     if isinstance(input_type, NonNullType):
         node = ast_node_from_value(value, input_type.type)
         if isinstance(node, _ast.NullValue):
@@ -97,7 +100,10 @@ def ast_node_from_value(value, input_type):  # noqa
             return _ast.EnumValue(value=serialized)
         elif input_type is ID and _INT_RE.match(serialized):
             return _ast.IntValue(value=serialized)
-        elif isinstance(input_type, DefaultCustomScalar):
+        elif (
+            isinstance(input_type, ScalarType)
+            and input_type not in SPECIFIED_SCALAR_TYPES
+        ):
             if _INT_RE.match(serialized):
                 intvalue = int(serialized)
                 if -2147483647 < intvalue < 2147483647:

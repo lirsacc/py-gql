@@ -1,43 +1,28 @@
 # -*- coding: utf-8 -*-
-""" GraphQL AST representations.
+""" GraphQL AST representations corresponding to the `GraphQL language elements`_.
+
+
+ .. _GraphQL language elements:
+   http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
 """
 
 import copy
-import json
-
-
-def node_to_dict(node):
-    """ Recrusively convert a ``py_gql.lang.ast.Node`` instance to
-    a dict that can be later converted to json. Useful for testing and
-    printing in a readable / compatible with JS tooling way.
-
-    :type node: any
-    :param node: A node instance or any value used inside nodes (list of nodes
-        and primitive values)
-
-    :rtype: dict
-    """
-    if isinstance(node, Node):
-        return dict(
-            {
-                attr: node_to_dict(getattr(node, attr))
-                for attr in node.__slots__
-                if attr != "source"
-            },
-            __kind__=node.__class__.__name__,
-        )
-    elif isinstance(node, list):
-        return [node_to_dict(v) for v in node]
-    else:
-        return node
 
 
 class Node(object):
-    """ AST node.
+    """ Base AST node.
 
-    All subclasses encode the language elements describe in
-    http://facebook.github.io/graphql/#sec-Language (Schema language related node are
-    still part of the draft spec (10 Jun 2018)).
+    Subclasses should not override the constructor but rather define their own
+    ``__slots__`` and ``__defaults__`` attributes which are used to create the
+    instances.
+
+    The source attribute is ignored for comparisons and serialization.
+
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: st
     """
 
     __slots__ = ("source", "loc")
@@ -85,17 +70,24 @@ class Node(object):
         return self.cls(**{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__})
 
     def to_dict(self):
-        return node_to_dict(self)
+        """ Convert the current node to a JSON serializable ``dict`` using
+        :func:`node_to_dict`.
 
-    def to_json(self, **kwargs):
-        kwargs.update(sort_keys=True, check_circular=True)
-        return json.dumps(self.to_dict(), **kwargs)
+        :rtype: ``dict``
+        """
+        return node_to_dict(self)
 
 
 class Name(Node):
     """
-    :ivar loc: (int, int)
-    :ivar value: str
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: st
     """
 
     __slots__ = ("source", "loc", "value")
@@ -103,8 +95,14 @@ class Name(Node):
 
 class Document(Node):
     """
-    :ivar loc: (int, int)
-    :ivar definitions: list[Definition]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar definitions:
+    :vartype definitions: List[Definition
     """
 
     __slots__ = ("source", "loc", "definitions")
@@ -121,12 +119,26 @@ class ExecutableDefinition(Definition):
 
 class OperationDefinition(ExecutableDefinition):
     """
-    :ivar loc: (int, int)
-    :ivar operation: str
-    :ivar name: Name
-    :ivar variable_definitions: list[VariableDefinition]
-    :ivar directives: list[Directive]
-    :ivar selection_set: SelectionSet
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar operation:
+    :vartype operation: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar variable_definitions:
+    :vartype variable_definitions: List[VariableDefinition]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar selection_set:
+    :vartype selection_set: SelectionSet
     """
 
     __slots__ = (
@@ -142,10 +154,20 @@ class OperationDefinition(ExecutableDefinition):
 
 class VariableDefinition(Node):
     """
-    :ivar loc: (int, int)
-    :ivar variable: Variable
-    :ivar type: Type
-    :ivar default_value: Optional[Value]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar variable:
+    :vartype variable: Variable
+
+    :ivar type:
+    :vartype type: Type
+
+    :ivar default_value:
+    :vartype default_value: Optional[Value]
     """
 
     __slots__ = ("source", "loc", "variable", "type", "default_value")
@@ -153,8 +175,14 @@ class VariableDefinition(Node):
 
 class Variable(Node):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
     """
 
     __slots__ = ("source", "loc", "name")
@@ -162,8 +190,14 @@ class Variable(Node):
 
 class SelectionSet(Node):
     """
-    :ivar loc: (int, int)
-    :ivar selections: list[Selection]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar selections:
+    :vartype selections: List[Selection]
     """
 
     __slots__ = ("source", "loc", "selections")
@@ -176,12 +210,26 @@ class Selection(Node):
 
 class Field(Selection):
     """
-    :ivar loc: (int, int)
-    :ivar alias: Optional[Name]
-    :ivar name: Name
-    :ivar arguments: list[Argument]
-    :ivar directives: list[Directive]
-    :ivar selection_set: Optional[SelectionSet]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar alias:
+    :vartype alias: Optional[Name]
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar arguments:
+    :vartype arguments: List[Argument]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar selection_set:
+    :vartype selection_set: Optional[SelectionSet]
     """
 
     __slots__ = (
@@ -198,9 +246,17 @@ class Field(Selection):
 
 class Argument(Node):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
-    :ivar value: Value
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar value:
+    :vartype value: Value
     """
 
     __slots__ = ("source", "loc", "name", "value")
@@ -208,9 +264,17 @@ class Argument(Node):
 
 class FragmentSpread(Selection):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
-    :ivar directives: list[Directive]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
     """
 
     __slots__ = ("source", "loc", "name", "directives")
@@ -219,10 +283,20 @@ class FragmentSpread(Selection):
 
 class InlineFragment(Selection):
     """
-    :ivar loc: (int, int)
-    :ivar type_condition: Type
-    :ivar directives: list[Directive]
-    :ivar selection_set: SelectionSet
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar type_condition:
+    :vartype type_condition: Type
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar selection_set:
+    :vartype selection_set: SelectionSet
     """
 
     __slots__ = ("source", "loc", "type_condition", "directives", "selection_set")
@@ -231,12 +305,26 @@ class InlineFragment(Selection):
 
 class FragmentDefinition(ExecutableDefinition):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
-    :ivar variable_definitions: list[VariableDefinition]
-    :ivar type_condition: Type
-    :ivar directives: list[Directive]
-    :ivar selection_set: SelectionSet
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar variable_definitions:
+    :vartype variable_definitions: List[VariableDefinition]
+
+    :ivar type_condition:
+    :vartype type_condition: Type
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar selection_set:
+    :vartype selection_set: SelectionSet
     """
 
     __slots__ = (
@@ -256,8 +344,14 @@ class Value(Node):
 
 class IntValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: str
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: str
     """
 
     __slots__ = ("source", "loc", "value")
@@ -268,8 +362,14 @@ class IntValue(Value):
 
 class FloatValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: str
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: str
     """
 
     __slots__ = ("source", "loc", "value")
@@ -280,9 +380,17 @@ class FloatValue(Value):
 
 class StringValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: str
-    :ivar block: bool
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: str
+
+    :ivar block:
+    :vartype block: bool
     """
 
     __slots__ = ("source", "loc", "value", "block")
@@ -297,8 +405,14 @@ class StringValue(Value):
 
 class BooleanValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: bool
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: bool
     """
 
     __slots__ = ("source", "loc", "value")
@@ -309,7 +423,12 @@ class BooleanValue(Value):
 
 class NullValue(Value):
     """
-    :ivar loc: (int, int)
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
     """
 
     def __str__(self):
@@ -318,8 +437,14 @@ class NullValue(Value):
 
 class EnumValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: str
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: str
     """
 
     __slots__ = ("source", "loc", "value")
@@ -330,8 +455,14 @@ class EnumValue(Value):
 
 class ListValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar value: list[Value]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar value:
+    :vartype value: List[Value]
     """
 
     __slots__ = ("source", "loc", "values")
@@ -339,8 +470,14 @@ class ListValue(Value):
 
 class ObjectValue(Value):
     """
-    :ivar loc: (int, int)
-    :ivar fields: list[ObjectField]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar fields:
+    :vartype fields: List[ObjectField]
     """
 
     __slots__ = ("source", "loc", "fields")
@@ -349,9 +486,17 @@ class ObjectValue(Value):
 
 class ObjectField(Node):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
-    :ivar value: Value
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar value:
+    :vartype value: Value
     """
 
     __slots__ = ("source", "loc", "name", "value")
@@ -359,9 +504,17 @@ class ObjectField(Node):
 
 class Directive(Node):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
-    :ivar arguments: list[Argument]
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar arguments:
+    :vartype arguments: List[Argument]
     """
 
     __slots__ = ("source", "loc", "name", "arguments")
@@ -374,8 +527,14 @@ class Type(Node):
 
 class NamedType(Type):
     """
-    :ivar loc: (int, int)
-    :ivar name: Name
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar name:
+    :vartype name: Name
     """
 
     __slots__ = ("source", "loc", "name")
@@ -383,8 +542,14 @@ class NamedType(Type):
 
 class ListType(Type):
     """
-    :ivar loc: (int, int)
-    :ivar type: Type
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar type:
+    :vartype type: Type
     """
 
     __slots__ = ("source", "loc", "type")
@@ -392,8 +557,14 @@ class ListType(Type):
 
 class NonNullType(Type):
     """
-    :ivar loc: (int, int)
-    :ivar type: NamedType|ListType
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar type:
+    :vartype type: Union[NamedType, ListType]
     """
 
     __slots__ = ("source", "loc", "type")
@@ -404,11 +575,39 @@ class TypeSystemDefinition(Definition):
 
 
 class SchemaDefinition(TypeSystemDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar operation_types:
+    :vartype operation_types: List[OperationTypeDefinition
+    """
+
     __slots__ = ("source", "loc", "directives", "operation_types")
     __defaults__ = {"directives": [], "operation_types": []}
 
 
 class OperationTypeDefinition(Node):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar operation:
+    :vartype operation: Name
+
+    :ivar type:
+    :vartype type: NamedTyp
+    """
+
     __slots__ = ("source", "loc", "operation", "type")
 
 
@@ -417,11 +616,51 @@ class TypeDefinition(TypeSystemDefinition):
 
 
 class ScalarTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class ObjectTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar interfaces:
+    :vartype interfaces: List[NamedType]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[FieldDefinition]
+    """
+
     __slots__ = (
         "source",
         "loc",
@@ -435,6 +674,29 @@ class ObjectTypeDefinition(TypeDefinition):
 
 
 class FieldDefinition(Node):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar arguments:
+    :vartype arguments: List[InputValueDefinition]
+
+    :ivar type:
+    :vartype type: NamedType
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = (
         "source",
         "loc",
@@ -448,6 +710,29 @@ class FieldDefinition(Node):
 
 
 class InputValueDefinition(Node):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar type:
+    :vartype type: NamedType
+
+    :ivar default_value:
+    :vartype default_value: Value
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = (
         "source",
         "loc",
@@ -461,26 +746,123 @@ class InputValueDefinition(Node):
 
 
 class InterfaceTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[FieldDefinition]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class UnionTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar types:
+    :vartype types: List[NamedType]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives", "types")
     __defaults__ = {"directives": [], "types": []}
 
 
 class EnumTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar values:
+    :vartype values: List[EnumValueDefinition]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives", "values")
     __defaults__ = {"directives": [], "values": []}
 
 
 class EnumValueDefinition(Node):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class InputObjectTypeDefinition(TypeDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[InputValueDefinition]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
@@ -490,35 +872,206 @@ class TypeExtension(TypeSystemDefinition):
 
 
 class ScalarTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = ("source", "loc", "name", "directives")
     __defaults__ = {"directives": []}
 
 
 class ObjectTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar interfaces:
+    :vartype interfaces: List[NamedType]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[FieldDefinition]
+    """
+
     __slots__ = ("source", "loc", "name", "interfaces", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class InterfaceTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[FieldDefinition]
+    """
+
     __slots__ = ("source", "loc", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class UnionTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar types:
+    :vartype types: List[NamedType]
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+    """
+
     __slots__ = ("source", "loc", "name", "directives", "types")
     __defaults__ = {"directives": [], "types": []}
 
 
 class EnumTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar values:
+    :vartype values: List[EnumValueDefinition]
+    """
+
     __slots__ = ("source", "loc", "name", "directives", "values")
     __defaults__ = {"directives": [], "values": []}
 
 
 class InputObjectTypeExtension(TypeExtension):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar directives:
+    :vartype directives: List[Directive]
+
+    :ivar fields:
+    :vartype fields: List[InputValueDefinition]
+    """
+
     __slots__ = ("source", "loc", "name", "directives", "fields")
     __defaults__ = {"directives": [], "fields": []}
 
 
 class DirectiveDefinition(TypeSystemDefinition):
+    """
+    :ivar loc: Location in the source
+    :vartype loc: Tuple[int, int]
+
+    :ivar source: Source document
+    :vartype source: str
+
+    :ivar description:
+    :vartype description: StringValue
+
+    :ivar name:
+    :vartype name: Name
+
+    :ivar arguments:
+    :vartype arguments: List[InputValueDefinition]
+
+    :ivar locations:
+    :vartype locations: List[Name]
+    """
+
     __slots__ = ("source", "loc", "description", "name", "arguments", "locations")
     __defaults__ = {"arguments": [], "locations": []}
+
+
+def node_to_dict(node):
+    """ Recrusively convert a ``py_gql.lang.ast.Node`` instance to a dict.
+
+    This is mostly useful for testing and when you need to convert nodes to JSON
+    such as interop with other languages, printing and serialisation.
+
+    Nodes are converted based on their `__slots__` adding a `__kind__` key
+    corresponding to the node class while primitive values are left as is. Lists are
+    converted per-element.
+
+    :type node: any
+    :param node: A :class:`Node` instance or any value used as a node attribute.
+
+    :rtype: any
+    :returns: Converted value
+    """
+    if isinstance(node, Node):
+        return dict(
+            {
+                attr: node_to_dict(getattr(node, attr))
+                for attr in node.__slots__
+                if attr != "source"
+            },
+            __kind__=node.__class__.__name__,
+        )
+    elif isinstance(node, list):
+        return [node_to_dict(v) for v in node]
+    else:
+        return node

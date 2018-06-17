@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Converting AST and values into nicely, standardised formatted strings.
-"""
 
 import json
 
@@ -10,16 +8,13 @@ from py_gql.lang import ast as _ast
 
 
 def print_ast(node):  # noqa: C901
-    """ Converts an AST into a string, using one set of reasonable
-    formatting rules.
+    """ Converts an AST into a string, using a set of reasonable formatting rules.
 
-    Useful to print some isoldated nodes in errors or for debugging.
+    :type node: py_gql.lang.ast.Node
+    :param node:
 
-    Args:
-        node (py_gql.lang.ast.Node): Ast node to print
-
-    Returns:
-        str: Formatted value for the provided node
+    :rtype: str
+    :returns: Formatted value for the provided node
     """
     kind = type(node)
 

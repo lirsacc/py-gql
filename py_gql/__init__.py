@@ -15,30 +15,3 @@ to build GraphQL servers. It supports:
 # flake8: noqa
 
 from ._graphql import graphql, GraphQLResult
-from .schema import (
-    Schema,
-    ObjectType,
-    Arg,
-    Directive,
-    Argument,
-    EnumValue,
-    EnumType,
-    Field,
-    ObjectType,
-    InputField,
-    InputObjectType,
-    InterfaceType,
-    ListType,
-    NonNullType,
-    ScalarType,
-    UnionType,
-    Int,
-    String,
-    Int,
-    Float,
-    ID,
-    UUID,
-    String,
-    Boolean,
-    RegexType,
-)

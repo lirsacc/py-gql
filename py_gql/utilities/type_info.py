@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Context visitor to track current types and parent while
-traversing an ast.
-"""
 
 
 from py_gql._utils import find_one
@@ -30,7 +27,7 @@ def _or_none(value, predicate=bool):
     return value if predicate(value) else None
 
 
-def get_field_def(schema, parent_type, field):
+def _get_field_def(schema, parent_type, field):
     name = field.name.value
     if parent_type is schema.query_type:
         if name == schema_field.name:
@@ -48,23 +45,31 @@ def get_field_def(schema, parent_type, field):
 
 
 class TypeInfoVisitor(DispatchingVisitor):
-    """ Keep track of current type context while visiting a document.
+    """ Visitor that tracks current types in a stack while traversing a Document.
 
-    Simple visitor made to maintain a stack of current types in order to
-    inspect types with regards to a schema while traversing a parse tree.
-    Very basic re-implementation of the JS version that can most likley be
-    improved.
+    All tracked types are considered with regards to the provided schema, however
+    unknown types and other unexpected errors will be downgraded to null values
+    in order to not crash the traversal. This leaves the consumer responsible to handle
+    such cases.
 
-    When using this alongside other visitors (such as when using
-    `ParallelVisitor`), this visitor needs to be the firt one to visit the
-    nodes in order for the information provided to be accurate donwstream.
+    .. note::
+
+        This is a very basic re-implementation of the reference javascript
+        implementation which is compatible with our version of AST visitors and it
+        can most likley be improved.
+
+    .. warning::
+
+        When using this alongside other visitors (such as when using
+        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs** to be the
+        firt one to visit the nodes in order for the information provided donwstream
+        to be accurate.
     """
 
-    slots = (
+    __slots__ = (
         "_schema",
         "_type_stack",
         "_input_type_stack",
-        "_get_field_def_fn",
         "_parent_type_stack",
         "_field_stack",
         "directive",
@@ -74,44 +79,63 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def __init__(self, schema, _get_field_def=None):
         self._schema = schema
-        self._get_field_def_fn = _get_field_def or get_field_def
 
         self._type_stack = []
         self._parent_type_stack = []
         self._input_type_stack = []
         self._field_stack = []
 
+        #: Optional[py_gql.schema.Directive]: Current directive if applicable else, ``None``
         self.directive = None
+        #: Optional[py_gql.schema.Argument]: Current argument if applicable else, ``None``
         self.argument = None
+        #: Optional[py_gql.schema.EnumValue]: Current enum value if applicable else, ``None``
         self.enum_value = None
 
     @property
     def type(self):
+        """ Current type if applicable, else ``None``
+
+        :rtype: Optional[py_gql.schema.Type]
+        """
         return _peek(self._type_stack)
 
     @property
     def parent_type(self):
+        """ Current type if applicable, else ``None``
+
+        :rtype: Optional[py_gql.schema.Type]
+        """
         return _peek(self._parent_type_stack, 1)
 
     @property
     def input_type(self):
+        """ Current input type if applicable, else ``None`` (when visiting arguments)
+
+        :rtype: Optional[py_gql.schema.Type]
+        """
         return _peek(self._input_type_stack, 1)
 
     @property
     def parent_input_type(self):
+        """ Current parent input type if applicable, else ``None``
+        (when visiting input objects)
+
+        :rtype: Optional[py_gql.schema.Type]
+        """
         return _peek(self._input_type_stack, 2)
 
     @property
     def field(self):
+        """ Current field definition if applicable, else ``None``
+
+        :rtype: Optional[py_gql.schema.Field]
+        """
         return _peek(self._field_stack)
 
     def _get_field_def(self, node):
         parent_type = self.parent_type
-        return (
-            self._get_field_def_fn(self._schema, parent_type, node)
-            if parent_type
-            else None
-        )
+        return _get_field_def(self._schema, parent_type, node) if parent_type else None
 
     def _type_from_ast(self, type_node):
         try:

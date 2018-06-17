@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """ Utilities to validate Python values against a schema """
 
-from .._utils import Path, find_one
+from .._utils import find_one
 from ..exc import CoercionError, InvalidValue, ScalarParsingError, UnknownEnumValue
 from ..lang import ast as _ast, print_ast
 from ..schema import EnumType, InputObjectType, ListType, NonNullType, ScalarType
+from .path import Path
 from .value_from_ast import typed_value_from_ast
 
 
@@ -15,15 +16,26 @@ def _path(path):
 
 
 def coerce_value(value, typ, node=None, path=None):
-    """ Coerces a Python value given a GraphQL Type.
+    """ Coerce a Python value given a GraphQL Type.
+
     Returns either a value which is valid for the provided type or raises
-    `CoercionError`.
+    :class:`py_gql.exc.CoercionError`.
 
     :type value: any
+    :param value: Value to coerce
+
     :type typ: py_gql.schema.Type
-    :type node: py_gql.lang.ast.Node
-    :type path: List[str]
+    :param type: Expected value type
+
+    :type node: Optional[py_gql.lang.ast.Node]
+    :param node: Relevant node
+
+    :type path: Optional[py_gql.utilities.Path]
+    :param path: Path into the value for nested values (lists, objects)
+        Should only be set on recursive calls.
+
     :rtype: any
+    :returns: The coerced value
     """
     if path is None:
         path = []
@@ -104,38 +116,26 @@ def _coerce_input_object(value, typ, node, path):
     return coerced
 
 
-def is_valid_value(value, typ):
-    """ Check if a Python value can be coerced against a given type.
-
-    :type value: any
-    :type typ: py_gql.schema.Type
-    :rtype: bool
-    """
-    try:
-        coerce_value(value, typ)
-        return True
-    except CoercionError:
-        return False
-
-
 def coerce_argument_values(definition, node, variables=None):
-    """ Prepares an object map of argument values given a field or directive
+    """ Prepares a dict of argument values given a field or directive
     definition and a field or directive node.
 
-    :type definition: py_gql.schema.Directive|py_gql.schema.Field
-    :param definition:
-        Field or Directive definition from which to extract argument
-        definitions.
+    :type definition: Union[py_gql.schema.Directive, py_gql.schema.Field]
+    :param definition: Field or Directive definition
+        from which to extract argument definitions
 
-    :type node: py_gql.lang.ast.Field|py_gql.lang.ast.Directive
-    :param node:
-        Ast node
+    :type node: Union[py_gql.lang.ast.Field, py_gql.lang.ast.Directive]
+    :param node: AST node
 
     :type variables: Optional[dict]
-    :param variables:
-        Coerced variable values
+    :param variables: Coerced variable values
 
     :rtype: dict
+
+    :Raises:
+
+        :class:`py_gql.exc.CoercionError` if any argument value fails to coerce,
+        required argument is missing, etc.
     """
     variables = dict() if variables is None else variables
     coerced_values = {}
@@ -188,7 +188,7 @@ def directive_arguments(definition, node, variables=None):
     definition.
 
     :type definition: py_gql.schema.Directive
-    :param definition: Field or Directive definition from which to extract arguments
+    :param definition: Directive definition from which to extract arguments
 
     :type node: py_gql.lang.ast.Field
     :param node: Ast node
@@ -196,7 +196,12 @@ def directive_arguments(definition, node, variables=None):
     :type variables: Optional[dict]
     :param variables: Coerced variable values
 
-    :rtype: dict
+    :rtype: Optional[dict]
+
+    :Raises:
+
+        :class:`py_gql.exc.CoercionError` if any directive argument value fails to
+        coerce, required argument is missing, etc.
     """
     directive = find_one(node.directives, lambda d: d.name.value == definition.name)
 

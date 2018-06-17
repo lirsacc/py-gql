@@ -11,20 +11,21 @@ from ..schema.types import EnumType, InputObjectType, ListType, NonNullType, Sca
 
 
 def untyped_value_from_ast(node, variables=None):
-    """ Convert an ast value node into a valid python value
-    without type validation.
+    """ Convert an ast value node into a valid python value without type validation.
 
     :type node: py_gql.lang.ast.Value
-    :param node:
-        The value node which value is required
+    :param node: The value node which value is required
 
-    :type variables: dict[str, any]|None
-    :param variables:
-        Variables mapping.
+    :type variables: Optional[dict]
+    :param variables: Variables mapping
 
     :rtype: any
-    :returns:
-        Extracted value.
+    :returns: Extracted value
+
+    :Raises:
+
+        - ``TypeError`` when node is not a value node
+        - :class:`py_gql.exc.UnknownVariable` if a variable is required and doesn't exist
     """
     kind = type(node)
 
@@ -55,31 +56,32 @@ def untyped_value_from_ast(node, variables=None):
 
 
 def typed_value_from_ast(node, type_, variables=None):
-    """ Convert an ast value node into a valid python value
-    while vaidating against a given type.
-    Raise ``py_gql.exc.InvalidValue`` when conversion fails.
+    """ Convert an ast value node into a valid python value while vaidating against a
+    given type.
 
     :type node: py_gql.lang.ast.Value
-    :param node:
-        The value node which value is required.
+    :param node: The value node which value is required
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
-        Type to validate against.
+    :type type_: py_gql.schema.Type
+    :param type_: Type to validate against
 
-    :type variables: dict[str, any]|None
-    :param variables:
-        Variables mapping.
+    :type variables: Optional[dict]
+    :param variables: Variables mapping
 
     :rtype: any
-    :returns:
-        Coerced value.
+    :returns: Coerced value
+
+    :Raises:
+
+        - ``TypeError`` when node is not a value node
+        - :class:`py_gql.exc.InvalidValue` if the value cannot be converted
+        - :class:`py_gql.exc.UnknownVariable` if a variable is required and doesn't exist
+
+    .. warning::
+
+        No validation is done with regard to the variable values which are assumed to
+        have been validated before.
     """
-
-    # [WARN] This is slightly different from the JS reference:
-    # - It raises on missing variables instead of nullifying
-    # - It doesn't wrap singletons scalars in list types
-
     kind = type(node)
     if isinstance(type_, NonNullType):
         if kind == _ast.NullValue:
@@ -94,17 +96,12 @@ def typed_value_from_ast(node, type_, variables=None):
         varname = node.name.value
         if not variables or varname not in variables:
             raise UnknownVariable(varname, [node])
-        # [WARN] No validation of the variable value is done here as
-        # we expect the query to have been validated and the variable usage
-        # to be of the correct type.
         return variables[varname]
 
     if isinstance(type_, ListType):
         if kind != _ast.ListValue:
             return [typed_value_from_ast(node, type_.type, variables)]
 
-        # [WARN] The ref implementation nullifies nullable missing entries
-        # => check spec for this behaviour.
         return [
             typed_value_from_ast(item, type_.type, variables) for item in node.values
         ]
@@ -135,8 +132,6 @@ def _extract_input_object(node, type_, variables):
                 coerced[name] = field.default_value
             elif isinstance(field.type, NonNullType):
                 raise InvalidValue("Missing field %s" % name, [node])
-            # [WARN] As-is missing field will remain missing in the
-            # resulting object, not sure if that's what the spec says.
         else:
             value = node_fields[name].value
             coerced[name] = typed_value_from_ast(value, field.type, variables)

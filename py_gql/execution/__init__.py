@@ -12,7 +12,7 @@ import functools as ft
 
 import six
 
-from .._utils import find_one, OrderedDict, flatten, is_iterable, Path
+from .._utils import find_one, OrderedDict, flatten, is_iterable
 from ..exc import (
     InvalidValue,
     CoercionError,
@@ -45,6 +45,7 @@ from ..utilities import (
     coerce_value,
     coerce_argument_values,
     default_resolver,
+    Path,
 )
 from ._utils import ExecutionContext, ResolveInfo, directive_arguments
 from .executors import DefaultExecutor, Executor

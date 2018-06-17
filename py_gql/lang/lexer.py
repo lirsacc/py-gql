@@ -67,6 +67,8 @@ QUOTED_CHARS = {
 def is_source_character(code):
     """
     :type code: int
+    :param code:
+
     :rtype: bool
     """
     return code >= 0x0020 or code == 0x0009
@@ -75,6 +77,8 @@ def is_source_character(code):
 def is_number_lead(code):
     """
     :type code: int
+    :param code:
+
     :rtype: bool
     """
     return code == 0x002d or is_digit(code)
@@ -83,6 +87,8 @@ def is_number_lead(code):
 def is_digit(code):
     """
     :type code: int
+    :param code:
+
     :rtype: bool
     """
     return 0x0030 <= code <= 0x0039
@@ -91,6 +97,8 @@ def is_digit(code):
 def is_name_lead(code):
     """
     :type code: int
+    :param code:
+
     :rtype: bool
     """
     return code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
@@ -99,329 +107,355 @@ def is_name_lead(code):
 def is_name_character(code):
     """
     :type code: int
+    :param code:
+
     :rtype: bool
     """
     return is_name_lead(code) or is_digit(code)
 
 
 class Lexer(object):
-    """ GraphQL Language lexer w/ an iterator interface.
+    """ Iterable GraphQL language lexer.
 
-    Raises variations of ``py_gql.exc.GQLSyntaxError`` when the source is
-    invalid.
+    This class is not typically exposed through the parser but can be used independently.
+
+    Each call to ``__next__`` will read over a number of characters required  to form a
+    valid :class:`py_gql.lang.token.Token` and otherwise raise
+    :class:`py_gql.exc.GraphQLSyntaxError` if that is not possible.
     """
 
-    __slots__ = ("source", "len", "done", "position", "started")
+    __slots__ = "_source", "_len", "_done", "_position", "_started"
 
     def __init__(self, source):
 
         if source is None:
             raise ValueError("source cannot be None")
 
-        self.source = ensure_unicode(source)
-        self.len = len(source)
-        self.done = False
-        self.started = False
-        self.position = 0
+        self._source = ensure_unicode(source)
+        self._len = len(source)
+        self._done = False
+        self._started = False
+        self._position = 0
 
-    def peek(self, count=1, raise_on_eof=False):
+    def _peek(self, count=1, raise_on_eof=False):
         """
         :type count: int
-        :type raise_on_eof: bool
-        :rtype: char|None
-        """
-        if self.done or self.position + count - 1 >= self.len:
-            if raise_on_eof:
-                raise UnexpectedEOF(self.position, self.source)
-            return None
-        return self.source[self.position + count - 1]
+        :param count:
 
-    def advance(self, expected=None):
+        :type raise_on_eof: bool
+        :param raise_on_eof:
+
+        :rtype: Optional[char]
         """
-        :type expected: char|None
-        :rtype: char|None
+        if self._done or self._position + count - 1 >= self._len:
+            if raise_on_eof:
+                raise UnexpectedEOF(self._position, self._source)
+            return None
+        return self._source[self._position + count - 1]
+
+    def _advance(self, expected=None):
         """
-        char = self.peek(raise_on_eof=expected is not None)
-        self.position += 1
+        :type expected: Optional[char]
+        :param expected:
+
+        :rtype: Optional[char]
+        """
+        char = self._peek(raise_on_eof=expected is not None)
+        self._position += 1
 
         if expected is not None and char != expected:
             raise UnexpectedCharacter(
                 'Expected "%s" but found "%s"' % (expected, char),
-                self.position,
-                self.source,
+                self._position,
+                self._source,
             )
 
         return char
 
-    def read_over_current_line(self):
+    def _read_over_current_line(self):
         """ Advance lexer until the end of the current line. """
         while True:
-            char = self.peek()
+            char = self._peek()
             if char is None:
                 break
             code = ord(char)
 
             if is_source_character(code) and code not in EOL_CHARS:
-                self.advance()
+                self._advance()
             else:
                 break
 
-    def read_over_whitespace(self):
-        """ Advance lexer over all whitespace / comments / ignored chars. """
+    def _read_over_whitespace(self):
+        """ Advance lexer over all whitespace / comments / ignored characters. """
         while True:
-            char = self.peek()
+            char = self._peek()
             if char is None:
                 break
             code = ord(char)
 
             if code in IGNORED_CHARS:
-                self.advance()
+                self._advance()
             elif code == 0x0023:  # '#'
-                self.advance()
-                self.read_over_current_line()
+                self._advance()
+                self._read_over_current_line()
             else:
                 break
 
-    def read_ellipsis(self):
+    def _read_ellipsis(self):
         """ Advance lexer over an ellipsis token (...).
+
         :rtype: py_gql.lang.token.Ellipsis
         """
-        start = self.position
+        start = self._position
         for _ in range(3):
-            self.advance(expected=".")
-        return token.Ellipsis(start, self.position)
+            self._advance(expected=".")
+        return token.Ellipsis(start, self._position)
 
-    def read_string(self):
+    def _read_string(self):
         """ Advance lexer over a quoted string.
+
         :rtype: py_gql.lang.token.String
         """
-        start = self.position
-        self.advance(expected='"')
+        start = self._position
+        self._advance(expected='"')
         acc = []
         while True:
-            char = self.peek()
+            char = self._peek()
 
             if char is None:
-                raise NonTerminatedString("", self.position, self.source)
+                raise NonTerminatedString("", self._position, self._source)
 
             code = ord(char)
-            self.advance()
+            self._advance()
 
             if char == '"':
                 value = "".join(acc)
-                return token.String(start, self.position, value)
+                return token.String(start, self._position, value)
             elif char == "\\":
-                acc.append(self.read_escape_sequence())
+                acc.append(self._read_escape_sequence())
             elif code == 0x000a or code == 0x000d:  # \n or \r
-                raise NonTerminatedString("", self.position - 1, self.source)
+                raise NonTerminatedString("", self._position - 1, self._source)
             elif not is_source_character(code):
-                raise InvalidCharacter(char, self.position - 1, self.source)
+                raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
 
-        raise NonTerminatedString("", self.position, self.source)
+        raise NonTerminatedString("", self._position, self._source)
 
-    def read_block_string(self):
-        """ Advance lexer over a quoted block string.
+    def _read_block_string(self):
+        """ Advance lexer over a triple quoted block string.
+
         :rtype: py_gql.lang.token.BlockString
         """
-        start = self.position
-        self.advance(expected='"')
-        self.advance(expected='"')
-        self.advance(expected='"')
+        start = self._position
+        self._advance(expected='"')
+        self._advance(expected='"')
+        self._advance(expected='"')
         acc = []
 
         while True:
-            char = self.peek()
+            char = self._peek()
 
             if char is None:
-                raise NonTerminatedString("", self.position, self.source)
+                raise NonTerminatedString("", self._position, self._source)
 
             code = ord(char)
-            self.advance()
+            self._advance()
 
-            if char == '"' and (self.peek(), self.peek(2)) == ('"', '"'):
-                self.advance()
-                self.advance()
+            if char == '"' and (self._peek(), self._peek(2)) == ('"', '"'):
+                self._advance()
+                self._advance()
                 value = parse_block_string("".join(acc))
-                return token.BlockString(start, self.position, value)
+                return token.BlockString(start, self._position, value)
             elif char == "\\":
-                if (self.peek(), self.peek(2), self.peek(3)) == ('"', '"', '"'):
+                if (self._peek(), self._peek(2), self._peek(3)) == ('"', '"', '"'):
                     for _ in range(3):
-                        acc.append(self.advance())
+                        acc.append(self._advance())
                 else:
                     acc.append(char)
             elif not (is_source_character(code) or code in EOL_CHARS):
-                raise InvalidCharacter(char, self.position - 1, self.source)
+                raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
 
-        raise NonTerminatedString("", self.position, self.source)
+        raise NonTerminatedString("", self._position, self._source)
 
-    def read_escape_sequence(self):
+    def _read_escape_sequence(self):
         """ Advance lexer over an escape character
+
         :rtype: char
         """
-        char = self.advance()
+        char = self._advance()
         if char is None:
-            raise NonTerminatedString("", self.position, self.source)
+            raise NonTerminatedString("", self._position, self._source)
 
         code = ord(char)
 
         if code in QUOTED_CHARS:
             return QUOTED_CHARS[code]
         elif code == 0x0075:  # unicode character: uXXXX
-            return self.read_escaped_unicode()
+            return self._read_escaped_unicode()
         else:
-            raise InvalidEscapeSequence(u"\%s" % char, self.position - 1, self.source)
+            raise InvalidEscapeSequence(u"\%s" % char, self._position - 1, self._source)
 
-    def read_escaped_unicode(self):
+    def _read_escaped_unicode(self):
         """ Advance lexer over a unicode character
+
         :rtype: char
         """
-        start = self.position
+        start = self._position
         for _ in range(4):
-            char = self.advance()
+            char = self._advance()
             if char is None:
-                raise NonTerminatedString("", self.position, self.source)
+                raise NonTerminatedString("", self._position, self._source)
             if not char.isalnum():
                 break
 
-        escape = self.source[start : self.position]
+        escape = self._source[start : self._position]
 
         if len(escape) != 4:
-            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self.source)
+            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self._source)
 
         try:
             return u"%c" % six.unichr(int(escape, 16))
         except ValueError:
-            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self.source)
+            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self._source)
 
-    def read_number(self):
+    def _read_number(self):
         """ Advance lexer over a number
-        :rtype: py_gql.lang.token.Integer|py_gql.lang.token.Float
+
+        :rtype: Union[py_gql.lang.token.Integer, py_gql.lang.token.Float]
         """
-        start = self.position
+        start = self._position
         is_float = False
 
-        char = self.peek(raise_on_eof=True)
+        char = self._peek(raise_on_eof=True)
         if ord(char) == 0x002d:  # "-"
-            self.advance()
+            self._advance()
 
-        self.read_over_integer()
+        self._read_over_integer()
 
-        char = self.peek()
+        char = self._peek()
         if char is not None and ord(char) == 0x002e:  # "."
-            self.advance()
+            self._advance()
             is_float = True
-            self.read_over_digits()
+            self._read_over_digits()
 
-        char = self.peek()
+        char = self._peek()
         if char is not None and ord(char) in (0x0065, 0x0045):  # "e", "E"
-            self.advance()
+            self._advance()
             is_float = True
-            char = self.peek(raise_on_eof=True)
+            char = self._peek(raise_on_eof=True)
             if ord(char) in (0x002d, 0x002b):  # "-", "+"
-                self.advance()
+                self._advance()
 
-            self.read_over_integer()
+            self._read_over_integer()
 
-        end = self.position
-        value = self.source[start:end]
+        end = self._position
+        value = self._source[start:end]
         return (
             token.Float(start, end, value)
             if is_float
             else token.Integer(start, end, value)
         )
 
-    def read_over_integer(self):
-        """
+    def _read_over_integer(self):
+        """ Advance lexer over an integer
+
         :rtype: int
         """
-        char = self.peek(raise_on_eof=True)
+        char = self._peek(raise_on_eof=True)
         code = ord(char)
 
         if code == 0x0030:  # "0"
-            self.advance()
-            char = self.peek()
+            self._advance()
+            char = self._peek()
             if char is not None and ord(char) == 0x0030:
-                raise UnexpectedCharacter("%s" % char, self.position, self.source)
+                raise UnexpectedCharacter("%s" % char, self._position, self._source)
         else:
-            self.read_over_digits()
+            self._read_over_digits()
 
-    def read_over_digits(self):
-        """
-        """
-        char = self.peek(raise_on_eof=True)
+    def _read_over_digits(self):
+        """ Advance lexer over a sequence of digits """
+        char = self._peek(raise_on_eof=True)
         code = ord(char)
         if not is_digit(code):
-            raise UnexpectedCharacter("%s" % char, self.position, self.source)
+            raise UnexpectedCharacter("%s" % char, self._position, self._source)
 
         while True:
-            char = self.peek()
+            char = self._peek()
             if char is not None and is_digit(ord(char)):
-                self.advance()
+                self._advance()
             else:
                 break
 
-    def read_name(self):
-        """ Advance lexer over a name /[_A-Za-z][A-Za-z0-9_]+/.
+    def _read_name(self):
+        """ Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
+
         :rtype: py_gql.lang.token.Name
         """
-        start = self.position
-        char = self.peek(raise_on_eof=True)
+        start = self._position
+        char = self._peek(raise_on_eof=True)
         while True:
-            char = self.peek()
+            char = self._peek()
             if char is not None and is_name_character(ord(char)):
-                self.advance()
+                self._advance()
             else:
                 break
 
-        end = self.position
-        value = self.source[start:end]
+        end = self._position
+        value = self._source[start:end]
         return token.Name(start, end, value)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        """ Iterator interface.
-        :rtype: py_gql.lang.token.Token
         """
-        if self.done:
+
+        :rtype: py_gql.lang.token.Token
+
+        :Raises:
+
+            - :class:`py_gql.exc.UnexpectedEOF`
+            - :class:`py_gql.exc.InvalidCharacter`
+            - :class:`py_gql.exc.UnexpectedCharacter`
+            - :class:`py_gql.exc.NonTerminatedString`
+        """
+        if self._done:
             raise StopIteration()
 
-        if not self.started:
-            self.started = True
+        if not self._started:
+            self._started = True
             return token.SOF(0, 0)
 
-        self.read_over_whitespace()
-        char = self.peek()
+        self._read_over_whitespace()
+        char = self._peek()
 
         if char is None:
-            self.done = True
-            return token.EOF(self.position, self.position)
+            self._done = True
+            return token.EOF(self._position, self._position)
 
         code = ord(char)
         if not is_source_character(code):
-            self.advance()
-            raise InvalidCharacter(char, self.position, self.source)
+            self._advance()
+            raise InvalidCharacter(char, self._position, self._source)
 
         if char in SYMBOLS:
-            start = self.position
-            self.advance()
-            return SYMBOLS[char](start, self.position)
+            start = self._position
+            self._advance()
+            return SYMBOLS[char](start, self._position)
         elif char == ".":
-            return self.read_ellipsis()
+            return self._read_ellipsis()
         elif char == '"':
-            if (self.peek(2), self.peek(3)) == ('"', '"'):
-                return self.read_block_string()
-            return self.read_string()
+            if (self._peek(2), self._peek(3)) == ('"', '"'):
+                return self._read_block_string()
+            return self._read_string()
         elif is_number_lead(code):
-            return self.read_number()
+            return self._read_number()
         elif is_name_lead(code):
-            return self.read_name()
+            return self._read_name()
         else:
-            raise UnexpectedCharacter(char, self.position, self.source)
+            raise UnexpectedCharacter(char, self._position, self._source)
 
-    next = __next__  # Python 2 iteraator interface
+    next = __next__  # Python 2 iterator interface

@@ -3,7 +3,21 @@
 
 
 def default_resolver(parent_value, args, context, info):
-    """ Default resolver.
+    """ Default resolver used during execution.
+
+    This resolver looks up the value from the ``parent_value`` in the
+    following lookup order:
+
+    1. If ``parent_value`` is a ``dict`` subcass:
+        1. If the field name is present and non callable, return it
+        2. If the field name is present and callable, return result of
+            calling it like a normal resolver (i.e. with the arguments passed to
+            this function)
+    2. If ``parent_value`` has an attribute corresponding to the field name:
+        1.  If the attribute is non callable, return it
+        2. If the attribute is callable, treat it like a method of ``parent_value``
+            and call it passing in ``(args, context, info)``
+    3. Return ``None``
 
     :type parent_value: any
     :param parant_value: Value of the resolved parent node
@@ -14,20 +28,11 @@ def default_resolver(parent_value, args, context, info):
     :type context: any
     :param context: User provided context value
 
-    :type info: ResolveInfo
+    :type info: :class:`py_gql.execution.ResolveInfo`
     :param info: Resolution context
 
     :rype: any
     :returns: Resolved value
-
-    Lookup order:
-
-        1. non callable key in the parent_value (dict subclass only)
-        2. result of callable(parent_value, args, context, info) key in the
-           parent_value (dict subclass only)
-        3. non callable attribute in the parent_value
-        4. result of callable(args, context, info) attribute in the parent_value
-        5. None
     """
     field_name = info.field_def.name
     if isinstance(parent_value, dict):

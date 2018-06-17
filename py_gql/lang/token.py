@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
-""" """
+"""
+Encode all the valid source tokens found in a GraphQL document as described in
+`this document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_.
+"""
 
 
 class Token(object):
-    """ Token class used by ``py_gql.lang.lexer.Lexer`` to represent
-    the source elements that make up a GraphQL document.
+    """ Base token class
+
+    :ivar start: Starting position for this token (0-indexed)
+    :ivar end: Final position for this token (0-indexed)
+    :ivar value: Characters making up this token
     """
 
-    __slots__ = ("start", "end", "value", "__kind__")
+    __slots__ = "start", "end", "value"
 
     def __init__(self, start, end, value=None):
         """
         :type start: int
+        :param start: Starting position for this token (0-indexed)
+
         :type end: int
-        :type value: str
+        :param end: Final position for this token (0-indexed)
+
+        :type value: Optional[str]
+        :param value: Characters making up this token
         """
         self.start = start
         self.end = end

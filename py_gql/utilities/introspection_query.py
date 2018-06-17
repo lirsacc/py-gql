@@ -2,7 +2,13 @@
 
 
 def introspection_query(description=True):
-    """ Generic introspection query """
+    """ Return a generic introspection query to be used by GraphQL clients.
+
+    :type description: int
+    :param description: If ``True`` the query will require descriptions to be included
+
+    :rtype: str
+    """
     return """
     query IntrospectionQuery {
         __schema {
