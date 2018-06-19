@@ -148,9 +148,8 @@ def test_Schema_includes_interface_possible_types_in_the_type_map():
 def test_Schema_refuses_duplicate_type_names():
     type_1 = ObjectType("Object", [Field("f", String)])
     type_2 = ObjectType("Object", [Field("f", String)])
-    schema = Schema(ObjectType("Query", [Field("f1", type_1), Field("f2", type_2)]))
     with pytest.raises(SchemaError) as exc_info:
-        schema.validate()
+        Schema(ObjectType("Query", [Field("f1", type_1), Field("f2", type_2)]))
 
     assert str(exc_info.value) == 'Duplicate type "Object"'
 

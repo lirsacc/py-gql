@@ -6,15 +6,8 @@ from py_gql._string_utils import parse_block_string
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
-from py_gql.schema import (
-    UUID,
-    Field,
-    ObjectType,
-    Schema,
-    String,
-    print_schema,
-    schema_from_ast,
-)
+from py_gql.schema import UUID, Field, ObjectType, String, print_schema, schema_from_ast
+from py_gql.schema.schema_directive import SchemaDirective
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
@@ -482,6 +475,10 @@ def test_union_type_extension_bad_extension():
 
 
 def test_scalar_type_extension():
+    class ProtectedDirective(SchemaDirective):
+        def visit_scalar(self, scalar_type):
+            return scalar_type
+
     schema = schema_from_ast(
         """
         directive @protected on SCALAR
@@ -493,7 +490,8 @@ def test_scalar_type_extension():
         scalar Foo
 
         extend scalar Foo @protected
-        """
+        """,
+        schema_directives={"protected": ProtectedDirective},
     )
 
     assert print_schema(schema, indent="    ") == dedent(
@@ -518,6 +516,10 @@ def test_scalar_type_extension():
 
 
 def test_injected_scalar_type_extension():
+    class ProtectedDirective(SchemaDirective):
+        def visit_scalar(self, scalar_type):
+            return scalar_type
+
     schema = schema_from_ast(
         """
         directive @protected on SCALAR
@@ -529,6 +531,7 @@ def test_injected_scalar_type_extension():
         extend scalar UUID @protected
         """,
         known_types=[UUID],
+        schema_directives={"protected": ProtectedDirective},
     )
 
     assert print_schema(schema, indent="    ", include_descriptions=False) == dedent(

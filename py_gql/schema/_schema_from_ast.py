@@ -2,6 +2,7 @@
 """ Build an executable schema from an parsed SDL file. """
 
 import collections
+import copy
 
 import six
 
@@ -13,6 +14,7 @@ from ..utilities import directive_arguments, typed_value_from_ast
 from .directives import DeprecatedDirective
 from .scalars import SPECIFIED_SCALAR_TYPES, DefaultCustomScalar
 from .schema import Schema
+from .schema_directive import apply_schema_directives
 
 
 def schema_from_ast(
@@ -21,41 +23,37 @@ def schema_from_ast(
     known_types=None,
     schema_directives=None,
     _raise_on_unknown_extension=False,
+    _raise_on_missing_directive=False,
 ):
     """ Build a valid schema from a schema definition.
 
     The schema is validate at the end to ensure not invalid schema gets created.
 
-    :type document: py_gql.lang.ast.Document|str|List[str]
+    :type document: Union[py_gql.lang.ast.Document, str, List[str]]
     :param document: Schema definition AST(s)
         A document will be used as is while a string or multiple string will
         be parsed first (potentially raising appropriate exceptions). List of
         strings will be combined as a single SDL.
 
-    :type resolvers: dict|callable
+    :type resolvers: Union[dict, callable]
     :param resolvers: Used to infer field resolvers
         If a `dict` is provided, this looks for the resolver at key
         `{type_name}.{field_name}`. If a callable is provided, this calls
         it with the `{type_name}.{field_name}` argument and use the return value
         if it is callable.
 
-    :type known_types: list
+    :type known_types: List[py_gql.schema.Type]
     :param known_types: User supplied list of known types
         Use this to specify some custom implementation for scalar, enums, etc.
         WARN: In case of object types, interfaces, etc. the supplied type will
         override the extracted type without checking.
 
-    WARN: Type extensions are ~~not supported yet~~ partially supported:
-        - Supported: InterfaceType, ObjectType, UnionType, EnumType,
-          InputTypeExtension
-        - Not supported (silently ignored): ScalarTypeExtension
-        - Extensions on unknown types are silently ignored.
-        - Extension validation is shared between this module and the schema
-          validation which is enforced at the end of this function anyways.
+    :type _raise_on_unknown_extension: bool
+    :param _raise_on_unknown_extension:
 
-    WARN: Directives on type definitions and extensions are not suported yet
+    :type _raise_on_missing_directive: bool
+    :param _raise_on_missing_directive:
 
-    WARN: Doesn't support comments-based description
     """
 
     if isinstance(document, six.string_types):
@@ -104,6 +102,11 @@ def schema_from_ast(
         node=schema_definition,
     )
 
+    # Schema must be valid before applying directives
+    schema.validate()
+    apply_schema_directives(
+        schema, schema_directives or {}, strict=_raise_on_missing_directive
+    )
     schema.validate()
 
     return schema
@@ -237,7 +240,7 @@ def _build_types_and_directives(  # noqa
     :returns: (type_map, directive_map)
     """
     _cache = {}
-    _known_types = {t.name: t for t in (known_types or [])}
+    _known_types = {t.name: copy.copy(t) for t in (known_types or [])}
 
     for _type in SPECIFIED_SCALAR_TYPES:
         _cache[_type.name] = _type

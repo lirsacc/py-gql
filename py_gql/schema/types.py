@@ -490,28 +490,20 @@ class InterfaceType(NamedType):
     is actually used when the field is resolved.
     """
 
-    def __init__(
-        self, name, fields, types=None, resolve_type=None, description=None, nodes=None
-    ):
+    def __init__(self, name, fields, resolve_type=None, description=None, nodes=None):
         """
         :type name: str
         :type fields: callable|dict(str, InputField)|[InputField]
-        :type types: callable|[Type]|dict(str, Type)
         :type description: str
         """
         assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
-        self._types = types
         self._fields = fields
         self.nodes = [] if nodes is None else nodes
 
         assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
-
-    @cached_property
-    def types(self):
-        return evaluate_lazy_list(self._types)
 
     @cached_property
     def fields(self):

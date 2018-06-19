@@ -122,9 +122,8 @@ def test_reject_non_object_subscription_type():
 
 
 def test_reject_incorrectly_typed_directives():
-    schema = Schema(SomeObject, directives=["somedirective"])
     with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
+        Schema(SomeObject, directives=["somedirective"])
 
     assert "somedirective" in str(exc_info.value)
     assert "str" in str(exc_info.value)

@@ -112,8 +112,8 @@ def test_int_and_float_do_not_overlap():
 def test_disjoint_unions_do_not_overlap():
     member1 = ObjectType("Object1", [Field("field", String)])
     member2 = ObjectType("Object2", [Field("field", String)])
-    union1 = UnionType("Union", [member2])
-    union2 = UnionType("Union", [member1])
+    union1 = UnionType("Union1", [member2])
+    union2 = UnionType("Union2", [member1])
     schema = Schema(
         ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
     )
@@ -123,8 +123,8 @@ def test_disjoint_unions_do_not_overlap():
 def test_common_unions_not_overlap():
     member1 = ObjectType("Object1", [Field("field", String)])
     member2 = ObjectType("Object2", [Field("field", String)])
-    union1 = UnionType("Union", [member2])
-    union2 = UnionType("Union", [member1, member2])
+    union1 = UnionType("Union1", [member2])
+    union2 = UnionType("Union2", [member1, member2])
     schema = Schema(
         ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
     )

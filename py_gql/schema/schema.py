@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """ Schema definition. """
 
+from collections import defaultdict
+
 from .._utils import cached_property
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
@@ -99,32 +101,22 @@ class Schema(object):
         self._is_valid = None
         self._literal_types_cache = {}
 
-    @cached_property
-    def _type_map(self):
-        return _build_type_map(self._types + self._directives)
+        self.type_map = _build_type_map(self._types + self._directives)
+        self._rebuild_caches()
 
-    @cached_property
-    def types(self):
-        return {
-            name: t
-            for name, t in self._type_map.items()
-            if not isinstance(t, Directive)
+    def _rebuild_caches(self):
+        self.types = {
+            name: t for name, t in self.type_map.items() if not isinstance(t, Directive)
         }
-
-    @cached_property
-    def directives(self):
-        return {
-            name: t for name, t in self._type_map.items() if isinstance(t, Directive)
+        self.directives = {
+            name: t for name, t in self.type_map.items() if isinstance(t, Directive)
         }
-
-    @cached_property
-    def implementations(self):
-        impls = {}
+        self.implementations = defaultdict(list)
         for typ in self.types.values():
             if isinstance(typ, ObjectType):
                 for iface in typ.interfaces:
-                    impls[iface.name] = impls.get(iface.name, []) + [typ]
-        return impls
+                    self.implementations[iface.name].append(typ)
+        self._is_valid = None
 
     def validate(self):
         if self._is_valid is None:

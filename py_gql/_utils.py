@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """ Some generic laguage level utilities. """
 
-import collections as _collections
-import contextlib as _contextlib
-import sys as _sys
+import collections
+import functools as ft
+import sys
 
-import six as _six
+import six
 
 
 def lazy(maybe_callable):
@@ -22,7 +22,7 @@ def lazy(maybe_callable):
     return maybe_callable
 
 
-MISSING = object()
+_MISSING = object()
 
 
 class cached_property(property):
@@ -46,8 +46,8 @@ class cached_property(property):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        value = obj.__dict__.get(self.__name__, MISSING)
-        if value is MISSING:
+        value = obj.__dict__.get(self.__name__, _MISSING)
+        if value is _MISSING:
             value = self.func(obj)
             obj.__dict__[self.__name__] = value
         return value
@@ -121,12 +121,12 @@ def find_one(iterable, predicate):
     return maybe_first((entry for entry in iterable if predicate(entry)), None)
 
 
-if _sys.version >= "3.7":  # flake8: noqa
+if sys.version >= "3.7":  # flake8: noqa
     # Take advantage that dicts are guaranteed ordred from 3.7 onward
     OrderedDict = dict
-    DefaultOrderedDict = _collections.defaultdict
+    DefaultOrderedDict = collections.defaultdict
 else:
-    OrderedDict = _collections.OrderedDict
+    OrderedDict = collections.OrderedDict
 
     class DefaultOrderedDict(OrderedDict):
         """ OrderedDict with default values """
@@ -224,10 +224,10 @@ def is_iterable(value, strings=True):
     except TypeError:
         return False
     else:
-        return strings or not isinstance(value, _six.string_types)
+        return strings or not isinstance(value, six.string_types)
 
 
-def nested_key(obj, *keys, default=MISSING):
+def nested_key(obj, *keys, **kwargs):
     """ Safely extract nested key from dicts and lists.
 
     >>> source = {'foo': {'bar': [{}, {}, {'baz': 42}]}}
@@ -247,12 +247,12 @@ def nested_key(obj, *keys, default=MISSING):
     True
 
     """
+    default = kwargs.get("default", _MISSING)
     for key in keys:
         try:
             obj = obj[key]
         except (KeyError, IndexError):
-            if default is not MISSING:
-                return default
-            else:
+            if default is _MISSING:
                 raise
+            return default
     return obj

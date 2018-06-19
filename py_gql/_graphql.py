@@ -4,6 +4,7 @@
 
 import json
 
+from ._utils import OrderedDict
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import execute
 from .lang import parse
@@ -14,7 +15,7 @@ from .validation import SPECIFIED_RULES, validate_ast
 def graphql(
     schema,
     document,
-    variables,
+    variables=None,
     operation_name=None,
     initial_value=None,
     validators=None,
@@ -56,7 +57,9 @@ def graphql(
     :rtype: GraphQLResult
     :returns: Execution result
     """
-    assert isinstance(schema, Schema) and schema.validate(), "Invalid schema"
+
+    assert isinstance(schema, Schema)
+    schema.validate()
 
     try:
         ast = parse(document, allow_type_system=False)
@@ -106,7 +109,7 @@ class GraphQLResult(object):
     __nonzero__ = __bool__
 
     def response(self):
-        d = {}
+        d = OrderedDict()
         if self._errors is not _unset and self._errors:
             d["errors"] = [error.to_json() for error in self._errors]
         if self._data is not _unset:
