@@ -60,32 +60,39 @@ def _test_schema(field):
 
 
 def test_it_uses_inline_operation_if_no_name_is_provided():
-    assert execute(
-        _test_schema(String), parse("{ test }"), initial_value={"test": "foo"}
-    ) == ({"test": "foo"}, [])
+    check_execution(
+        _test_schema(String),
+        "{ test }",
+        initial_value={"test": "foo"},
+        expected_data={"test": "foo"},
+    )
 
 
 def test_it_uses_only_operation_if_no_name_is_provided():
-    assert execute(
+    check_execution(
         _test_schema(String),
-        parse("query Example { test }"),
+        "query Example { test }",
         initial_value={"test": "foo"},
-    ) == ({"test": "foo"}, [])
+        expected_data={"test": "foo"},
+    )
 
 
 def test_it_uses_named_operation_if_name_is_provided():
-    assert execute(
+    check_execution(
         _test_schema(String),
-        parse("query Example1 { test } query Example2 { test }"),
+        "query Example1 { test } query Example2 { test }",
         initial_value={"test": "foo"},
         operation_name="Example1",
-    ) == ({"test": "foo"}, [])
+        expected_data={"test": "foo"},
+    )
 
 
 def test_raises_if_no_operation_is_provided():
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
-        execute(_test_schema(String), parse("fragment Example on Query { test }"))
+        execute(
+            _test_schema(String), parse("fragment Example on Query { test }")
+        )
     assert str(exc_info.value) == "Expected at least one operation"
 
 
@@ -114,7 +121,9 @@ def test_raises_if_unknown_operation_name_is_provided():
 def test_it_raises_if_operation_type_is_not_supported():
     with pytest.raises(ExecutionError) as exc_info:
         assert execute(
-            Schema(mutation_type=ObjectType("Mutation", [Field("test", String)])),
+            Schema(
+                mutation_type=ObjectType("Mutation", [Field("test", String)])
+            ),
             parse("{ test }"),
             initial_value={"test": "foo"},
         )
@@ -250,18 +259,18 @@ def test_default_resolution_evaluates_callables(exe_cls, exe_kwargs):
             schema,
             parse(
                 """{
-            a, b, c, d, e
-            deep {
-                a
-                deep {
-                    a
-                }
-            }
-        }"""
+                    a, b, c, d, e
+                    deep {
+                        a
+                        deep {
+                            a
+                        }
+                    }
+                }"""
             ),
             initial_value=data,
             executor=executor,
-        )
+        ).result()
 
     assert errors == []
     assert data == {
@@ -292,21 +301,21 @@ def test_merge_of_parallel_fragments(exe_cls, exe_kwargs):
             schema,
             parse(
                 """
-            { a, ...FragOne, ...FragTwo }
+                { a, ...FragOne, ...FragTwo }
 
-            fragment FragOne on Type {
-                b
-                deep { b, deeper: deep { b } }
-            }
+                fragment FragOne on Type {
+                    b
+                    deep { b, deeper: deep { b } }
+                }
 
-            fragment FragTwo on Type {
-                c
-                deep { c, deeper: deep { c } }
-            }
-        """
+                fragment FragTwo on Type {
+                    c
+                    deep { c, deeper: deep { c } }
+                }
+                """
             ),
             executor=executor,
-        )
+        ).result()
 
     assert errors == []
     assert data == {
@@ -339,7 +348,7 @@ def test_forwarded_resolver_arguments(mocker, exe_cls, exe_kwargs):
             initial_value=root,
             variables={"var": 123},
             executor=executor,
-        )
+        ).result()
 
         assert errors == []
 
@@ -407,7 +416,11 @@ def test_nulls_and_report_error_on_non_nullable_field(exe_cls, exe_kwargs):
             initial_value=dict(scalarNonNull=None),
             expected_data={"scalarNonNull": None},
             expected_errors=[
-                ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
+                (
+                    'Field "scalarNonNull" is not nullable',
+                    (10, 23),
+                    "scalarNonNull",
+                )
             ],
             executor=executor,
         )
@@ -422,7 +435,11 @@ def test_nulls_and_report_error_on_lazy_non_nullable_field(exe_cls, exe_kwargs):
             initial_value=dict(scalarNonNull=lambda *_: None),
             expected_data={"scalarNonNull": None},
             expected_errors=[
-                ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
+                (
+                    'Field "scalarNonNull" is not nullable',
+                    (10, 23),
+                    "scalarNonNull",
+                )
             ],
             executor=executor,
         )
@@ -447,10 +464,16 @@ def test_nulls_tree_of_nullable_fields(exe_cls, exe_kwargs):
             }
             """,
             initial_value={
-                "nested": {"scalar": None, "nested": {"scalar": None, "nested": None}}
+                "nested": {
+                    "scalar": None,
+                    "nested": {"scalar": None, "nested": None},
+                }
             },
             expected_data={
-                "nested": {"nested": {"nested": None, "scalar": None}, "scalar": None}
+                "nested": {
+                    "nested": {"nested": None, "scalar": None},
+                    "scalar": None,
+                }
             },
             expected_errors=[],
             executor=executor,
@@ -458,7 +481,9 @@ def test_nulls_tree_of_nullable_fields(exe_cls, exe_kwargs):
 
 
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(exe_cls, exe_kwargs):
+def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
+    exe_cls, exe_kwargs
+):
 
     with exe_cls(**exe_kwargs) as executor:
         check_execution(
@@ -499,7 +524,11 @@ def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(exe_cls, exe_kwa
                     (102, 278),
                     "nested.nestedNonNull",
                 ),
-                ('Field "nestedNonNull" is not nullable', (313, 380), "nestedNonNull"),
+                (
+                    'Field "nestedNonNull" is not nullable',
+                    (313, 380),
+                    "nestedNonNull",
+                ),
             ],
         )
 
@@ -540,7 +569,9 @@ def test_nulls_out_errored_subtrees(raiser, exe_cls, exe_kwargs):
     )
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(schema, doc, initial_value=root, executor=executor)
+        data, errors = execute(
+            schema, doc, initial_value=root, executor=executor
+        ).result()
 
     assert data == {
         "sync": "sync",
@@ -550,7 +581,7 @@ def test_nulls_out_errored_subtrees(raiser, exe_cls, exe_kwargs):
         "resolver": "resolver",
     }
 
-    assert [(str(err), node.loc, path) for err, node, path in errors] == [
+    assert [(str(err), err.nodes[0].loc, err.path) for err in errors] == [
         ("callable_error", (24, 38), ["callable_error"]),
         ("resolver_error", (66, 80), ["resolver_error"]),
     ]
@@ -571,7 +602,9 @@ def test_full_response_path_is_included_on_error(raiser, exe_cls, exe_kwargs):
         ],
     )
     schema = Schema(
-        ObjectType("query", [Field("nullableA", lambda: A, resolve=lambda *_: {})])
+        ObjectType(
+            "query", [Field("nullableA", lambda: A, resolve=lambda *_: {})]
+        )
     )
 
     doc = parse(
@@ -591,13 +624,13 @@ def test_full_response_path_is_included_on_error(raiser, exe_cls, exe_kwargs):
     )
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(schema, doc, executor=executor)
+        data, errors = execute(schema, doc, executor=executor).result()
 
     assert data == {
         "nullableA": {"aliasedA": {"nonNullA": {"anotherA": {"raises": None}}}}
     }
 
-    assert [(str(err), node.loc, path) for err, node, path in errors] == [
+    assert [(str(err), err.nodes[0].loc, err.path) for err in errors] == [
         (
             "Catch me if you can",
             (159, 165),
@@ -618,7 +651,9 @@ def test_it_does_not_include_illegal_fields(mocker, exe_cls, exe_kwargs):
     """
     )
 
-    schema = Schema(mutation_type=ObjectType("mutation", [Field("test", String)]))
+    schema = Schema(
+        mutation_type=ObjectType("mutation", [Field("test", String)])
+    )
 
     root = {
         "test": mocker.Mock(return_value="foo"),
@@ -626,7 +661,9 @@ def test_it_does_not_include_illegal_fields(mocker, exe_cls, exe_kwargs):
     }
 
     with exe_cls(**exe_kwargs) as executor:
-        result, _ = execute(schema, doc, initial_value=root, executor=executor)
+        result, _ = execute(
+            schema, doc, initial_value=root, executor=executor
+        ).result()
     assert result == {}
 
     assert not root["thisIsIllegalDontIncludeMe"].call_count
@@ -635,7 +672,8 @@ def test_it_does_not_include_illegal_fields(mocker, exe_cls, exe_kwargs):
 @pytest.fixture
 def _complex_schema():
     BlogImage = ObjectType(
-        "Image", [Field("url", String), Field("width", Int), Field("height", Int)]
+        "Image",
+        [Field("url", String), Field("width", Int), Field("height", Int)],
     )
 
     BlogAuthor = ObjectType(
@@ -739,12 +777,14 @@ def _complex_schema():
 
 
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_executes_correctly_without_validation(_complex_schema, exe_cls, exe_kwargs):
+def test_executes_correctly_without_validation(
+    _complex_schema, exe_cls, exe_kwargs
+):
     # This is an *invalid* query, but it should be an *executable* query.
     schema, doc = _complex_schema
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(schema, doc, executor=executor)
+        data, errors = execute(schema, doc, executor=executor).result()
 
     assert data == {
         "article": {
@@ -783,13 +823,15 @@ def test_executes_correctly_without_validation(_complex_schema, exe_cls, exe_kwa
 
 
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_result_is_ordered_according_to_query(_complex_schema, exe_cls, exe_kwargs):
+def test_result_is_ordered_according_to_query(
+    _complex_schema, exe_cls, exe_kwargs
+):
     """ check that deep iteration order of keys in result corresponds to order
     of appearance in query accounting for fragment use """
     # This is an *invalid* query, but it should be an *executable* query.
     schema, doc = _complex_schema
     with exe_cls(**exe_kwargs) as executor:
-        data, _ = execute(schema, doc, executor=executor)
+        data, _ = execute(schema, doc, executor=executor).result()
 
     def _extract_keys_in_order(d):
         if not isinstance(d, dict):
@@ -832,7 +874,10 @@ def test_result_is_ordered_according_to_query(_complex_schema, exe_cls, exe_kwar
                     [
                         ("id", None),
                         ("name", None),
-                        ("pic", [("url", None), ("width", None), ("height", None)]),
+                        (
+                            "pic",
+                            [("url", None), ("width", None), ("height", None)],
+                        ),
                         (
                             "recentArticle",
                             [

@@ -17,7 +17,10 @@ def _dict(value):
 
 
 def _simplify_errors(errors):
-    return [(str(err), node.loc, str(path)) for err, node, path in errors]
+    return [
+        (str(err), err.nodes[0].loc if err.nodes else None, str(err.path))
+        for err in errors
+    ]
 
 
 def check_execution(
@@ -37,12 +40,12 @@ def check_execution(
 
     if expected_exc is not None:
         with pytest.raises(expected_exc) as exc_info:
-            execute(schema, doc, **ex_kwargs)
+            execute(schema, doc, **ex_kwargs).result()
         if expected_msg is not None:
             assert str(exc_info.value) == expected_msg
 
     else:
-        data, errors = execute(schema, doc, **ex_kwargs)
+        data, errors = execute(schema, doc, **ex_kwargs).result()
 
         import pprint
 
@@ -58,4 +61,7 @@ def check_execution(
 
 
 # Default executors under tests
-TESTED_EXECUTORS = [(SyncExecutor, {}), (ThreadPoolExecutor, {"max_workers": 10})]
+TESTED_EXECUTORS = [
+    (SyncExecutor, {}),
+    (ThreadPoolExecutor, {"max_workers": 10}),
+]

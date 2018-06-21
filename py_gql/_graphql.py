@@ -2,17 +2,15 @@
 """ Main GraphQL entrypoint encapsulating query processing from start to finish.
 """
 
-import json
-
-from ._utils import OrderedDict
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
-from .execution import execute
+from .execution import execute, GraphQLResult
+from .execution._concurrency import is_deferred
 from .lang import parse
 from .schema import Schema
 from .validation import SPECIFIED_RULES, validate_ast
 
 
-def graphql(
+def _graphql(
     schema,
     document,
     variables=None,
@@ -74,7 +72,7 @@ def graphql(
         return GraphQLResult(errors=[err])
 
     try:
-        result, execution_errors = execute(
+        return execute(
             schema,
             ast,
             executor=executor,
@@ -88,33 +86,10 @@ def graphql(
     except ExecutionError as err:
         return GraphQLResult(data=None, errors=[err])
 
-    return GraphQLResult(data=result, errors=[err for err, _, _ in execution_errors])
 
-
-_unset = object()
-
-
-class GraphQLResult(object):
-    """ Wrapper encoding the behaviour described in the Response part of the spec
-    http://facebook.github.io/graphql/#sec-Response.
-    """
-
-    def __init__(self, data=_unset, errors=_unset):
-        self._data = data
-        self._errors = errors
-
-    def __bool__(self):
-        return not self._errors
-
-    __nonzero__ = __bool__
-
-    def response(self):
-        d = OrderedDict()
-        if self._errors is not _unset and self._errors:
-            d["errors"] = [error.to_json() for error in self._errors]
-        if self._data is not _unset:
-            d["data"] = self._data
-        return d
-
-    def json(self, **kw):
-        return json.dumps(self.response(), **kw)
+def graphql(*args, **kwargs):
+    timeout = kwargs.pop("timeout", None)
+    result = _graphql(*args, **kwargs)
+    if is_deferred(result):
+        return result.result(timeout=timeout)
+    return result

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import json
+
 import six
 
+from .._utils import OrderedDict
 from ..exc import CoercionError, ResolverError
 from ..utilities import directive_arguments
 
@@ -9,7 +12,7 @@ from ..utilities import directive_arguments
 class ExecutionContext(object):
     """ Container to be passed around **internally** during the execution.
     Unless you are implementing a custom execution function you should not need to
-    refer tot his class.
+    refer to this class.
     """
 
     __slots__ = (
@@ -96,7 +99,7 @@ class ExecutionContext(object):
 
 # REVIEW: Maybe this exposes too much?
 class ResolveInfo(object):
-    """ ResolveInfo will be passed to custom resolver function to expose
+    """ ResolveInfo will be passed to resolver functions to expose
     some of the data used in the execution process as well as some common helper
     functions.
 
@@ -192,3 +195,37 @@ class ResolveInfo(object):
             )
         self._directive_values[directive_name] = values
         return values
+
+
+_unset = object()
+
+
+class GraphQLResult(object):
+    """ Wrapper encoding the behaviour described in the Response part of the spec
+    http://facebook.github.io/graphql/June2018/#sec-Response.
+    """
+
+    def __init__(self, data=_unset, errors=_unset):
+        self._data = data
+        self._errors = errors
+
+    def __bool__(self):
+        return not self._errors
+
+    __nonzero__ = __bool__
+
+    def __iter__(self):
+        return iter((self._data, self._errors))
+
+    def response(self):
+        """ Generate an ordered response dict """
+        d = OrderedDict()
+        if self._errors is not _unset and self._errors:
+            d["errors"] = [error.to_json() for error in self._errors]
+        if self._data is not _unset:
+            d["data"] = self._data
+        return d
+
+    def json(self, **kw):
+        """ Encode result as JSON """
+        return json.dumps(self.response(), **kw)

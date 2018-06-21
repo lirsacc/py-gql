@@ -20,7 +20,7 @@ def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
     }
     """
         ),
-    )
+    ).result()
     assert result == {"hero": {"name": "R2-D2"}}
     assert errors == []
 
@@ -41,7 +41,7 @@ def test_id_and_friends_of_r2_d2(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert result == {
         "hero": {
             "id": "2001",
@@ -75,7 +75,7 @@ def test_the_friends_of_friends_of_r2_d2(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert result == {
         "hero": {
             "name": "R2-D2",
@@ -127,7 +127,7 @@ def test_luke_skywalker_using_id(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert result == {"human": {"name": "Luke Skywalker"}}
     assert errors == []
 
@@ -153,7 +153,7 @@ def test_generic_query_using_id_and_variable(starwars_schema, id, expected):
     """
         ),
         variables={"someId": id},
-    )
+    ).result()
     assert result == {"human": expected}
     assert errors == []
 
@@ -170,7 +170,7 @@ def test_changing_key_with_alias(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert result == {"luke": {"name": "Luke Skywalker"}}
     assert errors == []
 
@@ -192,7 +192,7 @@ def test_same_root_field_multiple_aliases(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert result == {
         "luke": {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
         "leia": {"name": "Leia Organa", "homePlanet": "Alderaan"},
@@ -213,7 +213,7 @@ def test_use_of_fragment_to_avoid_duplicate_content(starwars_schema):
     fragment HumanFragment on Human { name homePlanet }
     """
         ),
-    )
+    ).result()
     assert result == {
         "luke": {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
         "leia": {"name": "Leia Organa", "homePlanet": "Alderaan"},
@@ -235,7 +235,8 @@ def test_use_of_fragment_to_avoid_duplicate_content(starwars_schema):
     ],
 )
 def test_introspection(starwars_schema, query, result):
-    assert execute(starwars_schema, parse(query)) == (result, [])
+    data, errors = execute(starwars_schema, parse(query)).result()
+    assert data, errors == (result, [])
 
 
 def test_error_on_accessing_secret_backstory(starwars_schema):
@@ -251,13 +252,13 @@ def test_error_on_accessing_secret_backstory(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert data == {"hero": {"name": "R2-D2", "secretBackstory": None}}
     assert len(errors) == 1
-    err, node, path = errors[0]
+    err = errors[0]
     assert str(err) == "secretBackstory is secret."
-    assert path == ["hero", "secretBackstory"]
-    assert node.loc == (71, 86)
+    assert err.path == ["hero", "secretBackstory"]
+    assert err.nodes[0].loc == (71, 86)
 
 
 def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
@@ -276,7 +277,7 @@ def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert data == {
         "hero": {
             "friends": [
@@ -288,10 +289,10 @@ def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
         }
     }
     assert len(errors) == 3
-    for i, (err, node, path) in enumerate(errors):
+    for i, err in enumerate(errors):
         assert str(err) == "secretBackstory is secret."
-        assert path == ["hero", "friends", i, "secretBackstory"]
-        assert node.loc == (118, 133)
+        assert err.path == ["hero", "friends", i, "secretBackstory"]
+        assert err.nodes[0].loc == (118, 133)
 
 
 def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
@@ -307,13 +308,13 @@ def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
     }
     """
         ),
-    )
+    ).result()
     assert data == {"mainHero": {"name": "R2-D2", "story": None}}
     assert len(errors) == 1
-    err, node, path = errors[0]
+    err = errors[0]
     assert str(err) == "secretBackstory is secret."
-    assert path == ["mainHero", "story"]
-    assert node.loc == (81, 103)
+    assert err.path == ["mainHero", "story"]
+    assert err.nodes[0].loc == (81, 103)
 
 
 def test_error_on_missing_argument(starwars_schema):
@@ -328,9 +329,11 @@ def test_error_on_missing_argument(starwars_schema):
             }
             """
         ),
-    )
+    ).result()
     assert data == {"luke": None}
     assert len(errors) == 1
-    err, node, path = errors[0]
-    assert str(err) == 'Argument "id" of required type "String!" was not provided'
-    assert path == ["luke"]
+    err = errors[0]
+    assert (
+        str(err) == 'Argument "id" of required type "String!" was not provided'
+    )
+    assert err.path == ["luke"]

@@ -28,7 +28,9 @@ def test_built_schema_is_executable():
             """
         )
     )
-    data, _ = execute(schema, parse("{ str }"), initial_value={"str": 123})
+    data, _ = execute(
+        schema, parse("{ str }"), initial_value={"str": 123}
+    ).result()
     assert data == {"str": "123"}
 
 
@@ -40,7 +42,9 @@ def test_accepts_strings():
         }
         """
     )
-    data, _ = execute(schema, parse("{ str }"), initial_value={"str": 123})
+    data, _ = execute(
+        schema, parse("{ str }"), initial_value={"str": 123}
+    ).result()
     assert data == {"str": "123"}
 
 
@@ -311,7 +315,7 @@ def test_executing_union_default_resolve_type():
                 {"length": 5, "__typename__": "Banana"},
             ]
         },
-    )
+    ).result()
 
     assert data == {"fruits": [{"color": "green"}, {"length": 5}]}
 
@@ -358,7 +362,11 @@ def test_executing_interface_default_resolve_type():
         ),
         initial_value={
             "characters": [
-                {"name": "Han Solo", "totalCredits": 10, "__typename__": "Human"},
+                {
+                    "name": "Han Solo",
+                    "totalCredits": 10,
+                    "__typename__": "Human",
+                },
                 {
                     "name": "R2-D2",
                     "primaryFunction": "Astromech",
@@ -366,7 +374,7 @@ def test_executing_interface_default_resolve_type():
                 },
             ]
         },
-    )
+    ).result()
 
     assert data == {
         "characters": [

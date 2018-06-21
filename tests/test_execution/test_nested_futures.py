@@ -15,7 +15,9 @@ def test_execute_awaits_nested_future():
     schema = Schema(ObjectType("Query", [Field("foo", Int, resolve=resolver)]))
 
     with ThreadPoolExecutor() as executor:
-        data, errors = execute(schema, parse("{ foo }"), executor=executor)
+        data, errors = execute(
+            schema, parse("{ foo }"), executor=executor
+        ).result()
 
     assert data == {"foo": 42}
     assert errors == []
@@ -26,12 +28,16 @@ def test_execute_awaits_deeply_nested_future():
         return info.executor.submit(lambda *a, **kw: 42)
 
     def resolver(root, args, context, info):
-        return lambda: info.executor.submit(deep_resolver, root, args, context, info)
+        return lambda: info.executor.submit(
+            deep_resolver, root, args, context, info
+        )
 
     schema = Schema(ObjectType("Query", [Field("foo", Int, resolve=resolver)]))
 
     with ThreadPoolExecutor() as executor:
-        data, errors = execute(schema, parse("{ foo }"), executor=executor)
+        data, errors = execute(
+            schema, parse("{ foo }"), executor=executor
+        ).result()
 
     assert data == {"foo": 42}
     assert errors == []

@@ -46,10 +46,16 @@ from ..utilities import (
     coerce_argument_values,
     default_resolver,
     Path,
+    directive_arguments
 )
-from ._utils import ExecutionContext, ResolveInfo, directive_arguments
+from ._utils import ExecutionContext, ResolveInfo, GraphQLResult
 from .executors import DefaultExecutor, Executor
 from . import _concurrency
+
+
+__all__ = [
+    "execute", "GraphQLResult", "ExecutionContext", "ResolveInfo"
+]
 
 
 def execute(
@@ -107,16 +113,8 @@ def execute(
 
     executor = executor or DefaultExecutor()
     variables = variables or dict()
+
     operation = get_operation(ast, operation_name)
-
-    fragments = {
-        d.name.value: d
-        for d in ast.definitions
-        if isinstance(d, _ast.FragmentDefinition)
-    }
-
-    coerced_variables = coerce_variable_values(schema, operation, variables)
-
     object_type = {
         "query": schema.query_type,
         "mutation": schema.mutation_type,
@@ -127,6 +125,14 @@ def execute(
         raise ExecutionError(
             "Schema doesn't support %s operation" % operation.operation
         )
+
+    fragments = {
+        d.name.value: d
+        for d in ast.definitions
+        if isinstance(d, _ast.FragmentDefinition)
+    }
+
+    coerced_variables = coerce_variable_values(schema, operation, variables)
 
     ctx = ExecutionContext(
         schema,
@@ -147,14 +153,13 @@ def execute(
             ctx, operation.selection_set.selections, object_type, initial_value
         )
     else:
+        # TODO: Support subscriptions
         raise NotImplementedError("%s not supported" % operation.operation)
 
-    # While it would be more python-ic to raise in case of validation error,
-    # the natural flow would be to interrupt processing but the spec
-    # (http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability)
-    # says that we should null field and return all errors. Maybe we can
-    # re-evaluate the interpretation later.
-    return deferred_result.result(), ctx.errors
+    return _concurrency.chain(
+        deferred_result,
+        lambda d: GraphQLResult(data=d, errors=[err for err, _, _ in ctx.errors])
+    )
 
 
 def get_operation(document, operation_name):
