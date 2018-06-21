@@ -26,12 +26,17 @@ def test_correct_response_on_syntax_error_2(starwars_schema):
         }
     }
     """
+
     assert graphql(starwars_schema, query, {}).response() == {
         "errors": [
             {
-                "message": "Expected Name but found {\n(2:26):\n  1:\n  2:    query \
-HeroNameQuery {{\n                             ^\n  3:        hero {\n  4:           \
-name",
+                "message": """Expected Name but found {
+(2:26):
+  1:
+  2:    query HeroNameQuery {{
+                             ^
+  3:        hero {
+  4:           name""",
                 "locations": [{"columne": 26, "line": 2}],
             }
         ]
@@ -140,7 +145,9 @@ def test_correct_response_on_execution_error_2(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {}, operation_name="Foo").response() == {
+    assert graphql(
+        starwars_schema, query, {}, operation_name="Foo"
+    ).response() == {
         "errors": [{"message": 'No operation "Foo" found in document'}],
         "data": None,
     }
@@ -174,14 +181,22 @@ def test_correct_response_on_variables_error(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {"episode": 42, "id": 42}).response() == {
+    assert graphql(
+        starwars_schema, query, {"episode": 42, "id": 42}
+    ).response() == {
         "errors": [
             {
-                "message": 'Variable "$episode" got invalid value 42 (Expected type Episode)',
+                "message": (
+                    'Variable "$episode" got invalid value 42 '
+                    "(Expected type Episode)"
+                ),
                 "locations": [{"line": 2, "column": 12}],
             },
             {
-                "message": 'Variable "$human" of required type "String!" was not provided.',
+                "message": (
+                    'Variable "$human" of required type "String!" '
+                    "was not provided."
+                ),
                 "locations": [{"line": 2, "column": 32}],
             },
         ],

@@ -90,8 +90,8 @@ def fmt(ctx, verbose=False, files=None):
     with ctx.cd(ROOT):
         ctx.run(
             "isort --multi-line=3 --trailing-comma --force-grid-wrap=0 "
-            "--combine-as --line-width=88 --apply "
+            "--combine-as --apply --line-width=80 "
             "py_gql/**/*.py tests/**/*.py",
             echo=True,
         )
-        ctx.run("black py_gql/**/*.py tests/**/*/*.py", echo=True)
+        ctx.run("black --line-length=80 py_gql/**/*.py tests/**/*/*.py", echo=True)

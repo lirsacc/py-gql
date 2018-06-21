@@ -7,11 +7,18 @@ work with the schema / types implementation we have.
 
 from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
-from ..schema.types import EnumType, InputObjectType, ListType, NonNullType, ScalarType
+from ..schema.types import (
+    EnumType,
+    InputObjectType,
+    ListType,
+    NonNullType,
+    ScalarType,
+)
 
 
 def untyped_value_from_ast(node, variables=None):
-    """ Convert an ast value node into a valid python value without type validation.
+    """ Convert an ast value node into a valid python value without type
+    validation.
 
     :type node: py_gql.lang.ast.Value
     :param node: The value node which value is required
@@ -25,7 +32,8 @@ def untyped_value_from_ast(node, variables=None):
     :Raises:
 
         - ``TypeError`` when node is not a value node
-        - :class:`py_gql.exc.UnknownVariable` if a variable is required and doesn't exist
+        - :class:`py_gql.exc.UnknownVariable` if a variable is required and
+          doesn't exist
     """
     kind = type(node)
 
@@ -39,7 +47,8 @@ def untyped_value_from_ast(node, variables=None):
         return node.value
     elif kind == _ast.ListValue:
         return [
-            untyped_value_from_ast(item, variables=variables) for item in node.values
+            untyped_value_from_ast(item, variables=variables)
+            for item in node.values
         ]
     elif kind == _ast.ObjectValue:
         return {
@@ -56,8 +65,8 @@ def untyped_value_from_ast(node, variables=None):
 
 
 def typed_value_from_ast(node, type_, variables=None):
-    """ Convert an ast value node into a valid python value while vaidating against a
-    given type.
+    """ Convert an ast value node into a valid python value while validating
+    against a given type.
 
     :type node: py_gql.lang.ast.Value
     :param node: The value node which value is required
@@ -75,12 +84,13 @@ def typed_value_from_ast(node, type_, variables=None):
 
         - ``TypeError`` when node is not a value node
         - :class:`py_gql.exc.InvalidValue` if the value cannot be converted
-        - :class:`py_gql.exc.UnknownVariable` if a variable is required and doesn't exist
+        - :class:`py_gql.exc.UnknownVariable` if a variable is required and
+          doesn't exist
 
     .. warning::
 
-        No validation is done with regard to the variable values which are assumed to
-        have been validated before.
+        No validation is done with regard to the variable values which are
+        assumed to have been validated before.
     """
     kind = type(node)
     if isinstance(type_, NonNullType):
@@ -103,12 +113,15 @@ def typed_value_from_ast(node, type_, variables=None):
             return [typed_value_from_ast(node, type_.type, variables)]
 
         return [
-            typed_value_from_ast(item, type_.type, variables) for item in node.values
+            typed_value_from_ast(item, type_.type, variables)
+            for item in node.values
         ]
 
     if isinstance(type_, InputObjectType):
         if kind != _ast.ObjectValue:
-            raise InvalidValue("Expected Object but got %s" % kind.__name__, [node])
+            raise InvalidValue(
+                "Expected Object but got %s" % kind.__name__, [node]
+            )
         return _extract_input_object(node, type_, variables)
 
     if isinstance(type_, EnumType):

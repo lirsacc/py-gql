@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 """ tests related to introspection queries """
 from __future__ import unicode_literals
 
@@ -149,9 +150,15 @@ def test_allows_querying_the_schema_for_object_fields(starwars_schema):
                 "name": "Droid",
                 "fields": [
                     {"name": "id", "type": {"name": None, "kind": "NON_NULL"}},
-                    {"name": "name", "type": {"name": "String", "kind": "SCALAR"}},
+                    {
+                        "name": "name",
+                        "type": {"name": "String", "kind": "SCALAR"},
+                    },
                     {"name": "friends", "type": {"name": None, "kind": "LIST"}},
-                    {"name": "appearsIn", "type": {"name": None, "kind": "LIST"}},
+                    {
+                        "name": "appearsIn",
+                        "type": {"name": None, "kind": "LIST"},
+                    },
                     {
                         "name": "secretBackstory",
                         "type": {"name": "String", "kind": "SCALAR"},
@@ -201,14 +208,21 @@ def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
                     },
                     {
                         "name": "name",
-                        "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": None,
+                        },
                     },
                     {
                         "name": "friends",
                         "type": {
                             "kind": "LIST",
                             "name": None,
-                            "ofType": {"kind": "INTERFACE", "name": "Character"},
+                            "ofType": {
+                                "kind": "INTERFACE",
+                                "name": "Character",
+                            },
                         },
                     },
                     {
@@ -221,11 +235,19 @@ def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
                     },
                     {
                         "name": "secretBackstory",
-                        "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": None,
+                        },
                     },
                     {
                         "name": "primaryFunction",
-                        "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": None,
+                        },
                     },
                 ],
                 "name": "Droid",
@@ -292,7 +314,10 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
                                     "type": {
                                         "kind": "NON_NULL",
                                         "name": None,
-                                        "ofType": {"kind": "SCALAR", "name": "String"},
+                                        "ofType": {
+                                            "kind": "SCALAR",
+                                            "name": "String",
+                                        },
                                     },
                                 }
                             ],
@@ -307,7 +332,10 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
                                     "type": {
                                         "kind": "NON_NULL",
                                         "name": None,
-                                        "ofType": {"kind": "SCALAR", "name": "String"},
+                                        "ofType": {
+                                            "kind": "SCALAR",
+                                            "name": "String",
+                                        },
                                     },
                                 }
                             ],
@@ -1161,7 +1189,11 @@ def test_intropsection_query():
                     },
                     {
                         "name": "include",
-                        "locations": ["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
+                        "locations": [
+                            "FIELD",
+                            "FRAGMENT_SPREAD",
+                            "INLINE_FRAGMENT",
+                        ],
                         "args": [
                             {
                                 "defaultValue": None,
@@ -1180,7 +1212,11 @@ def test_intropsection_query():
                     },
                     {
                         "name": "skip",
-                        "locations": ["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
+                        "locations": [
+                            "FIELD",
+                            "FRAGMENT_SPREAD",
+                            "INLINE_FRAGMENT",
+                        ],
                         "args": [
                             {
                                 "defaultValue": None,
@@ -1266,7 +1302,11 @@ def test_intropsection_on_input_object():
                     {
                         "defaultValue": '"tes\t de\x0cault"',
                         "name": "a",
-                        "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": None,
+                        },
                     },
                     {
                         "defaultValue": None,
@@ -1284,7 +1324,11 @@ def test_intropsection_on_input_object():
                     {
                         "defaultValue": "null",
                         "name": "c",
-                        "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                        "type": {
+                            "kind": "SCALAR",
+                            "name": "String",
+                            "ofType": None,
+                        },
                     },
                 ],
                 "kind": "INPUT_OBJECT",

@@ -41,7 +41,9 @@ def validate_schema(schema):
     :returns: ``True`` if valid, raises if invalid so should never return False
     """
     for typ in schema.types.values():
-        _assert(typ and hasattr(typ, "name"), "Expected named type but got %s" % typ)
+        _assert(
+            typ and hasattr(typ, "name"), "Expected named type but got %s" % typ
+        )
         _assert(
             is_introspection_type(typ) or _is_valid_name(typ.name),
             'Invalid type name "%s", '
@@ -105,7 +107,9 @@ def _is_valid_name(name):
     >>> _is_valid_name('42')
     False
     """
-    return bool(name and VALID_NAME_RE.match(name) and not name.startswith("__"))
+    return bool(
+        name and VALID_NAME_RE.match(name) and not name.startswith("__")
+    )
 
 
 def _assert_valid_name(name):
@@ -137,7 +141,8 @@ def validate_root_types(schema):
     if schema.subscription_type is not None:
         _assert(
             isinstance(schema.subscription_type, ObjectType),
-            'Subscription must be ObjectType but got "%s"' % schema.subscription_type,
+            'Subscription must be ObjectType but got "%s"'
+            % schema.subscription_type,
         )
         _assert_valid_name(schema.subscription_type.name)
 
@@ -214,14 +219,16 @@ def validate_fields(schema, typ):
 
             _assert(
                 isinstance(arg, Argument),
-                'Expected Argument in "%s.%s" but got "%s"' % (typ, field.name, arg),
+                'Expected Argument in "%s.%s" but got "%s"'
+                % (typ, field.name, arg),
             )
 
             _assert_valid_name(arg.name)
 
             _assert(
                 arg.name not in argnames,
-                'Duplicate argument "%s" on "%s.%s"' % (arg.name, typ, field.name),
+                'Duplicate argument "%s" on "%s.%s"'
+                % (arg.name, typ, field.name),
             )
 
             _assert(
@@ -250,7 +257,8 @@ def validate_interfaces(schema, typ):
 
         _assert(
             interface.name not in imlemented_types,
-            'Type "%s" mut only implement interface "%s" once' % (typ, interface.name),
+            'Type "%s" mut only implement interface "%s" once'
+            % (typ, interface.name),
         )
 
         imlemented_types.add(interface.name)
@@ -341,7 +349,8 @@ def validate_union_members(schema, union_type):
     :type union_type: UnionType
     """
     _assert(
-        union_type.types, 'UnionType "%s" must at least define one member' % union_type
+        union_type.types,
+        'UnionType "%s" must at least define one member' % union_type,
     )
 
     member_types = set()
@@ -368,7 +377,8 @@ def validate_enum_values(schema, enum_type):
     :type enum_type: EnumType
     """
     _assert(
-        enum_type.values, 'EnumType "%s" must at least define one value' % enum_type
+        enum_type.values,
+        'EnumType "%s" must at least define one value' % enum_type,
     )
 
     for enum_value in enum_type.values.values():
@@ -388,7 +398,8 @@ def validate_input_fields(schema, input_object):
     :type input_object: InputObjectType
     """
     _assert(
-        input_object.fields, 'Type "%s" must define at least one field' % input_object
+        input_object.fields,
+        'Type "%s" must define at least one field' % input_object,
     )
 
     fieldnames = set()

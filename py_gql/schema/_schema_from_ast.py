@@ -66,9 +66,12 @@ def schema_from_ast(
         raise TypeError(type(document))
 
     # First pass = parse and extract relevant informaton
-    schema_definition, type_nodes, extension_nodes, directive_nodes = _extract_types(
-        ast.definitions
-    )
+    (
+        schema_definition,
+        type_nodes,
+        extension_nodes,
+        directive_nodes,
+    ) = _extract_types(ast.definitions)
 
     if _raise_on_unknown_extension:
         type_names = set(type_nodes.keys())
@@ -77,7 +80,9 @@ def schema_from_ast(
 
         for type_name, ext_node in extension_nodes.items():
             if type_name not in type_names:
-                raise SDLError('Cannot extend unknown type "%s"' % type_name, ext_node)
+                raise SDLError(
+                    'Cannot extend unknown type "%s"' % type_name, ext_node
+                )
 
     # Second pass = translate types in schema object and apply extensions
     types, directives = _build_types_and_directives(
@@ -89,7 +94,9 @@ def schema_from_ast(
     for schema_type in types.values():
         if isinstance(schema_type, _schema.ObjectType):
             for field in schema_type.fields:
-                field.resolve = _infer_resolver(resolvers, schema_type.name, field.name)
+                field.resolve = _infer_resolver(
+                    resolvers, schema_type.name, field.name
+                )
 
     operation_types = _operation_types(schema_definition, types)
 
@@ -140,7 +147,12 @@ def _extract_types(definitions):
         Mapping[str, py_gql.lang.ast.TypeExtension],
         Mapping[str, py_gql.lang.ast.DirectiveDefinition],
     ]
-    :returns: schema_definition, type_definitions, type_extensions, directive_definitions
+    :returns: (
+        schema_definition,
+        type_definitions,
+        type_extensions,
+        directive_definitions
+    )
     """
     schema_definition = None
     types = {}
@@ -150,7 +162,9 @@ def _extract_types(definitions):
     for definition in definitions:
         if isinstance(definition, _ast.SchemaDefinition):
             if schema_definition is not None:
-                raise SDLError("Must provide only one schema definition", [definition])
+                raise SDLError(
+                    "Must provide only one schema definition", [definition]
+                )
             schema_definition = definition
 
         elif isinstance(definition, _ast.TypeDefinition):
@@ -166,7 +180,8 @@ def _extract_types(definitions):
         elif isinstance(definition, _ast.DirectiveDefinition):
             if definition.name.value in directives:
                 raise SDLError(
-                    "Duplicate directive @%s" % definition.name.value, [definition]
+                    "Duplicate directive @%s" % definition.name.value,
+                    [definition],
                 )
             directives[definition.name.value] = definition
 
@@ -188,7 +203,8 @@ def _operation_types(schema_definition, type_map):
             op = opdef.operation
             if op in operation_types:
                 raise SDLError(
-                    "Can only define one %s in schema" % op, [schema_definition, opdef]
+                    "Can only define one %s in schema" % op,
+                    [schema_definition, opdef],
                 )
             if type_name not in type_map:
                 raise SDLError(
@@ -231,12 +247,16 @@ def _build_types_and_directives(  # noqa
     :param extension_nodes: Directive definitions
 
     :type known_types: List[py_gql.schema.Type]
-    :param known_types: List of knonw types used to inject custom implementations
+    :param known_types: List of known type implementations to inject
         Most useful for scalars and enums but can be used for
-        WARN: Extensions will be applied to these types as well and the resulting types
-        may not be the same objects that were provided. Do not rely on type identity.
+        WARN: Extensions will be applied to these types as well and the
+        resulting types may not be the same objects that were provided.
+        Do not rely on type identity.
 
-    :rtype: Tuple[Mapping[str, py_gql.schema.Type], Mapping[str, py_gql.schema.Directive]]
+    :rtype: Tuple[
+        Mapping[str, py_gql.schema.Type],
+        Mapping[str, py_gql.schema.Directive]
+    ]
     :returns: (type_map, directive_map)
     """
     _cache = {}
@@ -275,7 +295,9 @@ def _build_types_and_directives(  # noqa
             return _schema.ListType(build_type(type_node.type), node=type_node)
 
         if isinstance(type_node, _ast.NonNullType):
-            return _schema.NonNullType(build_type(type_node.type), node=type_node)
+            return _schema.NonNullType(
+                build_type(type_node.type), node=type_node
+            )
 
         type_name = type_node.name.value
 
@@ -287,7 +309,9 @@ def _build_types_and_directives(  # noqa
         if isinstance(type_node, _ast.NamedType):
             type_def = type_nodes.get(type_name) or _known_types.get(type_name)
             if type_def is None:
-                raise SDLError("Type %s not found in document" % type_name, type_node)
+                raise SDLError(
+                    "Type %s not found in document" % type_name, type_node
+                )
             # Leverage the ususal lazy evaluation of fields and types
             # to prevent recursion issues
             return Ref(type_name, _cache)
@@ -464,7 +488,9 @@ def _build_types_and_directives(  # noqa
             node=node,
         )
         if node.default_value is not None:
-            kwargs["default_value"] = typed_value_from_ast(node.default_value, type)
+            kwargs["default_value"] = typed_value_from_ast(
+                node.default_value, type
+            )
 
         return cls(node.name.value, type, **kwargs)
 
@@ -555,7 +581,8 @@ def _build_types_and_directives(  # noqa
         """
         if not isinstance(extension_node, _ast.InterfaceTypeExtension):
             raise TypeExtensionError(
-                'Expected InterfaceTypeExtension for InterfaceType "%s" but got %s'
+                "Expected InterfaceTypeExtension for InterfaceType "
+                '"%s" but got %s'
                 % (source_type.name, type(extension_node).__name__),
                 [extension_node],
             )
@@ -647,7 +674,9 @@ def _build_types_and_directives(  # noqa
             types.append(build_type(new_type))
 
         return _schema.UnionType(
-            source_type.name, types=types, nodes=source_type.nodes + [extension_node]
+            source_type.name,
+            types=types,
+            nodes=source_type.nodes + [extension_node],
         )
 
     def extend_input_object(source_type, extension_node):
@@ -662,7 +691,8 @@ def _build_types_and_directives(  # noqa
         """
         if not isinstance(extension_node, _ast.InputObjectTypeExtension):
             raise TypeExtensionError(
-                'Expected InputObjectTypeExtension for InputObjectType "%s" but got %s'
+                "Expected InputObjectTypeExtension for InputObjectType "
+                '"%s" but got %s'
                 % (source_type.name, type(extension_node).__name__),
                 [extension_node],
             )
@@ -721,7 +751,8 @@ def _build_types_and_directives(  # noqa
         )
 
     types = {
-        type_node.name.value: build_type(type_node) for type_node in type_nodes.values()
+        type_node.name.value: build_type(type_node)
+        for type_node in type_nodes.values()
     }
 
     for schema_type in known_types or []:

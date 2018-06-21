@@ -32,7 +32,10 @@ def test_fails_with_more_than_one_root_field(schema):
         importantEmails
         notImportantEmails
     }""",
-        ['Subscription "ImportantEmails" must select only one ' "top level field."],
+        [
+            'Subscription "ImportantEmails" must select only one '
+            "top level field."
+        ],
     )
 
 
@@ -46,7 +49,10 @@ def test_fails_with_more_than_one_root_field_including_introspection(schema):
         __typename
     }
     """,
-        ['Subscription "ImportantEmails" must select only one ' "top level field."],
+        [
+            'Subscription "ImportantEmails" must select only one '
+            "top level field."
+        ],
     )
 
 
@@ -61,7 +67,10 @@ def test_fails_with_many_more_than_one_root_field(schema):
         spamEmails
         }
     """,
-        ['Subscription "ImportantEmails" must select only one ' "top level field."],
+        [
+            'Subscription "ImportantEmails" must select only one '
+            "top level field."
+        ],
     )
 
 

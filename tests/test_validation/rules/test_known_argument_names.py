@@ -173,7 +173,9 @@ def test_misspelled_arg_name_is_reported(schema):
         doesKnowCommand(dogcommand: true)
     }
     """,
-        ['Unknown argument "dogcommand" on field "doesKnowCommand" of type "Dog"'],
+        [
+            'Unknown argument "dogcommand" on field "doesKnowCommand" of type "Dog"'
+        ],
         [(62, 78)],
     )
 

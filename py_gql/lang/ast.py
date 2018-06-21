@@ -32,7 +32,9 @@ class Node(object):
         # [TODO] Does this auto-discovery have a significant perf. impact ?
         # If so the constructor could just be overriden for each subclass.
         for attr in self.__slots__:
-            self.__setattr__(attr, kwargs.get(attr, self.__defaults__.get(attr, None)))
+            self.__setattr__(
+                attr, kwargs.get(attr, self.__defaults__.get(attr, None))
+            )
 
     def __eq__(self, rhs):
         return type(rhs) == type(self) and all(
@@ -67,7 +69,9 @@ class Node(object):
         return self.cls(**{k: getattr(self, k) for k in self.__slots__})
 
     def __deepcopy__(self):
-        return self.cls(**{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__})
+        return self.cls(
+            **{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__}
+        )
 
     def to_dict(self):
         """ Convert the current node to a JSON serializable ``dict`` using
@@ -149,7 +153,11 @@ class OperationDefinition(ExecutableDefinition):
         "directives",
         "selection_set",
     )
-    __defaults__ = {"variable_definitions": [], "directives": [], "operation": "query"}
+    __defaults__ = {
+        "variable_definitions": [],
+        "directives": [],
+        "operation": "query",
+    }
 
 
 class VariableDefinition(Node):
@@ -299,7 +307,13 @@ class InlineFragment(Selection):
     :vartype selection_set: SelectionSet
     """
 
-    __slots__ = ("source", "loc", "type_condition", "directives", "selection_set")
+    __slots__ = (
+        "source",
+        "loc",
+        "type_condition",
+        "directives",
+        "selection_set",
+    )
     __defaults__ = {"directives": []}
 
 
@@ -1042,7 +1056,14 @@ class DirectiveDefinition(TypeSystemDefinition):
     :vartype locations: List[Name]
     """
 
-    __slots__ = ("source", "loc", "description", "name", "arguments", "locations")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "arguments",
+        "locations",
+    )
     __defaults__ = {"arguments": [], "locations": []}
 
 

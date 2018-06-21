@@ -37,7 +37,9 @@ DIRECTIVE_LOCATIONS = frozenset(
 )
 
 
-EXECUTABLE_DEFINITIONS = frozenset(["query", "mutation", "subscription", "fragment"])
+EXECUTABLE_DEFINITIONS = frozenset(
+    ["query", "mutation", "subscription", "fragment"]
+)
 
 
 SCHEMA_DEFINITIONS = frozenset(
@@ -473,7 +475,9 @@ class Parser(object):
                 return self.parse_type_system_definition()
         elif _is(start, _token.CurlyOpen):
             return self.parse_executable_definition()
-        elif self.allow_type_system and _is(start, _token.String, _token.BlockString):
+        elif self.allow_type_system and _is(
+            start, _token.String, _token.BlockString
+        ):
             return self.parse_type_system_definition()
 
         raise _unexpected_token(start, start.start, self.lexer._source)
@@ -484,7 +488,9 @@ class Parser(object):
         :rtype: py_gql.lang.ast.Name
         """
         token = self.expect(_token.Name)
-        return _ast.Name(value=token.value, loc=self._loc(token), source=self.source)
+        return _ast.Name(
+            value=token.value, loc=self._loc(token), source=self.source
+        )
 
     def parse_executable_definition(self):
         """ ExecutableDefinition : OperationDefinition | FragmentDefinition
@@ -545,7 +551,9 @@ class Parser(object):
         """
         if _is(self.peek(), _token.ParenOpen):
             return self.many(
-                _token.ParenOpen, self.parse_variable_definition, _token.ParenClose
+                _token.ParenOpen,
+                self.parse_variable_definition,
+                _token.ParenClose,
             )
         return []
 
@@ -559,7 +567,9 @@ class Parser(object):
             variable=self.parse_variable(),
             type=self.expect(_token.Colon) and self.parse_type_reference(),
             default_value=(
-                self.parse_value_literal(True) if self.skip(_token.Equals) else None
+                self.parse_value_literal(True)
+                if self.skip(_token.Equals)
+                else None
             ),
             loc=self._loc(start),
             source=self.source,
@@ -651,7 +661,9 @@ class Parser(object):
         start = self.peek()
         return _ast.Argument(
             name=self.parse_name(),
-            value=(self.expect(_token.Colon) and self.parse_value_literal(False)),
+            value=(
+                self.expect(_token.Colon) and self.parse_value_literal(False)
+            ),
             loc=self._loc(start),
             source=self.source,
         )
@@ -705,7 +717,9 @@ class Parser(object):
                 if self.experimental_fragment_variables
                 else None
             ),
-            type_condition=(self.expect_keyword("on") and self.parse_named_type()),
+            type_condition=(
+                self.expect_keyword("on") and self.parse_named_type()
+            ),
             directives=self.parse_directives(False),
             selection_set=self.parse_selection_set(),
             loc=self._loc(start),
@@ -746,7 +760,9 @@ class Parser(object):
             return self.parse_object(const)
         elif kind == _token.Integer:
             self.advance()
-            return _ast.IntValue(value=value, loc=self._loc(token), source=self.source)
+            return _ast.IntValue(
+                value=value, loc=self._loc(token), source=self.source
+            )
         elif kind == _token.Float:
             self.advance()
             return _ast.FloatValue(
@@ -758,7 +774,9 @@ class Parser(object):
             if value in ("true", "false"):
                 self.advance()
                 return _ast.BooleanValue(
-                    value=value == "true", loc=self._loc(token), source=self.source
+                    value=value == "true",
+                    loc=self._loc(token),
+                    source=self.source,
                 )
             elif value == "null":
                 self.advance()
@@ -816,7 +834,9 @@ class Parser(object):
         fields = []
         while not self.skip(_token.CurlyClose):
             fields.append(self.parse_object_field(const))
-        return _ast.ObjectValue(fields=fields, loc=self._loc(start), source=self.source)
+        return _ast.ObjectValue(
+            fields=fields, loc=self._loc(start), source=self.source
+        )
 
     def parse_object_field(self, const=False):
         """ ObjectField[Const] : Name : Value[?Const]
@@ -829,7 +849,9 @@ class Parser(object):
         start = self.peek()
         return _ast.ObjectField(
             name=self.parse_name(),
-            value=(self.expect(_token.Colon) and self.parse_value_literal(const)),
+            value=(
+                self.expect(_token.Colon) and self.parse_value_literal(const)
+            ),
             loc=self._loc(start),
             source=self.source,
         )
@@ -879,7 +901,9 @@ class Parser(object):
             typ = self.parse_named_type()
 
         if self.skip(_token.ExclamationMark):
-            return _ast.NonNullType(type=typ, loc=self._loc(start), source=self.source)
+            return _ast.NonNullType(
+                type=typ, loc=self._loc(start), source=self.source
+            )
 
         return typ
 
@@ -1047,7 +1071,9 @@ class Parser(object):
             self.advance()
             return []
         return (
-            self.many(_token.CurlyOpen, self.parse_field_definition, _token.CurlyClose)
+            self.many(
+                _token.CurlyOpen, self.parse_field_definition, _token.CurlyClose
+            )
             if _is(self.peek(), _token.CurlyOpen)
             else []
         )
@@ -1078,7 +1104,9 @@ class Parser(object):
         :rtype: List[py_gql.lang.ast.InputValueDefinition]
         """
         return (
-            self.many(_token.ParenOpen, self.parse_input_value_def, _token.ParenClose)
+            self.many(
+                _token.ParenOpen, self.parse_input_value_def, _token.ParenClose
+            )
             if _is(self.peek(), _token.ParenOpen)
             else []
         )
@@ -1097,7 +1125,9 @@ class Parser(object):
             name=name,
             type=self.parse_type_reference(),
             default_value=(
-                self.parse_value_literal(True) if self.skip(_token.Equals) else None
+                self.parse_value_literal(True)
+                if self.skip(_token.Equals)
+                else None
             ),
             directives=self.parse_directives(True),
             loc=self._loc(start),
@@ -1174,7 +1204,9 @@ class Parser(object):
         """
         return (
             self.many(
-                _token.CurlyOpen, self.parse_enum_value_definition, _token.CurlyClose
+                _token.CurlyOpen,
+                self.parse_enum_value_definition,
+                _token.CurlyClose,
             )
             if _is(self.peek(), _token.CurlyOpen)
             else []
@@ -1220,7 +1252,9 @@ class Parser(object):
         :rtype: List[py_gql.lang.ast.InputValueDefinition]
         """
         return (
-            self.many(_token.CurlyOpen, self.parse_input_value_def, _token.CurlyClose)
+            self.many(
+                _token.CurlyOpen, self.parse_input_value_def, _token.CurlyClose
+            )
             if _is(self.peek(), _token.CurlyOpen)
             else []
         )
@@ -1262,7 +1296,10 @@ class Parser(object):
         if not directives:
             raise _unexpected_token(start, start.start, self.lexer._source)
         return _ast.ScalarTypeExtension(
-            name=name, directives=directives, loc=self._loc(start), source=self.source
+            name=name,
+            directives=directives,
+            loc=self._loc(start),
+            source=self.source,
         )
 
     def parse_object_type_extension(self):
@@ -1422,7 +1459,8 @@ class Parser(object):
         return self.delimited_list(_token.Pipe, self.parse_directive_location)
 
     def parse_directive_location(self):
-        """ DirectiveLocation : ExecutableDirectiveLocation | TypeSystemDirectiveLocation
+        """ DirectiveLocation : ExecutableDirectiveLocation \
+        | TypeSystemDirectiveLocation
 
         - ExecutableDirectiveLocation : one of QUERY MUTATION SUBSCRIPTION FIELD \
         FRAGMENT_DEFINITION FRAGMENT_SPREAD INLINE_FRAGMENT

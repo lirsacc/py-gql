@@ -1,27 +1,28 @@
 # -*- coding: utf-8 -*-
 
 import hashlib
+
 import pytest
 
-from py_gql.exc import SDLError, ScalarParsingError
+from py_gql import graphql
 from py_gql._string_utils import parse_block_string
+from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.schema import (
-    schema_from_ast,
-    Directive,
     Argument,
-    Int,
-    ObjectType,
+    Directive,
+    EnumType,
+    EnumValue,
     Field,
+    Int,
+    ListType,
+    NonNullType,
+    ObjectType,
+    ScalarType,
     String,
     print_schema,
-    ScalarType,
-    NonNullType,
-    ListType,
-    EnumValue,
-    EnumType,
+    schema_from_ast,
 )
 from py_gql.schema.schema_directive import SchemaDirective, wrap_resolver
-from py_gql import graphql
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
@@ -95,7 +96,9 @@ def test_field_modifier_using_arguments():
     class PowerDirective(SchemaDirective):
 
         definition = Directive(
-            "power", ["FIELD_DEFINITION"], [Argument("exponent", Int, default_value=2)]
+            "power",
+            ["FIELD_DEFINITION"],
+            [Argument("exponent", Int, default_value=2)],
         )
 
         def __init__(self, args):
@@ -199,7 +202,10 @@ def test_object_modifier_and_field_modifier():
     ).response() == {
         "data": {
             "foo": {
-                "uid": "6dc146d52a9962cfb9b29c2414f68cc628e2a0dcce7832760ddf39a441726173",
+                "uid": (
+                    "6dc146d52a9962cfb9b29c2414f68cc628e2a0dcce"
+                    "7832760ddf39a441726173"
+                ),
                 "name": "SOME LOWER CASE NAME",
                 "id": 42,
             }
@@ -223,7 +229,10 @@ def test_location_not_supported():
         )
 
     assert exc_info.value.to_json() == {
-        "message": "SchemaDirective implementation for @upper must support FIELD_DEFINITION"
+        "message": (
+            "SchemaDirective implementation for @upper must "
+            "support FIELD_DEFINITION"
+        )
     }
 
 
@@ -248,7 +257,9 @@ def test_location_not_supported_2():
         )
 
     assert exc_info.value.to_json() == {
-        "message": "SchemaDirective implementation for @upper must support SCHEMA"
+        "message": (
+            "SchemaDirective implementation for @upper must support SCHEMA"
+        )
     }
 
 
@@ -276,7 +287,9 @@ def test_multiple_directives_applied_in_order():
     class PowerDirective(SchemaDirective):
 
         definition = Directive(
-            "power", ["FIELD_DEFINITION"], [Argument("exponent", Int, default_value=2)]
+            "power",
+            ["FIELD_DEFINITION"],
+            [Argument("exponent", Int, default_value=2)],
         )
 
         def __init__(self, args):
@@ -359,11 +372,15 @@ def test_input_values():
         )
 
         def visit_argument(self, arg):
-            arg.type = LimitedLengthScalarType.wrap(arg.type, self.min, self.max)
+            arg.type = LimitedLengthScalarType.wrap(
+                arg.type, self.min, self.max
+            )
             return arg
 
         def visit_input_field(self, field):
-            field.type = LimitedLengthScalarType.wrap(field.type, self.min, self.max)
+            field.type = LimitedLengthScalarType.wrap(
+                field.type, self.min, self.max
+            )
             return field
 
     schema = schema_from_ast(
@@ -449,7 +466,9 @@ def test_enum_value_directive():
     """ generating custom enum values """
 
     # These could be pre-loaded from a database or a config file dynamically
-    VALUES = dict([("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")])
+    VALUES = dict(
+        [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
+    )
 
     class CSSColorDirective(SchemaDirective):
         def visit_enum_value(self, enum_value):
@@ -487,7 +506,9 @@ def test_enum_type_directive():
     """ generating custom enums """
 
     # These could be pre-loaded from a database or a config file dynamically
-    VALUES = dict([("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")])
+    VALUES = dict(
+        [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
+    )
 
     class GeneratedEnum(SchemaDirective):
         def visit_enum(self, enum):

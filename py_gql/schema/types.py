@@ -107,7 +107,9 @@ class InputField(object):
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
-    def __init__(self, name, typ, default_value=_UNDEF, description=None, node=None):
+    def __init__(
+        self, name, typ, default_value=_UNDEF, description=None, node=None
+    ):
         """
         :type name: str
         :type typ: Type
@@ -128,7 +130,9 @@ class InputField(object):
 
     @cached_property
     def required(self):
-        return isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+        return (
+            isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+        )
 
     def __str__(self):
         return "InputField(%s: %s)" % (self.name, self.type)
@@ -187,7 +191,12 @@ class EnumValue(object):
             raise TypeError("Invalid enum value definition %r" % definition)
 
     def __init__(
-        self, name, value=_UNDEF, deprecation_reason=None, description=None, node=None
+        self,
+        name,
+        value=_UNDEF,
+        deprecation_reason=None,
+        description=None,
+        node=None,
     ):
         """
         :type name: str
@@ -232,7 +241,9 @@ class EnumType(NamedType):
         self.reverse_values = OrderedDict()
         for v in values:
             ev = EnumValue.from_def(v)
-            assert ev.name not in self.values, "Duplicate enum value %s" % ev.name
+            assert ev.name not in self.values, (
+                "Duplicate enum value %s" % ev.name
+            )
             self.reverse_values[ev.value] = self.values[ev.name] = ev
 
     def get_value(self, name):
@@ -249,7 +260,9 @@ class EnumType(NamedType):
         try:
             return self.values[name].value
         except KeyError:
-            raise UnknownEnumValue("Invalid name %s for enum %s" % (name, self.name))
+            raise UnknownEnumValue(
+                "Invalid name %s for enum %s" % (name, self.name)
+            )
 
     def get_name(self, value):
         """ Extract the name for a given value.
@@ -265,7 +278,9 @@ class EnumType(NamedType):
         try:
             return self.reverse_values[value].name
         except KeyError:
-            raise UnknownEnumValue("Invalid value %r for enum %s" % (value, self.name))
+            raise UnknownEnumValue(
+                "Invalid value %r for enum %s" % (value, self.name)
+            )
 
 
 class ScalarType(NamedType):
@@ -342,7 +357,9 @@ class Argument(object):
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
-    def __init__(self, name, typ, default_value=_UNDEF, description=None, node=None):
+    def __init__(
+        self, name, typ, default_value=_UNDEF, description=None, node=None
+    ):
         """
         :type name: str
         :type typ: Type
@@ -363,7 +380,9 @@ class Argument(object):
 
     @cached_property
     def required(self):
-        return isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+        return (
+            isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+        )
 
     def __str__(self):
         return "Argument(%s: %s)" % (self.name, self.type)
@@ -490,7 +509,9 @@ class InterfaceType(NamedType):
     is actually used when the field is resolved.
     """
 
-    def __init__(self, name, fields, resolve_type=None, description=None, nodes=None):
+    def __init__(
+        self, name, fields, resolve_type=None, description=None, nodes=None
+    ):
         """
         :type name: str
         :type fields: callable|dict(str, InputField)|[InputField]
@@ -522,7 +543,9 @@ class UnionType(NamedType):
     to determine which type is actually used when the field is resolved.
     """
 
-    def __init__(self, name, types, resolve_type=None, description=None, nodes=None):
+    def __init__(
+        self, name, types, resolve_type=None, description=None, nodes=None
+    ):
         """
         :type name: str
         :type types: callable|[Type]|dict(str, Type)
@@ -557,7 +580,9 @@ class Directive(Type):
         :type args: callable|[Argument]|dict(str, Argument)
         :type description: str
         """
-        assert locations and all([loc in DIRECTIVE_LOCATIONS for loc in locations])
+        assert locations and all(
+            [loc in DIRECTIVE_LOCATIONS for loc in locations]
+        )
         assert name not in RESERVED_NAMES, name
         self.name = name
         self.description = description
@@ -589,7 +614,8 @@ def is_output_type(typ):
     """ These types may be used as output types as the result of fields.
     """
     return isinstance(
-        unwrap_type(typ), (ScalarType, EnumType, ObjectType, InterfaceType, UnionType)
+        unwrap_type(typ),
+        (ScalarType, EnumType, ObjectType, InterfaceType, UnionType),
     )
 
 

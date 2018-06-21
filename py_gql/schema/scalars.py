@@ -54,11 +54,15 @@ def coerce_int(maybe_int):
             else:
                 numeric = int(maybe_int, 10)
         except ValueError:
-            raise ValueError("Int cannot represent non-integer value: %s" % maybe_int)
+            raise ValueError(
+                "Int cannot represent non-integer value: %s" % maybe_int
+            )
     else:
         numeric = int(maybe_int)
         if numeric != maybe_int:
-            raise ValueError("Int cannot represent non-integer value: %s" % maybe_int)
+            raise ValueError(
+                "Int cannot represent non-integer value: %s" % maybe_int
+            )
 
     if not (MIN_INT < numeric < MAX_INT):
         raise ValueError(
@@ -71,13 +75,17 @@ def coerce_int(maybe_int):
 def coerce_float(maybe_float):
     """ Spec compliant float conversion. """
     if maybe_float == "":
-        raise ValueError("Float cannot represent non numeric value: (empty string)")
+        raise ValueError(
+            "Float cannot represent non numeric value: (empty string)"
+        )
     if maybe_float is None:
         raise ValueError("Float cannot represent non numeric value: None")
     try:
         return float(maybe_float)
     except ValueError:
-        raise ValueError("Float cannot represent non numeric value: %s" % maybe_float)
+        raise ValueError(
+            "Float cannot represent non numeric value: %s" % maybe_float
+        )
 
 
 Int = ScalarType(
@@ -199,7 +207,9 @@ class RegexType(ScalarType):
             self.regex = regex
 
         if description is None:
-            self.description = "String matching pattern /%s/" % self.regex.pattern
+            self.description = (
+                "String matching pattern /%s/" % self.regex.pattern
+            )
         else:
             self.description = description
 

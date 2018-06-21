@@ -4,7 +4,15 @@
 import pytest
 
 from py_gql._utils import deduplicate
-from py_gql.schema import Field, Int, ListType, NonNullType, ObjectType, Schema, String
+from py_gql.schema import (
+    Field,
+    Int,
+    ListType,
+    NonNullType,
+    ObjectType,
+    Schema,
+    String,
+)
 
 from ._test_utils import check_execution
 

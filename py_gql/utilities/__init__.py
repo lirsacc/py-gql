@@ -10,7 +10,11 @@ you are building custom GraphQL tooling on top of this library.
 # flake8: noqa
 
 from .ast_node_from_value import ast_node_from_value
-from .coerce_value import coerce_argument_values, coerce_value, directive_arguments
+from .coerce_value import (
+    coerce_argument_values,
+    coerce_value,
+    directive_arguments,
+)
 from .default_resolver import default_resolver
 from .introspection_query import introspection_query
 from .path import Path

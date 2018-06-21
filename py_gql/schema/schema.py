@@ -3,7 +3,6 @@
 
 from collections import defaultdict
 
-from .._utils import cached_property
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
 from .directives import SPECIFIED_DIRECTIVES
@@ -106,10 +105,14 @@ class Schema(object):
 
     def _rebuild_caches(self):
         self.types = {
-            name: t for name, t in self.type_map.items() if not isinstance(t, Directive)
+            name: t
+            for name, t in self.type_map.items()
+            if not isinstance(t, Directive)
         }
         self.directives = {
-            name: t for name, t in self.type_map.items() if isinstance(t, Directive)
+            name: t
+            for name, t in self.type_map.items()
+            if isinstance(t, Directive)
         }
         self.implementations = defaultdict(list)
         for typ in self.types.values():
@@ -280,7 +283,8 @@ def _build_type_map(types, _type_map=None):
 
         if not (isinstance(typ, Type) and hasattr(typ, "name")):
             raise SchemaError(
-                'Expected named types but got "%s" of type %s' % (typ, type(typ))
+                'Expected named types but got "%s" of type %s'
+                % (typ, type(typ))
             )
 
         name = typ.name

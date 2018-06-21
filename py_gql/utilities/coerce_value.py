@@ -2,9 +2,20 @@
 """ Utilities to validate Python values against a schema """
 
 from .._utils import find_one
-from ..exc import CoercionError, InvalidValue, ScalarParsingError, UnknownEnumValue
+from ..exc import (
+    CoercionError,
+    InvalidValue,
+    ScalarParsingError,
+    UnknownEnumValue,
+)
 from ..lang import ast as _ast, print_ast
-from ..schema import EnumType, InputObjectType, ListType, NonNullType, ScalarType
+from ..schema import (
+    EnumType,
+    InputObjectType,
+    ListType,
+    NonNullType,
+    ScalarType,
+)
 from .path import Path
 from .value_from_ast import typed_value_from_ast
 
@@ -65,7 +76,9 @@ def coerce_value(value, typ, node=None, path=None):
             except UnknownEnumValue as err:
                 raise CoercionError(str(err), node, value_path=_path(path))
         else:
-            raise CoercionError("Expected type %s" % typ, node, value_path=_path(path))
+            raise CoercionError(
+                "Expected type %s" % typ, node, value_path=_path(path)
+            )
 
     if isinstance(typ, ListType):
         return _coerce_list_value(value, typ, node, path)
@@ -87,7 +100,9 @@ def _coerce_list_value(value, typ, node, path):
 def _coerce_input_object(value, typ, node, path):
     if not isinstance(value, dict):
         raise CoercionError(
-            "Expected type %s to be an object" % typ, node, value_path=_path(path)
+            "Expected type %s to be an object" % typ,
+            node,
+            value_path=_path(path),
         )
 
     coerced = {}
@@ -176,7 +191,8 @@ def coerce_argument_values(definition, node, variables=None):
                 except InvalidValue as err:
                     raise CoercionError(
                         'Argument "%s" of type "%s" was provided invalid value '
-                        "%s (%s)" % (argname, argtype, print_ast(arg.value), str(err)),
+                        "%s (%s)"
+                        % (argname, argtype, print_ast(arg.value), str(err)),
                         node,
                     )
 
@@ -203,7 +219,9 @@ def directive_arguments(definition, node, variables=None):
         :class:`py_gql.exc.CoercionError` if any directive argument value fails to
         coerce, required argument is missing, etc.
     """
-    directive = find_one(node.directives, lambda d: d.name.value == definition.name)
+    directive = find_one(
+        node.directives, lambda d: d.name.value == definition.name
+    )
 
     return (
         coerce_argument_values(definition, directive, variables)

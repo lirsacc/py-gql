@@ -103,4 +103,6 @@ def validate_ast(schema, ast_root, validators=None):
     )
 
     visit(validator, ast_root)
-    return ValidationResult(list(chain(*[v.errors for v in validator.visitors[1:]])))
+    return ValidationResult(
+        list(chain(*[v.errors for v in validator.visitors[1:]]))
+    )

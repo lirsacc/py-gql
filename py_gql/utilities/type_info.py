@@ -16,7 +16,11 @@ from py_gql.schema import (
     nullable_type,
     unwrap_type,
 )
-from py_gql.schema.introspection import schema_field, type_field, type_name_field
+from py_gql.schema.introspection import (
+    schema_field,
+    type_field,
+    type_name_field,
+)
 
 
 def _peek(lst, count=1, default=None):
@@ -45,25 +49,25 @@ def _get_field_def(schema, parent_type, field):
 
 
 class TypeInfoVisitor(DispatchingVisitor):
-    """ Visitor that tracks current types in a stack while traversing a Document.
+    """ Visitor that tracks current types while traversing a Document.
 
-    All tracked types are considered with regards to the provided schema, however
-    unknown types and other unexpected errors will be downgraded to null values
-    in order to not crash the traversal. This leaves the consumer responsible to handle
-    such cases.
+    All tracked types are considered with regards to the provided schema,
+    however unknown types and other unexpected errors will be downgraded to
+    null values in order to not crash the traversal. This leaves the consumer
+    responsible to handle such cases.
 
     .. note::
 
         This is a very basic re-implementation of the reference javascript
-        implementation which is compatible with our version of AST visitors and it
-        can most likley be improved.
+        implementation which is compatible with our version of AST visitors
+        and it can most likley be improved.
 
     .. warning::
 
         When using this alongside other visitors (such as when using
-        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs** to be the
-        firt one to visit the nodes in order for the information provided donwstream
-        to be accurate.
+        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs**
+        to be the first one to visit the nodes in order for the information
+        provided donwstream to be accurate.
     """
 
     __slots__ = (
@@ -85,11 +89,11 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._input_type_stack = []
         self._field_stack = []
 
-        #: Optional[py_gql.schema.Directive]: Current directive if applicable else, ``None``
+        #: Optional[py_gql.schema.Directive]: Current directive if applicable
         self.directive = None
-        #: Optional[py_gql.schema.Argument]: Current argument if applicable else, ``None``
+        #: Optional[py_gql.schema.Argument]: Current argument if applicable
         self.argument = None
-        #: Optional[py_gql.schema.EnumValue]: Current enum value if applicable else, ``None``
+        #: Optional[py_gql.schema.EnumValue]: Current enum value if applicable
         self.enum_value = None
 
     @property
@@ -110,7 +114,8 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     @property
     def input_type(self):
-        """ Current input type if applicable, else ``None`` (when visiting arguments)
+        """ Current input type if applicable, else ``None``
+        (when visiting arguments)
 
         :rtype: Optional[py_gql.schema.Type]
         """
@@ -135,7 +140,11 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def _get_field_def(self, node):
         parent_type = self.parent_type
-        return _get_field_def(self._schema, parent_type, node) if parent_type else None
+        return (
+            _get_field_def(self._schema, parent_type, node)
+            if parent_type
+            else None
+        )
 
     def _type_from_ast(self, type_node):
         try:
@@ -190,7 +199,9 @@ class TypeInfoVisitor(DispatchingVisitor):
     def enter_inline_fragment(self, node):
         if node.type_condition:
             self._type_stack.append(
-                _or_none(self._type_from_ast(node.type_condition), is_output_type)
+                _or_none(
+                    self._type_from_ast(node.type_condition), is_output_type
+                )
             )
         else:
             self._type_stack.append(_or_none(self.type, is_output_type))
@@ -226,7 +237,9 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def enter_list_value(self, node):
         list_type = nullable_type(self.input_type)
-        item_type = unwrap_type(list_type) if isinstance(list_type, ListType) else None
+        item_type = (
+            unwrap_type(list_type) if isinstance(list_type, ListType) else None
+        )
         self._input_type_stack.append(_or_none(item_type, is_input_type))
 
     def leave_list_value(self, node):
@@ -238,7 +251,9 @@ class TypeInfoVisitor(DispatchingVisitor):
             name = node.name.value
             field_def = find_one(object_type.fields, lambda f: f.name == name)
             self._input_type_stack.append(
-                field_def.type if field_def and is_input_type(field_def.type) else None
+                field_def.type
+                if field_def and is_input_type(field_def.type)
+                else None
             )
         else:
             self._input_type_stack.append(None)

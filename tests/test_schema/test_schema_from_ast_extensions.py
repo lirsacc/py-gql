@@ -6,7 +6,14 @@ from py_gql._string_utils import parse_block_string
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
-from py_gql.schema import UUID, Field, ObjectType, String, print_schema, schema_from_ast
+from py_gql.schema import (
+    UUID,
+    Field,
+    ObjectType,
+    String,
+    print_schema,
+    schema_from_ast,
+)
 from py_gql.schema.schema_directive import SchemaDirective
 
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
@@ -470,7 +477,10 @@ def test_union_type_extension_bad_extension():
 
     assert exc_info.value.to_json() == {
         "locations": [{"column": 13, "line": 16}],
-        "message": 'Expected UnionTypeExtension for UnionType "Foo" but got ObjectTypeExtension',
+        "message": (
+            'Expected UnionTypeExtension for UnionType "Foo" '
+            "but got ObjectTypeExtension"
+        ),
     }
 
 
@@ -534,7 +544,9 @@ def test_injected_scalar_type_extension():
         schema_directives={"protected": ProtectedDirective},
     )
 
-    assert print_schema(schema, indent="    ", include_descriptions=False) == dedent(
+    assert print_schema(
+        schema, indent="    ", include_descriptions=False
+    ) == dedent(
         """
         directive @protected on SCALAR
 

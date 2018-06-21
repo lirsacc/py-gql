@@ -49,7 +49,9 @@ TestNestedInputObject = InputObjectType(
     ],
 )
 
-_inspect = lambda _, args, *a: json.dumps(args.get("input", None), sort_keys=True)
+_inspect = lambda _, args, *a: json.dumps(
+    args.get("input", None), sort_keys=True
+)
 
 _field = lambda name, argType, **kw: Field(
     name, String, [Arg("input", argType, **kw)], resolve=_inspect
@@ -61,7 +63,9 @@ TestType = ObjectType(
         _field("fieldWithObjectInput", TestInputObject),
         _field("fieldWithNullableStringInput", String),
         _field("fieldWithNonNullableStringInput", NonNullType(String)),
-        _field("fieldWithDefaultArgumentValue", String, default_value="Hello World"),
+        _field(
+            "fieldWithDefaultArgumentValue", String, default_value="Hello World"
+        ),
         _field("fieldWithNestedObjectInput", TestNestedInputObject),
         _field("list", ListType(String)),
         _field("nnList", NonNullType(ListType(String))),
@@ -126,7 +130,9 @@ def test_null_value_in_list_inline_struct():
             fieldWithObjectInput(input: {b: ["A",null,"C"], c: "C"})
         }
         """,
-        expected_data={"fieldWithObjectInput": '{"b": ["A", null, "C"], "c": "C"}'},
+        expected_data={
+            "fieldWithObjectInput": '{"b": ["A", null, "C"], "c": "C"}'
+        },
         expected_errors=[],
     )
 
@@ -312,7 +318,9 @@ def test_fail_on_addition_of_unknown_input_field():
             fieldWithObjectInput(input: $input)
         }
         """,
-        variables={"input": {"a": "foo", "b": "bar", "c": "baz", "extra": "dog"}},
+        variables={
+            "input": {"a": "foo", "b": "bar", "c": "baz", "extra": "dog"}
+        },
         expected_exc=VariablesCoercionError,
         expected_msg=(
             'Variable "$input" got invalid value {"a": "foo", "b": "bar", "c": '
@@ -425,7 +433,9 @@ def test_does_not_allow_non_nullable_inputs_to_be_omitted_in_a_variable():
         }
         """,
         expected_exc=VariablesCoercionError,
-        expected_msg=('Variable "$value" of required type "String!" was not provided.'),
+        expected_msg=(
+            'Variable "$value" of required type "String!" was not provided.'
+        ),
     )
 
 
@@ -439,7 +449,9 @@ def test_does_not_allow_non_nullable_inputs_to_be_set_to_null_in_a_variable():
         """,
         variables={"input": None},
         expected_exc=VariablesCoercionError,
-        expected_msg=('Variable "$value" of required type "String!" was not provided.'),
+        expected_msg=(
+            'Variable "$value" of required type "String!" was not provided.'
+        ),
     )
 
 
@@ -707,7 +719,9 @@ def test_does_not_allow_unknown_types_to_be_used_as_values():
             variables={"input": "whoknows"},
         )
 
-    assert 'Unknown type "UnknownType!" for variable "$input"' in str(exc_info.value)
+    assert 'Unknown type "UnknownType!" for variable "$input"' in str(
+        exc_info.value
+    )
 
 
 def test_argument_default_values_when_no_argument_provided():
@@ -740,8 +754,8 @@ def test_argument_default_value_when_argument_cannot_be_coerced():
         expected_data={"fieldWithDefaultArgumentValue": None},
         expected_errors=[
             (
-                'Argument "input" of type "String" was provided invalid value WRONG_TYPE '
-                "(Invalid literal EnumValue)",
+                'Argument "input" of type "String" was provided '
+                "invalid value WRONG_TYPE (Invalid literal EnumValue)",
                 (2, 50),
                 "fieldWithDefaultArgumentValue",
             )

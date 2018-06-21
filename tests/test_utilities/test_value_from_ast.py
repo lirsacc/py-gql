@@ -15,7 +15,10 @@ from py_gql.schema.types import (
     ListType,
     NonNullType,
 )
-from py_gql.utilities.value_from_ast import typed_value_from_ast, untyped_value_from_ast
+from py_gql.utilities.value_from_ast import (
+    typed_value_from_ast,
+    untyped_value_from_ast,
+)
 
 
 class TestUntyped(object):

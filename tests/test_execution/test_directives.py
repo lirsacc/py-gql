@@ -5,7 +5,15 @@ import pytest
 
 from py_gql.execution import execute
 from py_gql.lang import parse
-from py_gql.schema import Arg, Directive, Field, Int, ObjectType, Schema, String
+from py_gql.schema import (
+    Arg,
+    Directive,
+    Field,
+    Int,
+    ObjectType,
+    Schema,
+    String,
+)
 
 test_type = ObjectType("TestType", [Field("a", String), Field("b", String)])
 schema = Schema(test_type)

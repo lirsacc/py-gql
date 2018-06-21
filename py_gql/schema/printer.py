@@ -73,7 +73,11 @@ class SchemaPrinter(object):
         :returns: Formatted GraphQL schema
         """
         directives = sorted(
-            [d for d in schema.directives.values() if d not in SPECIFIED_DIRECTIVES],
+            [
+                d
+                for d in schema.directives.values()
+                if d not in SPECIFIED_DIRECTIVES
+            ],
             key=op.attrgetter("name"),
         )
 
@@ -84,7 +88,8 @@ class SchemaPrinter(object):
                 if (
                     t not in SPECIFIED_SCALAR_TYPES
                     and (
-                        self.include_introspection_types or not is_introspection_type(t)
+                        self.include_introspection_types
+                        or not is_introspection_type(t)
                     )
                 )
             ],
@@ -96,7 +101,9 @@ class SchemaPrinter(object):
             + [
                 self.print_directive(d)
                 for d in (
-                    SPECIFIED_DIRECTIVES if self.include_introspection_types else []
+                    SPECIFIED_DIRECTIVES
+                    if self.include_introspection_types
+                    else []
                 )
             ]
             + [self.print_directive(d) for d in directives]
@@ -118,7 +125,9 @@ class SchemaPrinter(object):
 
         :rtype: str
         """
-        if not self.include_descriptions or not getattr(definition, "description"):
+        if not self.include_descriptions or not getattr(
+            definition, "description"
+        ):
             return ""
 
         indent = self.indent * depth
@@ -128,13 +137,19 @@ class SchemaPrinter(object):
             max_len = 120 - len(prefix)
             lines = [
                 (prefix + line.rstrip()) if line else "#"
-                for line in wrapped_lines(definition.description.split("\n"), max_len)
+                for line in wrapped_lines(
+                    definition.description.split("\n"), max_len
+                )
             ]
-            return ("\n" if not first_in_block else "") + "\n".join(lines) + "\n"
+            return (
+                ("\n" if not first_in_block else "") + "\n".join(lines) + "\n"
+            )
 
         elif self.description_format == "block":
             max_len = 120 - len(indent)
-            lines = list(wrapped_lines(definition.description.split("\n"), max_len))
+            lines = list(
+                wrapped_lines(definition.description.split("\n"), max_len)
+            )
             first = lines[0]
 
             if len(lines) == 1 and len(first) < 70 and not first.endswith('"'):
@@ -146,8 +161,12 @@ class SchemaPrinter(object):
                         [
                             "%s%s%s"
                             % (
-                                "\n" if (i == 0 and not has_leading_whitespace) else "",
-                                indent if (i > 0 or not has_leading_whitespace) else "",
+                                "\n"
+                                if (i == 0 and not has_leading_whitespace)
+                                else "",
+                                indent
+                                if (i > 0 or not has_leading_whitespace)
+                                else "",
                                 _escape_triple_quotes(line),
                             )
                             for i, line in enumerate(lines)
@@ -249,7 +268,8 @@ class SchemaPrinter(object):
         return "%stype %s%s {\n%s\n}" % (
             self.print_description(typ),
             typ.name,
-            " implements %s" % " & ".join([iface.name for iface in typ.interfaces])
+            " implements %s"
+            % " & ".join([iface.name for iface in typ.interfaces])
             if typ.interfaces
             else "",
             self.print_fields(typ),
@@ -353,7 +373,9 @@ class SchemaPrinter(object):
                 indent,
             )
         else:
-            return "(%s)" % ", ".join([self.print_input_value(arg) for arg in args])
+            return "(%s)" % ", ".join(
+                [self.print_input_value(arg) for arg in args]
+            )
 
     def print_input_value(self, arg_or_inut_field):
         """
@@ -381,7 +403,9 @@ def _schema_definition(schema, indent):
     """
     if (
         (not schema.query_type or schema.query_type.name == "Query")
-        and (not schema.mutation_type or schema.mutation_type.name == "Mutation")
+        and (
+            not schema.mutation_type or schema.mutation_type.name == "Mutation"
+        )
         and (
             not schema.subscription_type
             or schema.subscription_type.name == "Subscription"
@@ -393,7 +417,9 @@ def _schema_definition(schema, indent):
     if schema.query_type:
         operation_types.append("%squery: %s" % (indent, schema.query_type.name))
     if schema.mutation_type:
-        operation_types.append("%smutation: %s" % (indent, schema.mutation_type.name))
+        operation_types.append(
+            "%smutation: %s" % (indent, schema.mutation_type.name)
+        )
     if schema.subscription_type:
         operation_types.append(
             "%ssubscription: %s" % (indent, schema.subscription_type.name)

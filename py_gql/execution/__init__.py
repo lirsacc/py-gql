@@ -129,7 +129,13 @@ def execute(
         )
 
     ctx = ExecutionContext(
-        schema, ast, coerced_variables, fragments, executor, operation, context_value
+        schema,
+        ast,
+        coerced_variables,
+        fragments,
+        executor,
+        operation,
+        context_value,
     )
 
     if operation.operation == "query":
@@ -184,7 +190,9 @@ def get_operation(document, operation_name):
     if operation is not None:
         return operation
     else:
-        raise ExecutionError('No operation "%s" found in document' % operation_name)
+        raise ExecutionError(
+            'No operation "%s" found in document' % operation_name
+        )
 
 
 def coerce_variable_values(schema, operation, variables=None):
@@ -266,7 +274,11 @@ def coerce_variable_values(schema, operation, variables=None):
                 errors.append(
                     VariableCoercionError(
                         'Variable "$%s" got invalid value %s (%s)'
-                        % (name, json.dumps(variables[name], sort_keys=True), err),
+                        % (
+                            name,
+                            json.dumps(variables[name], sort_keys=True),
+                            err,
+                        ),
                         [var_def],
                     )
                 )
@@ -277,7 +289,9 @@ def coerce_variable_values(schema, operation, variables=None):
     return coerced
 
 
-def collect_fields(ctx, object_type, selections, visited_fragments=None):  # noqa : C901
+def collect_fields(  # noqa : C901
+    ctx, object_type, selections, visited_fragments=None
+):
     """ Collect all fields in a selection set, recursively traversing fragments
     in one single map and conserving definitino order.
 
@@ -316,7 +330,11 @@ def collect_fields(ctx, object_type, selections, visited_fragments=None):  # noq
             if not _include_selection(selection, ctx.variables):
                 continue
 
-            key = selection.alias.value if selection.alias else selection.name.value
+            key = (
+                selection.alias.value
+                if selection.alias
+                else selection.name.value
+            )
             if key not in grouped_fields:
                 grouped_fields[key] = []
             grouped_fields[key].append(selection)
@@ -483,7 +501,9 @@ def execute_selections(ctx, selections, object_type, object_value, path=None):
     return _concurrency.chain(_concurrency.all_(deferred_fields), OrderedDict)
 
 
-def execute_selections_serially(ctx, selections, object_type, object_value, path=None):
+def execute_selections_serially(
+    ctx, selections, object_type, object_value, path=None
+):
     fields = collect_fields(ctx, object_type, selections)
     resolved_fields = []
     steps = []
@@ -555,7 +575,9 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
         # explicitely if the query lead to this behaviour ?
         def _handle_null(value):
             if value is None:
-                ctx.add_error('Field "%s" is not nullable' % path, nodes[0], path)
+                ctx.add_error(
+                    'Field "%s" is not nullable' % path, nodes[0], path
+                )
             return _concurrency.deferred(value)
 
         return _concurrency.chain(
@@ -567,14 +589,17 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
         return _concurrency.deferred(None)
 
     if isinstance(field_type, ListType):
-        return _complete_list_value(ctx, field_type.type, nodes, resolved_value, path)
+        return _complete_list_value(
+            ctx, field_type.type, nodes, resolved_value, path
+        )
 
     if isinstance(field_type, ScalarType):
         try:
             serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:
             raise RuntimeError(
-                'Field "%s" cannot be serialized as "%s": %s' % (path, field_type, err)
+                'Field "%s" cannot be serialized as "%s": %s'
+                % (path, field_type, err)
             )
         else:
             return _concurrency.deferred(serialized)
@@ -584,19 +609,23 @@ def complete_value(ctx, field_type, nodes, resolved_value, path):
             serialized = field_type.get_name(resolved_value)
         except UnknownEnumValue as err:
             raise RuntimeError(
-                'Field "%s" cannot be serialized as "%s": %s' % (path, field_type, err)
+                'Field "%s" cannot be serialized as "%s": %s'
+                % (path, field_type, err)
             )
         else:
             return _concurrency.deferred(serialized)
 
     if isinstance(field_type, (ObjectType, InterfaceType, UnionType)):
-        return _complete_object_value(ctx, field_type, nodes, resolved_value, path)
+        return _complete_object_value(
+            ctx, field_type, nodes, resolved_value, path
+        )
 
 
 def _complete_list_value(ctx, item_type, nodes, list_value, path):
     if not is_iterable(list_value, False):
         raise RuntimeError(
-            'Field "%s" is a list type and resolved value ' "should be iterable" % path
+            'Field "%s" is a list type and resolved value '
+            "should be iterable" % path
         )
 
     return _concurrency.all_(
@@ -609,7 +638,9 @@ def _complete_list_value(ctx, item_type, nodes, list_value, path):
 
 def _complete_object_value(ctx, field_type, nodes, object_value, path):
     if isinstance(field_type, (InterfaceType, UnionType)):
-        runtime_type = _resolve_type(object_value, ctx.context, ctx.schema, field_type)
+        runtime_type = _resolve_type(
+            object_value, ctx.context, ctx.schema, field_type
+        )
 
         if isinstance(runtime_type, six.string_types):
             runtime_type = ctx.schema.get_type(runtime_type, None)
@@ -617,7 +648,8 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path):
         if not isinstance(runtime_type, ObjectType):
             raise RuntimeError(
                 'Abstract type "%s" must resolve to an ObjectType at runtime '
-                'for field "%s". Received "%s".' % (field_type, path, runtime_type)
+                'for field "%s". Received "%s".'
+                % (field_type, path, runtime_type)
             )
 
         # Backup check in case of badly implemented `resolve_type`,
