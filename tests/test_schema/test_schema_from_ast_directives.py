@@ -504,15 +504,13 @@ def test_enum_type_directive():
     """ generating custom enums """
 
     # These could be pre-loaded from a database or a config file dynamically
-    VALUES = dict(
-        [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
-    )
+    VALUES = [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
 
     class GeneratedEnum(SchemaDirective):
         def visit_enum(self, enum):
             return EnumType(
                 enum.name,
-                VALUES.items(),
+                VALUES,
                 description=enum.description,
                 nodes=enum.nodes,
             )
@@ -547,6 +545,7 @@ def test_enum_type_directive():
     )
 
     enum = schema.get_type("Color")
-    for k, v in VALUES.items():
+    values_dict = dict(VALUES)
+    for k, v in values_dict.items():
         assert enum.get_value(k) == v
         assert enum.get_name(v) == k

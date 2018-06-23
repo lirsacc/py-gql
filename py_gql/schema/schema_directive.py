@@ -304,7 +304,7 @@ class SchemaDirective(SchemaVisitor):
     @classmethod
     def support_location(cls, location):
         mtd = getattr(cls, _LOCATION_TO_METHOD[location], None)
-        return callable(mtd) and mtd is not cls.default
+        return callable(mtd) and mtd != cls.default
 
 
 def wrap_resolver(field_def, func):

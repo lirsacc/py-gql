@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Export schema as SDL.
-See: https://github.com/facebook/graphql/pull/90 for the corresponding discussions. """
+""" Export schema as SDL. """
 from __future__ import unicode_literals
 
 import operator as op
