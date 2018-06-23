@@ -10,11 +10,16 @@ from . import types as _schema
 from .._utils import is_iterable, nested_key
 from ..exc import SDLError, TypeExtensionError
 from ..lang import ast as _ast, parse
-from ..utilities import directive_arguments, typed_value_from_ast
+from ..utilities import directive_arguments, value_from_ast
 from .directives import DeprecatedDirective
-from .scalars import SPECIFIED_SCALAR_TYPES, DefaultCustomScalar
+from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
 from .schema_directive import apply_schema_directives
+from .validation import RESERVED_NAMES
+
+
+def _ident(value):
+    return value
 
 
 def schema_from_ast(
@@ -449,10 +454,12 @@ def _build_types_and_directives(  # noqa
 
         :rtype: py_gql.schema.Scalarype
         """
-        return DefaultCustomScalar(
+        return _schema.ScalarType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
             nodes=[node],
+            serialize=_ident,
+            parse=_ident,
         )
 
     def input_object_type(node):
@@ -488,9 +495,7 @@ def _build_types_and_directives(  # noqa
             node=node,
         )
         if node.default_value is not None:
-            kwargs["default_value"] = typed_value_from_ast(
-                node.default_value, type
-            )
+            kwargs["default_value"] = value_from_ast(node.default_value, type)
 
         return cls(node.name.value, type, **kwargs)
 
@@ -727,7 +732,6 @@ def _build_types_and_directives(  # noqa
 
         :rtype: py_gql.schema.ScalarType
         """
-        print("extend scalar", source_type)
         if not isinstance(extension_node, _ast.ScalarTypeExtension):
             raise TypeExtensionError(
                 'Expected ScalarTypeExtension for ScalarType "%s" but got %s'
@@ -735,7 +739,7 @@ def _build_types_and_directives(  # noqa
                 [extension_node],
             )
 
-        if source_type.name in _schema.RESERVED_NAMES:
+        if source_type.name in RESERVED_NAMES:
             raise TypeExtensionError(
                 "Cannot extend specified scalar %s" % (source_type.name),
                 [extension_node],

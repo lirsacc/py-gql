@@ -41,7 +41,7 @@ from ..schema import (
 )
 from ..schema.introspection import schema_field, type_field, type_name_field
 from ..utilities import (
-    typed_value_from_ast,
+    value_from_ast,
     coerce_value,
     coerce_argument_values,
     default_resolver,
@@ -252,7 +252,7 @@ def coerce_variable_values(schema, operation, variables=None):
         if name not in variables:
             if var_def.default_value is not None:
                 try:
-                    coerced[name] = typed_value_from_ast(
+                    coerced[name] = value_from_ast(
                         var_def.default_value, var_type
                     )
                 except InvalidValue as err:

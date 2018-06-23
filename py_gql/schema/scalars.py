@@ -27,7 +27,6 @@ Boolean = ScalarType(
     serialize=bool,
     parse=bool,
     parse_literal=_typed_coerce(bool, _ast.BooleanValue),
-    _specififed=True,
 )
 
 
@@ -97,7 +96,6 @@ Int = ScalarType(
     serialize=coerce_int,
     parse=coerce_int,
     parse_literal=_typed_coerce(coerce_int, _ast.IntValue),
-    _specififed=True,
 )
 
 
@@ -111,7 +109,6 @@ Float = ScalarType(
     serialize=coerce_float,
     parse=coerce_float,
     parse_literal=_typed_coerce(coerce_float, _ast.FloatValue, _ast.IntValue),
-    _specififed=True,
 )
 
 
@@ -137,7 +134,6 @@ String = ScalarType(
     serialize=_serialize_string,
     parse=_parse_string,
     parse_literal=_typed_coerce(_parse_string, _ast.StringValue),
-    _specififed=True,
 )
 
 
@@ -154,7 +150,6 @@ ID = ScalarType(
     serialize=six.text_type,
     parse=six.text_type,
     parse_literal=_typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue),
-    _specififed=True,
 )
 
 
@@ -225,25 +220,3 @@ class RegexType(ScalarType):
         self._parse = _parse
         self._serialize = _parse
         self._parse_literal = _typed_coerce(_parse, _ast.StringValue)
-
-
-class DefaultCustomScalar(ScalarType):
-    """ Default string based behaviour for scalar types derived from schema SDL.
-    This will be essentially take everything and transform it into a string.
-    """
-
-    def __init__(self, name, description=None, **kw):
-        super(DefaultCustomScalar, self).__init__(
-            name,
-            String._serialize,
-            String._parse,
-            _typed_coerce(
-                String._parse,
-                _ast.StringValue,
-                _ast.FloatValue,
-                _ast.IntValue,
-                _ast.BooleanValue,
-            ),
-            description=description,
-            **kw,
-        )

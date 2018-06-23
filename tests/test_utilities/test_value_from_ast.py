@@ -15,10 +15,7 @@ from py_gql.schema.types import (
     ListType,
     NonNullType,
 )
-from py_gql.utilities.value_from_ast import (
-    typed_value_from_ast,
-    untyped_value_from_ast,
-)
+from py_gql.utilities import untyped_value_from_ast, value_from_ast
 
 
 class TestUntyped(object):
@@ -118,11 +115,11 @@ class TestTyped(object):
     def _run_test_case(self, value, type_, expected, error, variables=None):
         if error is None:
             assert (
-                typed_value_from_ast(parse_value(value), type_, variables) == expected
+                value_from_ast(parse_value(value), type_, variables) == expected
             )
         else:
             with pytest.raises(error):
-                typed_value_from_ast(parse_value(value), type_, variables)
+                value_from_ast(parse_value(value), type_, variables)
 
     @pytest.mark.parametrize(
         "type_,value,expected",
@@ -188,11 +185,11 @@ class TestTyped(object):
         self._run_test_case(value, Color, expected, error)
 
     def test_it_coerces_nullable_to_none(self):
-        assert typed_value_from_ast(parse_value("null"), Boolean, None) is None
+        assert value_from_ast(parse_value("null"), Boolean, None) is None
 
     def test_it_raises_on_non_nullable_null(self):
         with pytest.raises(InvalidValue):
-            typed_value_from_ast(parse_value("null"), NonNullType(Boolean), None)
+            value_from_ast(parse_value("null"), NonNullType(Boolean), None)
 
     @pytest.mark.parametrize(
         "type_,value,expected,error",
@@ -222,7 +219,9 @@ class TestTyped(object):
             (NonNullListOfBool, "[true, null]", [True, None], None),
         ],
     )
-    def test_it_coerces_non_null_lists_of_values(self, type_, value, expected, error):
+    def test_it_coerces_non_null_lists_of_values(
+        self, type_, value, expected, error
+    ):
         self._run_test_case(value, type_, expected, error)
 
     @pytest.mark.parametrize(
@@ -237,7 +236,9 @@ class TestTyped(object):
             (ListOfNonNullBool, "[true, null]", None, InvalidValue),
         ],
     )
-    def test_it_coerces_lists_of_non_null_values(self, type_, value, expected, error):
+    def test_it_coerces_lists_of_non_null_values(
+        self, type_, value, expected, error
+    ):
         self._run_test_case(value, type_, expected, error)
 
     @pytest.mark.parametrize(
@@ -275,7 +276,12 @@ class TestTyped(object):
                 {"int": 42, "bool": True, "requiredBool": False},
                 None,
             ),
-            (TestInput, "{ int: true, requiredBool: true }", None, InvalidValue),
+            (
+                TestInput,
+                "{ int: true, requiredBool: true }",
+                None,
+                InvalidValue,
+            ),
             (TestInput, "{ requiredBool: null }", None, InvalidValue),
             (TestInput, "{ bool: true }", None, InvalidValue),
         ],

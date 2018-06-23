@@ -5,6 +5,7 @@ import re
 
 from ..exc import SchemaError
 from .introspection import is_introspection_type
+from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Argument,
     Directive,
@@ -22,6 +23,7 @@ from .types import (
 )
 
 VALID_NAME_RE = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9]*$")
+RESERVED_NAMES = set((t.name for t in SPECIFIED_SCALAR_TYPES))
 
 
 def validate_schema(schema):
@@ -45,7 +47,9 @@ def validate_schema(schema):
             typ and hasattr(typ, "name"), "Expected named type but got %s" % typ
         )
         _assert(
-            is_introspection_type(typ) or _is_valid_name(typ.name),
+            is_introspection_type(typ)
+            or typ in SPECIFIED_SCALAR_TYPES
+            or _is_valid_name(typ.name),
             'Invalid type name "%s", '
             "must match /^[_a-zA-Z][_a-zA-Z0-9]*$/" % typ.name,
         )
@@ -108,7 +112,7 @@ def _is_valid_name(name):
     False
     """
     return bool(
-        name and VALID_NAME_RE.match(name) and not name.startswith("__")
+        name and not name.startswith("__") and VALID_NAME_RE.match(name)
     )
 
 

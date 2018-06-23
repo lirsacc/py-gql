@@ -17,7 +17,7 @@ from ..schema import (
     ScalarType,
 )
 from .path import Path
-from .value_from_ast import typed_value_from_ast
+from .value_from_ast import value_from_ast
 
 
 def _path(path):
@@ -185,7 +185,7 @@ def coerce_argument_values(definition, node, variables=None):
                     )
             else:
                 try:
-                    coerced_values[argname] = typed_value_from_ast(
+                    coerced_values[argname] = value_from_ast(
                         arg.value, argtype, variables=variables
                     )
                 except InvalidValue as err:

@@ -3,6 +3,7 @@
 import hashlib
 
 import pytest
+import six
 
 from py_gql import graphql
 from py_gql._string_utils import parse_block_string
@@ -348,7 +349,7 @@ def test_input_values():
 
         def parse(self, value):
             parsed = self.type.parse(value)
-            if not isinstance(parsed, str):
+            if not isinstance(parsed, six.string_types):
                 raise ScalarParsingError("Not a string")
             if not (self.min <= len(parsed) <= self.max):
                 raise ScalarParsingError(
@@ -356,9 +357,6 @@ def test_input_values():
                     % (self.name, self.min, self.max, len(parsed))
                 )
             return parsed
-
-        def parse_literal(self, node, variables=None):
-            return self.parse(node.value)
 
     class LimitedLengthDirective(SchemaDirective):
         def __init__(self, args):

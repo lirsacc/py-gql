@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-""" Utilities to extract Python values from an ast node.
-
-In large part ported from the JS implementation and adapted to
-work with the schema / types implementation we have.
-"""
+""" Utilities to extract Python values from an ast node. """
 
 from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
-from ..schema.types import (
+from ..schema import (
     EnumType,
     InputObjectType,
     ListType,
@@ -16,55 +12,7 @@ from ..schema.types import (
 )
 
 
-def untyped_value_from_ast(node, variables=None):
-    """ Convert an ast value node into a valid python value without type
-    validation.
-
-    :type node: py_gql.lang.ast.Value
-    :param node: The value node which value is required
-
-    :type variables: Optional[dict]
-    :param variables: Variables mapping
-
-    :rtype: any
-    :returns: Extracted value
-
-    :Raises:
-
-        - ``TypeError`` when node is not a value node
-        - :class:`py_gql.exc.UnknownVariable` if a variable is required and
-          doesn't exist
-    """
-    kind = type(node)
-
-    if kind == _ast.NullValue:
-        return None
-    elif kind == _ast.IntValue:
-        return int(node.value, 10)
-    elif kind == _ast.FloatValue:
-        return float(node.value)
-    elif kind in (_ast.StringValue, _ast.EnumValue, _ast.BooleanValue):
-        return node.value
-    elif kind == _ast.ListValue:
-        return [
-            untyped_value_from_ast(item, variables=variables)
-            for item in node.values
-        ]
-    elif kind == _ast.ObjectValue:
-        return {
-            f.name.value: untyped_value_from_ast(f.value, variables=variables)
-            for f in node.fields
-        }
-    elif kind == _ast.Variable:
-        varname = node.name.value
-        if not variables or varname not in variables:
-            raise UnknownVariable(varname, [node])
-        return variables[varname]
-
-    raise TypeError("Unexpected node %s" % node.__class__)
-
-
-def typed_value_from_ast(node, type_, variables=None):
+def value_from_ast(node, type_, variables=None):
     """ Convert an ast value node into a valid python value while validating
     against a given type.
 
@@ -110,11 +58,10 @@ def typed_value_from_ast(node, type_, variables=None):
 
     if isinstance(type_, ListType):
         if kind != _ast.ListValue:
-            return [typed_value_from_ast(node, type_.type, variables)]
+            return [value_from_ast(node, type_.type, variables)]
 
         return [
-            typed_value_from_ast(item, type_.type, variables)
-            for item in node.values
+            value_from_ast(item, type_.type, variables) for item in node.values
         ]
 
     if isinstance(type_, InputObjectType):
@@ -147,6 +94,6 @@ def _extract_input_object(node, type_, variables):
                 raise InvalidValue("Missing field %s" % name, [node])
         else:
             value = node_fields[name].value
-            coerced[name] = typed_value_from_ast(value, field.type, variables)
+            coerced[name] = value_from_ast(value, field.type, variables)
 
     return coerced

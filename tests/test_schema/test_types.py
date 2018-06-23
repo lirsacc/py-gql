@@ -12,15 +12,7 @@ from py_gql.exc import (
     UnknownEnumValue,
 )
 from py_gql.lang.parser import parse_value
-from py_gql.schema import (
-    UUID,
-    Boolean,
-    EnumType,
-    Float,
-    Int,
-    RegexType,
-    String,
-)
+from py_gql.schema import UUID, Boolean, EnumType, Float, Int, RegexType, String
 
 
 def test_EnumType_rejects_duplicate_names():

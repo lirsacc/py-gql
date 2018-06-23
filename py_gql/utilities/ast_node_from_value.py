@@ -16,7 +16,7 @@ from ..schema import (
     ScalarType,
     is_input_type,
 )
-from ..schema.scalars import SPECIFIED_SCALAR_TYPES
+from ..schema.scalars import SPECIFIED_SCALAR_TYPES, MAX_INT, MIN_INT
 
 _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 
@@ -95,12 +95,9 @@ def ast_node_from_value(value, input_type):  # noqa
         if input_type is Int:
             return _ast.IntValue(value=str(serialized))
         elif input_type is Float:
-            if (
-                int(serialized) == serialized
-                and -2147483647 < serialized < 2147483647
-            ):
+            if int(serialized) == serialized and MIN_INT < serialized < MAX_INT:
                 return _ast.IntValue(value=str(int(serialized)))
-            elif -2147483647 < serialized < 2147483647:
+            elif MIN_INT < serialized < MAX_INT:
                 return _ast.FloatValue(value=str(serialized))
             return _ast.FloatValue(value="%.g" % serialized)
 
@@ -115,7 +112,7 @@ def ast_node_from_value(value, input_type):  # noqa
         ):
             if _INT_RE.match(serialized):
                 intvalue = int(serialized)
-                if -2147483647 < intvalue < 2147483647:
+                if MIN_INT < intvalue < MAX_INT:
                     return _ast.IntValue(value=serialized)
                 else:
                     return _ast.FloatValue(value=serialized)

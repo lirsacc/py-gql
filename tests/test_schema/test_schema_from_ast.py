@@ -396,7 +396,7 @@ def test_custom_scalar():
     )
     scalar = schema.types["CustomScalar"]
     assert scalar.parse("foo") == "foo"
-    assert scalar.serialize(123) == "123"
+    assert scalar.serialize(123) == 123
 
 
 def test_input_object():

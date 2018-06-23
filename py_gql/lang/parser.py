@@ -90,7 +90,7 @@ def parse_value(source, **kwargs):
     This is useful within tools that operate upon GraphQL values (eg. ``[42]``) directly
     and in isolation of complete GraphQL documents. Consider providing the results
     to the utility functions :func:`py_gql.utilities.untyped_value_from_ast` and
-    :func:`py_gql.utilities.typed_value_from_ast`.
+    :func:`py_gql.utilities.value_from_ast`.
 
     :type source: Union[str, bytes]
     :param source: The GraphQL document to parse
