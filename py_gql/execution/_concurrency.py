@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-""" Helpers to work with futures and the concurrent module. """
+""" Helpers to work with futures and the concurrent module in a way similar
+to promises """
+
+# TODO: Review this package code. The various `deferred(None)` leaders
+# smell .
 
 from concurrent import futures as _f
 
@@ -14,7 +18,7 @@ def deferred(value):
     :type value: any
     :param value: Original value
 
-    :rtype: ``concurrent.futures.Future``
+    :rtype: concurrent.futures.Future
     :returns: Value wrapped in a ``Future``
 
     >>> deferred = deferred(1)
@@ -32,7 +36,7 @@ def ensure_deferred(maybe_future):
     :type maybe_future: any
     :param maybe_future: Original value
 
-    :rtype: ``concurrent.futures.Future``
+    :rtype: concurrent.futures.Future
     :returns: Value wrapped in a ``Future`` if not alrady the case
     """
     if isinstance(maybe_future, _f.Future):
@@ -44,7 +48,10 @@ def all_(futures):
     """ Create a Future from a list of futures that resolves only when all
     futures have resolved.
 
-    :type futures: list[concurrent.futures.Future]
+    If any future rejects, the wrapping future rejects with the exception for
+    that future.
+
+    :type futures: List[concurrent.futures.Future]
     :param futures: List of futures.
 
     :rtype: concurrent.futures.Future
@@ -97,12 +104,25 @@ def all_(futures):
     return result
 
 
-def chain(previous, *funcs):
+def chain(leader, *funcs):
     """ Chain futures together until all steps have been exhausted.
 
     - Final result can be either a deferred value or not, depends on the return
       type of the last step in chain.
     - Assumes futures are independantly submitted to an executor
+
+    :type leader: concurrrent.futures.Future
+    :param leader: First future in the chain.
+        Can be ommitted, in which case the first step will be called with
+        ``None`` as input.
+
+    :type funcs: Iterable[(any) -> any]
+    :param funcs: Steps in the chain
+        Each step receives the result of the previous step as input.
+        Return value of a step can be either a future or a value which will be
+        wrapped as a future if there is more steps to compute.
+
+    :rtype: concurrent.futures.Future
 
     >>> f1 = _f.Future()
     >>> f3 = chain(f1, lambda x: deferred(x + 1), lambda x: x * 3)
@@ -112,6 +132,10 @@ def chain(previous, *funcs):
     """
     result = _f.Future()
     stack = list(funcs)[::-1]
+
+    if callable(leader):
+        stack.insert(0, leader)
+        leader = deferred(None)
 
     def callback(future):
         try:
@@ -134,12 +158,19 @@ def chain(previous, *funcs):
                     ensure_deferred(mapped).add_done_callback(callback)
 
     result.set_running_or_notify_cancel()
-    previous.add_done_callback(callback)
+    leader.add_done_callback(callback)
     return result
 
 
 def unwrap(future):
-    """ Resolve nested futures until a non future is resolved or an exception is raised.
+    """ Resolve nested futures until a non future is resolved or an
+    exception is raised.
+
+    :type future: concurrent.futures.Future
+    :param future: Future to unwrap
+
+    :rtype: any
+    :returns: Unwrapped value
 
     >>> f1 = _f.Future()
     >>> f2 = _f.Future()
@@ -177,14 +208,30 @@ def unwrap(future):
 
 
 def serial(steps):
+    """ Similar to :func:`chain` but ignoring the intermediate results.
+    """
+
     def _step(original):
-        return lambda _: original()  # Need to force a scope chnage
+        return lambda _: original()  # Need to force a scope change
 
     return chain(deferred(None), *[_step(step) for step in steps])
 
 
-def except_(future, error_cls, func=lambda x: None):
+def except_(future, exc_cls, func=lambda x: None):
     """ Except for futures.
+
+    :type future: concurrent.futures.Future
+    :param future: Future to wrap
+
+    :type exc_cls: Union[type, Tuple[*type]]
+    :param exc_cls: Exception classes to expect.
+        Can be any value compatible with a standard ``except`` clause.
+
+    :type func: callable
+    :param func:
+        Will be passed the expected exception to generate the wrapped future's
+        result.
+        Default behaviour is to set the result to ``None``.
 
     >>> f1 = _f.Future()
     >>> f = except_(f1, ValueError, lambda err: err)
@@ -203,7 +250,7 @@ def except_(future, error_cls, func=lambda x: None):
             res = future.result()
         except _f.CancelledError:
             result.cancel()
-        except error_cls as err:
+        except exc_cls as err:
             result.set_result(func(err))
         except Exception as err:
             result.set_exception(err)
