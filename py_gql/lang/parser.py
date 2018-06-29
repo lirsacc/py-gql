@@ -162,7 +162,6 @@ class Parser(object):
         source,
         no_location=False,
         allow_type_system=True,
-        allow_block_strings=True,
         allow_legacy_sdl_empty_fields=False,
         allow_legacy_sdl_implements_interfaces=False,
         experimental_fragment_variables=False,
@@ -182,12 +181,6 @@ class Parser(object):
             By default, the parser will accept schema definition nodes, when
             only executing GraphQL queries setting this to ``False`` can save
             operations and remove the need for some later validation.
-
-        :type allow_block_strings: bool
-        :param allow_block_strings:
-            Block strings are currently part of the Draft specification
-            and so can be disabled with this flag if the user wants the
-            behaviour of the stable spec.
 
         :type allow_legacy_sdl_empty_fields: bool
         :param allow_legacy_sdl_empty_fields:
@@ -237,8 +230,6 @@ class Parser(object):
 
         self.no_location = no_location
         self.allow_type_system = allow_type_system
-        # TODO: Remove this flas as the spec supports it by default.
-        self.allow_block_strings = allow_block_strings
         self.allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
         self.allow_legacy_sdl_implements_interfaces = (
             allow_legacy_sdl_implements_interfaces
@@ -795,9 +786,6 @@ class Parser(object):
         :rtype: py_gql.lang.ast.StringValue
         """
         token = self.advance()
-
-        if not self.allow_block_strings and _is(token, _token.BlockString):
-            raise _unexpected_token(token, token.start, self.lexer._source)
 
         return _ast.StringValue(
             value=token.value,

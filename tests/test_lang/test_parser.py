@@ -221,7 +221,9 @@ def test_it_creates_ast():
                                     _ast.Argument(
                                         loc=(9, 14),
                                         name=_ast.Name(loc=(9, 11), value="id"),
-                                        value=_ast.IntValue(loc=(13, 14), value="4"),
+                                        value=_ast.IntValue(
+                                            loc=(13, 14), value="4"
+                                        ),
                                     )
                                 ],
                                 directives=[],
@@ -231,7 +233,9 @@ def test_it_creates_ast():
                                         _ast.Field(
                                             loc=(22, 24),
                                             alias=None,
-                                            name=_ast.Name(loc=(22, 24), value="id"),
+                                            name=_ast.Name(
+                                                loc=(22, 24), value="id"
+                                            ),
                                             directives=[],
                                             arguments=[],
                                             selection_set=None,
@@ -239,7 +243,9 @@ def test_it_creates_ast():
                                         _ast.Field(
                                             loc=(30, 34),
                                             alias=None,
-                                            name=_ast.Name(loc=(30, 34), value="name"),
+                                            name=_ast.Name(
+                                                loc=(30, 34), value="name"
+                                            ),
                                             directives=[],
                                             arguments=[],
                                             selection_set=None,
@@ -288,7 +294,9 @@ def test_it_creates_ast_from_nameless_query_without_variables():
                                         _ast.Field(
                                             loc=(21, 23),
                                             alias=None,
-                                            name=_ast.Name(loc=(21, 23), value="id"),
+                                            name=_ast.Name(
+                                                loc=(21, 23), value="id"
+                                            ),
                                             arguments=[],
                                             directives=[],
                                             selection_set=None,
@@ -363,11 +371,6 @@ def test_parse_value_it_parses_block_strings():
     )
 
 
-def test_parse_value_raises_if_block_strings_are_disabled():
-    with pytest.raises(UnexpectedToken):
-        parse_value(u'""" foo """', allow_block_strings=False)
-
-
 def test_parse_type_it_parses_well_known_types():
     assert_node_equal(
         parse_type(u"String"),
@@ -387,7 +390,9 @@ def test_parse_type_it_parses_list_types():
         parse_type(u"[MyType]"),
         _ast.ListType(
             loc=(0, 8),
-            type=_ast.NamedType(loc=(1, 7), name=_ast.Name(loc=(1, 7), value="MyType")),
+            type=_ast.NamedType(
+                loc=(1, 7), name=_ast.Name(loc=(1, 7), value="MyType")
+            ),
         ),
     )
 
@@ -397,7 +402,9 @@ def test_parse_type_it_parses_non_null_types():
         parse_type(u"MyType!"),
         _ast.NonNullType(
             loc=(0, 7),
-            type=_ast.NamedType(loc=(0, 6), name=_ast.Name(loc=(0, 6), value="MyType")),
+            type=_ast.NamedType(
+                loc=(0, 6), name=_ast.Name(loc=(0, 6), value="MyType")
+            ),
         ),
     )
 
@@ -471,7 +478,9 @@ def test_it_parses_inline_fragment_without_type():
                                     selections=[
                                         _ast.Field(
                                             loc=(63, 67),
-                                            name=_ast.Name(loc=(63, 67), value="name"),
+                                            name=_ast.Name(
+                                                loc=(63, 67), value="name"
+                                            ),
                                         )
                                     ],
                                 ),
