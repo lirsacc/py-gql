@@ -49,12 +49,12 @@ TestNestedInputObject = InputObjectType(
     ],
 )
 
-_inspect = lambda _, args, *a: json.dumps(
-    args.get("input", None), sort_keys=True
+_inspect = lambda name: lambda _, args, *a: json.dumps(
+    args.get(name, None), sort_keys=True
 )
 
 _field = lambda name, argType, **kw: Field(
-    name, String, [Arg("input", argType, **kw)], resolve=_inspect
+    name, String, [Arg("input", argType, **kw)], resolve=_inspect("input")
 )
 
 TestType = ObjectType(
@@ -63,6 +63,11 @@ TestType = ObjectType(
         _field("fieldWithObjectInput", TestInputObject),
         _field("fieldWithNullableStringInput", String),
         _field("fieldWithNonNullableStringInput", NonNullType(String)),
+        _field(
+            "fieldWithNonNullableStringInputAndDefaultArgumentValue",
+            NonNullType(String),
+            default_value="Hello World",
+        ),
         _field(
             "fieldWithDefaultArgumentValue", String, default_value="Hello World"
         ),
@@ -288,7 +293,6 @@ def test_errors_on_omission_of_nested_non_null():
     )
 
 
-# REVIEW: Difference with reference implementation
 @pytest.mark.xfail
 def test_fail_on_deep_nested_errors_and_with_many_errors():
     with pytest.raises(VariablesCoercionError) as exc_info:
@@ -348,20 +352,6 @@ def test_allows_nullable_inputs_to_be_omitted_in_a_variable():
         _SCHEMA,
         """
         query ($value: String) {
-            fieldWithNullableStringInput(input: $value)
-        }
-        """,
-        expected_data={"fieldWithNullableStringInput": "null"},
-        expected_errors=[],
-    )
-
-
-def test_allows_nullable_inputs_to_be_omitted_in_an_unlisted_variable():
-    # This is an *invalid* query, but it should be an *executable* query.
-    check_execution(
-        _SCHEMA,
-        """
-        query {
             fieldWithNullableStringInput(input: $value)
         }
         """,
@@ -497,26 +487,6 @@ def test_reports_error_for_missing_non_nullable_inputs():
     )
 
 
-def test_reports_error_for_missing_non_nullable_inputs_no_validation():
-    # This is an *invalid* query, but it should be an *executable* query.
-    check_execution(
-        _SCHEMA,
-        """
-        {
-            fieldWithNonNullableStringInput
-        }
-        """,
-        {"fieldWithNonNullableStringInput": None},
-        [
-            (
-                'Argument "input" of required type "String!" was not provided',
-                (23, 54),
-                "fieldWithNonNullableStringInput",
-            )
-        ],
-    )
-
-
 def test_reports_error_for_array_passed_into_string_input():
     check_execution(
         _SCHEMA,
@@ -553,6 +523,21 @@ def test_reports_error_for_non_provided_variables_for_non_nullable_inputs():
                 "fieldWithNonNullableStringInput",
             )
         ],
+    )
+
+
+def test_uses_default_when_no_runtime_value_is_provided_to_a_non_null_argument():
+    check_execution(
+        _SCHEMA,
+        """
+        query optionalVariable($optional: String) {
+            fieldWithNonNullableStringInputAndDefaultArgumentValue(input: $optional)
+        }
+        """,
+        expected_data={
+            "fieldWithNonNullableStringInputAndDefaultArgumentValue": '"Hello World"'
+        },
+        expected_errors=[],
     )
 
 
@@ -608,8 +593,7 @@ def test_does_not_allow_non_null_lists_to_be_null():
         """,
         expected_exc=VariablesCoercionError,
         expected_msg=(
-            'Variable "$input" got invalid value null (Expected non-nullable '
-            "type [String]! not to be null)"
+            'Variable "$input" of required type "[String]!" must not be null.'
         ),
         variables={"input": None},
     )
@@ -654,8 +638,7 @@ def test_does_not_allow_non_null_lists_of_non_nulls_to_be_null():
         variables={"input": None},
         expected_exc=VariablesCoercionError,
         expected_msg=(
-            'Variable "$input" got invalid value null (Expected non-nullable '
-            "type [String!]! not to be null)"
+            'Variable "$input" of required type "[String!]!" must not be null.'
         ),
     )
 

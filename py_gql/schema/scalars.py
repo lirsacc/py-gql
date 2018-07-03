@@ -160,8 +160,6 @@ SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID)
 # Further down are common types for your convenience but which will 1) not
 # be available by default 2) not be available in other GraphQL servers a-priori.
 
-# [TODO] Port more common types (ISO8601 Datetime, ISO Date, Email, Regex, ...)
-
 
 def _serialize_uuid(maybe_uuid):
     if isinstance(maybe_uuid, uuid.UUID):

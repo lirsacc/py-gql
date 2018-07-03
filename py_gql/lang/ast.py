@@ -29,8 +29,6 @@ class Node(object):
     __defaults__ = {}
 
     def __init__(self, *_, **kwargs):
-        # [TODO] Does this auto-discovery have a significant perf. impact ?
-        # If so the constructor could just be overriden for each subclass.
         for attr in self.__slots__:
             self.__setattr__(
                 attr, kwargs.get(attr, self.__defaults__.get(attr, None))

@@ -64,7 +64,6 @@ def test_it_parses_variable_inline_values():
     parse(u"{ field(complex: { a: { b: [ $var ] } }) }")
 
 
-# [WARN] naming ??
 def test_it_parses_constant_default_values():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"query Foo($x: Complex = { a: { b: [ $var ] } }) { field }")

@@ -56,7 +56,7 @@ class cached_property(property):
 def deduplicate(iterable, key=None):
     """ Deduplicate an iterable.
 
-    [WARN] The return type is a generator and can only be consumed once,
+    The return type is a generator and can only be consumed once,
     wrap with `list` if you need a static result.
 
     :type iterable: Iterable

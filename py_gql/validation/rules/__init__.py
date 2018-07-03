@@ -15,7 +15,9 @@ from ...schema import (
 )
 from ..visitors import ValidationVisitor, VariablesCollector
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
-from .overlapping_fields_can_be_merged import OverlappingFieldsCanBeMergedChecker  # noqa: F401
+from .overlapping_fields_can_be_merged import (
+    OverlappingFieldsCanBeMergedChecker
+)  # noqa: F401
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
@@ -63,13 +65,16 @@ class LoneAnonymousOperationChecker(ValidationVisitor):
 
     def enter_document(self, node):
         operation_definitions = [
-            d for d in node.definitions if isinstance(d, _ast.OperationDefinition)
+            d
+            for d in node.definitions
+            if isinstance(d, _ast.OperationDefinition)
         ]
 
         has_anonymous = any((d.name is None for d in operation_definitions))
         if has_anonymous and len(operation_definitions) > 1:
             self.add_error(
-                "The anonymous operation must be the only defined operation.", node
+                "The anonymous operation must be the only defined operation.",
+                node,
             )
             raise SkipNode()
 
@@ -148,7 +153,8 @@ class VariablesAreInputTypesChecker(ValidationVisitor):
             typ = None
         if not is_input_type(typ):
             self.add_error(
-                'Variable "$%s" must be input type' % node.variable.name.value, node
+                'Variable "$%s" must be input type' % node.variable.name.value,
+                node,
             )
 
 
@@ -203,7 +209,9 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
     def enter_fragment_definition(self, node):
         name = node.name.value
         if name in self._names:
-            self.add_error('There can only be one fragment named "%s"' % name, node)
+            self.add_error(
+                'There can only be one fragment named "%s"' % name, node
+            )
         self._names.add(name)
 
 
@@ -410,7 +418,11 @@ class NoUndefinedVariablesChecker(VariablesCollector):
                         self.add_error(
                             'Variable "$%s" from fragment "%s" is not defined '
                             "on %s operation"
-                            % (var, fragment, '"%s"' % op if op != "" else "anonymous"),
+                            % (
+                                var,
+                                fragment,
+                                '"%s"' % op if op != "" else "anonymous",
+                            ),
                             node,
                         )
 
@@ -557,7 +569,8 @@ class KnownDirectivesChecker(ValidationVisitor):
             location = self._current_location()
             if location not in schema_directive.locations:
                 self.add_error(
-                    'Directive "@%s" may not be used on %s' % (name, location), node
+                    'Directive "@%s" may not be used on %s' % (name, location),
+                    node,
                 )
 
 
@@ -637,15 +650,13 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
     arguments have been provided.
     """
 
-    # Validate on leave to allow for deeper errors to appear first.
-    # TODO: Should this be done in other places.
-
     def _missing_args(self, arg_defs, node):
         node_args = set((arg.name.value for arg in node.arguments))
         for arg in arg_defs:
             if arg.required and (arg.name not in node_args):
                 yield arg
 
+    # Validate on leave to allow for deeper errors to appear first.
     def leave_field(self, node):
         field_def = self.type_info.field
         if field_def:
@@ -656,6 +667,7 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
                     node,
                 )
 
+    # Validate on leave to allow for deeper errors to appear first.
     def leave_directive(self, node):
         directive_def = self.type_info.directive
         if directive_def:
@@ -713,7 +725,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
                     real_type = (
                         vartype
                         if (
-                            isinstance(vartype, NonNullType) or not vardef.default_value
+                            isinstance(vartype, NonNullType)
+                            or not vardef.default_value
                         )
                         else NonNullType(vartype)
                     )

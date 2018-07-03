@@ -217,7 +217,10 @@ class EnumType(NamedType):
     Enum values as strings, however internally Enums can be represented by any
     kind of type, often integers.
 
-    [WARN] Enum values must be hashable for reverse lookup to be possible.
+    .. warning::
+
+        Enum values must be hashable to provide revere-lookup
+        capabilities when coercing python values into enum values.
     """
 
     def __init__(self, name, values, description=None, nodes=None):

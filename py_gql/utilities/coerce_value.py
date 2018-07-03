@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """ Utilities to validate Python values against a schema """
 
+import json
+
 from .._utils import find_one
 from ..exc import (
     CoercionError,
     InvalidValue,
     ScalarParsingError,
     UnknownEnumValue,
+    UnknownType,
+    VariableCoercionError,
+    VariablesCoercionError,
 )
 from ..lang import ast as _ast, print_ast
 from ..schema import (
@@ -15,6 +20,7 @@ from ..schema import (
     ListType,
     NonNullType,
     ScalarType,
+    is_input_type,
 )
 from .path import Path
 from .value_from_ast import value_from_ast
@@ -22,7 +28,7 @@ from .value_from_ast import value_from_ast
 
 def _path(path):
     if not path:
-        return ""
+        return Path()
     return Path(["value"]) + path
 
 
@@ -228,3 +234,105 @@ def directive_arguments(definition, node, variables=None):
         if directive is not None
         else None
     )
+
+
+def coerce_variable_values(schema, operation, variables):
+    """ Prepares an object map of variable values of the correct type based on
+    the provided operation definition and arbitrary JSON input. If the input
+    cannot be parsed to match the variable definitions, an ExecutionError will
+    be thrown. The returned value is a plain dict since it is exposed to user
+    code.
+
+    Extra variables are ignored and filtered out.
+
+    :type schema: py_gql.schema.Schema
+    :param schema: GraphQL Schema to consider
+
+    :type operation: py_gql.lang.ast.OperationDefinition
+    :param operation: Operation definition containing the variable definitions
+
+    :type variables: dict
+    :param variables
+
+    :rtype: dict
+
+    :Raises:
+
+        :class:`py_gql.exc.VariablesCoercionError` if any variable cannot be
+        coerced.
+    """
+    coerced, errors = {}, []
+
+    for var_def in operation.variable_definitions:
+        name = var_def.variable.name.value
+
+        try:
+            var_type = schema.get_type_from_literal(var_def.type)
+        except UnknownType as err:
+            errors.append(
+                VariableCoercionError(
+                    'Unknown type "%s" for variable "$%s"'
+                    % (print_ast(var_def.type), name),
+                    [var_def],
+                )
+            )
+            continue
+
+        if not is_input_type(var_type):
+            errors.append(
+                VariableCoercionError(
+                    'Variable "$%s" expected value of type "%s" which cannot be used '
+                    "as an input type." % (name, print_ast(var_def.type)),
+                    [var_def],
+                )
+            )
+            continue
+
+        if name not in variables:
+            if var_def.default_value is not None:
+                try:
+                    coerced[name] = value_from_ast(
+                        var_def.default_value, var_type
+                    )
+                except InvalidValue as err:
+                    errors.append(
+                        VariableCoercionError(
+                            'Variable "$%s" got invalid default value %s (%s)'
+                            % (name, print_ast(var_def.default_value), err),
+                            [var_def],
+                        )
+                    )
+            elif isinstance(var_type, NonNullType):
+                errors.append(
+                    VariableCoercionError(
+                        'Variable "$%s" of required type "%s" was not provided.'
+                        % (name, var_type),
+                        [var_def],
+                    )
+                )
+        else:
+            value = variables[name]
+            if value is None and isinstance(var_type, NonNullType):
+                errors.append(
+                    VariableCoercionError(
+                        'Variable "$%s" of required type "%s" must not be null.'
+                        % (name, var_type),
+                        [var_def],
+                    )
+                )
+            else:
+                try:
+                    coerced[name] = coerce_value(value, var_type)
+                except (InvalidValue, CoercionError) as err:
+                    errors.append(
+                        VariableCoercionError(
+                            'Variable "$%s" got invalid value %s (%s)'
+                            % (name, json.dumps(value, sort_keys=True), err),
+                            [var_def],
+                        )
+                    )
+
+    if errors:
+        raise VariablesCoercionError(errors)
+
+    return coerced

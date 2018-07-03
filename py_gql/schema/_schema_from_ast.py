@@ -50,7 +50,7 @@ def schema_from_ast(
     :type known_types: List[py_gql.schema.Type]
     :param known_types: User supplied list of known types
         Use this to specify some custom implementation for scalar, enums, etc.
-        WARN: In case of object types, interfaces, etc. the supplied type will
+        In case of object types, interfaces, etc. the supplied type will
         override the extracted type without checking.
 
     :type _raise_on_unknown_extension: bool
@@ -254,7 +254,7 @@ def _build_types_and_directives(  # noqa
     :type known_types: List[py_gql.schema.Type]
     :param known_types: List of known type implementations to inject
         Most useful for scalars and enums but can be used for
-        WARN: Extensions will be applied to these types as well and the
+        Extensions will be applied to these types as well and the
         resulting types may not be the same objects that were provided.
         Do not rely on type identity.
 

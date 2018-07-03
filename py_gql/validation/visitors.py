@@ -48,7 +48,6 @@ class VariablesCollector(ValidationVisitor):
     def __init__(self, *args, **kwargs):
         super(VariablesCollector, self).__init__(*args, **kwargs)
 
-        # [TODO] This looks more complex than it needs to be.
         self._op = None
         self._op_variables = DefaultOrderedDict(OrderedDict)
         self._op_defined_variables = DefaultOrderedDict(OrderedDict)

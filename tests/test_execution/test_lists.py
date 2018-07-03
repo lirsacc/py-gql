@@ -86,7 +86,8 @@ def test_it_raises_on_non_iterable_value_for_list_type(not_iterable):
         not_iterable,
         expected_exc=RuntimeError,
         expected_msg=(
-            'Field "nest.test" is a list type and resolved value should ' "be iterable"
+            'Field "nest.test" is a list type and resolved value should '
+            "be iterable"
         ),
     )
 
@@ -115,7 +116,9 @@ def test_nullable_list_of_nullable_items(data, expected):
         pytest.param([1, None, 2], [1, None, 2], id="[T]!, contains null"),
         pytest.param(_lazy([1, 2]), [1, 2], id="[T]!, callable"),
         pytest.param(
-            _lazy([1, None, 2]), [1, None, 2], id="[T]!, callable, contains null"
+            _lazy([1, None, 2]),
+            [1, None, 2],
+            id="[T]!, callable, contains null",
         ),
     ],
 )
@@ -127,7 +130,10 @@ def test_non_nullable_list_of_nullable_items_ok(data, expected):
     "data, expected_err",
     [
         (None, ('Field "nest.test" is not nullable', (9, 13), "nest.test")),
-        (_lazy(None), ('Field "nest.test" is not nullable', (9, 13), "nest.test")),
+        (
+            _lazy(None),
+            ('Field "nest.test" is not nullable', (9, 13), "nest.test"),
+        ),
     ],
 )
 def test_non_nullable_list_of_nullable_items_fail(data, expected_err):

@@ -20,9 +20,11 @@ class SkipNode(GraphQLError):
 class Visitor:
     """ Visitor metaclass
 
-    [WARN] This doesn't support editing the ast, tracking of the visitor
-    path or providing shared context by default like the reference
-    implementation.
+    .. note::
+
+        This doesn't support editing the ast, tracking of the visitor
+        path or providing shared context by default like the JS reference
+        implementation.
     """
 
     @abc.abstractmethod
