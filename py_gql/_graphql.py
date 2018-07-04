@@ -18,6 +18,7 @@ def _graphql(
     initial_value=None,
     validators=None,
     context=None,
+    middlewares=None,
     executor=None,
 ):
     """ Full execution chain.
@@ -48,6 +49,10 @@ def _graphql(
         Limits on the type(s) used here will depend on your own resolver
         implementations and the executor you use. MOst thread safe data-structures
         should work.
+
+    :type middlewares: Optional[List[callable]]
+    :param middlewares:
+        List of middleware callable to consume when resolving fields.
 
     :type executor: py_gql.execution.executors.Executor
     :param executor: Custom executor to process resolver functions
@@ -80,6 +85,7 @@ def _graphql(
             context_value=context,
             variables=variables,
             operation_name=operation_name,
+            middlewares=middlewares,
         )
     except VariablesCoercionError as err:
         return GraphQLResult(data=None, errors=err.errors)

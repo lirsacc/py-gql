@@ -39,6 +39,7 @@ from ..utilities import (
     directive_arguments,
 )
 from ._utils import ExecutionContext, GraphQLResult, ResolveInfo
+from .middleware import apply_middlewares
 from .executors import DefaultExecutor, Executor
 
 
@@ -50,6 +51,7 @@ def execute(
     operation_name=None,
     initial_value=None,
     context_value=None,
+    middlewares=None,
 ):
     """ Execute a graphql query against a schema.
 
@@ -82,6 +84,10 @@ def execute(
         Limits on the type(s) used here will depend on your own resolver
         implementations and the executor you use. Most thread safe
         data-structures should work.
+
+    :type middlewares: Optional[List[callable]]
+    :param middlewares:
+        List of middleware callable to consume when resolving fields.
     """
     # Programmer errors
     assert isinstance(schema, Schema), "Expected Schema object"
@@ -90,6 +96,7 @@ def execute(
         variables, dict
     ), "Variables must be a dictionnary"
     assert executor is None or isinstance(executor, Executor)
+    assert not middlewares or all(callable(mw) for mw in middlewares)
 
     executor = executor or DefaultExecutor()
     variables = variables or dict()
@@ -121,6 +128,7 @@ def execute(
         fragments,
         executor,
         operation,
+        middlewares,
         context_value,
     )
 
@@ -133,15 +141,14 @@ def execute(
             ctx, operation.selection_set.selections, object_type, initial_value
         )
     else:
-        # TODO: Support subscriptions
         raise NotImplementedError("%s not supported" % operation.operation)
 
-    return _concurrency.chain(
-        deferred_result,
-        lambda d: GraphQLResult(
-            data=d, errors=[err for err, _, _ in ctx.errors]
-        ),
-    )
+    def _on_end(data):
+        return GraphQLResult(
+            data=data, errors=[err for err, _, _ in ctx.errors]
+        )
+
+    return _concurrency.chain(deferred_result, _on_end)
 
 
 def get_operation(document, operation_name):
@@ -445,6 +452,9 @@ def resolve_field(
             ft.partial(complete_value, ctx, field_def.type, nodes, path),
         )
         return ctx.executor.submit(resolver, root, args, context, info)
+
+    if ctx.middlewares:
+        resolve = apply_middlewares(resolve, ctx.middlewares)
 
     try:
         args = coerce_argument_values(field_def, nodes[0], ctx.variables)

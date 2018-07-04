@@ -227,7 +227,7 @@ def except_(future, exc_cls, func=lambda x: None):
     :param exc_cls: Exception classes to expect.
         Can be any value compatible with a standard ``except`` clause.
 
-    :type func: callable
+    :type func: Optional[callable]
     :param func:
         Will be passed the expected exception to generate the wrapped future's
         result.

@@ -22,8 +22,9 @@ class ExecutionContext(object):
         "fragments",
         "executor",
         "operation",
-        "_errors",
+        "middlewares",
         "context",
+        "_errors",
     )
 
     def __init__(
@@ -34,6 +35,7 @@ class ExecutionContext(object):
         fragments,
         executor,
         operation,
+        middlewares,
         context,
     ):
         """
@@ -52,6 +54,9 @@ class ExecutionContext(object):
         :type operation: py_gql.lang.ast.OperationDefinition
         :param operation:
 
+        :type middlewares:
+        :param middlewares:
+
         :type context: any
         :param context:
         """
@@ -61,6 +66,7 @@ class ExecutionContext(object):
         self.fragments = fragments
         self.executor = executor
         self.operation = operation
+        self.middlewares = middlewares
         self.context = context
         self._errors = []
 
