@@ -28,14 +28,21 @@ from py_gql.schema import (
 @pytest.fixture
 def schema():
 
-    Being = InterfaceType("Being", [Field("name", String, [Arg("surname", Boolean)])])
+    Being = InterfaceType(
+        "Being", [Field("name", String, [Arg("surname", Boolean)])]
+    )
 
-    Pet = InterfaceType("Pet", [Field("name", String, [Arg("surname", Boolean)])])
+    Pet = InterfaceType(
+        "Pet", [Field("name", String, [Arg("surname", Boolean)])]
+    )
 
-    Canine = InterfaceType("Canine", [Field("name", String, [Arg("surname", Boolean)])])
+    Canine = InterfaceType(
+        "Canine", [Field("name", String, [Arg("surname", Boolean)])]
+    )
 
     DogCommand = EnumType(
-        "DogCommand", [EnumValue("SIT", 0), EnumValue("HEEL", 1), EnumValue("DOWN", 2)]
+        "DogCommand",
+        [EnumValue("SIT", 0), EnumValue("HEEL", 1), EnumValue("DOWN", 2)],
     )
 
     FurColor = EnumType(
@@ -58,7 +65,9 @@ def schema():
             Field("barkVolume", Int),
             Field("barks", Boolean),
             Field("doesKnowCommand", Boolean, [Arg("dogCommand", DogCommand)]),
-            Field("isHousetrained", Boolean, [Arg("atOtherHomes", Boolean, True)]),
+            Field(
+                "isHousetrained", Boolean, [Arg("atOtherHomes", Boolean, True)]
+            ),
             Field("isAtLocation", Boolean, [Arg("x", Int), Arg("y", Int)]),
         ],
         [Being, Pet, Canine],
@@ -109,6 +118,9 @@ def schema():
         "ComplexInput",
         [
             InputField("requiredField", NonNullType(Boolean)),
+            InputField(
+                "nonNullField", NonNullType(Boolean), default_value=False
+            ),
             InputField("intField", Int),
             InputField("stringField", String),
             InputField("booleanField", Boolean),
@@ -121,7 +133,9 @@ def schema():
         [
             Field("intArgField", String, [Arg("intArg", Int)]),
             Field(
-                "nonNullIntArgField", String, [Arg("nonNullIntArg", NonNullType(Int))]
+                "nonNullIntArgField",
+                String,
+                [Arg("nonNullIntArg", NonNullType(Int))],
             ),
             Field("stringArgField", String, [Arg("stringArg", String)]),
             Field("booleanArgField", String, [Arg("booleanArg", Boolean)]),
@@ -129,7 +143,9 @@ def schema():
             Field("floatArgField", String, [Arg("floatArg", Float)]),
             Field("idArgField", String, [Arg("idArg", ID)]),
             Field(
-                "stringListArgField", String, [Arg("stringListArg", ListType(String))]
+                "stringListArgField",
+                String,
+                [Arg("stringListArg", ListType(String))],
             ),
             Field(
                 "stringListNonNullArgField",
@@ -142,7 +158,16 @@ def schema():
                 String,
                 [Arg("req1", NonNullType(Int)), Arg("req2", NonNullType(Int))],
             ),
-            Field("multipleOpts", String, [Arg("opt1", Int, 0), Arg("opt2", Int, 0)]),
+            Field(
+                "nonNullFieldWithDefault",
+                String,
+                [Arg("arg", NonNullType(Int), default_value=0)],
+            ),
+            Field(
+                "multipleOpts",
+                String,
+                [Arg("opt1", Int, 0), Arg("opt2", Int, 0)],
+            ),
             Field(
                 "multipleOptAndReq",
                 String,
@@ -207,7 +232,8 @@ def schema():
 @pytest.fixture
 def schema_2():
     SomeBox = InterfaceType(
-        "SomeBox", [Field("deepBox", lambda: SomeBox), Field("unrelatedField", String)]
+        "SomeBox",
+        [Field("deepBox", lambda: SomeBox), Field("unrelatedField", String)],
     )
 
     StringBox = ObjectType(
@@ -276,7 +302,8 @@ def schema_2():
                             Field(
                                 "node",
                                 ObjectType(
-                                    "Node", [Field("id", ID), Field("name", String)]
+                                    "Node",
+                                    [Field("id", ID), Field("name", String)],
                                 ),
                             )
                         ],
@@ -288,7 +315,8 @@ def schema_2():
 
     yield Schema(
         ObjectType(
-            "QueryRoot", [Field("someBox", SomeBox), Field("connection", Connection)]
+            "QueryRoot",
+            [Field("someBox", SomeBox), Field("connection", Connection)],
         ),
         types=[IntBox, StringBox, NonNullStringBox1Impl, NonNullStringBox2Impl],
     )

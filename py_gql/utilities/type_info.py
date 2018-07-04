@@ -76,6 +76,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         "_input_type_stack",
         "_parent_type_stack",
         "_field_stack",
+        "_input_value_def_stack",
         "directive",
         "argument",
         "enum_value",
@@ -88,6 +89,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._parent_type_stack = []
         self._input_type_stack = []
         self._field_stack = []
+        self._input_value_def_stack = []
 
         #: Optional[py_gql.schema.Directive]: Current directive if applicable
         self.directive = None
@@ -138,6 +140,15 @@ class TypeInfoVisitor(DispatchingVisitor):
         """
         return _peek(self._field_stack)
 
+    @property
+    def input_value_def(self):
+        """ Current input value definition (arg def, input field) if
+        applicable, else ``None``
+
+        :rtype: Optional[Union[py_gql.schema.Argument, py_gql.schema.InputField]]
+        """
+        return _peek(self._input_value_def_stack)
+
     def _get_field_def(self, node):
         parent_type = self.parent_type
         return (
@@ -151,6 +162,10 @@ class TypeInfoVisitor(DispatchingVisitor):
             return self._schema.get_type_from_literal(type_node)
         except UnknownType:
             return None
+
+    def _leave_input_value(self):
+        self._input_type_stack.pop()
+        self._input_value_def_stack.pop()
 
     def enter_selection_set(self, node):
         named_type = unwrap_type(self.type)
@@ -222,6 +237,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         if ctx:
             name = node.name.value
             self.argument = find_one(ctx.args, lambda a: a.name == name)
+            self._input_value_def_stack.append(self.argument)
             self._input_type_stack.append(
                 self.argument.type
                 if self.argument and is_input_type(self.argument.type)
@@ -230,10 +246,11 @@ class TypeInfoVisitor(DispatchingVisitor):
         else:
             self.argument = None
             self._input_type_stack.append(None)
+            self._input_value_def_stack.append(None)
 
     def leave_argument(self, node):
         self.argument = None
-        self._input_type_stack.pop()
+        self._leave_input_value()
 
     def enter_list_value(self, node):
         list_type = nullable_type(self.input_type)
@@ -241,15 +258,18 @@ class TypeInfoVisitor(DispatchingVisitor):
             unwrap_type(list_type) if isinstance(list_type, ListType) else None
         )
         self._input_type_stack.append(_or_none(item_type, is_input_type))
+        # List positions never have a default value.
+        self._input_value_def_stack.append(None)
 
     def leave_list_value(self, node):
-        self._input_type_stack.pop()
+        self._leave_input_value()
 
     def enter_object_field(self, node):
         object_type = unwrap_type(self.input_type)
         if isinstance(object_type, InputObjectType):
             name = node.name.value
             field_def = find_one(object_type.fields, lambda f: f.name == name)
+            self._input_value_def_stack.append(field_def)
             self._input_type_stack.append(
                 field_def.type
                 if field_def and is_input_type(field_def.type)
@@ -257,9 +277,10 @@ class TypeInfoVisitor(DispatchingVisitor):
             )
         else:
             self._input_type_stack.append(None)
+            self._input_value_def_stack.append(None)
 
     def leave_object_field(self, node):
-        self._input_type_stack.pop()
+        self._leave_input_value()
 
     def enter_enum_value(self, node):
         enum = unwrap_type(self.input_type)

@@ -15,9 +15,9 @@ from ...schema import (
 )
 from ..visitors import ValidationVisitor, VariablesCollector
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
-from .overlapping_fields_can_be_merged import (
+from .overlapping_fields_can_be_merged import (  # noqa: F401
     OverlappingFieldsCanBeMergedChecker
-)  # noqa: F401
+)
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
@@ -413,7 +413,7 @@ class NoUndefinedVariablesChecker(VariablesCollector):
             defined = self._op_defined_variables[op]
             for fragment in deduplicate(fragments):
                 fragment_variables = self._fragment_variables[fragment].items()
-                for var, (node, _) in fragment_variables:
+                for var, (node, _, _) in fragment_variables:
                     if var not in defined:
                         self.add_error(
                             'Variable "$%s" from fragment "%s" is not defined '
@@ -428,7 +428,7 @@ class NoUndefinedVariablesChecker(VariablesCollector):
 
         for op, variables in self._op_variables.items():
             defined = self._op_defined_variables[op]
-            for var, (node, _) in variables.items():
+            for var, (node, _, _) in variables.items():
                 if var not in defined:
                     self.add_error(
                         'Variable "$%s" is not defined on %s operation'
@@ -645,10 +645,9 @@ class UniqueArgumentNamesChecker(ValidationVisitor):
     enter_directive = _check_duplicate_args
 
 
-class ProvidedNonNullArgumentsChecker(ValidationVisitor):
-    """ A field or directive is only valid if all required (non-null) field
-    arguments have been provided.
-    """
+class ProvidedRequiredArgumentsChecker(ValidationVisitor):
+    """ A field or directive is only valid if all required (non-null without a
+    default value) ) field arguments have been provided. """
 
     def _missing_args(self, arg_defs, node):
         node_args = set((arg.name.value for arg in node.arguments))
@@ -679,23 +678,6 @@ class ProvidedNonNullArgumentsChecker(ValidationVisitor):
                 )
 
 
-class VariablesDefaultValueAllowedChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all variable default values
-    are allowed due to a variable not being required.
-    """
-
-    # TODO: Implement suggestion lists ?
-
-    def enter_variable_definition(self, node):
-        input_type = self.type_info.input_type
-        if isinstance(input_type, NonNullType) and node.default_value:
-            self.add_error(
-                'Variable "$%s" of type %s is required and will not use the '
-                "default value" % (node.variable.name.value, input_type),
-                node,
-            )
-
-
 class VariablesInAllowedPositionChecker(VariablesCollector):
     """ Variables passed to field arguments conform to type """
 
@@ -706,37 +688,58 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
             fragments = self._op_fragments[op]
 
             def iter_variables():
-                for name, (node, input_type) in variables.items():
-                    yield name, (node, input_type)
+                for usage in variables.items():
+                    yield usage
                 for fragment in fragments:
                     frament_vars = self._fragment_variables[fragment].items()
-                    for name, (node, input_type) in frament_vars:
-                        yield name, (node, input_type)
+                    for usage in frament_vars:
+                        yield usage
 
-            for varname, (varnode, input_type) in iter_variables():
+            for (varname, usage) in iter_variables():
+                varnode, input_type, input_value_def = usage
                 vardef = vardefs.get(varname)
                 if vardef and input_type:
 
                     try:
-                        vartype = self.schema.get_type_from_literal(vardef.type)
+                        var_type = self.schema.get_type_from_literal(
+                            vardef.type
+                        )
                     except UnknownType:
-                        vartype = None
+                        continue
 
-                    real_type = (
-                        vartype
+                    var_default = vardef.default_value
+
+                    if (
+                        isinstance(input_type, NonNullType) and
+                        not isinstance(var_type, NonNullType)
+                    ):
+                        non_null_var_default = (
+                            var_default is not None
+                            and type(var_default) != _ast.NullValue
+                        )
+                        location_default = (
+                            input_value_def is not None
+                            and input_value_def.has_default_value
+                        )
                         if (
-                            isinstance(vartype, NonNullType)
-                            or not vardef.default_value
-                        )
-                        else NonNullType(vartype)
-                    )
-                    if not self.schema.is_subtype(real_type, input_type):
-                        self.add_error(
-                            'Variable "$%s" of type %s used in position '
-                            "expecting type %s"
-                            % (varname, print_ast(vardef.type), input_type),
-                            varnode,
-                        )
+                            not non_null_var_default and not location_default
+                        ) or not self.schema.is_subtype(
+                            var_type, input_type.type
+                        ):
+                            self.add_error(
+                                'Variable "$%s" of type %s used in position '
+                                "expecting type %s"
+                                % (varname, print_ast(vardef.type), input_type),
+                                varnode,
+                            )
+                    else:
+                        if not self.schema.is_subtype(var_type, input_type):
+                            self.add_error(
+                                'Variable "$%s" of type %s used in position '
+                                "expecting type %s"
+                                % (varname, print_ast(vardef.type), input_type),
+                                varnode,
+                            )
 
 
 class UniqueInputFieldNamesChecker(ValidationVisitor):

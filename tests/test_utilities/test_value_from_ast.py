@@ -302,6 +302,19 @@ class TestTyped(object):
     ):
         self._run_test_case(value, type_, expected, error, variables)
 
+    def test_it_raises_on_null_variable_with_non_null_type(self):
+        with pytest.raises(InvalidValue) as exc_info:
+            value_from_ast(
+                parse_value("$testVariable"),
+                NonNullBool,
+                {"testVariable": None},
+            )
+
+        assert str(exc_info.value) == (
+            'Variable "$testVariable" used for type "Boolean!" '
+            "must not be null."
+        )
+
     @pytest.mark.parametrize(
         "type_,value,variables,expected,error",
         [

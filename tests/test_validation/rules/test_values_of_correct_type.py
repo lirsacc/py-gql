@@ -804,6 +804,21 @@ def test_valid_input_object_value(schema, value):
         ),
         pytest.param(
             """
+            {
+                complicatedArgs {
+                    complexArgField(complexArg: {
+                        requiredField: true,
+                        nonNullField: null,
+                    })
+                }
+            }
+            """,
+            ["Expected type Boolean!, found null"],
+            [(182, 186)],
+            id="Partial object, null to non-null field",
+        ),
+        pytest.param(
+            """
         {
           complicatedArgs {
             complexArgField(complexArg: {
@@ -895,6 +910,7 @@ def test_variables_with_valid_default_values(schema):
         $a: Int = 1,
         $b: String = "ok",
         $c: ComplexInput = { requiredField: true, intField: 3 }
+        $d: Int! = 123
     ) {
         dog { name }
     }
@@ -945,14 +961,14 @@ def test_variables_with_invalid_default_values(schema):
         ValuesOfCorrectTypeChecker,
         schema,
         """
-    query InvalidDefaultValues(
-        $a: Int = "one",
-        $b: String = 4,
-        $c: ComplexInput = "notverycomplex"
-    ) {
-        dog { name }
-    }
-    """,
+        query InvalidDefaultValues(
+            $a: Int = "one",
+            $b: String = 4,
+            $c: ComplexInput = "notverycomplex"
+        ) {
+            dog { name }
+        }
+        """,
         [
             'Expected type Int, found "one"',
             "Expected type String, found 4",
@@ -966,12 +982,12 @@ def test_variables_with_complex_invalid_default_values(schema):
         ValuesOfCorrectTypeChecker,
         schema,
         """
-    query WithDefaultValues(
-        $a: ComplexInput = { requiredField: 123, intField: "abc" }
-    ) {
-        dog { name }
-    }
-    """,
+        query WithDefaultValues(
+            $a: ComplexInput = { requiredField: 123, intField: "abc" }
+        ) {
+            dog { name }
+        }
+        """,
         ["Expected type Boolean!, found 123", 'Expected type Int, found "abc"'],
     )
 
@@ -981,10 +997,10 @@ def test_complex_variables_missing_required_field(schema):
         ValuesOfCorrectTypeChecker,
         schema,
         """
-    query MissingRequiredField($a: ComplexInput = {intField: 3}) {
-        dog { name }
-    }
-    """,
+        query MissingRequiredField($a: ComplexInput = {intField: 3}) {
+            dog { name }
+        }
+        """,
         [
             "Required field ComplexInput.requiredField of type Boolean! "
             "was not provided"
@@ -997,9 +1013,9 @@ def test_list_variables_with_invalid_item(schema):
         ValuesOfCorrectTypeChecker,
         schema,
         """
-    query InvalidItem($a: [String] = ["one", 2]) {
-        dog { name }
-    }
-    """,
+        query InvalidItem($a: [String] = ["one", 2]) {
+            dog { name }
+        }
+        """,
         ["Expected type String, found 2"],
     )

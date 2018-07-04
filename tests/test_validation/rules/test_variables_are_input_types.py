@@ -39,3 +39,16 @@ def test_output_types_are_invalid(schema):
             'Variable "$c" must be input type',
         ],
     )
+
+
+def test_unknown_types_are_invalid(schema):
+    run_test(
+        VariablesAreInputTypesChecker,
+        schema,
+        """
+    query Foo($a: Bar) {
+        field(a: $a)
+    }
+    """,
+        ['Variable "$a" must be input type'],
+    )

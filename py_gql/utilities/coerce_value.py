@@ -222,8 +222,8 @@ def directive_arguments(definition, node, variables=None):
 
     :Raises:
 
-        :class:`py_gql.exc.CoercionError` if any directive argument value fails to
-        coerce, required argument is missing, etc.
+        :class:`py_gql.exc.CoercionError` if any directive argument value fails
+        to coerce, required argument is missing, etc.
     """
     directive = find_one(
         node.directives, lambda d: d.name.value == definition.name
@@ -252,7 +252,7 @@ def coerce_variable_values(schema, operation, variables):
     :param operation: Operation definition containing the variable definitions
 
     :type variables: dict
-    :param variables
+    :param variables: Provided variables
 
     :rtype: dict
 
@@ -281,8 +281,9 @@ def coerce_variable_values(schema, operation, variables):
         if not is_input_type(var_type):
             errors.append(
                 VariableCoercionError(
-                    'Variable "$%s" expected value of type "%s" which cannot be used '
-                    "as an input type." % (name, print_ast(var_def.type)),
+                    'Variable "$%s" expected value of type "%s" which cannot '
+                    "be used as an input type."
+                    % (name, print_ast(var_def.type)),
                     [var_def],
                 )
             )

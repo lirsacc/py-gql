@@ -88,12 +88,21 @@ class VariablesCollector(ValidationVisitor):
     def enter_variable_value(self, node):
         var = node.name.value
         input_type = self.type_info.input_type
+        input_value_def = self.type_info.input_value_def
         if self._in_var_def:
             pass
         elif self._op is not None:
-            self._op_variables[self._op][var] = (node, input_type)
+            self._op_variables[self._op][var] = (
+                node,
+                input_type,
+                input_value_def,
+            )
         elif self._fragment is not None:
-            self._fragment_variables[self._fragment][var] = (node, input_type)
+            self._fragment_variables[self._fragment][var] = (
+                node,
+                input_type,
+                input_value_def,
+            )
 
     def _flatten_fragments(self):
         for parent, children in self._fragment_fragments.items():

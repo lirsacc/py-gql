@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """ generic execution tests """
 
+import json
+
 import pytest
 
-from py_gql.exc import ExecutionError, ResolverError
+from py_gql.exc import ExecutionError, ResolverError, VariablesCoercionError
 from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
@@ -893,3 +895,133 @@ def test_result_is_ordered_according_to_query(
             ],
         ),
     ]
+
+
+class TestNonNullArguments(object):
+    schema_with_null_args = Schema(
+        ObjectType(
+            "Query",
+            [
+                Field(
+                    "withNonNullArg",
+                    String,
+                    args=[Arg("cannotBeNull", NonNullType(String))],
+                    resolve=lambda _, a, *__: json.dumps(
+                        a.get("cannotBeNull", "NOT PROVIDED")
+                    ),
+                )
+            ],
+        )
+    )
+
+    def test_non_null_literal(self):
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query {
+                withNonNullArg (cannotBeNull: "literal value")
+            }
+            """,
+            expected_data={"withNonNullArg": '"literal value"'},
+            expected_errors=[],
+        )
+
+    def test_non_null_variable(self):
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query ($testVar: String!) {
+                withNonNullArg (cannotBeNull: $testVar)
+            }
+            """,
+            variables={"testVar": "variable value"},
+            expected_data={"withNonNullArg": '"variable value"'},
+            expected_errors=[],
+        )
+
+    def test_missing_variable_with_default(self):
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query ($testVar: String = "default value") {
+                withNonNullArg (cannotBeNull: $testVar)
+            }
+            """,
+            expected_data={"withNonNullArg": '"default value"'},
+            expected_errors=[],
+        )
+
+    def test_missing(self):
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query {
+                withNonNullArg
+            }
+            """,
+            expected_data={"withNonNullArg": None},
+            expected_errors=[
+                (
+                    'Argument "cannotBeNull" of required type "String!" was '
+                    "not provided",
+                    (37, 51),
+                    "withNonNullArg",
+                )
+            ],
+        )
+
+    def test_null_literal(self):
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query {
+                withNonNullArg (cannotBeNull: null)
+            }
+            """,
+            expected_data={"withNonNullArg": None},
+            expected_errors=[
+                (
+                    'Argument "cannotBeNull" of type "String!" was provided '
+                    "invalid value null (Expected non null value.)",
+                    (37, 72),
+                    "withNonNullArg",
+                )
+            ],
+        )
+
+    def test_missing_variable(self):
+        # Differs from reference implementation as a missing variable will
+        # abort the full execution. This is consistent as all variables defined
+        # must be used in an operation and so a missing variables for a non null
+        # type should break.
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query ($testVar: String!) {
+                withNonNullArg (cannotBeNull: $testVar)
+            }
+            """,
+            expected_exc=VariablesCoercionError,
+            expected_msg=(
+                'Variable "$testVar" of required type "String!" was not '
+                "provided."
+            ),
+        )
+
+    def test_null_variable(self):
+        # Differs from reference implementation as a null variable provided for
+        # a non null type will abort the full execution.
+        check_execution(
+            self.schema_with_null_args,
+            """
+            query ($testVar: String!) {
+                withNonNullArg (cannotBeNull: $testVar)
+            }
+            """,
+            variables={"testVar": None},
+            expected_exc=VariablesCoercionError,
+            expected_msg=(
+                'Variable "$testVar" of required type "String!" '
+                "must not be null."
+            ),
+        )

@@ -41,6 +41,20 @@ def value_from_ast(node, type_, variables=None):
         assumed to have been validated before.
     """
     kind = type(node)
+
+    if kind == _ast.Variable:
+        varname = node.name.value
+        if not variables or varname not in variables:
+            raise UnknownVariable(varname, [node])
+        variable_value = variables[varname]
+        if isinstance(type_, NonNullType) and variable_value is None:
+            raise InvalidValue(
+                'Variable "$%s" used for type "%s" must not be null.'
+                % (varname, type_),
+                [node],
+            )
+        return variable_value
+
     if isinstance(type_, NonNullType):
         if kind == _ast.NullValue:
             raise InvalidValue("Expected non null value.", [node])
@@ -49,12 +63,6 @@ def value_from_ast(node, type_, variables=None):
 
     if kind == _ast.NullValue:
         return None
-
-    if kind == _ast.Variable:
-        varname = node.name.value
-        if not variables or varname not in variables:
-            raise UnknownVariable(varname, [node])
-        return variables[varname]
 
     if isinstance(type_, ListType):
         if kind != _ast.ListValue:
