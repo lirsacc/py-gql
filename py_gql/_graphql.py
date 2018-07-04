@@ -79,7 +79,13 @@ def _graphql(
         middlewares = [tracer.middleware] + (middlewares or [])
 
     try:
-        tracer.start()
+        tracer.trace(
+            "query",
+            "start",
+            document=document,
+            variables=variables,
+            operation_name=operation_name,
+        )
 
         with tracer.trace_context("parse", document=document):
             ast = parse(document, allow_type_system=False)
@@ -90,7 +96,13 @@ def _graphql(
             validation_result = validate_ast(schema, ast, validators=validators)
 
         if not validation_result:
-            tracer.end()
+            tracer.trace(
+                "query",
+                "end",
+                document=document,
+                variables=variables,
+                operation_name=operation_name,
+            )
             return GraphQLResult(errors=validation_result.errors)
         else:
             tracer.trace("execute", "start", ast=ast, variables=variables)
@@ -107,19 +119,43 @@ def _graphql(
 
             def close_trace(_):
                 tracer.trace("execute", "end", ast=ast, variables=variables)
-                tracer.end()
+                tracer.trace(
+                    "query",
+                    "end",
+                    document=document,
+                    variables=variables,
+                    operation_name=operation_name,
+                )
 
             result.add_done_callback(close_trace)
             return result
 
     except GraphQLSyntaxError as err:
-        tracer.end()
+        tracer.trace(
+            "query",
+            "end",
+            document=document,
+            variables=variables,
+            operation_name=operation_name,
+        )
         return GraphQLResult(errors=[err])
     except VariablesCoercionError as err:
-        tracer.end()
+        tracer.trace(
+            "query",
+            "end",
+            document=document,
+            variables=variables,
+            operation_name=operation_name,
+        )
         return GraphQLResult(data=None, errors=err.errors)
     except ExecutionError as err:
-        tracer.end()
+        tracer.trace(
+            "query",
+            "end",
+            document=document,
+            variables=variables,
+            operation_name=operation_name,
+        )
         return GraphQLResult(data=None, errors=[err])
 
 

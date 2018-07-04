@@ -13,7 +13,8 @@ class GraphQLTracer(object):
 
     Trace order during standard processing is as such:
 
-    - :meth:`start`
+    - :meth:`trace`('query', 'start', `document`, `variables`, `operation_name`) \
+-> :meth:`on_query_start`
     - :meth:`trace`('parse', 'start', `query string`) -> :meth:`on_parse_start`
     - :meth:`trace`('parse', 'end', `query string`) -> :meth:`on_parse_end`
     - :meth:`trace`('validate', 'start', `ast`) -> :meth:`on_validate_start`
@@ -23,7 +24,8 @@ class GraphQLTracer(object):
             - :meth:`trace`('field', 'start', `args`, `info`) -> :meth:`on_field_start`
             - :meth:`trace`('field', 'end', `args`, `info`) -> :meth:`on_field_end`
     - :meth:`trace`('execute', 'end', `ast`, `variables`) -> :meth:`on_execute_end`
-    - :meth:`end`
+    - :meth:`trace`('query', 'end', `document`, `variables`, `operation_name`) \
+-> :meth:`on_query_end`
     """
 
     def trace(self, evt, stage, **kwargs):
@@ -45,19 +47,39 @@ class GraphQLTracer(object):
         yield next_step(root, args, context, info)
         self.trace("field", "end", args=args, info=info)
 
-    def start(self):
-        """ Called before graphql processing starts """
+    def on_query_start(self, document, variables, operation_name):
+        """ Called before graphql processing starts
+
+        :type document: str
+        :param document: The query document as a string
+
+        :type variables: Optional[dict]
+        :param variables: Raw JSON Variables
+
+        :type operation_name: Optional[str]
+        :param operation_name: Operation name
+        """
         pass
 
-    def end(self):
-        """ Called after graphql processing ends """
+    def on_query_end(self, document, variables, operation_name):
+        """ Called after graphql processing ends
+
+        :type document: str
+        :param document: The query document as a string
+
+        :type variables: Optional[dict]
+        :param variables: Raw JSON Variables
+
+        :type operation_name: Optional[str]
+        :param operation_name: Operation name
+        """
         pass
 
     def on_parse_start(self, document):
         """ Called before graphql parsing starts
 
         :type document: str
-        :param document: The query documents
+        :param document: The query document as a string
         """
         pass
 
@@ -65,7 +87,7 @@ class GraphQLTracer(object):
         """ Called after graphql parsing ends
 
         :type document: str
-        :param document: The query documents
+        :param document: The query document as a string
         """
         pass
 
