@@ -7,9 +7,9 @@ https://swapi.co using no external dependency.
 import os
 from flask import Flask, Response, request, jsonify
 
-from py_gql import graphql
+from py_gql import graphql, ThreadPoolExecutor
 from py_gql.schema import print_schema
-from py_gql.execution.executors import ThreadPoolExecutor
+from py_gql.utilities.tracers import ApolloTracer
 
 from schema import schema
 
@@ -31,13 +31,21 @@ def sdl_route():
 @app.route('/graphql', methods=('POST',))
 def graphql_route():
     data = request.json
-    return jsonify(graphql(
+
+    tracer = ApolloTracer()
+
+    result = graphql(
         schema,
         data['query'],
         data.get('variables', {}),
         data.get('operation_name'),
-        executor=EXECUTOR
-    ).response())
+        executor=EXECUTOR,
+        tracer=tracer,
+    )
+
+    result.add_extension(tracer)
+
+    return jsonify(result.response())
 
 
 @app.route('/graphiql')
