@@ -3,7 +3,6 @@
 import pytest
 
 from py_gql.execution.middleware import apply_middlewares, GraphQLMiddleware
-from py_gql.execution import ThreadPoolExecutor
 from py_gql._graphql import graphql
 
 
