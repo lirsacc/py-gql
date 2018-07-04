@@ -207,13 +207,13 @@ _unset = object()
 
 
 class GraphQLResult(object):
-    """ Wrapper encoding the behaviour described in the Response part of the spec
-    http://facebook.github.io/graphql/June2018/#sec-Response.
-    """
+    """ Wrapper encoding the behaviour described in the Response part of the
+    spec. """
 
     def __init__(self, data=_unset, errors=_unset):
         self._data = data
         self._errors = errors
+        self._extensions = OrderedDict()
 
     def __bool__(self):
         return not self._errors
@@ -223,6 +223,16 @@ class GraphQLResult(object):
     def __iter__(self):
         return iter((self._data, self._errors))
 
+    def add_extension(self, ext):
+        name = ext.name()
+        if name in self._extensions:
+            raise ValueError('Duplicate extension "%s"' % name)
+        self._extensions[name] = ext.payload()
+
+    def add_extensions(self, exts):
+        for ext in exts:
+            self.add_extension(ext)
+
     def response(self):
         """ Generate an ordered response dict """
         d = OrderedDict()
@@ -230,8 +240,21 @@ class GraphQLResult(object):
             d["errors"] = [error.to_json() for error in self._errors]
         if self._data is not _unset:
             d["data"] = self._data
+        if self._extensions:
+            d["extensions"] = self._extensions
         return d
 
     def json(self, **kw):
         """ Encode result as JSON """
         return json.dumps(self.response(), **kw)
+
+
+class GraphQLExtension(object):
+    """
+    """
+
+    def payload(self):
+        raise NotImplementedError()
+
+    def name(self):
+        raise NotImplementedError()
