@@ -33,33 +33,40 @@ def _graphql(
     :type variables: dict
     :param variables: Raw, JSON decoded variables parsed from the request
 
-
     :type operation_name: Optional[str]
     :param operation_name: Operation to execute
-        If specified, the operation with the given name will be executed. If not;
-        this executes the single operation without disambiguation.
+        If specified, the operation with the given name will be executed. If
+        not, this executes the single operation without disambiguation.
 
     :type initial_value: any
     :param initial_value: Root resolution value
         Will be passed to all top-level resolvers.
 
+    :type validators: Optional[List[py_gql.validation.ValidationVisitor]]
+    :param validators: Custom validators. Will replace the defaults.
+
     :type context: any
     :param context:
         Custom application-specific execution context. Use this to pass in
-        anything your resolvers require like database connection, user information, etc.
+        anything your resolvers require like database connection, user
+        information, etc.
         Limits on the type(s) used here will depend on your own resolver
-        implementations and the executor you use. MOst thread safe data-structures
-        should work.
+        implementations and the executor you use. Most thread safe
+        data-structures should work.
 
     :type middlewares: Optional[List[callable]]
     :param middlewares:
         List of middleware callable to consume when resolving fields.
 
+    :type tracer: Optional[py_gql.execution.GraphQLTracer]
+    :param tracer:
+        Tracer instance.
+
     :type executor: py_gql.execution.executors.Executor
     :param executor: Custom executor to process resolver functions
 
-    :rtype: GraphQLResult
-    :returns: Execution result
+    :rtype: Future[GraphQLResult]
+    :returns: Deferred execution result
     """
 
     assert isinstance(schema, Schema)
@@ -117,6 +124,55 @@ def _graphql(
 
 
 def graphql(*args, **kwargs):
+    """ Synchronous GraphQL entrypoint.
+
+    :type schema: py_gql.schema.Schema
+    :param schema: Schema to execute the query against
+
+    :type document: str
+    :param document: The query document.
+
+    :type variables: dict
+    :param variables: Raw, JSON decoded variables parsed from the request
+
+    :type operation_name: Optional[str]
+    :param operation_name: Operation to execute
+        If specified, the operation with the given name will be executed. If
+        not, this executes the single operation without disambiguation.
+
+    :type initial_value: any
+    :param initial_value: Root resolution value
+        Will be passed to all top-level resolvers.
+
+    :type validators: Optional[List[py_gql.validation.ValidationVisitor]]
+    :param validators: Custom validators. Will replace the defaults.
+
+    :type context: any
+    :param context:
+        Custom application-specific execution context. Use this to pass in
+        anything your resolvers require like database connection, user
+        information, etc.
+        Limits on the type(s) used here will depend on your own resolver
+        implementations and the executor you use. Most thread safe
+        data-structures should work.
+
+    :type middlewares: Optional[List[callable]]
+    :param middlewares:
+        List of middleware callable to consume when resolving fields.
+
+    :type tracer: Optional[py_gql.execution.GraphQLTracer]
+    :param tracer:
+        Tracer instance.
+
+    :type executor: py_gql.execution.executors.Executor
+    :param executor: Custom executor to process resolver functions
+
+    :type timeout: float
+    :param timeout: Execution timeout in seconds.
+
+    :rtype: GraphQLResult
+    :returns: Execution result
+    """
     timeout = kwargs.pop("timeout", None)
     result = _graphql(*args, **kwargs)
     if _concurrency.is_deferred(result):

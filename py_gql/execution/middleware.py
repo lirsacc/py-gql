@@ -1,10 +1,34 @@
 # -*- coding: utf-8 -*-
-""" Middlewares provide support for modifying / short-circuiting each phase of
-the execution of GraphQL a query:
+""" Middlewares provide support for modifying / short-circuiting the field
+resolution part of the execution.
 
-    - Parsing
-    - Validation
-    - Field Resolution
+A middleware can be either a function that returns / yields to the next step
+or a callable subclassing :class:`GraphQLMiddleware`:
+
+.. highlight:: python
+
+    # Functional middleware
+    def ensure_bar_middleware(next_, root, args, context, info):
+        if args.get('foo') != 'bar':
+            raise ResolverError('Not bar!')
+        return next_(root, args, context, info)
+
+    # Generator middleware
+    def logging_middleware(next_, root, args, context, info):
+        logger.debug('start', info.path)
+        yield next_(root, args, context, info)
+        logger.debug('end', info.path)
+
+    # Class based middleware
+    class CollectFieldsMiddleware(GraphQLMiddleware):
+        def __init__(self):
+            self.fields = []
+
+        def __call__(self, next_, root, args, context, info):
+            self.fields.append(info.path)
+            return next_(root, args, context, info)
+
+    collect_fields = CollectFieldsMiddleware()
 
 """
 
@@ -15,9 +39,6 @@ from . import _concurrency
 
 
 class GraphQLMiddleware(object):
-    """
-    """
-
     def __call__(self, next_, root, args, context, info):
         return next_(root, args, context, info)
 
