@@ -3,8 +3,8 @@
 """
 
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
-from .execution import execute, GraphQLResult
-from .execution._concurrency import is_deferred
+from .execution import GraphQLResult, GraphQLTracer, _concurrency, execute
+from .execution.tracing import NullTracer
 from .lang import parse
 from .schema import Schema
 from .validation import SPECIFIED_RULES, validate_ast
@@ -19,6 +19,7 @@ def _graphql(
     validators=None,
     context=None,
     middlewares=None,
+    tracer=None,
     executor=None,
 ):
     """ Full execution chain.
@@ -62,40 +63,62 @@ def _graphql(
     """
 
     assert isinstance(schema, Schema)
-    schema.validate()
+    assert schema.validate()
+
+    tracer = tracer or NullTracer()
+    assert isinstance(tracer, GraphQLTracer)
+
+    if not isinstance(tracer, NullTracer):
+        middlewares = [tracer.middleware] + (middlewares or [])
 
     try:
-        ast = parse(document, allow_type_system=False)
+        tracer.start()
+
+        with tracer.trace_context("parse", document=document):
+            ast = parse(document, allow_type_system=False)
 
         validators = SPECIFIED_RULES if validators is None else validators
-        validation_result = validate_ast(schema, ast, validators=validators)
+
+        with tracer.trace_context("validate", ast=ast):
+            validation_result = validate_ast(schema, ast, validators=validators)
 
         if not validation_result:
+            tracer.end()
             return GraphQLResult(errors=validation_result.errors)
+        else:
+            tracer.trace("execute", "start", ast=ast, variables=variables)
+            result = execute(
+                schema,
+                ast,
+                executor=executor,
+                initial_value=initial_value,
+                context_value=context,
+                variables=variables,
+                operation_name=operation_name,
+                middlewares=middlewares,
+            )
+
+            def close_trace(_):
+                tracer.trace("execute", "end", ast=ast, variables=variables)
+                tracer.end()
+
+            result.add_done_callback(close_trace)
+            return result
 
     except GraphQLSyntaxError as err:
+        tracer.end()
         return GraphQLResult(errors=[err])
-
-    try:
-        return execute(
-            schema,
-            ast,
-            executor=executor,
-            initial_value=initial_value,
-            context_value=context,
-            variables=variables,
-            operation_name=operation_name,
-            middlewares=middlewares,
-        )
     except VariablesCoercionError as err:
+        tracer.end()
         return GraphQLResult(data=None, errors=err.errors)
     except ExecutionError as err:
+        tracer.end()
         return GraphQLResult(data=None, errors=[err])
 
 
 def graphql(*args, **kwargs):
     timeout = kwargs.pop("timeout", None)
     result = _graphql(*args, **kwargs)
-    if is_deferred(result):
+    if _concurrency.is_deferred(result):
         return result.result(timeout=timeout)
     return result
