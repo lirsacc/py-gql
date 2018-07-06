@@ -5,7 +5,8 @@ import datetime as dt
 import json
 import logging
 
-from py_gql.execution import GraphQLExtension, GraphQLTracer
+from .._utils import OrderedDict
+from ..execution import GraphQLExtension, GraphQLTracer
 
 
 def _nanoseconds(delta):
@@ -21,20 +22,19 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
     implementation """
 
     def __init__(self):
-        self.parsing = {}
+        self.start = None
         self.validation_start = None
         self.validation_end = None
         self.parse_start = None
         self.parse_end = None
-        self.resolvers = []
-        self._fields = {}
-        self._end = None
+        self.fields = OrderedDict()
+        self.end = None
 
     def on_query_start(self, **_):
-        self._start = dt.datetime.utcnow()
+        self.start = dt.datetime.utcnow()
 
     def on_query_end(self, **_):
-        self._end = dt.datetime.utcnow()
+        self.end = dt.datetime.utcnow()
 
     def on_parse_start(self, **_):
         self.parse_start = dt.datetime.utcnow()
@@ -49,21 +49,20 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
         self.validation_end = dt.datetime.utcnow()
 
     def on_field_start(self, info, **_):
-        self._fields[str(info.path)] = dt.datetime.utcnow()
+        start = dt.datetime.utcnow()
+        self.fields[str(info.path)] = {
+            "path": list(info.path),
+            "parentType": info.parent_type.name,
+            "fieldName": info.field_def.name,
+            "returnType": str(info.field_def.type),
+            "startOffset": _nanoseconds(start - self.start),
+            "start": start,
+        }
 
     def on_field_end(self, info, **_):
         end = dt.datetime.utcnow()
-        start = self._fields.pop(str(info.path))
-        self.resolvers.append(
-            {
-                "path": list(info.path),
-                "parentType": info.parent_type.name,
-                "fieldName": info.field_def.name,
-                "returnType": str(info.field_def.type),
-                "startOffset": _nanoseconds(start - self._start),
-                "duration": _nanoseconds(end - start),
-            }
-        )
+        start = self.fields[str(info.path)].pop("start")
+        self.fields[str(info.path)]["duration"] = _nanoseconds(end - start)
 
     def name(self):
         return "tracing"
@@ -71,16 +70,12 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
     def payload(self):
         return {
             "version": 1,
-            "startTime": _rfc3339(self._start),
-            "endTime": _rfc3339(self._end),
-            "duration": _nanoseconds(self._end - self._start),
+            "startTime": _rfc3339(self.start),
+            "endTime": _rfc3339(self.end),
+            "duration": _nanoseconds(self.end - self.start),
             "execution": (
-                {
-                    "resolvers": sorted(
-                        self.resolvers, key=lambda r: r["startOffset"]
-                    )
-                }
-                if self.resolvers
+                {"resolvers": list(self.fields.values())}
+                if self.fields
                 else None
             ),
             "validation": (
@@ -89,7 +84,7 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
                         self.validation_end - self.validation_start
                     ),
                     "startOffset": _nanoseconds(
-                        self.validation_start - self._start
+                        self.validation_start - self.start
                     ),
                 }
                 if self.validation_start is not None
@@ -98,7 +93,7 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
             "parsing": (
                 {
                     "duration": _nanoseconds(self.parse_end - self.parse_start),
-                    "startOffset": _nanoseconds(self.parse_start - self._start),
+                    "startOffset": _nanoseconds(self.parse_start - self.start),
                 }
                 if self.parse_start is not None
                 else None
