@@ -70,7 +70,7 @@ def _graphql(
     """
 
     assert isinstance(schema, Schema)
-    assert schema.validate()
+    schema.validate()
 
     tracer = tracer or NullTracer()
     assert isinstance(tracer, GraphQLTracer)
