@@ -1,0 +1,237 @@
+version: 2
+
+references:
+
+    python36: &python36
+        image: circleci/python:3.6.5
+        environment:
+            PY: 36
+
+    python37: &python37
+        image: circleci/python:3.7
+        environment:
+            PY: 37
+
+    python27: &python27
+        image: circleci/python:2.7.14
+        environment:
+            PY: 27
+            REQUIREMENTS: -rtest-requirements.txt -e.
+
+    docker-python36: &docker-python36
+        docker:
+            - *python36
+
+    docker-python37: &docker-python37
+        docker:
+            - *python37
+
+    docker-python27: &docker-python27
+        docker:
+            - *python27
+
+    workspace: &workspace
+        attach_workspace:
+            at: .
+
+    cache-python-36: &cache-python-36
+        key: py36-deps-{{ arch }}-{{ checksum "workspace/.py-cache" }}
+
+    cache-python-36: &cache-python-37
+        key: py37-deps-{{ arch }}-{{ checksum "workspace/.py-cache" }}
+
+    cache-python-27: &cache-python-27
+        key: py27-deps-{{ arch }}-{{ checksum "workspace/.py-cache" }}
+
+    deps: &deps
+        run:
+            name: Installing dependencies
+            command: |
+                mkdir -p ~/.cache/pip
+                virtualenv --clear --python $(which python) "venv${PY}"
+                tar -C workspace -cpf - src | tar -C "venv${PY}" -xpf -
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                pip install ${REQUIREMENTS:-'-rdev-requirements.txt'}
+
+    run-tests: &run-tests
+        run:
+            name: Run tests
+            command: |
+                results="$(pwd)/workspace/test-results"
+                checkout="$(pwd)/workspace/src"
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                mkdir -p "${results}/python${PY}"
+                inv test -c
+                python -c \
+                    'import sys; sys.stdout.write(sys.stdin.read().replace(sys.argv[1], sys.argv[2]))' \
+                    "$(pwd)/" "${checkout}/" <.coverage >"${results}/python${PY}/.coverage"
+                mv coverage.xml ${results}/python${PY}/junit.xml
+                mv htmlcov ${results}/python${PY}
+
+    store-tests: &store-tests
+        store_test_results:
+            path: workspace/test-results
+
+jobs:
+    checkout:
+        <<: *docker-python36
+        steps:
+            - run:
+                name: Prepare working directory
+                command: mkdir -p workspace/src
+            - checkout: {path: workspace/src}
+            - run:
+                name: Creating cachekey(s)
+                command: |
+                    cd workspace
+                    echo 1 >.py-cache
+                    cat src/dev-requirements*.txt >> .py-cache
+                    cat src/setup.py >> .py-cache
+            - persist_to_workspace:
+                paths: workspace
+                root: .
+
+    deps-36:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - *deps
+            - save_cache:
+                <<: *cache-python-36
+                paths: ~/.cache/pip
+            - persist_to_workspace:
+                paths: venv36
+                root: .
+
+    deps-27:
+        <<: *docker-python27
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-27
+            - *deps
+            - save_cache:
+                <<: *cache-python-27
+                paths: ~/.cache/pip
+            - persist_to_workspace:
+                paths: venv27
+                root: .
+
+    deps-37:
+        <<: *docker-python37
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-37
+            - *deps
+            - save_cache:
+                <<: *cache-python-37
+                paths: ~/.cache/pip
+            - persist_to_workspace:
+                paths: venv37
+                root: .
+
+    test:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - *run-tests
+            - *store-tests
+            - persist_to_workspace:
+                paths: workspace/test-results/python36
+                root: .
+
+    test-27:
+        <<: *docker-python27
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-27
+            - *run-tests
+            - *store-tests
+            - persist_to_workspace:
+                paths: workspace/test-results/python27
+                root: .
+
+    test-37:
+        <<: *docker-python37
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-37
+            - *run-tests
+            - *store-tests
+            - persist_to_workspace:
+                paths: workspace/test-results/python37
+                root: .
+
+    collect-tests:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - run:
+                name: Collect test results across Python versions
+                command: |
+                    results="$(pwd)/workspace/test-results"
+                    . "venv${PY}/bin/activate" && cd workspace/src
+                    mkdir -p "${results}/python"
+                    ls -1 "${results}" | grep python. | while read file; do
+                        cp "${results}/${file}/.coverage" ".coverage.${file}" || true
+                        mv "${results}/${file}/junit.xml" "${results}/${file}.xml" || true
+                        mv "${results}/${file}" "${results}/python/${file##python}"
+                    done
+                    if [ -n "$(ls -1 .coverage.* 2>/dev/null || true)" ]; then
+                        which coverage >/dev/null 2>&1 || pip install coverage
+                        coverage erase
+                        coverage combine
+                        coverage report --rcfile test.ini
+                        coverage html --rcfile test.ini
+                        coverage xml --rcfile test.ini
+                        mv .coverage coverage.xml htmlcov/* ${results}/python/
+                    fi
+            - *store-tests
+            - store_artifacts: {path: workspace/test-results, destination: .}
+
+    lint:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - run:
+                name: Running linter(s)
+                command: |
+                    . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                    inv lint
+
+workflows:
+  version: 2
+
+  build:
+    jobs:
+        - checkout
+        - deps-36:
+            requires:
+                - checkout
+        - lint:
+            requires:
+                - deps-36
+        - test:
+            requires:
+                - deps-36
+        - deps-27:
+            requires:
+                - checkout
+        - test-27:
+            requires:
+                - deps-27
+        - deps-37:
+            requires:
+                - checkout
+        - test-37:
+            requires:
+                - deps-37
+        - collect-tests:
+            requires:
+                - test
+                - test-27
+                - test-37
+
+

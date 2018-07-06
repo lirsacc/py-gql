@@ -6,7 +6,7 @@
 
 **:construction: WIP! Do not use this in production :construction:**
 
-![GraphQL Logo](./GraphQL Logo.svg)
+[![CircleCI](https://circleci.com/gh/lirsacc/py-gql/tree/master.svg?style=svg)](https://circleci.com/gh/lirsacc/py-gql/tree/master)
 
 This is for now a learning project born out of some frustrations with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work and on personal projects. While they work fairly well and we still run with them in production I figured I could tackle the following goals better by starting this.
 
