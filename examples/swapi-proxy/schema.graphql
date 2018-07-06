@@ -1,10 +1,19 @@
+# This is the SWAPI schema used in most demos but using python snake case
+# conventions.
+
 type Query {
     film(id: Int!): Film
-    all_films(search: String): [Film]
+    all_films(search: String): [Film]!
     planet(id: Int!): Planet
-    all_planets(search: String): [Planet]
+    all_planets(search: String): [Planet]!
     person(id: Int!): Person
-    all_people(search: String): [Person]
+    all_people(search: String): [Person]!
+    starship(id: Int!): Starship
+    all_starships(search: String): [Starship]!
+    vehicle(id: Int!): Vehicle
+    all_vehicles(search: String): [Vehicle]!
+    species(id: Int!): Species
+    all_species(search: String): [Species]!
 }
 
 interface Object {
@@ -53,11 +62,11 @@ type Person implements Object {
     """
     The height of the person in centimeters.
     """
-    height: String
+    height: Float
     """
     The mass of the person in kilograms.
     """
-    mass: String
+    mass: Float
     """
     The skin color of this person.
     """
@@ -67,21 +76,21 @@ type Person implements Object {
     """
     homeworld: Planet
     """
-    An array of film resource URLs that this person has been in.
+    An array of film sthat this person has been in.
     """
     films: [Film]
-    # """
-    # An array of species resource URLs that this person belongs to.
-    # """
-    # species: Array
-    # """
-    # An array of starship resource URLs that this person has piloted.
-    # """
-    # starships: Array
-    # """
-    # An array of vehicle resource URLs that this person has piloted.
-    # """
-    # vehicles: Array
+    """
+    An array of species that this person belongs to.
+    """
+    species: [Species]
+    """
+    An array of starships that this person has piloted.
+    """
+    starships: [Starship]
+    """
+    An array of vehicles that this person has piloted.
+    """
+    vehicles: [Vehicle]
     """
     the ISO 8601 date format of the time that this resource was created.
     """
@@ -153,15 +162,15 @@ type Planet implements Object {
     """
     The diameter of this planet in kilometers.
     """
-    diameter: String
+    diameter: Float
     """
     The number of standard hours it takes for this planet to complete a single rotation on its axis.
     """
-    rotation_period: String
+    rotation_period: Int
     """
     The number of standard days it takes for this planet to complete a single orbit of its local star.
     """
-    orbital_period: String
+    orbital_period: Int
     """
     A number denoting the gravity of this planet, where "1" is normal or 1 standard G. "2" is twice or 2 standard Gs. "0.5" is half or 0.5 standard Gs.
     """
@@ -169,7 +178,7 @@ type Planet implements Object {
     """
     The average population of sentient beings inhabiting this planet.
     """
-    population: String
+    population: Float
     """
     The climate of this planet. Comma separated if diverse.
     """
@@ -181,7 +190,7 @@ type Planet implements Object {
     """
     The percentage of the planet surface that is naturally occurring water or bodies of water.
     """
-    surface_water: String
+    surface_water: Float
     """
     An array of People that live on this planet.
     """
@@ -198,4 +207,210 @@ type Planet implements Object {
     the ISO 8601 date format of the time that this resource was edited.
     """
     edited: String
+}
+
+
+"""
+A single transport
+"""
+interface Transport {
+    name: String
+    model: String
+    manufacturer: String
+    cost_in_credits: Float
+    length: Float
+    crew: Int
+    passengers: Int
+    max_atmosphering_speed: Int
+    cargo_capacity: Float
+    consumables: String
+    pilots: [Person]
+    films: [Film]
+}
+
+"""
+A Starship resource is a single transport craft that has hyperdrive capability.
+"""
+type Starship implements Object & Transport {
+    id: Int!
+    created: String
+    edited: String
+    """
+    The name of this starship. The common name, such as "Death Star".
+    """
+    name: String
+    """
+    The model or official name of this starship. Such as "T-65 X-wing" or "DS-1 Orbital Battle Station".
+    """
+    model: String
+    """
+    The class of this starship, such as "Starfighter" or "Deep Space Mobile Battlestation"
+    """
+    starship_class: String
+    """
+    The manufacturer of this starship. Comma separated if more than one.
+    """
+    manufacturer: String
+    """
+    The cost of this starship new, in galactic credits.
+    """
+    cost_in_credits: Float
+    """
+    The length of this starship in meters.
+    """
+    length: Float
+    """
+    The number of personnel needed to run or pilot this starship.
+    """
+    crew: Int
+    """
+    The number of non-essential people this starship can transport.
+    """
+    passengers: Int
+    """
+    The maximum speed of this starship in the atmosphere. "N/A" if this starship is incapable of atmospheric flight.
+    """
+    max_atmosphering_speed: Int
+    """
+    The class of this starships hyperdrive.
+    """
+    hyperdrive_rating: Float
+    """
+    The Maximum number of Megalights this starship can travel in a standard hour. A "Megalight" is a standard unit of distance and has never been defined before within the Star Wars universe. This figure is only really useful for measuring the difference in speed of starships. We can assume it is similar to AU, the distance between our Sun (Sol) and Earth.
+    """
+    MGLT: Int
+    """
+    The maximum number of kilograms that this starship can transport.
+    """
+    cargo_capacity: Float
+    """
+    The maximum length of time that this starship can provide consumables for its entire crew without having to resupply.
+    """
+    consumables: String
+    """
+    An array of films that this starship has appeared in.
+    """
+    films: [Film]
+    """
+    An array of people that this starship has been piloted by.
+    """
+    pilots: [Person]
+}
+
+"""
+A Vehicle resource is a single transport craft that does not have hyperdrive capability.
+"""
+type Vehicle implements Object & Transport {
+    id: Int!
+    created: String
+    edited: String
+    """
+    The name of this vehicle. The common name, such as "Sand Crawler" or "Speeder bike"
+    """
+    name: String
+    """
+    The model or official name of this vehicle. Such as "All-Terrain Attack Transport".
+    """
+    model: String
+    """
+    The class of this vehicle, such as "Wheeled" or "Repulsorcraft".
+    """
+    vehicle_class: String
+    """
+    The manufacturer of this vehicle. Comma separated if more than one.
+    """
+    manufacturer: String
+    """
+    The cost of this vehicle new, in Galactic Credits.
+    """
+    cost_in_credits: Float
+    """
+     The length of this vehicle in meters.
+    """
+    length: Float
+    """
+    The number of personnel needed to run or pilot this vehicle.
+    """
+    crew: Int
+    """
+    The number of non-essential people this vehicle can transport.
+    """
+    passengers: Int
+    """
+    The maximum speed of this vehicle in the atmosphere.
+    """
+    max_atmosphering_speed: Int
+    """
+    The maximum number of kilograms that this vehicle can transport.
+    """
+    cargo_capacity: Float
+    """
+    The maximum length of time that this vehicle can provide consumables for its entire crew without having to resupply.
+    """
+    consumables: String
+    """
+    An array of films that this vehicle has appeared in.
+    """
+    films: [Film]
+    """
+    An array of people that this vehicle has been piloted by.
+    """
+    pilots: [Person]
+}
+
+"""
+A Species resource is a type of person or character within the Star Wars Universe.
+"""
+type Species implements Object {
+    id: Int!
+    created: String
+    edited: String
+    """
+    The name of this species.
+    """
+    name: String
+    """
+    The classification of this species, such as "mammal" or "reptile".
+    """
+    classification: String
+    """
+    The designation of this species, such as "sentient".
+    """
+    designation: String
+    """
+    The average height of this species in centimeters.
+    """
+    average_height: Float
+    """
+    The average lifespan of this species in years.
+    """
+    average_lifespan: Int
+    """
+    A comma-separated string of common eye colors for this species, "none" if this species does not typically have eyes.
+    """
+    eye_colors: String
+    """
+    A comma-separated string of common hair colors for this species, "none" if this species does not typically have hair.
+    """
+    hair_colors: String
+    """
+    A comma-separated string of common skin colors for this species, "none" if this species does not typically have skin.
+    """
+    skin_colors: String
+    """
+    The language commonly spoken by this species.
+    """
+    language: String
+    """
+    The planet that this species originates from.
+    """
+    homeworld: Planet
+    """
+    An array of People URL Resources that are a part of this species.
+    """
+    people: [Person]
+    """
+    An array of Film URL Resources that this species has appeared in.
+    """
+    films: [Film]
 }
