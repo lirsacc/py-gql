@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from py_gql._string_utils import parse_block_string
+from py_gql._string_utils import dedent
 from py_gql.lang import ast as _ast, parse, print_ast
-
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def test_minimal_ast():

@@ -10,7 +10,6 @@ import functools as ft
 from . import ast as _ast, token as _token
 from ..exc import UnexpectedEOF, UnexpectedToken
 from .lexer import Lexer
-from .token import Token
 
 DIRECTIVE_LOCATIONS = frozenset(
     [
@@ -60,8 +59,10 @@ OPERATION_TYPES = frozenset(["query", "mutation", "subscription"])
 
 
 def _unexpected_token(msg_or_token, *args):
-    if isinstance(msg_or_token, Token):
-        msg_or_token = "Unexpected %s" % msg_or_token
+    if isinstance(msg_or_token, _token.Token):
+        if isinstance(msg_or_token, _token.EOF):
+            return UnexpectedEOF(*args)
+        msg_or_token = 'Unexpected "%s"' % msg_or_token
     return UnexpectedToken(msg_or_token, *args)
 
 
@@ -304,7 +305,7 @@ class Parser(object):
             return self.advance()
 
         raise _unexpected_token(
-            "Expected %s but found %s" % (kind.__name__, next_token),
+            'Expected %s but found "%s"' % (kind.__name__, next_token),
             next_token.start,
             self.lexer._source,
         )
@@ -323,7 +324,7 @@ class Parser(object):
             return self.advance()
 
         raise _unexpected_token(
-            'Expected "%s" but found %s' % (keyword, next_token),
+            'Expected "%s" but found "%s"' % (keyword, next_token),
             next_token.start,
             self.lexer._source,
         )

@@ -39,16 +39,6 @@ def test_it_accepts_binary_type():
     assert lex_one(b"foo") == token.Name(0, 3, "foo")
 
 
-@pytest.mark.skip("Irrelevant")
-def test_it_records_line_and_column():
-    pass
-
-
-@pytest.mark.skip("Irrelevant")
-def test_it_can_be_json_stringified_or_util_inspected():
-    pass
-
-
 def test_it_skips_whitespace_and_comments_1():
     assert (
         lex_one(
@@ -79,19 +69,25 @@ def test_it_skips_whitespace_and_comments_3():
     assert lex_one(u",,,foo,,,") == token.Name(3, 6, "foo")
 
 
-@pytest.mark.skip("Irrelevant (see tests/test_errors.py)")
-def test_it_errors_respect_whitespace():
-    pass
+def test_errors_respect_whitespace():
+    with pytest.raises(UnexpectedCharacter) as exc_info:
+        lex_one(
+            u"""
 
+                ?
 
-@pytest.mark.skip("Irrelevant (see tests/test_errors.py)")
-def test_it_updates_line_numbers_in_error_for_file_context():
-    pass
+            """
+        )
 
-
-@pytest.mark.skip("Irrelevant (see tests/test_errors.py)")
-def test_it_updates_column_numbers_in_error_for_file_context():
-    pass
+    assert str(exc_info.value) == (
+        'Unexpected character "?" (3:17):\n'
+        "  1:\n"
+        "  2:\n"
+        "  3:                ?\n"
+        "                    ^\n"
+        "  4:\n"
+        "  5:            "
+    )
 
 
 @pytest.mark.parametrize(
@@ -100,7 +96,10 @@ def test_it_updates_column_numbers_in_error_for_file_context():
         (u'"simple"', token.String(0, 8, "simple")),
         (u'" white space "', token.String(0, 15, " white space ")),
         (u'"quote \\""', token.String(0, 10, 'quote "')),
-        (u'"escaped \\n\\r\\b\\t\\f"', token.String(0, 20, "escaped \n\r\b\t\f")),
+        (
+            u'"escaped \\n\\r\\b\\t\\f"',
+            token.String(0, 20, "escaped \n\r\b\t\f"),
+        ),
         (u'"slashes \\\\ \\/"', token.String(0, 15, "slashes \\ /")),
         (
             u'"unicode \\u1234\\u5678\\u90AB\\uCDEF"',
@@ -142,7 +141,10 @@ def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
     [
         (u'"""simple"""', token.BlockString(0, 12, "simple")),
         (u'""" white space """', token.BlockString(0, 19, " white space ")),
-        (u'"""contains " quote"""', token.BlockString(0, 22, 'contains " quote')),
+        (
+            u'"""contains " quote"""',
+            token.BlockString(0, 22, 'contains " quote'),
+        ),
         (
             u'"""contains \\""" triplequote"""',
             token.BlockString(0, 31, 'contains """ triplequote'),
@@ -156,7 +158,10 @@ def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
             u'"""unescaped \\n\\r\\b\\t\\f\\u1234"""',
             token.BlockString(0, 32, "unescaped \\n\\r\\b\\t\\f\\u1234"),
         ),
-        (u'"""slashes \\\\ \\/"""', token.BlockString(0, 19, "slashes \\\\ \\/")),
+        (
+            u'"""slashes \\\\ \\/"""',
+            token.BlockString(0, 19, "slashes \\\\ \\/"),
+        ),
         (
             u'''"""
 
@@ -182,7 +187,9 @@ def test_it_lexes_block_strings(value, expected):
         (u'"""null-byte is not \u0000 end of file"""', InvalidCharacter, 20),
     ],
 )
-def test_it_lex_reports_useful_block_string_errors(value, err_cls, expected_positon):
+def test_it_lex_reports_useful_block_string_errors(
+    value, err_cls, expected_positon
+):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == expected_positon
@@ -269,16 +276,6 @@ def test_it_lex_reports_useful_unknown_character_error(value, err_cls, pos):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == pos
-
-
-@pytest.mark.skip("Irrelevant")
-def test_it_lex_reports_useful_information_for_dashes_in_names():
-    pass
-
-
-@pytest.mark.skip("Irrelevant")
-def test_it_produces_double_linked_list_of_tokens_including_comments():
-    pass
 
 
 def test_it_lexes_multiple_tokens():

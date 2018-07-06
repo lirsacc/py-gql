@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql._string_utils import parse_block_string
+from py_gql._string_utils import dedent
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
@@ -15,8 +15,6 @@ from py_gql.schema import (
     schema_from_ast,
 )
 from py_gql.schema.schema_directive import SchemaDirective
-
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def test_object_type_extension():

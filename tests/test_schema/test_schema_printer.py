@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql._string_utils import parse_block_string
+from py_gql._string_utils import dedent
 from py_gql.schema import (
     UUID,
     Arg,
@@ -23,8 +23,6 @@ from py_gql.schema import (
 )
 from py_gql.schema.printer import print_schema
 
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
-
 
 def _single_field_schema(*args, **opts):
     return Schema(ObjectType("Query", [Field("singleField", *args, **opts)]))
@@ -42,7 +40,9 @@ def _single_field_schema(*args, **opts):
     ],
 )
 def test_single_field_schema(type, opts, expected):
-    assert print_schema(_single_field_schema(type, **opts), indent="    ") == dedent(
+    assert print_schema(
+        _single_field_schema(type, **opts), indent="    "
+    ) == dedent(
         """
         type Query {
             singleField: %s
@@ -79,7 +79,9 @@ def test_string_field_with_int_arg():
 
 
 def test_string_field_with_int_arg_with_default_value():
-    schema = _single_field_schema(String, args=[Arg("argOne", Int, default_value=2)])
+    schema = _single_field_schema(
+        String, args=[Arg("argOne", Int, default_value=2)]
+    )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
@@ -103,7 +105,9 @@ def test_string_field_with_string_arg_with_default_value():
 
 
 def test_string_field_with_int_arg_with_null_default_value():
-    schema = _single_field_schema(String, args=[Arg("argOne", Int, default_value=None)])
+    schema = _single_field_schema(
+        String, args=[Arg("argOne", Int, default_value=None)]
+    )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
@@ -114,7 +118,9 @@ def test_string_field_with_int_arg_with_null_default_value():
 
 
 def test_string_field_with_non_null_int_arg():
-    schema = _single_field_schema(String, args=[Arg("argOne", NonNullType(Int))])
+    schema = _single_field_schema(
+        String, args=[Arg("argOne", NonNullType(Int))]
+    )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
@@ -139,7 +145,8 @@ def test_string_field_with_multiple_args():
 
 def test_string_field_with_multiple_args_with_default():
     schema = _single_field_schema(
-        String, args=[Arg("argOne", Int, default_value=2), Arg("argTwo", String)]
+        String,
+        args=[Arg("argOne", Int, default_value=2), Arg("argTwo", String)],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
@@ -152,7 +159,8 @@ def test_string_field_with_multiple_args_with_default():
 
 def test_custom_query_root_type():
     assert print_schema(
-        Schema(ObjectType("CustomQueryType", [Field("foo", String)])), indent="    "
+        Schema(ObjectType("CustomQueryType", [Field("foo", String)])),
+        indent="    ",
     ) == dedent(
         """
         schema {
@@ -295,7 +303,9 @@ def test_custom_directive():
     directive = Directive(
         "customDirective", locations=["FIELD"], args=[Arg("argOne", String)]
     )
-    schema = Schema(ObjectType("Query", [Field("foo", String)]), directives=[directive])
+    schema = Schema(
+        ObjectType("Query", [Field("foo", String)]), directives=[directive]
+    )
     assert print_schema(schema, indent="    ") == dedent(
         """
         directive @customDirective(argOne: String) on FIELD

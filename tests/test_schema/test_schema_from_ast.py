@@ -2,14 +2,12 @@
 
 import pytest
 
-from py_gql._string_utils import parse_block_string
+from py_gql._string_utils import dedent
 from py_gql.exc import SDLError
 from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import UUID, print_schema, schema_from_ast
 from py_gql.schema.directives import SPECIFIED_DIRECTIVES
-
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def _check(schema):

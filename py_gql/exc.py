@@ -40,23 +40,30 @@ class GraphQLSyntaxError(GraphQLError):
 
     @cached_property
     def highlighted(self):
-        """ Message followed by a view of the source document pointing at the exact
-        location of the error """
+        """ Message followed by a view of the source document pointing at the
+        exact location of the error """
         if self.source is not None:
-            return self.message + "\n" + highlight_location(self.source, self.position)
+            return (
+                self.message
+                + " "
+                + highlight_location(self.source, self.position)
+            )
         return self.message
 
     def __str__(self):
         return self.highlighted
 
     def to_json(self):
-        """ Convert the exception to a dictionnary that can be serialized to JSON
-        and exposed in a graphql response
+        """ Convert the exception to a dictionnary that can be serialized to
+        JSON and exposed in a graphql response
 
         :rtype: dict
         """
         line, col = index_to_loc(self.source, self.position)
-        return {"message": str(self), "locations": [{"line": line, "columne": col}]}
+        return {
+            "message": str(self),
+            "locations": [{"line": line, "columne": col}],
+        }
 
 
 class InvalidCharacter(GraphQLSyntaxError):
@@ -94,8 +101,8 @@ class UnexpectedToken(GraphQLSyntaxError):
 
 
 class GraphQLLocatedError(GraphQLError):
-    """ Raised when the error can be traced back to specific position in the document
-    """
+    """ Raised when the error can be traced back to specific position in the
+    document """
 
     def __init__(self, message, nodes=None, path=None):
         """
@@ -122,8 +129,8 @@ class GraphQLLocatedError(GraphQLError):
         return self.message
 
     def to_json(self):
-        """ Convert the exception to a dictionnary that can be serialized to JSON
-        and exposed in a graphql response
+        """ Convert the exception to a dictionnary that can be serialized to
+        JSON and exposed in a graphql response
 
         :rtype: dict
         """
@@ -212,8 +219,8 @@ class ResolverError(GraphQLLocatedError):
 
     Subclass or raise this exception directly for use in your own
     resolvers in order for them to report errors instead of crashing execution.
-    If your exception exposes an ``extensions`` attribute it will be included in the
-    serialized version without the need to override :meth:`to_json`.
+    If your exception exposes an ``extensions`` attribute it will be included
+    in the serialized version without the need to override :meth:`to_json`.
     """
 
     def __init__(self, msg, node=None, path=None, extensions=None):
@@ -234,8 +241,8 @@ class ResolverError(GraphQLLocatedError):
         self.extensions = extensions
 
     def to_json(self):
-        """ Convert the exception to a dictionnary that can be serialized to JSON
-        and exposed in a graphql response
+        """ Convert the exception to a dictionnary that can be serialized to
+        JSON and exposed in a graphql response
 
         :rtype: dict
         """

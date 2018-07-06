@@ -128,7 +128,7 @@ class Lexer(object):
     :class:`py_gql.exc.GraphQLSyntaxError` if that is not possible.
     """
 
-    __slots__ = "_source", "_len", "_done", "_position", "_started"
+    __slots__ = ("_source", "_len", "_done", "_position", "_started")
 
     def __init__(self, source):
 
@@ -386,7 +386,9 @@ class Lexer(object):
             char = self._peek()
             if char is not None and ord(char) == 0x0030:
                 raise UnexpectedCharacter(
-                    "%s" % char, self._position, self._source
+                    'Unexpected character "%s"' % char,
+                    self._position,
+                    self._source,
                 )
         else:
             self._read_over_digits()
@@ -396,7 +398,9 @@ class Lexer(object):
         char = self._peek(raise_on_eof=True)
         code = ord(char)
         if not is_digit(code):
-            raise UnexpectedCharacter("%s" % char, self._position, self._source)
+            raise UnexpectedCharacter(
+                'Unexpected character "%s"' % char, self._position, self._source
+            )
 
         while True:
             char = self._peek()
@@ -472,6 +476,8 @@ class Lexer(object):
         elif is_name_lead(code):
             return self._read_name()
         else:
-            raise UnexpectedCharacter(char, self._position, self._source)
+            raise UnexpectedCharacter(
+                'Unexpected character "%s"' % char, self._position, self._source
+            )
 
     next = __next__  # Python 2 iterator interface

@@ -19,29 +19,29 @@ def assert_node_equal(ref, expected):
     assert _ast.node_to_dict(ref) == _ast.node_to_dict(expected)
 
 
-@pytest.mark.skip("Irrelevant")
 def test_it_asserts_that_a_source_to_parse_was_provided():
-    pass
+    with pytest.raises(ValueError):
+        parse(None)
 
 
 @pytest.mark.parametrize(
     "value, error_cls, position, message",
     [
-        (u"{", UnexpectedToken, 1, "Expected Name but found <EOF>"),
+        (u"{", UnexpectedToken, 1, 'Expected Name but found "<EOF>"'),
         (
             u"\n{ ...MissingOn }\nfragment MissingOn Type",
             UnexpectedToken,
             37,
-            'Expected "on" but found Type',
+            'Expected "on" but found "Type"',
         ),
-        (u"{ field: {} }", UnexpectedToken, 9, "Expected Name but found {"),
+        (u"{ field: {} }", UnexpectedToken, 9, 'Expected Name but found "{"'),
         (
             u"notanoperation Foo { field }",
             UnexpectedToken,
             0,
-            "Unexpected notanoperation",
+            'Unexpected "notanoperation"',
         ),
-        (u"...", UnexpectedToken, 0, "Unexpected ..."),
+        (u"...", UnexpectedToken, 0, 'Unexpected "..."'),
     ],
 )
 def test_it_provides_useful_errors(value, error_cls, position, message):
@@ -54,11 +54,6 @@ def test_it_provides_useful_errors(value, error_cls, position, message):
         assert exc_info.value.message == message
 
 
-@pytest.mark.skip("Irrelevant")
-def test_it_parse_provides_useful_error_when_using_source():
-    pass
-
-
 def test_it_parses_variable_inline_values():
     # assert doesn't raise
     parse(u"{ field(complex: { a: { b: [ $var ] } }) }")
@@ -68,21 +63,21 @@ def test_it_parses_constant_default_values():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"query Foo($x: Complex = { a: { b: [ $var ] } }) { field }")
     assert exc_info.value.position == 36
-    assert exc_info.value.message == "Unexpected $"
+    assert exc_info.value.message == 'Unexpected "$"'
 
 
 def test_it_does_not_accept_fragments_named_on():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"fragment on on on { on }")
     assert exc_info.value.position == 9
-    assert exc_info.value.message == "Unexpected on"
+    assert exc_info.value.message == 'Unexpected "on"'
 
 
 def test_it_does_not_accept_fragments_spread_of_on():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"{ ...on }")
     assert exc_info.value.position == 8
-    assert exc_info.value.message == "Expected Name but found }"
+    assert exc_info.value.message == 'Expected Name but found "}"'
 
 
 def test_it_parses_multi_bytes_characters():
@@ -325,19 +320,9 @@ def test_it_experimental_allows_parsing_fragment_defined_variables():
     )
 
 
-@pytest.mark.skip("Irrelevant (loc/source access is different)")
-def test_it_contains_location_information_that_only_stringifys_start_end():
-    pass
-
-
-@pytest.mark.skip("Irrelevant (loc/source access is different)")
 def test_it_contains_references_to_source():
-    pass
-
-
-@pytest.mark.skip("Irrelevant (loc/source access is different)")
-def test_it_contains_references_to_start_and_end_tokens():
-    pass
+    doc = parse(u"{ id }")
+    assert doc.source == "{ id }"
 
 
 def test_parse_value_it_parses_null_value():

@@ -62,12 +62,16 @@ def parse_block_string(
         if i == 0:
             continue
         indent = leading_whitespace(line)
-        if indent < len(line) and (common_indent is None or indent < common_indent):
+        if indent < len(line) and (
+            common_indent is None or indent < common_indent
+        ):
             common_indent = indent
 
     if common_indent:
         lines = [
-            line[common_indent:] if (len(line) >= common_indent and i > 0) else line
+            line[common_indent:]
+            if (len(line) >= common_indent and i > 0)
+            else line
             for i, line in enumerate(lines)
         ]
 
@@ -202,7 +206,10 @@ def highlight_location(body, position, delta=2):
 
     output = ["(%d:%d):" % (line, col)]
     output.extend(
-        [ws(2) + lineno(l) + ":" + lines[l] for l in range(min_line, line_index)]
+        [
+            ws(2) + lineno(l) + ":" + lines[l]
+            for l in range(min_line, line_index)
+        ]
     )
     output.append(ws(2) + lineno(line_index) + ":" + lines[line_index])
     output.append(ws(2) + ws(len(str(max_line + 1)) + col) + "^")
@@ -253,3 +260,6 @@ def wrapped_lines(lines, max_len, word_boundaries=" -_"):
 
         if wrapped:
             yield wrapped
+
+
+dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)

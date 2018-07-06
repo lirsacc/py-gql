@@ -11,7 +11,7 @@ def test_correct_response_on_syntax_error_1(starwars_schema):
     assert graphql(starwars_schema, "", {}).response() == {
         "errors": [
             {
-                "message": "Unexpected <EOF>\n(1:1):\n  1:\n    ^",
+                "message": "Unexpected <EOF> (1:1):\n  1:\n    ^",
                 "locations": [{"columne": 1, "line": 1}],
             }
         ]
@@ -30,8 +30,7 @@ def test_correct_response_on_syntax_error_2(starwars_schema):
     assert graphql(starwars_schema, query, {}).response() == {
         "errors": [
             {
-                "message": """Expected Name but found {
-(2:26):
+                "message": """Expected Name but found "{" (2:26):
   1:
   2:    query HeroNameQuery {{
                              ^

@@ -6,7 +6,7 @@ import pytest
 import six
 
 from py_gql import graphql
-from py_gql._string_utils import parse_block_string
+from py_gql._string_utils import dedent
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.schema import (
     Argument,
@@ -24,8 +24,6 @@ from py_gql.schema import (
     schema_from_ast,
 )
 from py_gql.schema.schema_directive import SchemaDirective, wrap_resolver
-
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def test_simple_field_modifier():

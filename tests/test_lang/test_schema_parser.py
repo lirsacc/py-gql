@@ -10,7 +10,7 @@ on revision 8d1ae25de444a9b544a1fdc98e138ae91b77057c.
 
 import pytest
 
-from py_gql.exc import UnexpectedToken
+from py_gql.exc import UnexpectedToken, UnexpectedEOF
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
 
@@ -40,7 +40,11 @@ def _field(loc, name, type_, args=[]):  # noqa : B006
 
 def _input(loc, name, type_, default_value=None):
     return _ast.InputValueDefinition(
-        loc=loc, name=name, type=type_, default_value=default_value, directives=[]
+        loc=loc,
+        name=name,
+        type=type_,
+        default_value=default_value,
+        directives=[],
     )
 
 
@@ -93,7 +97,9 @@ type Hello {
                     name=_name((20, 25), "Hello"),
                     interfaces=[],
                     directives=[],
-                    description=_ast.StringValue(loc=(1, 14), value="Description"),
+                    description=_ast.StringValue(
+                        loc=(1, 14), value="Description"
+                    ),
                     fields=[
                         _field(
                             (30, 43),
@@ -222,7 +228,7 @@ def test_it_parses_extension_without_fields_followed_by_extension():
 
 
 def test_extension_without_anything_throws():
-    with pytest.raises(UnexpectedToken) as exc_info:
+    with pytest.raises(UnexpectedEOF) as exc_info:
         parse(u"extend type Hello")
     assert exc_info.value.position == 17
     assert exc_info.value.message == "Unexpected <EOF>"
@@ -238,7 +244,7 @@ def test_extension_do_not_include_descriptions_0():
       }"""
         )
     assert exc_info.value.position == 27
-    assert exc_info.value.message == "Unexpected extend"
+    assert exc_info.value.message == 'Unexpected "extend"'
 
 
 def test_extension_do_not_include_descriptions_1():
@@ -250,7 +256,7 @@ def test_extension_do_not_include_descriptions_1():
       }"""
         )
     assert exc_info.value.position == 14
-    assert exc_info.value.message == "Unexpected Description"
+    assert exc_info.value.message == 'Unexpected "Description"'
 
 
 def test_it_parses_simple_non_null_type():
@@ -528,7 +534,8 @@ type Hello {
                                     (22, 38),
                                     _name((22, 28), "things"),
                                     _ast.ListType(
-                                        loc=(30, 38), type=_type((31, 37), "String")
+                                        loc=(30, 38),
+                                        type=_type((31, 37), "String"),
                                     ),
                                 )
                             ],
@@ -635,28 +642,28 @@ def test_union_fails_with_no_types():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"union Hello = |")
     assert exc_info.value.position == 15
-    assert exc_info.value.message == "Expected Name but found <EOF>"
+    assert exc_info.value.message == 'Expected Name but found "<EOF>"'
 
 
 def test_union_fails_with_leading_douple_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"union Hello = || Wo | Rld")
     assert exc_info.value.position == 15
-    assert exc_info.value.message == "Expected Name but found |"
+    assert exc_info.value.message == 'Expected Name but found "|"'
 
 
 def test_union_fails_with_double_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"union Hello = Wo || Rld")
     assert exc_info.value.position == 18
-    assert exc_info.value.message == "Expected Name but found |"
+    assert exc_info.value.message == 'Expected Name but found "|"'
 
 
 def test_union_fails_with_trailing_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(u"union Hello = | Wo | Rld |")
     assert exc_info.value.position == 26
-    assert exc_info.value.message == "Expected Name but found <EOF>"
+    assert exc_info.value.message == 'Expected Name but found "<EOF>"'
 
 
 def test_it_parses_scalar():
@@ -710,7 +717,7 @@ def test_simple_input_object_with_args_should_fail():
         )
 
     assert exc_info.value.position == 34
-    assert exc_info.value.message == "Expected Colon but found ("
+    assert exc_info.value.message == 'Expected Colon but found "("'
 
 
 def test_directive_with_incorrect_locations_fails():
@@ -732,13 +739,17 @@ class TestAllowLegacySdlEmptyFieldsOption(object):
             parse(body)
 
         assert exc_info.value.position == 13
-        assert exc_info.value.message == "Expected Name but found }"
+        assert exc_info.value.message == 'Expected Name but found "}"'
 
         assert_node_equal(
             parse(body, allow_legacy_sdl_empty_fields=True),
             _doc(
                 (0, 14),
-                [_ast.ObjectTypeDefinition(loc=(0, 14), name=_name((5, 10), "Hello"))],
+                [
+                    _ast.ObjectTypeDefinition(
+                        loc=(0, 14), name=_name((5, 10), "Hello")
+                    )
+                ],
             ),
         )
 
@@ -751,7 +762,7 @@ class TestAllowLegacySdlImplementsInterfacesOption(object):
             parse(body)
 
         assert exc_info.value.position == 25
-        assert exc_info.value.message == "Unexpected rld"
+        assert exc_info.value.message == 'Unexpected "rld"'
 
         assert_node_equal(
             parse(body, allow_legacy_sdl_implements_interfaces=True),
@@ -761,7 +772,10 @@ class TestAllowLegacySdlImplementsInterfacesOption(object):
                     _ast.ObjectTypeDefinition(
                         loc=(0, 46),
                         name=_name((5, 10), "Hello"),
-                        interfaces=[_type((22, 24), "Wo"), _type((25, 28), "rld")],
+                        interfaces=[
+                            _type((22, 24), "Wo"),
+                            _type((25, 28), "rld"),
+                        ],
                         fields=[
                             _field(
                                 (31, 44),
@@ -780,7 +794,9 @@ def test_it_parses_kitchen_sink(fixture_file):
     assert parse(fixture_file("schema-kitchen-sink.graphql"), no_location=True)
 
 
-def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(fixture_file):
+def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(
+    fixture_file
+):
     with pytest.raises(UnexpectedToken):
         parse(
             fixture_file("schema-kitchen-sink.graphql"),
