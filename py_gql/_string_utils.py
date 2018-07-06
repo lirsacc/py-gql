@@ -5,6 +5,8 @@ import re
 
 import six
 
+from ._utils import OrderedDict
+
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
 LEADING_WS = re.compile(r"^[\t\s]*")
@@ -309,7 +311,7 @@ def infer_suggestions(candidate, options, distance=levenshtein):
 
     :rtype: List[str]
     """
-    distances = {}
+    distances = OrderedDict()
     half = len(candidate) / 2
     for option in options:
         distance = levenshtein(candidate, option)
