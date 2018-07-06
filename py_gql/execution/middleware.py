@@ -77,7 +77,6 @@ def apply_middlewares(func, middlewares):
             mw = generator_middleware(mw)
         tail = ft.partial(mw, tail)
 
-    tail = ft.wraps(func)(tail)
     return tail
 
 
@@ -89,7 +88,6 @@ def generator_middleware(func):
     non-yielding code present after the ``yield`` keyword is guaranteed to be
     run. """
 
-    @ft.wraps(func)
     def wrapped(step, *args, **kwargs):
         gen = func(step, *args, **kwargs)
 
