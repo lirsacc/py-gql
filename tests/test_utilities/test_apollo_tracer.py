@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from py_gql.utilities.tracers import ApolloTracer
 from py_gql import graphql
+from py_gql.utilities.tracers import ApolloTracer
 
 
 def test_it_does_not_crash(starwars_schema):

@@ -2,7 +2,6 @@
 """ Some useful middlewares """
 
 import datetime as dt
-
 import json
 import logging
 

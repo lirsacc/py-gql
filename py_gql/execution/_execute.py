@@ -39,8 +39,8 @@ from ..utilities import (
     directive_arguments,
 )
 from ._utils import ExecutionContext, GraphQLResult, ResolveInfo
-from .middleware import apply_middlewares
 from .executors import DefaultExecutor, Executor
+from .middleware import apply_middlewares
 
 
 def execute(

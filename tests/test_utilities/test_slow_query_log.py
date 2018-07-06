@@ -3,9 +3,9 @@
 import logging
 import time
 
-from py_gql.schema import Schema, ObjectType, String, Field
-from py_gql.utilities.tracers import SlowQueryLog
 from py_gql import graphql
+from py_gql.schema import Field, ObjectType, Schema, String
+from py_gql.utilities.tracers import SlowQueryLog
 
 
 def slow_resolver(*args, **kwargs):

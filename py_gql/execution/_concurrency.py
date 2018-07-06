@@ -4,7 +4,6 @@ to promises """
 
 from concurrent import futures as _f
 
-
 _UNDEF = object()
 
 
