@@ -269,7 +269,7 @@ def directive_arguments(definition, node, variables=None):
     )
 
 
-def coerce_variable_values(schema, operation, variables):
+def coerce_variable_values(schema, operation, variables):  # noqa: C901
     """ Prepares an object map of variable values of the correct type based on
     the provided operation definition and arbitrary JSON input. If the input
     cannot be parsed to match the variable definitions, an ExecutionError will
