@@ -541,11 +541,6 @@ def test_supports_deprecated():
     )
 
 
-@pytest.mark.skip("Irrelevant")
-def test_correctly_assign_ast_nodes():
-    pass
-
-
 def test_root_operation_types_with_custom_names():
     schema = schema_from_ast(
         """
@@ -577,16 +572,6 @@ def test_default_root_operation_type_names():
     assert schema.query_type.name == "Query"
     assert schema.mutation_type.name == "Mutation"
     assert schema.subscription_type.name == "Subscription"
-
-
-@pytest.mark.skip("No it can't")
-def test_can_build_invalid_schema():
-    pass
-
-
-@pytest.mark.skip("Irrelevant, legacy names not implemented")
-def test_accepts_legacy_names():
-    pass
 
 
 def test_allows_only_a_single_schema_definition():

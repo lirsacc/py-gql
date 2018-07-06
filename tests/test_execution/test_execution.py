@@ -151,27 +151,6 @@ def test_uses_mutation_schema_for_mutation_operation(mocker):
     assert mutation.call_count == 1
 
 
-# Currenty haven't found a solution for the subscriptions interface
-@pytest.mark.xfail
-def test_uses_subscription_schema_for_subscription_operation(mocker):
-    query = mocker.Mock(return_value="foo")
-    mutation = mocker.Mock(return_value="foo")
-    subscription = mocker.Mock(return_value="foo")
-
-    def _f(resolver):
-        return Field("test", String, resolve=resolver)
-
-    schema = Schema(
-        query_type=ObjectType("Query", [_f(query)]),
-        mutation_type=ObjectType("Mutation", [_f(mutation)]),
-        subscription_type=ObjectType("Subscription", [_f(subscription)]),
-    )
-
-    execute(schema, parse("subscription M { test }"))
-    assert not query.call_count
-    assert subscription.call_count == 1
-
-
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
 def test_default_resolution_looks_up_key(exe_cls, exe_kwargs):
     schema = _test_schema(String)
