@@ -200,7 +200,7 @@ class VariablesCoercionError(GraphQLError):
     def __str__(self):
         if len(self.errors) == 1:
             return str(self.errors[0])
-        return str(self.errors)
+        return ",\n".join([str(err) for err in self.errors])
 
 
 class CoercionError(GraphQLLocatedError):
@@ -212,6 +212,16 @@ class CoercionError(GraphQLLocatedError):
         if self.value_path:
             return "%s at %s" % (self.message, self.value_path)
         return self.message
+
+
+class MultiCoercionError(CoercionError):
+    def __init__(self, errors):
+        self.errors = errors
+
+    def __str__(self):
+        if len(self.errors) == 1:
+            return str(self.errors[0])
+        return ",\n".join([str(err) for err in self.errors])
 
 
 class ResolverError(GraphQLLocatedError):

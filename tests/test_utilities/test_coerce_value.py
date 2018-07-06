@@ -27,7 +27,12 @@ def _test(value, typ, expected_result, expected_error=None):
 
 
 def test_String_raises_on_list():
-    _test([1, 2, 3], String, None, 'String cannot represent list value "[1, 2, 3]"')
+    _test(
+        [1, 2, 3],
+        String,
+        None,
+        'String cannot represent list value "[1, 2, 3]"',
+    )
 
 
 def test_Int_from_int_input():
@@ -52,7 +57,10 @@ def test_Int_from_null_value():
 
 def test_Int_raises_for_empty_value():
     _test(
-        "", Int, None, "Int cannot represent non 32-bit signed integer: (empty string)"
+        "",
+        Int,
+        None,
+        "Int cannot represent non 32-bit signed integer: (empty string)",
     )
 
 
@@ -81,7 +89,12 @@ def test_Float_for_float_input():
 
 
 def test_Float_raises_for_empty_value():
-    _test("", Float, None, "Float cannot represent non numeric value: (empty string)")
+    _test(
+        "",
+        Float,
+        None,
+        "Float cannot represent non numeric value: (empty string)",
+    )
 
 
 def test_Float_raises_for_char_input():
@@ -109,7 +122,8 @@ def test_Enum_raises_for_incorrect_value_type():
 
 
 Input = InputObjectType(
-    "TestInputObject", [InputField("foo", NonNullType(Int)), InputField("bar", Int)]
+    "TestInputObject",
+    [InputField("foo", NonNullType(Int)), InputField("bar", Int)],
 )
 
 
@@ -132,7 +146,10 @@ def test_InputObject_raises_for_invalid_field():
 
 def test_InputObject_raises_for_missing_required_field():
     _test(
-        {}, Input, None, "Field foo of required type Int! was not provided at value.foo"
+        {},
+        Input,
+        None,
+        "Field foo of required type Int! was not provided at value.foo",
     )
 
 
@@ -162,6 +179,16 @@ def test_ListType_raises_for_invalid_item():
     )
 
 
+def test_ListType_raises_for_invalid_items():
+    _test(
+        [1, "abc", "def"],
+        ListType(Int),
+        None,
+        "Int cannot represent non-integer value: abc at value[1],\n"
+        "Int cannot represent non-integer value: def at value[2]",
+    )
+
+
 def test_nested_error():
     _test(
         [{"foo": "abc"}],
@@ -173,5 +200,8 @@ def test_nested_error():
 
 def test_null_non_nullable_type():
     _test(
-        None, NonNullType(Int), None, "Expected non-nullable type Int! not to be null"
+        None,
+        NonNullType(Int),
+        None,
+        "Expected non-nullable type Int! not to be null",
     )

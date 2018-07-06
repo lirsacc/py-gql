@@ -5,7 +5,7 @@ import json
 import six
 
 from .._utils import OrderedDict
-from ..exc import CoercionError, ResolverError
+from ..exc import CoercionError, MultiCoercionError, ResolverError
 from ..utilities import directive_arguments
 
 
@@ -78,6 +78,9 @@ class ExecutionContext(object):
         """
         if isinstance(err, six.string_types):
             err = ResolverError(err, node, path)
+        elif isinstance(err, MultiCoercionError):
+            for child_error in err.errors:
+                self.add_error(child_error)
         elif isinstance(err, (ResolverError, CoercionError)):
             if node:
                 if err.nodes and node not in err.nodes:

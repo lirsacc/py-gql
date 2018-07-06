@@ -293,8 +293,7 @@ def test_errors_on_omission_of_nested_non_null():
     )
 
 
-@pytest.mark.xfail
-def test_fail_on_deep_nested_errors_and_with_many_errors():
+def test_fail_on_deep_nested_errors_with_multiple_errors():
     with pytest.raises(VariablesCoercionError) as exc_info:
         check_execution(
             _SCHEMA,
@@ -306,12 +305,12 @@ def test_fail_on_deep_nested_errors_and_with_many_errors():
             variables={"input": {"na": {"a": "foo"}}},
         )
 
-    assert exc_info.value.errors == [
-        'Variable "$input" got invalid value {"na": {"a": "foo"}} (Field c of '
-        "required type String! was not provided at value.na.c)",
+    assert str(exc_info.value) == (
         'Variable "$input" got invalid value {"na": {"a": "foo"}} '
-        "(Field nb of required type String! was not provided at value.nb)",
-    ]
+        "(Field c of required type String! was not provided at value.na.c),\n"
+        'Variable "$input" got invalid value {"na": {"a": "foo"}} '
+        "(Field nb of required type String! was not provided at value.nb)"
+    )
 
 
 def test_fail_on_addition_of_unknown_input_field():

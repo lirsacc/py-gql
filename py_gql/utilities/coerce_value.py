@@ -7,6 +7,7 @@ from .._utils import find_one
 from ..exc import (
     CoercionError,
     InvalidValue,
+    MultiCoercionError,
     ScalarParsingError,
     UnknownEnumValue,
     UnknownType,
@@ -95,10 +96,28 @@ def coerce_value(value, typ, node=None, path=None):
 
 def _coerce_list_value(value, typ, node, path):
     if isinstance(value, (list, tuple)):
-        return [
-            coerce_value(entry, typ.type, node=node, path=path + [index])
-            for index, entry in enumerate(value)
-        ]
+        coerced = []
+        errors = []
+
+        for index, entry in enumerate(value):
+            try:
+                coerced.append(
+                    coerce_value(
+                        entry, typ.type, node=node, path=path + [index]
+                    )
+                )
+            except MultiCoercionError as err:
+                for child_err in err.errors:
+                    errors.append(child_err)
+            except CoercionError as err:
+                errors.append(err)
+
+        if len(errors) > 1:
+            raise MultiCoercionError(errors)
+        elif len(errors) == 1:
+            raise errors[0]
+
+        return coerced
     else:
         return [coerce_value(value, typ.type, node=node, path=path + [0])]
 
@@ -112,19 +131,33 @@ def _coerce_input_object(value, typ, node, path):
         )
 
     coerced = {}
+    errors = []
     for field in typ.fields:
         if field.name not in value:
             if isinstance(field.type, NonNullType):
-                raise CoercionError(
-                    "Field %s of required type %s was not provided"
-                    % (field.name, field.type),
-                    node,
-                    value_path=_path(path + [field.name]),
+                errors.append(
+                    CoercionError(
+                        "Field %s of required type %s was not provided"
+                        % (field.name, field.type),
+                        node,
+                        value_path=_path(path + [field.name]),
+                    )
                 )
         else:
-            coerced[field.name] = coerce_value(
-                value[field.name], field.type, node, path + [field.name]
-            )
+            try:
+                coerced[field.name] = coerce_value(
+                    value[field.name], field.type, node, path + [field.name]
+                )
+            except MultiCoercionError as err:
+                for child_err in err.errors:
+                    errors.append(child_err)
+            except CoercionError as err:
+                errors.append(err)
+
+    if len(errors) > 1:
+        raise MultiCoercionError(errors)
+    elif len(errors) == 1:
+        raise errors[0]
 
     for fieldname in value.keys():
         if fieldname not in typ.field_map:
@@ -324,6 +357,19 @@ def coerce_variable_values(schema, operation, variables):
             else:
                 try:
                     coerced[name] = coerce_value(value, var_type)
+                except MultiCoercionError as err:
+                    for child_err in err.errors:
+                        errors.append(
+                            VariableCoercionError(
+                                'Variable "$%s" got invalid value %s (%s)'
+                                % (
+                                    name,
+                                    json.dumps(value, sort_keys=True),
+                                    child_err,
+                                ),
+                                [var_def],
+                            )
+                        )
                 except (InvalidValue, CoercionError) as err:
                     errors.append(
                         VariableCoercionError(
