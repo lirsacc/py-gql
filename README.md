@@ -8,6 +8,8 @@
 
 [![CircleCI](https://circleci.com/gh/lirsacc/py-gql/tree/master.svg?style=svg)](https://circleci.com/gh/lirsacc/py-gql/tree/master)
 
+**Roadmap**: See issue #1 for roadmap to version 1.
+
 This is for now a learning project born out of some frustrations with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work and on personal projects. While they work fairly well and we still run with them in production I figured I could tackle the following goals better by starting this.
 
 1.  personnally get a deeper understanding of GraphQL by implementing the spec.
@@ -19,45 +21,6 @@ This is for now a learning project born out of some frustrations with [graphql-c
 4.  (later) Some convenience helpers for generating schemas and generally making working with GraphQL easier. One candidate is [sqlalchemy](https://www.sqlalchemy.org/) integration.
 
 For now, this is largely based on the [GraphQL JS](https://github.com/graphql/graphql-js) implementation and extensive test suite as the first goal is to get a working library covering the current spec and working synchronously. As such naming and implementation might be similar and there are some comments documenting the divergences; but it is not supposed to be a 1-1 port and the internals / api are meant to be iterated upon and diverge more over time once the current spec is implemented.
-
-## TODO / Goals
-
--   [x] First heads down dev round = synchronous version of the spec that supports resolving complex queries ([8ea52113c280](https://github.com/lirsacc/py-gql/tree/8ea52113c280)).
-
--   **Spec review**
-
-    -   [ ] Make sure we still match the newly releases spec ([June 2018](http://facebook.github.io/graphql/June2018/)), should already be the case but can't be too careful
-
-    -   [ ] Go over TODO/WARN/REVIEW comments and review marked behaviour
-
-    -   [ ] Review all skipped / xfail tests and resolve issue
-
--   **Execution / Consuming a GraphQL schema**
-
-    -   [x] Figure out the interface and implement custom execution + support async / parallel resolution of fields. (Done with the `ThreadPoolExecutor` and nested dispatch, still need interface for asyncio)
-    -   [ ] Make subscriptions work in a spec compatible way without forcing user in a given observable library
-    -   [ ] Support custom directives
-    -   [ ] ~~Figure a way to hook into the library (middlewares could be one, decorator on resolvers could also be nice). Main targets for this are custom directives and authorization / contextual schemas.~~  
-             Support execution middlewares to hook intol all resovlers.  
-             Implement a tracing middleware compatible with [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
-    -   [ ] Implement asyncio executor and entry point
-    -   [x] Review error handling as not all errors provide suggestions (not critical but nice to have) or exact source location.
-    -   [ ] Benchmark / trace execution to identify bottlenecks and compare with graphql-core. The first implementation was aimed at correctness and understanding of the specification and not necessarily performance.
-    -   [ ] Setup automated benchmark for execution, parsing, etc. to catch regressions
-    -   [ ] Implement custom validators (e.g. query depth) and types (Date, Datetime, etc.)
-    -   [ ] Provide a nicer interface for resolvers and returning / chaining `Future` objects
-
--   **SDL support**
-
-    -   [x] Implement schema generation
-    -   [ ] Support custom schema directives
-    -   [x] Support full type extension
-
--   **Documentation**
-
-    -   [ ] Set up sphinx to generate some basic documentation
-    -   [ ] Clean up docstrings and standardise on one format so Sphinx can generate consistent docs
-    -   [ ] Write some usage examples and readable docs
 
 ## Examples
 

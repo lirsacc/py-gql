@@ -10,7 +10,7 @@ on revision 8d1ae25de444a9b544a1fdc98e138ae91b77057c.
 
 import pytest
 
-from py_gql.exc import UnexpectedToken, UnexpectedEOF
+from py_gql.exc import UnexpectedEOF, UnexpectedToken
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
 
