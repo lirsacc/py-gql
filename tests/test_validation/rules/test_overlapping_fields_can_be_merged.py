@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Test specified rule in isolation. """
 
-# Tests were adapted from the one in the GraphQLJS reference implementation,
-# as our version exits early not all of the expected errors are aplicable but
-# they conserved as comments for reference.
-# Tests related to suggestion list are kept for reference but skipped as this
-# feature is not implemented.
-
-import pytest
-
 from py_gql.validation.rules import OverlappingFieldsCanBeMergedChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -19,11 +11,11 @@ def test_unique_fields(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment uniqueFields on Dog {
-        name
-        nickname
-    }
-    """,
+        fragment uniqueFields on Dog {
+            name
+            nickname
+        }
+        """,
     )
 
 
@@ -32,11 +24,11 @@ def test_identical_fields(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment mergeIdenticalFields on Dog {
-        name
-        name
-    }
-    """,
+        fragment mergeIdenticalFields on Dog {
+            name
+            name
+        }
+        """,
     )
 
 
@@ -45,11 +37,11 @@ def test_identical_fields_with_identical_args(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
-        doesKnowCommand(dogCommand: SIT)
-        doesKnowCommand(dogCommand: SIT)
-    }
-    """,
+        fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+            doesKnowCommand(dogCommand: SIT)
+        }
+        """,
     )
 
 
@@ -58,11 +50,11 @@ def test_identical_fields_with_identical_directives(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment mergeSameFieldsWithSameDirectives on Dog {
-        name @include(if: true)
-        name @include(if: true)
-    }
-    """,
+        fragment mergeSameFieldsWithSameDirectives on Dog {
+            name @include(if: true)
+            name @include(if: true)
+        }
+        """,
     )
 
 
@@ -71,11 +63,11 @@ def test_different_args_with_different_aliases(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment differentArgsWithDifferentAliases on Dog {
-        knowsSit: doesKnowCommand(dogCommand: SIT)
-        knowsDown: doesKnowCommand(dogCommand: DOWN)
-    }
-    """,
+        fragment differentArgsWithDifferentAliases on Dog {
+            knowsSit: doesKnowCommand(dogCommand: SIT)
+            knowsDown: doesKnowCommand(dogCommand: DOWN)
+        }
+        """,
     )
 
 
@@ -84,11 +76,11 @@ def test_different_directives_with_different_aliases(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment differentDirectivesWithDifferentAliases on Dog {
-        nameIfTrue: name @include(if: true)
-        nameIfFalse: name @include(if: false)
-    }
-    """,
+        fragment differentDirectivesWithDifferentAliases on Dog {
+            nameIfTrue: name @include(if: true)
+            nameIfFalse: name @include(if: false)
+        }
+        """,
     )
 
 
@@ -97,11 +89,11 @@ def test_different_skip_include_directives_accepted(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment differentDirectivesWithDifferentAliases on Dog {
-        name @include(if: true)
-        name @include(if: false)
-    }
-    """,
+        fragment differentDirectivesWithDifferentAliases on Dog {
+            name @include(if: true)
+            name @include(if: false)
+        }
+        """,
     )
 
 
@@ -110,17 +102,17 @@ def test_same_aliases_with_different_field_targets(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment sameAliasesWithDifferentFieldTargets on Dog {
-        fido: name
-        fido: nickname
-    }
-    """,
+        fragment sameAliasesWithDifferentFieldTargets on Dog {
+            fido: name
+            fido: nickname
+        }
+        """,
         [
             'Field(s) "fido" conflict because "name" and "nickname" are '
             "different fields. Use different aliases on the fields to fetch "
             "both if this was intentional."
         ],
-        [[(68, 78), (87, 101)]],
+        [[(76, 86), (99, 113)]],
     )
 
 
@@ -129,15 +121,15 @@ def test_same_aliases_allowed_on_non_overlapping_fields(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment sameAliasesWithDifferentFieldTargets on Pet {
-        ... on Dog {
-            name
+        fragment sameAliasesWithDifferentFieldTargets on Pet {
+            ... on Dog {
+                name
+            }
+            ... on Cat {
+                name: nickname
+            }
         }
-        ... on Cat {
-            name: nickname
-        }
-    }
-    """,
+        """,
     )
 
 
@@ -146,17 +138,17 @@ def test_alias_masking_direct_field_access(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment aliasMaskingDirectFieldAccess on Dog {
-        name: nickname
-        name
-    }
-    """,
+        fragment aliasMaskingDirectFieldAccess on Dog {
+            name: nickname
+            name
+        }
+        """,
         [
             'Field(s) "name" conflict because "nickname" and "name" are different '
             "fields. Use different aliases on the fields to fetch both if this "
             "was intentional."
         ],
-        [[(61, 75), (84, 88)]],
+        [[(69, 83), (96, 100)]],
     )
 
 
@@ -165,11 +157,11 @@ def test_different_args_second_adds_an_argument(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment conflictingArgs on Dog {
-        doesKnowCommand
-        doesKnowCommand(dogCommand: HEEL)
-    }
-    """,
+        fragment conflictingArgs on Dog {
+            doesKnowCommand
+            doesKnowCommand(dogCommand: HEEL)
+        }
+        """,
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
@@ -183,11 +175,11 @@ def test_different_args_second_missing_an_argument(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment conflictingArgs on Dog {
-        doesKnowCommand(dogCommand: SIT)
-        doesKnowCommand
-    }
-    """,
+        fragment conflictingArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+            doesKnowCommand
+        }
+        """,
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
@@ -201,11 +193,11 @@ def test_conflicting_args(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment conflictingArgs on Dog {
-        doesKnowCommand(dogCommand: SIT)
-        doesKnowCommand(dogCommand: HEEL)
-    }
-    """,
+        fragment conflictingArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+            doesKnowCommand(dogCommand: HEEL)
+        }
+        """,
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
@@ -219,15 +211,15 @@ def test_allows_different_args_where_no_conflict_is_possible(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment conflictingArgs on Pet {
-        ... on Dog {
-            name(surname: true)
+        fragment conflictingArgs on Pet {
+            ... on Dog {
+                name(surname: true)
+            }
+            ... on Cat {
+                name
+            }
         }
-        ... on Cat {
-            name
-        }
-    }
-    """,
+        """,
     )
 
 
@@ -236,22 +228,22 @@ def test_encounters_conflict_in_fragments(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        ...A
-        ...B
-    }
-    fragment A on Type {
-        x: a
-    }
-    fragment B on Type {
-        x: b
-    }
-    """,
+        {
+            ...A
+            ...B
+        }
+        fragment A on Type {
+            x: a
+        }
+        fragment B on Type {
+            x: b
+        }
+        """,
         [
             'Field(s) "x" conflict because "a" and "b" are different fields. Use '
             "different aliases on the fields to fetch both if this was intentional."
         ],
-        [[(72, 76), (116, 120)]],
+        [[(96, 100), (152, 156)]],
     )
 
 
@@ -260,28 +252,28 @@ def test_reports_each_conflict_once(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        f1 {
-            ...A
-            ...B
+        {
+            f1 {
+                ...A
+                ...B
+            }
+            f2 {
+                ...B
+                ...A
+            }
+            f3 {
+                ...A
+                ...B
+                x: c
+            }
         }
-        f2 {
-            ...B
-            ...A
+        fragment A on Type {
+            x: a
         }
-        f3 {
-            ...A
-            ...B
-            x: c
+        fragment B on Type {
+            x: b
         }
-    }
-    fragment A on Type {
-        x: a
-    }
-    fragment B on Type {
-        x: b
-    }
-    """,
+        """,
         [
             'Field(s) "x" conflict because "a" and "b" are different fields. '
             "Use different aliases on the fields to fetch both if this was "
@@ -294,9 +286,9 @@ def test_reports_each_conflict_once(schema):
             "intentional.",
         ],
         [
-            [(234, 238), (278, 282)],
-            [(180, 184), (234, 238)],
-            [(180, 184), (278, 282)],
+            [(302, 306), (358, 362)],
+            [(232, 236), (302, 306)],
+            [(232, 236), (358, 362)],
         ],
     )
 
@@ -306,21 +298,21 @@ def test_deep_conflict(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            x: a
-        },
-        field {
-            x: b
+        {
+            field {
+                x: a
+            },
+            field {
+                x: b
+            }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "field" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases '
             "on the fields to fetch both if this was intentional."
         ],
-        [[(15, 49), (35, 39), (59, 93), (79, 83)]],
+        [[(23, 65), (47, 51), (79, 121), (103, 107)]],
     )
 
 
@@ -329,24 +321,24 @@ def test_deep_conflict_with_multiple_issues(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            x: a
-            y: c
-        },
-        field {
-            x: b
-            y: d
+        {
+            field {
+                x: a
+                y: c
+            },
+            field {
+                x: b
+                y: d
+            }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "field" conflict because subfields "x" conflict '
             '("a" and "b" are different fields) and subfields "y" conflict '
             '("c" and "d" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(15, 66), (35, 39), (52, 56), (76, 127), (96, 100), (113, 117)]],
+        [[(23, 86), (47, 51), (68, 72), (100, 163), (124, 128), (145, 149)]],
     )
 
 
@@ -355,26 +347,26 @@ def test_very_deep_conflict(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            deepField {
-                x: a
-            }
-        },
-        field {
-            deepField {
-                x: b
+        {
+            field {
+                deepField {
+                    x: a
+                }
+            },
+            field {
+                deepField {
+                    x: b
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "field" conflict because subfields "deepField" conflict '
             '(subfields "x" conflict ("a" and "b" are different fields)). '
             "Use different aliases on the fields to fetch both if this was "
             "intentional."
         ],
-        [[(15, 91), (35, 81), (63, 67), (101, 177), (121, 167), (149, 153)]],
+        [[(23, 115), (47, 101), (79, 83), (129, 221), (153, 207), (185, 189)]],
     )
 
 
@@ -383,28 +375,28 @@ def test_reports_deep_conflict_to_nearest_common_ancestor(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            deepField {
-                x: a
-            }
-            deepField {
-                x: b
-            }
-        },
-        field {
-            deepField {
-                y
+        {
+            field {
+                deepField {
+                    x: a
+                }
+                deepField {
+                    x: b
+                }
+            },
+            field {
+                deepField {
+                    y
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "deepField" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(35, 81), (63, 67), (94, 140), (122, 126)]],
+        [[(47, 101), (79, 83), (118, 172), (150, 154)]],
     )
 
 
@@ -413,36 +405,36 @@ def test_reports_deep_conflict_to_nearest_common_ancestor_in_fragments(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            ...F
-        }
-        field {
-            ...F
-        }
-    }
-    fragment F on T {
-        deepField {
-            deeperField {
-                x: a
+        {
+            field {
+                ...F
             }
-            deeperField {
-                x: b
-            }
-        },
-        deepField {
-            deeperField {
-                y
+            field {
+                ...F
             }
         }
-    }
-    """,
+        fragment F on T {
+            deepField {
+                deeperField {
+                    x: a
+                }
+                deeperField {
+                    x: b
+                }
+            },
+            deepField {
+                deeperField {
+                    y
+                }
+            }
+        }
+        """,
         [
             'Field(s) "deeperField" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(153, 201), (183, 187), (214, 262), (244, 248)]],
+        [[(197, 253), (231, 235), (270, 326), (304, 308)]],
     )
 
 
@@ -451,29 +443,29 @@ def test_reports_deep_conflict_in_nested_fragments(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        field {
-            ...F
+        {
+            field {
+                ...F
+            }
+            field {
+                ...I
+            }
         }
-        field {
-            ...I
+        fragment F on T {
+            x: a
+            ...G
         }
-    }
-    fragment F on T {
-        x: a
-        ...G
-    }
-    fragment G on T {
-        y: c
-    }
-    fragment I on T {
-        y: d
-        ...J
-    }
-    fragment J on T {
-        x: b
-    }
-    """,
+        fragment G on T {
+            y: c
+        }
+        fragment I on T {
+            y: d
+            ...J
+        }
+        fragment J on T {
+            x: b
+        }
+        """,
         [
             'Field(s) "field" conflict because subfields "y" conflict ("c" and '
             '"d" are different fields) and subfields "x" conflict ("a" and "b" '
@@ -489,17 +481,17 @@ def test_ignores_unknown_fragments(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-      field
-      ...Unknown
-      ...Known
-    }
+        {
+        field
+        ...Unknown
+        ...Known
+        }
 
-    fragment Known on T {
-      field
-      ...OtherUnknown
-    }
-    """,
+        fragment Known on T {
+        field
+        ...OtherUnknown
+        }
+        """,
     )
 
 
@@ -508,17 +500,17 @@ def test_conflicting_return_types_which_potentially_overlap(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-     {
-        someBox {
-            ...on IntBox {
-                scalar
-            }
-            ...on NonNullStringBox1 {
-                scalar
+        {
+            someBox {
+                ...on IntBox {
+                    scalar
+                }
+                ...on NonNullStringBox1 {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "scalar" conflict because they return '
             "conflicting types Int and String!. Use different aliases on the "
@@ -532,21 +524,21 @@ def test_compatible_return_shapes_on_different_return_types(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on SomeBox {
-            deepBox {
-                unrelatedField
-            }
-            }
-            ... on StringBox {
+        {
+            someBox {
+                ... on SomeBox {
                 deepBox {
                     unrelatedField
                 }
+                }
+                ... on StringBox {
+                    deepBox {
+                        unrelatedField
+                    }
+                }
             }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -555,17 +547,17 @@ def test_disallows_differing_return_types_despite_no_overlap(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                scalar
-            }
-            ... on StringBox {
-                scalar
+        {
+            someBox {
+                ... on IntBox {
+                    scalar
+                }
+                ... on StringBox {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "scalar" conflict because they return conflicting types '
             "Int and String. Use different aliases on the fields to fetch both "
@@ -579,55 +571,55 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                deepBox {
-                   ...X
+        {
+            someBox {
+                ... on IntBox {
+                    deepBox {
+                    ...X
+                    }
                 }
             }
-        }
-        someBox {
-            ... on StringBox {
-                deepBox {
+            someBox {
+                ... on StringBox {
+                    deepBox {
+                    ...Y
+                    }
+                }
+            }
+            memoed: someBox {
+                ... on IntBox {
+                    deepBox {
+                    ...X
+                    }
+                }
+            }
+            memoed: someBox {
+                ... on StringBox {
+                    deepBox {
+                    ...Y
+                    }
+                }
+            }
+            other: someBox {
+                ...X
+            }
+            other: someBox {
                 ...Y
-                }
             }
         }
-        memoed: someBox {
-            ... on IntBox {
-                deepBox {
-                   ...X
-                }
-            }
+        fragment X on SomeBox {
+            scalar
         }
-        memoed: someBox {
-            ... on StringBox {
-                deepBox {
-                   ...Y
-                }
-            }
+        fragment Y on SomeBox {
+            scalar: unrelatedField
         }
-        other: someBox {
-            ...X
-        }
-        other: someBox {
-            ...Y
-        }
-    }
-    fragment X on SomeBox {
-        scalar
-    }
-    fragment Y on SomeBox {
-        scalar: unrelatedField
-    }
-    """,
+        """,
         [
             'Field(s) "other" conflict because subfields "scalar" conflict '
             '("scalar" and "unrelatedField" are different fields). Use different '
             "aliases on the fields to fetch both if this was intentional."
         ],
-        [[(586, 629), (724, 730), (638, 681), (773, 795)]],
+        [[(697, 748), (867, 873), (761, 812), (928, 950)]],
     )
 
 
@@ -638,23 +630,23 @@ def test_disallows_differing_return_type_nullability_despite_no_overlap(
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on NonNullStringBox1 {
-                scalar
-            }
-            ... on StringBox {
-                scalar
+        {
+            someBox {
+                ... on NonNullStringBox1 {
+                    scalar
+                }
+                ... on StringBox {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "scalar" conflict because they return conflicting types '
             "String! and String. Use different aliases on the fields to fetch "
             "both if this was intentional."
         ],
-        [[(80, 86), (148, 154)]],
+        [[(96, 102), (176, 182)]],
     )
 
 
@@ -663,21 +655,21 @@ def test_disallows_differing_return_type_list_despite_no_overlap_0(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                box: listStringBox {
-                    scalar
+        {
+            someBox {
+                ... on IntBox {
+                    box: listStringBox {
+                        scalar
+                    }
                 }
-            }
-            ... on StringBox {
-                box: stringBox {
-                   scalar
+                ... on StringBox {
+                    box: stringBox {
+                    scalar
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "box" conflict because they return conflicting types '
             "[StringBox] and StringBox. Use different aliases on the fields to "
@@ -691,21 +683,21 @@ def test_disallows_differing_return_type_list_despite_no_overlap_1(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                box: stringBox {
-                   scalar
+        {
+            someBox {
+                ... on IntBox {
+                    box: stringBox {
+                    scalar
+                    }
                 }
-            }
-            ... on StringBox {
-                box: listStringBox {
-                   scalar
+                ... on StringBox {
+                    box: listStringBox {
+                    scalar
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "box" conflict because they return conflicting types '
             "StringBox and [StringBox]. Use different aliases on the fields to "
@@ -719,22 +711,22 @@ def test_disallows_differing_subfields(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                box: stringBox {
-                    val: scalar
-                    val: unrelatedField
+        {
+            someBox {
+                ... on IntBox {
+                    box: stringBox {
+                        val: scalar
+                        val: unrelatedField
+                    }
                 }
-            }
-            ... on StringBox {
-                box: stringBox {
-                   val: scalar
+                ... on StringBox {
+                    box: stringBox {
+                    val: scalar
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "val" conflict because "scalar" and "unrelatedField" are '
             "different fields. Use different aliases on the fields to fetch both "
@@ -748,21 +740,21 @@ def test_disallows_differing_deep_return_types_despite_no_overlap(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                box: stringBox {
-                   scalar
+        {
+            someBox {
+                ... on IntBox {
+                    box: stringBox {
+                    scalar
+                    }
                 }
-            }
-            ... on StringBox {
-                box: intBox {
-                   scalar
+                ... on StringBox {
+                    box: intBox {
+                    scalar
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "box" conflict because subfields "scalar" conflict '
             "(they return conflicting types String and Int). Use different "
@@ -776,17 +768,17 @@ def test_allows_non_conflicting_overlaping_types(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ... on IntBox {
-                scalar: unrelatedField
-            }
-            ... on StringBox {
-                scalar
+        {
+            someBox {
+                ... on IntBox {
+                    scalar: unrelatedField
+                }
+                ... on StringBox {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -795,17 +787,17 @@ def test_same_wrapped_scalar_return_types(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ...on NonNullStringBox1 {
-                scalar
-            }
-            ...on NonNullStringBox2 {
-                scalar
+        {
+            someBox {
+                ...on NonNullStringBox1 {
+                    scalar
+                }
+                ...on NonNullStringBox2 {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -814,13 +806,13 @@ def test_allows_inline_typeless_fragments(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    {
-        a
-        ... {
+        {
             a
+            ... {
+                a
+            }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -829,25 +821,25 @@ def test_compares_deep_types_including_list(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        connection {
-            ...edgeID
-            edges {
-                node {
-                    id: name
+        {
+            connection {
+                ...edgeID
+                edges {
+                    node {
+                        id: name
+                    }
                 }
             }
         }
-    }
 
-    fragment edgeID on Connection {
-        edges {
-            node {
-                id
+        fragment edgeID on Connection {
+            edges {
+                node {
+                    id
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Field(s) "edges" conflict because subfields "node" conflict '
             '(subfields "id" conflict ("name" and "id" are different fields)). '
@@ -862,28 +854,18 @@ def test_ignores_unknown_types(schema_2):
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
         """
-    {
-        someBox {
-            ...on UnknownType {
-                scalar
-            }
-            ...on NonNullStringBox2 {
-                scalar
+        {
+            someBox {
+                ...on UnknownType {
+                    scalar
+                }
+                ...on NonNullStringBox2 {
+                    scalar
+                }
             }
         }
-    }
-    """,
+        """,
     )
-
-
-@pytest.mark.skip("Irrelevant")
-def test_error_message_contains_hint_for_alias_conflict(schema):
-    pass
-
-
-@pytest.mark.skip("Irrelevant")
-def test_works_for_field_names_that_are_js_keywords(schema):
-    pass
 
 
 def test_does_not_infinite_loop_on_recursive_fragment(schema):
@@ -891,8 +873,8 @@ def test_does_not_infinite_loop_on_recursive_fragment(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment fragA on Human { name, relatives { name, ...fragA } }
-    """,
+        fragment fragA on Human { name, relatives { name, ...fragA } }
+        """,
     )
 
 
@@ -901,8 +883,8 @@ def test_does_not_infinite_loop_on_immediately_recursive_fragment(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment fragA on Human { name, ...fragA }
-    """,
+        fragment fragA on Human { name, ...fragA }
+        """,
     )
 
 
@@ -911,10 +893,10 @@ def test_does_not_infinite_loop_on_transitively_recursive_fragment(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment fragA on Human { name, ...fragB }
-    fragment fragB on Human { name, ...fragC }
-    fragment fragC on Human { name, ...fragA }
-    """,
+        fragment fragA on Human { name, ...fragB }
+        fragment fragB on Human { name, ...fragC }
+        fragment fragC on Human { name, ...fragA }
+        """,
     )
 
 
@@ -923,12 +905,12 @@ def test_finds_invalid_case_even_with_immediately_recursive_fragment(schema):
         OverlappingFieldsCanBeMergedChecker,
         schema,
         """
-    fragment sameAliasesWithDifferentFieldTargets on Dog {
-        ...sameAliasesWithDifferentFieldTargets
-        fido: name
-        fido: nickname
-    }
-    """,
+        fragment sameAliasesWithDifferentFieldTargets on Dog {
+            ...sameAliasesWithDifferentFieldTargets
+            fido: name
+            fido: nickname
+        }
+        """,
         [
             'Field(s) "fido" conflict because "name" and "nickname" are different '
             "fields. Use different aliases on the fields to fetch both if this "

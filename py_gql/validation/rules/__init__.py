@@ -2,22 +2,26 @@
 """ Validation rules from the spec.
 """
 
-from ..._utils import deduplicate, DefaultOrderedDict, OrderedDict
+from ..._string_utils import infer_suggestions, quoted_options_list
+from ..._utils import DefaultOrderedDict, OrderedDict, deduplicate
 from ...exc import UnknownType
 from ...lang import ast as _ast, print_ast
 from ...lang.visitor import SkipNode
 from ...schema import (
+    InterfaceType,
+    NonNullType,
+    ObjectType,
+    UnionType,
     is_composite_type,
     is_input_type,
     is_leaf_type,
     unwrap_type,
-    NonNullType,
 )
 from ..visitors import ValidationVisitor, VariablesCollector
-from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
 from .overlapping_fields_can_be_merged import (  # noqa: F401
     OverlappingFieldsCanBeMergedChecker
 )
+from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
@@ -111,7 +115,6 @@ class KnownTypeNamesChecker(ValidationVisitor):
         try:
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
-            # [TODO] Implement suggestion list?
             self.add_error('Unknown type "%s"' % str(err), node)
 
 
@@ -190,12 +193,50 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
 
         field_def = self.type_info.field
         if field_def is None:
-            # [TODO] Implement suggestion list?
-            self.add_error(
-                'Cannot query field "%s" on type "%r"'
-                % (node.name.value, self.type_info.parent_type),
-                node,
-            )
+
+            if isinstance(
+                self.type_info.parent_type, (ObjectType, InterfaceType)
+            ):
+                fieldnames = [f.name for f in self.type_info.parent_type.fields]
+                suggestions = infer_suggestions(node.name.value, fieldnames)
+                if suggestions:
+                    self.add_error(
+                        'Cannot query field "%s" on type "%r", '
+                        "did you mean %s"
+                        % (
+                            node.name.value,
+                            self.type_info.parent_type,
+                            quoted_options_list(suggestions),
+                        ),
+                        node,
+                    )
+                else:
+                    self.add_error(
+                        'Cannot query field "%s" on type "%r"'
+                        % (node.name.value, self.type_info.parent_type),
+                        node,
+                    )
+
+            elif isinstance(self.type_info.parent_type, UnionType):
+                self.add_error(
+                    'Cannot query field "%s" on type "%r", '
+                    "did you mean to use an inline fragment on %s"
+                    % (
+                        node.name.value,
+                        self.type_info.parent_type,
+                        quoted_options_list(
+                            [t.name for t in self.type_info.parent_type.types]
+                        ),
+                    ),
+                    node,
+                )
+
+            else:
+                self.add_error(
+                    'Cannot query field "%s" on type "%r"'
+                    % (node.name.value, self.type_info.parent_type),
+                    node,
+                )
 
 
 class UniqueFragmentNamesChecker(ValidationVisitor):
@@ -600,8 +641,6 @@ class KnownArgumentNamesChecker(ValidationVisitor):
     """ A GraphQL field / directive is only valid if all supplied arguments
     are defined by that field / directive. """
 
-    # [TODO] Implement suggestion lists ?
-
     def enter_field(self, node):
         field_def = self.type_info.field
         if field_def is not None:
@@ -609,11 +648,29 @@ class KnownArgumentNamesChecker(ValidationVisitor):
             for arg in node.arguments:
                 name = arg.name.value
                 if name not in known:
-                    self.add_error(
-                        'Unknown argument "%s" on field "%s" of type "%s"'
-                        % (name, field_def.name, self.type_info.parent_type),
-                        arg,
-                    )
+                    suggestions = list(infer_suggestions(name, known))
+                    if not suggestions:
+                        self.add_error(
+                            'Unknown argument "%s" on field "%s" of type "%s"'
+                            % (
+                                name,
+                                field_def.name,
+                                self.type_info.parent_type,
+                            ),
+                            arg,
+                        )
+                    else:
+                        self.add_error(
+                            'Unknown argument "%s" on field "%s" of type "%s", '
+                            "did you mean %s"
+                            % (
+                                name,
+                                field_def.name,
+                                self.type_info.parent_type,
+                                quoted_options_list(suggestions),
+                            ),
+                            arg,
+                        )
 
     def enter_directive(self, node):
         directive_def = self.type_info.directive
@@ -622,11 +679,23 @@ class KnownArgumentNamesChecker(ValidationVisitor):
             for arg in node.arguments:
                 name = arg.name.value
                 if name not in known:
-                    self.add_error(
-                        'Unknown argument "%s" on directive "@%s"'
-                        % (name, directive_def.name),
-                        arg,
-                    )
+                    suggestions = infer_suggestions(name, known)
+                    if not suggestions:
+                        self.add_error(
+                            'Unknown argument "%s" on directive "@%s"'
+                            % (name, directive_def.name),
+                            arg,
+                        )
+                    else:
+                        self.add_error(
+                            'Unknown argument "%s" on directive "@%s", did you mean %s'
+                            % (
+                                name,
+                                directive_def.name,
+                                quoted_options_list(suggestions),
+                            ),
+                            arg,
+                        )
 
 
 class UniqueArgumentNamesChecker(ValidationVisitor):
@@ -709,9 +778,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
 
                     var_default = vardef.default_value
 
-                    if (
-                        isinstance(input_type, NonNullType) and
-                        not isinstance(var_type, NonNullType)
+                    if isinstance(input_type, NonNullType) and not isinstance(
+                        var_type, NonNullType
                     ):
                         non_null_var_default = (
                             var_default is not None

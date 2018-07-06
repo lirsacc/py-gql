@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """ ported from graphql-js """
 
-from py_gql._string_utils import parse_block_string, wrapped_lines
+import pytest
+from py_gql._string_utils import parse_block_string, wrapped_lines, levenshtein
 
 
 def test_parse_block_string_removes_uniform_indentation_from_a_string():
@@ -77,7 +78,13 @@ def test_parse_block_string_does_not_alter_trailing_spaces():
     )
 
     assert parse_block_string(raw_value) == "\n".join(
-        ["Hello,     ", "  World!   ", "           ", "Yours,     ", "  GraphQL. "]
+        [
+            "Hello,     ",
+            "  World!   ",
+            "           ",
+            "Yours,     ",
+            "  GraphQL. ",
+        ]
     )
 
 
@@ -102,3 +109,40 @@ def test_wrapped_lines():
         "and it should also wrap around dashes like this-",
         "kind-of-token.",
     ]
+
+
+@pytest.mark.parametrize(
+    "a,b,expected",
+    [
+        ("", "", 0),
+        ("a", "", 1),
+        ("", "a", 1),
+        ("abc", "", 3),
+        ("", "abc", 3),
+        ("", "", 0),
+        ("a", "a", 0),
+        ("abc", "abc", 0),
+        ("", "a", 1),
+        ("a", "ab", 1),
+        ("b", "ab", 1),
+        ("ac", "abc", 1),
+        ("abcdefg", "xabxcdxxefxgx", 6),
+        ("a", "", 1),
+        ("ab", "a", 1),
+        ("ab", "b", 1),
+        ("abc", "ac", 1),
+        ("xabxcdxxefxgx", "abcdefg", 6),
+        ("a", "b", 1),
+        ("ab", "ac", 1),
+        ("ac", "bc", 1),
+        ("abc", "axc", 1),
+        ("xabxcdxxefxgx", "1ab2cd34ef5g6", 6),
+        ("example", "samples", 3),
+        ("sturgeon", "urgently", 6),
+        ("levenshtein", "frankenstein", 6),
+        ("distance", "difference", 5),
+        ("java was neat", "scala is great", 7),
+    ],
+)
+def test_levenshtein(a, b, expected):
+    assert levenshtein(a, b) == expected

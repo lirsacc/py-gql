@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Test specified rule in isolation. """
 
-# Tests were adapted from the one in the GraphQLJS reference implementation,
-# as our version exits early not all of the expected errors are aplicable but
-# they conserved as comments for reference.
-# Tests related to suggestion list are kept for reference but skipped as this
-# feature is not implemented.
-
-import pytest
-
 from py_gql.validation.rules import NoUndefinedVariablesChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -19,10 +11,10 @@ def test_all_variables_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        field(a: $a, b: $b, c: $c)
-    }
-    """,
+        query Foo($a: String, $b: String, $c: String) {
+            field(a: $a, b: $b, c: $c)
+        }
+        """,
     )
 
 
@@ -31,14 +23,14 @@ def test_all_variables_deeply_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        field(a: $a) {
-            field(b: $b) {
-                field(c: $c)
+        query Foo($a: String, $b: String, $c: String) {
+            field(a: $a) {
+                field(b: $b) {
+                    field(c: $c)
+                }
             }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -47,18 +39,18 @@ def test_all_variables_deeply_in_inline_fragments_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        ... on Type {
-            field(a: $a) {
-                field(b: $b) {
-                    ... on Type {
-                       field(c: $c)
+        query Foo($a: String, $b: String, $c: String) {
+            ... on Type {
+                field(a: $a) {
+                    field(b: $b) {
+                        ... on Type {
+                        field(c: $c)
+                        }
                     }
                 }
             }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -67,26 +59,26 @@ def test_all_variables_in_fragments_deeply_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        ...FragA
-    }
-
-    fragment FragA on Type {
-        field(a: $a) {
-            ...FragB
+        query Foo($a: String, $b: String, $c: String) {
+            ...FragA
         }
-    }
 
-    fragment FragB on Type {
-        field(b: $b) {
-            ...FragC
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragB
+            }
         }
-    }
 
-    fragment FragC on Type {
-        field(c: $c)
-    }
-    """,
+        fragment FragB on Type {
+            field(b: $b) {
+                ...FragC
+            }
+        }
+
+        fragment FragC on Type {
+            field(c: $c)
+        }
+        """,
     )
 
 
@@ -95,16 +87,16 @@ def test_variable_within_single_fragment_defined_in_multiple_operations(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String) {
-        ...FragA
-    }
-    query Bar($a: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    """,
+        query Foo($a: String) {
+            ...FragA
+        }
+        query Bar($a: String) {
+            ...FragA
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        """,
     )
 
 
@@ -113,19 +105,19 @@ def test_variable_within_fragments_defined_in_operations(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String) {
-        ...FragA
-    }
-    query Bar($b: String) {
-        ...FragB
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
+        query Foo($a: String) {
+            ...FragA
+        }
+        query Bar($b: String) {
+            ...FragB
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
     )
 
 
@@ -134,16 +126,16 @@ def test_variable_within_recursive_fragment_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String) {
-        ...FragA
-    }
-
-    fragment FragA on Type {
-        field(a: $a) {
+        query Foo($a: String) {
             ...FragA
         }
-    }
-    """,
+
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragA
+            }
+        }
+        """,
         [],
     )
 
@@ -153,12 +145,12 @@ def test_variable_not_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        field(a: $a, b: $b, c: $c, d: $d)
-    }
-    """,
+        query Foo($a: String, $b: String, $c: String) {
+            field(a: $a, b: $b, c: $c, d: $d)
+        }
+        """,
         ['Variable "$d" is not defined on "Foo" operation'],
-        [(91, 93)],
+        [(99, 101)],
     )
 
 
@@ -167,12 +159,12 @@ def test_variable_not_defined_by_unnamed_query(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    {
-        field(a: $a)
-    }
-    """,
+        {
+            field(a: $a)
+        }
+        """,
         ['Variable "$a" is not defined on anonymous operation'],
-        [(24, 26)],
+        [(32, 34)],
     )
 
 
@@ -181,10 +173,10 @@ def test_multiple_variables_not_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        field(a: $a, b: $b, c: $c)
-    }
-    """,
+        query Foo($b: String) {
+            field(a: $a, b: $b, c: $c)
+        }
+        """,
         [
             'Variable "$a" is not defined on "Foo" operation',
             'Variable "$c" is not defined on "Foo" operation',
@@ -197,13 +189,13 @@ def test_variable_in_fragment_not_defined_by_unnamed_query(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    """,
+        {
+            ...FragA
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        """,
         [
             'Variable "$a" from fragment "FragA" is not defined on anonymous'
             " operation"
@@ -216,23 +208,23 @@ def test_variable_in_fragment_not_defined_by_operation(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a) {
-            ...FragB
+        query Foo($a: String, $b: String) {
+            ...FragA
         }
-    }
-    fragment FragB on Type {
-        field(b: $b) {
-            ...FragC
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragB
+            }
         }
-    }
-    fragment FragC on Type {
-        field(c: $c)
-    }
-    """,
+        fragment FragB on Type {
+            field(b: $b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            field(c: $c)
+        }
+        """,
         [
             'Variable "$c" from fragment "FragC" is not defined on "Foo" operation'
         ],
@@ -244,23 +236,23 @@ def test_multiple_variables_in_fragments_not_defined(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a) {
-            ...FragB
+        query Foo($b: String) {
+            ...FragA
         }
-    }
-    fragment FragB on Type {
-        field(b: $b) {
-            ...FragC
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragB
+            }
         }
-    }
-    fragment FragC on Type {
-        field(c: $c)
-    }
-    """,
+        fragment FragB on Type {
+            field(b: $b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            field(c: $c)
+        }
+        """,
         [
             'Variable "$a" from fragment "FragA" is not defined on "Foo" operation',
             'Variable "$c" from fragment "FragC" is not defined on "Foo" operation',
@@ -273,16 +265,16 @@ def test_single_variable_in_fragment_not_defined_by_multiple_operations(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragAB
-    }
-    query Bar($a: String) {
-        ...FragAB
-    }
-    fragment FragAB on Type {
-        field(a: $a, b: $b)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragAB
+        }
+        query Bar($a: String) {
+            ...FragAB
+        }
+        fragment FragAB on Type {
+            field(a: $a, b: $b)
+        }
+        """,
         [
             'Variable "$a" from fragment "FragAB" is not defined on "Foo" '
             "operation",
@@ -297,19 +289,19 @@ def test_variables_in_fragment_not_defined_by_multiple_operations(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragA
-    }
-    query Bar($a: String) {
-        ...FragB
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragA
+        }
+        query Bar($a: String) {
+            ...FragB
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
         [
             'Variable "$a" from fragment "FragA" is not defined on "Foo" operation',
             'Variable "$b" from fragment "FragB" is not defined on "Bar" operation',
@@ -322,19 +314,19 @@ def test_variable_in_fragment_used_by_other_operation(schema):
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragA
-    }
-    query Bar($a: String) {
-        ...FragB
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragA
+        }
+        query Bar($a: String) {
+            ...FragB
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
         [
             'Variable "$a" from fragment "FragA" is not defined on "Foo" operation',
             'Variable "$b" from fragment "FragB" is not defined on "Bar" operation',
@@ -342,28 +334,30 @@ def test_variable_in_fragment_used_by_other_operation(schema):
     )
 
 
-@pytest.mark.skip("Irrelevant")
 def test_multiple_undefined_variables_produce_multiple_errors(schema):
     run_test(
         NoUndefinedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragAB
-    }
-    query Bar($a: String) {
-        ...FragAB
-    }
-    fragment FragAB on Type {
-        field1(a: $a, b: $b)
-        ...FragC
-        field3(a: $a, b: $b)
-    }
-    fragment FragC on Type {
-        field2(c: $c)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragAB
+        }
+        query Bar($a: String) {
+            ...FragAB
+        }
+        fragment FragAB on Type {
+            field1(a: $a, b: $b)
+            ...FragC
+            field3(a: $a, b: $b)
+        }
+        fragment FragC on Type {
+            field2(c: $c)
+        }
+        """,
         [
-            'Variable "$a" from fragment "FragA" is not defined on "Foo" operation'
+            'Variable "$a" from fragment "FragAB" is not defined on "Foo" operation',
+            'Variable "$c" from fragment "FragC" is not defined on "Foo" operation',
+            'Variable "$b" from fragment "FragAB" is not defined on "Bar" operation',
+            'Variable "$c" from fragment "FragC" is not defined on "Bar" operation',
         ],
     )

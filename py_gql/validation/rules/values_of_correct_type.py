@@ -4,22 +4,27 @@
 
 from ...exc import ScalarParsingError, UnknownEnumValue
 from ...lang.visitor import SkipNode
-from ...schema import EnumType, InputObjectType, NonNullType, ScalarType, unwrap_type
+from ..._string_utils import infer_suggestions, quoted_options_list
+from ...schema import (
+    EnumType,
+    InputObjectType,
+    NonNullType,
+    ScalarType,
+    unwrap_type,
+)
 from ...schema.scalars import SPECIFIED_SCALAR_TYPES
 from ..visitors import ValidationVisitor
 
 
 class ValuesOfCorrectTypeChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all value literals are of the type
-    expected at their position. """
+    expected at their position.
 
-    # TODO: Implement suggestion lists ?
+    .. warning::
 
-    # WARN: This is very (too ?) tightly coupled with the TypeInfoVisitor
-    # implementation
-
-    # WARN: This mostly ignores cases where the input type is not known, which
-    # should be caught by other validators.
+        This check ignores cases where the input type is not known, which
+        should be caught by other validators.
+    """
 
     def _report_bad_value(self, input_type, node, extra=None):
         msg = "Expected type %s, found %s" % (input_type, node)
@@ -42,7 +47,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 is_custom = named_type not in SPECIFIED_SCALAR_TYPES
                 extra = str(err) if is_custom else None
                 # Preserve message for custom scalar types.
-                self._report_bad_value(input_type, node, extra)
+                self._report_bad_value(input_type, node, extra=extra)
 
     enter_int_value = _check_scalar
     enter_float_value = _check_scalar
@@ -86,7 +91,22 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         parent_type = unwrap_type(self.type_info.parent_input_type)
         field_type = self.type_info.input_type
         if field_type is None and isinstance(parent_type, InputObjectType):
-            self.add_error(
-                "Field %s is not defined by type %s" % (node.name.value, parent_type),
-                node,
+            suggestions = infer_suggestions(
+                node.name.value, [f.name for f in parent_type.fields]
             )
+            if suggestions:
+                self.add_error(
+                    "Field %s is not defined by type %s, did you mean %s"
+                    % (
+                        node.name.value,
+                        parent_type,
+                        quoted_options_list(suggestions),
+                    ),
+                    node,
+                )
+            else:
+                self.add_error(
+                    "Field %s is not defined by type %s"
+                    % (node.name.value, parent_type),
+                    node,
+                )

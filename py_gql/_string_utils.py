@@ -84,6 +84,9 @@ def parse_block_string(
     return "\n".join(lines)
 
 
+dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
+
+
 def index_to_loc(body, position):
     r""" Get the (lineno, col) tuple from a zero-indexed offset.
 
@@ -262,4 +265,87 @@ def wrapped_lines(lines, max_len, word_boundaries=" -_"):
             yield wrapped
 
 
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
+def levenshtein(s1, s2):
+    """ Compute the Levenshtein edit distance between 2 strings.
+
+    :type s1: str
+    :param s1:
+
+    :type s2: str
+    :param s2:
+
+    :rtype: int
+    """
+    if len(s1) < len(s2):
+        return levenshtein(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+
+def infer_suggestions(candidate, options, distance=levenshtein):
+    """ Extract the most similar entries to an input string from multiple options
+
+    :type candidate: str
+    :param candidate:
+
+    :type options: List[str]
+    :param options:
+
+    :type distance: (str, str) -> int
+    :param distance:
+
+    :rtype: List[str]
+    """
+    distances = {}
+    half = len(candidate) / 2
+    for option in options:
+        distance = levenshtein(candidate, option)
+        threshold = max(half, len(option) / 2, 1)
+        if distance <= threshold:
+            distances[option] = distance
+    return sorted(distances.keys(), key=distances.get)
+
+
+def quoted_options_list(options):
+    """ Quote a list of strings
+
+    :type options: List[str]
+    :param options:
+
+    :rtype: str
+
+    >>> quoted_options_list([])
+    ''
+
+    >>> quoted_options_list(['foo'])
+    '"foo"'
+
+    >>> quoted_options_list(['foo', 'bar'])
+    '"foo" or "bar"'
+
+    >>> quoted_options_list(['foo', 'bar', 'baz'])
+    '"foo", "bar" or "baz"'
+    """
+    if not options:
+        return ""
+
+    if len(options) == 1:
+        return '"%s"' % options[0]
+
+    return "%s or %s" % (
+        ", ".join(('"%s"' % option for option in options[:-1])),
+        '"%s"' % options[-1],
+    )
