@@ -97,7 +97,6 @@ def fmt(ctx, verbose=False, files=None):
         ctx.run(
             "black --line-length=80 py_gql/**/*.py tests/**/*/*.py", echo=True
         )
-        ctx.run("black py_gql/**/*.py tests/**/*/*.py", echo=True)
 
 
 @invoke.task
