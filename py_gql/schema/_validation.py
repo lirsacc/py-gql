@@ -43,7 +43,8 @@ def validate_schema(schema):
     """
     for type_ in schema.types.values():
         _assert(
-            type_ and hasattr(type_, "name"), "Expected named type but got %s" % type_
+            type_ and hasattr(type_, "name"),
+            "Expected named type but got %s" % type_,
         )
         _assert(
             is_introspection_type(type_)
@@ -110,7 +111,9 @@ def _is_valid_name(name):
     >>> _is_valid_name('42')
     False
     """
-    return bool(name and not name.startswith("__") and VALID_NAME_RE.match(name))
+    return bool(
+        name and not name.startswith("__") and VALID_NAME_RE.match(name)
+    )
 
 
 def _assert_valid_name(name):
@@ -143,7 +146,8 @@ def validate_root_types(schema):
     if schema.subscription_type is not None:
         _assert(
             isinstance(schema.subscription_type, ObjectType),
-            'Subscription must be ObjectType but got "%s"' % schema.subscription_type,
+            'Subscription must be ObjectType but got "%s"'
+            % schema.subscription_type,
         )
         _assert_valid_name(schema.subscription_type.name)
 
@@ -222,14 +226,16 @@ def validate_fields(schema, type_):
 
             _assert(
                 isinstance(arg, Argument),
-                'Expected Argument in "%s.%s" but got "%s"' % (type_, field.name, arg),
+                'Expected Argument in "%s.%s" but got "%s"'
+                % (type_, field.name, arg),
             )
 
             _assert_valid_name(arg.name)
 
             _assert(
                 arg.name not in argnames,
-                'Duplicate argument "%s" on "%s.%s"' % (arg.name, type_, field.name),
+                'Duplicate argument "%s" on "%s.%s"'
+                % (arg.name, type_, field.name),
             )
 
             _assert(
@@ -306,7 +312,13 @@ def validate_implementation(schema, type_, interface):
                 object_arg is not None,
                 'Interface field argument "%s.%s.%s" is not provided by '
                 '"%s.%s"'
-                % (interface.name, field.name, arg.name, type_.name, field.name),
+                % (
+                    interface.name,
+                    field.name,
+                    arg.name,
+                    type_.name,
+                    field.name,
+                ),
             )
 
             # TODO: Should this use is_subtype ?
@@ -353,7 +365,8 @@ def validate_union_members(schema, union_type):
         union_type (py_gql.schema.UnionType):
     """
     _assert(
-        union_type.types, 'UnionType "%s" must at least define one member' % union_type
+        union_type.types,
+        'UnionType "%s" must at least define one member' % union_type,
     )
 
     member_types = set()
@@ -381,7 +394,8 @@ def validate_enum_values(schema, enum_type):
         enum_type (py_gql.schema.EnumType)
     """
     _assert(
-        enum_type.values, 'EnumType "%s" must at least define one value' % enum_type
+        enum_type.values,
+        'EnumType "%s" must at least define one value' % enum_type,
     )
 
     for enum_value in enum_type.values.values():
@@ -402,7 +416,8 @@ def validate_input_fields(schema, input_object):
         union_type (py_gql.schema.InputObjectType)
     """
     _assert(
-        input_object.fields, 'Type "%s" must define at least one field' % input_object
+        input_object.fields,
+        'Type "%s" must define at least one field' % input_object,
     )
 
     fieldnames = set()

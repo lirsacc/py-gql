@@ -16,7 +16,11 @@ from py_gql.schema import (
     nullable_type,
     unwrap_type,
 )
-from py_gql.schema.introspection import schema_field, type_field, type_name_field
+from py_gql.schema.introspection import (
+    schema_field,
+    type_field,
+    type_name_field,
+)
 
 
 def _peek(lst, count=1, default=None):
@@ -130,7 +134,11 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def _get_field_def(self, node):
         parent_type = self.parent_type
-        return _get_field_def(self._schema, parent_type, node) if parent_type else None
+        return (
+            _get_field_def(self._schema, parent_type, node)
+            if parent_type
+            else None
+        )
 
     def _type_from_ast(self, type_node):
         try:
@@ -173,7 +181,9 @@ class TypeInfoVisitor(DispatchingVisitor):
             "mutation": self._schema.mutation_type,
             "subscription": self._schema.subscription_type,
         }.get(node.operation, None)
-        self._type_stack.append(type_ if isinstance(type_, ObjectType) else None)
+        self._type_stack.append(
+            type_ if isinstance(type_, ObjectType) else None
+        )
 
     def leave_operation_definition(self, node):
         self._type_stack.pop()
@@ -189,7 +199,9 @@ class TypeInfoVisitor(DispatchingVisitor):
     def enter_inline_fragment(self, node):
         if node.type_condition:
             self._type_stack.append(
-                _or_none(self._type_from_ast(node.type_condition), is_output_type)
+                _or_none(
+                    self._type_from_ast(node.type_condition), is_output_type
+                )
             )
         else:
             self._type_stack.append(_or_none(self.type, is_output_type))
@@ -227,7 +239,9 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def enter_list_value(self, node):
         list_type = nullable_type(self.input_type)
-        item_type = unwrap_type(list_type) if isinstance(list_type, ListType) else None
+        item_type = (
+            unwrap_type(list_type) if isinstance(list_type, ListType) else None
+        )
         self._input_type_stack.append(_or_none(item_type, is_input_type))
         # List positions never have a default value.
         self._input_value_def_stack.append(None)
@@ -242,7 +256,9 @@ class TypeInfoVisitor(DispatchingVisitor):
             field_def = find_one(object_type.fields, lambda f: f.name == name)
             self._input_value_def_stack.append(field_def)
             self._input_type_stack.append(
-                field_def.type if field_def and is_input_type(field_def.type) else None
+                field_def.type
+                if field_def and is_input_type(field_def.type)
+                else None
             )
         else:
             self._input_type_stack.append(None)

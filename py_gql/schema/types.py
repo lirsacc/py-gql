@@ -117,7 +117,7 @@ class ListType(WrappingType):
             Source node used when building type from the SDL
 
     Args:
-        type_ (Union[py_gql.schema.Type, Callable[[], py_gql.schema.Type]]):
+        type_ (Lazy[py_gql.schema.Type]):
             Type or callable returning the type (lazy / cyclic definitions).
 
         node (Optional[py_gql.lang.ast.ListType]):

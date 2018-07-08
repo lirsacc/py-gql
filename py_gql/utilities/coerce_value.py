@@ -97,7 +97,9 @@ def _coerce_list_value(value, type_, node, path):
         for index, entry in enumerate(value):
             try:
                 coerced.append(
-                    coerce_value(entry, type_.type, node=node, path=path + [index])
+                    coerce_value(
+                        entry, type_.type, node=node, path=path + [index]
+                    )
                 )
             except MultiCoercionError as err:
                 for child_err in err.errors:
@@ -118,7 +120,9 @@ def _coerce_list_value(value, type_, node, path):
 def _coerce_input_object(value, type_, node, path):
     if not isinstance(value, dict):
         raise CoercionError(
-            "Expected type %s to be an object" % type_, node, value_path=_path(path)
+            "Expected type %s to be an object" % type_,
+            node,
+            value_path=_path(path),
         )
 
     coerced = {}
@@ -221,7 +225,8 @@ def coerce_argument_values(definition, node, variables=None):
                 except InvalidValue as err:
                     raise CoercionError(
                         'Argument "%s" of type "%s" was provided invalid value '
-                        "%s (%s)" % (argname, argtype, print_ast(arg.value), str(err)),
+                        "%s (%s)"
+                        % (argname, argtype, print_ast(arg.value), str(err)),
                         [node],
                     )
 
@@ -247,7 +252,9 @@ def directive_arguments(definition, node, variables=None):
             if any directive argument value fails to coerce, required argument
             is missing, etc.
     """
-    directive = find_one(node.directives, lambda d: d.name.value == definition.name)
+    directive = find_one(
+        node.directives, lambda d: d.name.value == definition.name
+    )
 
     return (
         coerce_argument_values(definition, directive, variables)
@@ -299,7 +306,8 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
             errors.append(
                 VariableCoercionError(
                     'Variable "$%s" expected value of type "%s" which cannot '
-                    "be used as an input type." % (name, print_ast(var_def.type)),
+                    "be used as an input type."
+                    % (name, print_ast(var_def.type)),
                     [var_def],
                 )
             )
@@ -308,7 +316,9 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
         if name not in variables:
             if var_def.default_value is not None:
                 try:
-                    coerced[name] = value_from_ast(var_def.default_value, var_type)
+                    coerced[name] = value_from_ast(
+                        var_def.default_value, var_type
+                    )
                 except InvalidValue as err:
                     errors.append(
                         VariableCoercionError(
@@ -343,7 +353,11 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
                         errors.append(
                             VariableCoercionError(
                                 'Variable "$%s" got invalid value %s (%s)'
-                                % (name, json.dumps(value, sort_keys=True), child_err),
+                                % (
+                                    name,
+                                    json.dumps(value, sort_keys=True),
+                                    child_err,
+                                ),
                                 [var_def],
                             )
                         )

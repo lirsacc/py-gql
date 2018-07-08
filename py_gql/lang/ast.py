@@ -49,7 +49,9 @@ class Node(object):
         return self.cls(**{k: getattr(self, k) for k in self.__slots__})
 
     def __deepcopy__(self):
-        return self.cls(**{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__})
+        return self.cls(
+            **{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__}
+        )
 
     def to_dict(self):
         """ Convert the current node to a JSON serializable ``dict`` using
@@ -134,7 +136,12 @@ class VariableDefinition(Node):
     __slots__ = ("source", "loc", "variable", "type", "default_value")
 
     def __init__(
-        self, variable=None, type=None, default_value=None, source=None, loc=None
+        self,
+        variable=None,
+        type=None,
+        default_value=None,
+        source=None,
+        loc=None,
     ):
         #: py_gql.lang.ast.Variable:
         self.variable = variable
@@ -242,7 +249,13 @@ class FragmentSpread(Selection):
 
 
 class InlineFragment(Selection):
-    __slots__ = ("source", "loc", "type_condition", "directives", "selection_set")
+    __slots__ = (
+        "source",
+        "loc",
+        "type_condition",
+        "directives",
+        "selection_set",
+    )
 
     def __init__(
         self,
@@ -496,7 +509,9 @@ class TypeSystemDefinition(Definition):
 class SchemaDefinition(TypeSystemDefinition):
     __slots__ = ("source", "loc", "directives", "operation_types")
 
-    def __init__(self, directives=None, operation_types=None, source=None, loc=None):
+    def __init__(
+        self, directives=None, operation_types=None, source=None, loc=None
+    ):
         #: List[py_gql.lang.ast.Directives]:
         self.directives = directives or []
         #: List[py_gql.lang.ast.OperationTypeDefinition]:
@@ -529,7 +544,12 @@ class ScalarTypeDefinition(TypeDefinition):
     __slots__ = ("source", "loc", "description", "name", "directives")
 
     def __init__(
-        self, name=None, directives=None, source=None, loc=None, description=None
+        self,
+        name=None,
+        directives=None,
+        source=None,
+        loc=None,
+        description=None,
     ):
         #: py_gql.lang.ast.Name:
         self.name = name
@@ -736,7 +756,12 @@ class EnumValueDefinition(Node):
     __slots__ = ("source", "loc", "description", "name", "directives")
 
     def __init__(
-        self, name=None, directives=None, source=None, loc=None, description=None
+        self,
+        name=None,
+        directives=None,
+        source=None,
+        loc=None,
+        description=None,
     ):
         #: py_gql.lang.ast.Name:
         self.name = name
@@ -824,7 +849,9 @@ class ObjectTypeExtension(TypeExtension):
 class InterfaceTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "fields")
 
-    def __init__(self, name=None, directives=None, fields=None, source=None, loc=None):
+    def __init__(
+        self, name=None, directives=None, fields=None, source=None, loc=None
+    ):
         #: py_gql.lang.ast.Name:
         self.name = name
         #: List[py_gql.lang.ast.Directives]:
@@ -840,7 +867,9 @@ class InterfaceTypeExtension(TypeExtension):
 class UnionTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "types")
 
-    def __init__(self, name=None, directives=None, types=None, source=None, loc=None):
+    def __init__(
+        self, name=None, directives=None, types=None, source=None, loc=None
+    ):
         #: py_gql.lang.ast.Name:
         self.name = name
         #: List[py_gql.lang.ast.Directives]:
@@ -856,7 +885,9 @@ class UnionTypeExtension(TypeExtension):
 class EnumTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "values")
 
-    def __init__(self, name=None, directives=None, values=None, source=None, loc=None):
+    def __init__(
+        self, name=None, directives=None, values=None, source=None, loc=None
+    ):
         #: py_gql.lang.ast.Name:
         self.name = name
         #: List[py_gql.lang.ast.Directives]:
@@ -872,7 +903,9 @@ class EnumTypeExtension(TypeExtension):
 class InputObjectTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "fields")
 
-    def __init__(self, name=None, directives=None, fields=None, source=None, loc=None):
+    def __init__(
+        self, name=None, directives=None, fields=None, source=None, loc=None
+    ):
         #: py_gql.lang.ast.Name:
         self.name = name
         #: List[py_gql.lang.ast.Directives]:
@@ -886,7 +919,14 @@ class InputObjectTypeExtension(TypeExtension):
 
 
 class DirectiveDefinition(TypeSystemDefinition):
-    __slots__ = ("source", "loc", "description", "name", "arguments", "locations")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "arguments",
+        "locations",
+    )
 
     def __init__(
         self,

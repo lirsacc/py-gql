@@ -74,14 +74,18 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
             "endTime": _rfc3339(self.end),
             "duration": _nanoseconds(self.end - self.start),
             "execution": (
-                {"resolvers": list(self.fields.values())} if self.fields else None
+                {"resolvers": list(self.fields.values())}
+                if self.fields
+                else None
             ),
             "validation": (
                 {
                     "duration": _nanoseconds(
                         self.validation_end - self.validation_start
                     ),
-                    "startOffset": _nanoseconds(self.validation_start - self.start),
+                    "startOffset": _nanoseconds(
+                        self.validation_start - self.start
+                    ),
                 }
                 if self.validation_start is not None
                 else None
@@ -111,7 +115,9 @@ class SlowQueryLog(GraphQLTracer):
     and override :meth:`format_document` and :meth:`format_variables`
     """
 
-    def __init__(self, threshold, logger=None, level=logging.WARNING, format_str=None):
+    def __init__(
+        self, threshold, logger=None, level=logging.WARNING, format_str=None
+    ):
         """
         :type threshold: int
         :param threshold: Slow threshold in ms
@@ -127,7 +133,9 @@ class SlowQueryLog(GraphQLTracer):
         """
         self._threshold = threshold
         self._logger = (
-            logger if logger is not None else logging.getLogger("py_gql.slow_query_log")
+            logger
+            if logger is not None
+            else logging.getLogger("py_gql.slow_query_log")
         )
         self._level = level
         self._format_str = format_str or _SLOW_LOG_FORMAT_STR

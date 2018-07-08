@@ -3,7 +3,13 @@
 
 from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
-from ..schema import EnumType, InputObjectType, ListType, NonNullType, ScalarType
+from ..schema import (
+    EnumType,
+    InputObjectType,
+    ListType,
+    NonNullType,
+    ScalarType,
+)
 
 
 def value_from_ast(node, type_, variables=None):
@@ -58,11 +64,15 @@ def value_from_ast(node, type_, variables=None):
         if kind != _ast.ListValue:
             return [value_from_ast(node, type_.type, variables)]
 
-        return [value_from_ast(item, type_.type, variables) for item in node.values]
+        return [
+            value_from_ast(item, type_.type, variables) for item in node.values
+        ]
 
     if isinstance(type_, InputObjectType):
         if kind != _ast.ObjectValue:
-            raise InvalidValue("Expected Object but got %s" % kind.__name__, [node])
+            raise InvalidValue(
+                "Expected Object but got %s" % kind.__name__, [node]
+            )
         return _extract_input_object(node, type_, variables)
 
     if isinstance(type_, EnumType):

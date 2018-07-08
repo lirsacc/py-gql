@@ -32,7 +32,8 @@ def untyped_value_from_ast(node, variables=None):
         return node.value
     elif kind == _ast.ListValue:
         return [
-            untyped_value_from_ast(item, variables=variables) for item in node.values
+            untyped_value_from_ast(item, variables=variables)
+            for item in node.values
         ]
     elif kind == _ast.ObjectValue:
         return {

@@ -78,7 +78,9 @@ def all_(futures):
                 return
 
             if not future.done():
-                raise RuntimeError("Future callback called while future is not done.")
+                raise RuntimeError(
+                    "Future callback called while future is not done."
+                )
 
             try:
                 res = future.result()
@@ -135,7 +137,9 @@ def chain(leader, *funcs):
 
     def callback(future):
         if not future.done():
-            raise RuntimeError("Future callback called while future is not done.")
+            raise RuntimeError(
+                "Future callback called while future is not done."
+            )
 
         try:
             res = future.result()
@@ -174,7 +178,9 @@ def unwrap(future):
 
     def callback(future):
         if not future.done():
-            raise RuntimeError("Future callback called while future is not done.")
+            raise RuntimeError(
+                "Future callback called while future is not done."
+            )
 
         try:
             res = future.result()
@@ -232,7 +238,9 @@ def except_(future, exc_cls=(Exception,), map_=lambda x: None):
     def callback(future):
 
         if not future.done():
-            raise RuntimeError("Future callback called while future is not done.")
+            raise RuntimeError(
+                "Future callback called while future is not done."
+            )
 
         try:
             res = future.result()

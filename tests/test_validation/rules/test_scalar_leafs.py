@@ -66,7 +66,10 @@ def test_scalar_selection_not_allowed_on_boolean(schema):
     fragment scalarSelectionsNotAllowedOnBoolean on Dog {
         barks { sinceWhen }
     }""",
-        ['Field "barks" cannot have a selection as type "Boolean" ' "has no fields"],
+        [
+            'Field "barks" cannot have a selection as type "Boolean" '
+            "has no fields"
+        ],
     )
 
 
@@ -108,7 +111,10 @@ def test_scalar_selection_not_allowed_with_directives(schema):
     fragment scalarSelectionsNotAllowedWithDirectives on Dog {
         name @include(if: true) { isAlsoHumanName }
     }""",
-        ['Field "name" cannot have a selection as type "String" ' "has no fields"],
+        [
+            'Field "name" cannot have a selection as type "String" '
+            "has no fields"
+        ],
     )
 
 

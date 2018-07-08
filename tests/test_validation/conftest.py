@@ -64,11 +64,19 @@ def schema():
             Field("nickname", String),
             Field("barkVolume", Int),
             Field("barks", Boolean),
-            Field("doesKnowCommand", Boolean, [Argument("dogCommand", DogCommand)]),
             Field(
-                "isHousetrained", Boolean, [Argument("atOtherHomes", Boolean, True)]
+                "doesKnowCommand", Boolean, [Argument("dogCommand", DogCommand)]
             ),
-            Field("isAtLocation", Boolean, [Argument("x", Int), Argument("y", Int)]),
+            Field(
+                "isHousetrained",
+                Boolean,
+                [Argument("atOtherHomes", Boolean, True)],
+            ),
+            Field(
+                "isAtLocation",
+                Boolean,
+                [Argument("x", Int), Argument("y", Int)],
+            ),
         ],
         [Being, Pet, Canine],
     )
@@ -150,13 +158,24 @@ def schema():
             Field(
                 "stringListNonNullArgField",
                 String,
-                [Argument("stringListNonNullArg", ListType(NonNullType(String)))],
+                [
+                    Argument(
+                        "stringListNonNullArg", ListType(NonNullType(String))
+                    )
+                ],
             ),
-            Field("complexArgField", String, [Argument("complexArg", ComplexInput)]),
+            Field(
+                "complexArgField",
+                String,
+                [Argument("complexArg", ComplexInput)],
+            ),
             Field(
                 "multipleReqs",
                 String,
-                [Argument("req1", NonNullType(Int)), Argument("req2", NonNullType(Int))],
+                [
+                    Argument("req1", NonNullType(Int)),
+                    Argument("req2", NonNullType(Int)),
+                ],
             ),
             Field(
                 "nonNullFieldWithDefault",

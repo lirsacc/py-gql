@@ -225,7 +225,9 @@ def test_variable_in_fragment_not_defined_by_operation(schema):
             field(c: $c)
         }
         """,
-        ['Variable "$c" from fragment "FragC" is not defined on "Foo" operation'],
+        [
+            'Variable "$c" from fragment "FragC" is not defined on "Foo" operation'
+        ],
     )
 
 
@@ -274,8 +276,10 @@ def test_single_variable_in_fragment_not_defined_by_multiple_operations(schema):
         }
         """,
         [
-            'Variable "$a" from fragment "FragAB" is not defined on "Foo" ' "operation",
-            'Variable "$b" from fragment "FragAB" is not defined on "Bar" ' "operation",
+            'Variable "$a" from fragment "FragAB" is not defined on "Foo" '
+            "operation",
+            'Variable "$b" from fragment "FragAB" is not defined on "Bar" '
+            "operation",
         ],
     )
 

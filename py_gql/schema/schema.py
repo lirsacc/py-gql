@@ -128,10 +128,14 @@ class Schema(object):
 
     def _rebuild_caches(self):
         self.types = {
-            name: t for name, t in self.type_map.items() if not isinstance(t, Directive)
+            name: t
+            for name, t in self.type_map.items()
+            if not isinstance(t, Directive)
         }
         self.directives = {
-            name: t for name, t in self.type_map.items() if isinstance(t, Directive)
+            name: t
+            for name, t in self.type_map.items()
+            if isinstance(t, Directive)
         }
         self.implementations = defaultdict(list)
         for type_ in self.types.values():
@@ -215,7 +219,8 @@ class Schema(object):
         """ Get the possible implementations of an abstract type.
 
         Args:
-            type_ (Union[py_gql.schema.types.UnionType, py_gql.schema.types.InterfaceType]):
+            type_ (Union[py_gql.schema.types.UnionType, \
+py_gql.schema.types.InterfaceType]):
                 Abstract type to check.
 
         Returns:
@@ -228,7 +233,9 @@ class Schema(object):
             self._possible_types[type_] = type_.types or []
             return self._possible_types[type_]
         elif isinstance(type_, InterfaceType):
-            self._possible_types[type_] = self.implementations.get(type_.name, [])
+            self._possible_types[type_] = self.implementations.get(
+                type_.name, []
+            )
             return self._possible_types[type_]
 
         raise TypeError("Not an abstract type: %s" % type_)
@@ -237,7 +244,8 @@ class Schema(object):
         """ Check that ``type_`` is a possible realization of ``abstract_type``.
 
         Args:
-            abstract_type (Union[py_gql.schema.types.UnionType, py_gql.schema.types.InterfaceType]):
+            abstract_type (Union[py_gql.schema.types.UnionType, \
+py_gql.schema.types.InterfaceType]):
             type_ (py_gql.schema.Type): Concrete type to check
 
         Returns:
@@ -332,7 +340,8 @@ def _build_type_map(types, _type_map=None):
 
         if not (isinstance(type_, Type) and hasattr(type_, "name")):
             raise SchemaError(
-                'Expected named types but got "%s" of type %s' % (type_, type(type_))
+                'Expected named types but got "%s" of type %s'
+                % (type_, type(type_))
             )
 
         name = type_.name

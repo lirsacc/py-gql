@@ -29,7 +29,9 @@ DirInput = InputObjectType("DirInput", [Field("field", String)])
 WrappedDirInput = InputObjectType("WrappedDirInput", [Field("field", String)])
 
 Dir = Directive(
-    "dir", ["OBJECT"], [Argument("arg", DirInput), Argument("argList", ListType(WrappedDirInput))]
+    "dir",
+    ["OBJECT"],
+    [Argument("arg", DirInput), Argument("argList", ListType(WrappedDirInput))],
 )
 
 BlogImage = ObjectType(
@@ -41,7 +43,9 @@ BlogAuthor = ObjectType(
     [
         Field("id", String),
         Field("name", String),
-        Field("pic", BlogImage, [Argument("width", Int), Argument("height", Int)]),
+        Field(
+            "pic", BlogImage, [Argument("width", Int), Argument("height", Int)]
+        ),
         Field("recentArticle", lambda: BlogArticle),
     ],
 )
@@ -68,7 +72,8 @@ BlogQuery = ObjectType(
 BlogMutation = ObjectType("Mutation", [Field("writeArticle", BlogArticle)])
 
 BlogSubscription = ObjectType(
-    "Subscription", [Field("articleSubscribe", BlogArticle, [Argument("id", String)])]
+    "Subscription",
+    [Field("articleSubscribe", BlogArticle, [Argument("id", String)])],
 )
 
 
@@ -78,7 +83,9 @@ def _null_resolver(*a, **kw):
 
 def test_Schema_is_possible_type_is_accurate():
     schema = Schema(
-        ObjectType("Query", [Field("getObject", Interface, resolve=_null_resolver)]),
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+        ),
         directives=[Dir],
     )
     assert not schema.is_possible_type(Interface, Implementing)
@@ -86,7 +93,9 @@ def test_Schema_is_possible_type_is_accurate():
 
 def test_Schema_includes_input_types_only_used_in_directives():
     schema = Schema(
-        ObjectType("Query", [Field("getObject", Interface, resolve=_null_resolver)]),
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+        ),
         directives=[Dir],
     )
     assert schema.get_type("DirInput") is DirInput
@@ -95,7 +104,9 @@ def test_Schema_includes_input_types_only_used_in_directives():
 
 def test_Schema_get_type_raises_on_unknown_type():
     schema = Schema(
-        ObjectType("Query", [Field("getObject", Interface, resolve=_null_resolver)]),
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+        ),
         directives=[Dir],
     )
     with pytest.raises(UnknownType):
@@ -104,7 +115,9 @@ def test_Schema_get_type_raises_on_unknown_type():
 
 def test_Schema_get_type_does_not_raise_on_unknown_type_with_default():
     schema = Schema(
-        ObjectType("Query", [Field("getObject", Interface, resolve=_null_resolver)]),
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+        ),
         directives=[Dir],
     )
     assert schema.get_type("UnknownType", None) is None
@@ -119,15 +132,29 @@ def test_Schema_includes_nested_input_objects_in_the_map():
     )
     SomeMutation = ObjectType(
         "SomeMutation",
-        [Field("mutateSomething", BlogArticle, [Argument("input", SomeInputObject)])],
+        [
+            Field(
+                "mutateSomething",
+                BlogArticle,
+                [Argument("input", SomeInputObject)],
+            )
+        ],
     )
     SomeSubscription = ObjectType(
         "SomeSubscription",
-        [Field("subscribeToSomething", BlogArticle, [Argument("input", SomeInputObject)])],
+        [
+            Field(
+                "subscribeToSomething",
+                BlogArticle,
+                [Argument("input", SomeInputObject)],
+            )
+        ],
     )
 
     schema = Schema(
-        BlogQuery, mutation_type=SomeMutation, subscription_type=SomeSubscription
+        BlogQuery,
+        mutation_type=SomeMutation,
+        subscription_type=SomeSubscription,
     )
 
     assert schema.types.get("NestedInputObject") is NestedInputObject
@@ -136,10 +163,13 @@ def test_Schema_includes_nested_input_objects_in_the_map():
 def test_Schema_includes_interface_possible_types_in_the_type_map():
     SomeInterface = InterfaceType("SomeInterface", [Field("f", Int)])
 
-    SomeSubtype = ObjectType("SomeSubtype", [Field("f", Int)], lambda: [SomeInterface])
+    SomeSubtype = ObjectType(
+        "SomeSubtype", [Field("f", Int)], lambda: [SomeInterface]
+    )
 
     schema = Schema(
-        ObjectType("Query", [Field("iface", SomeInterface)]), types=[SomeSubtype]
+        ObjectType("Query", [Field("iface", SomeInterface)]),
+        types=[SomeSubtype],
     )
 
     assert schema.types.get("SomeSubtype") is SomeSubtype

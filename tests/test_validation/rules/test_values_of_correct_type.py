@@ -217,13 +217,22 @@ def test_null_into_nullable_type_2(schema):
             "1", "Expected type String, found 1", (70, 71), id="int -> string"
         ),
         pytest.param(
-            "1.0", "Expected type String, found 1.0", (70, 73), id="float -> string"
+            "1.0",
+            "Expected type String, found 1.0",
+            (70, 73),
+            id="float -> string",
         ),
         pytest.param(
-            "true", "Expected type String, found true", (70, 74), id="bool -> string"
+            "true",
+            "Expected type String, found true",
+            (70, 74),
+            id="bool -> string",
         ),
         pytest.param(
-            "BAR", "Expected type String, found BAR", (70, 73), id="enum -> string"
+            "BAR",
+            "Expected type String, found BAR",
+            (70, 73),
+            id="enum -> string",
         ),
     ],
 )
@@ -256,7 +265,9 @@ def test_invalid_string_values(schema, value, expected_err, loc):
             (64, 91),
             id="big int -> int",
         ),
-        pytest.param("FOO", "Expected type Int, found FOO", (64, 67), id="enum -> int"),
+        pytest.param(
+            "FOO", "Expected type Int, found FOO", (64, 67), id="enum -> int"
+        ),
         pytest.param(
             "3.0", "Expected type Int, found 3.0", (64, 67), id="float -> int"
         ),
@@ -264,7 +275,10 @@ def test_invalid_string_values(schema, value, expected_err, loc):
             "true", "Expected type Int, found true", (64, 68), id="bool -> int"
         ),
         pytest.param(
-            "3.333", "Expected type Int, found 3.333", (64, 69), id="float -> int"
+            "3.333",
+            "Expected type Int, found 3.333",
+            (64, 69),
+            id="float -> int",
         ),
     ],
 )
@@ -289,7 +303,10 @@ def test_invalid_int_values(schema, value, expected_err, loc):
     "value,expected_err,loc",
     [
         pytest.param(
-            '"3"', 'Expected type Float, found "3"', (68, 71), id="string -> float"
+            '"3"',
+            'Expected type Float, found "3"',
+            (68, 71),
+            id="string -> float",
         ),
         pytest.param(
             '"3.333"',
@@ -298,10 +315,16 @@ def test_invalid_int_values(schema, value, expected_err, loc):
             id="string -> float",
         ),
         pytest.param(
-            "true", "Expected type Float, found true", (68, 72), id="bool -> float"
+            "true",
+            "Expected type Float, found true",
+            (68, 72),
+            id="bool -> float",
         ),
         pytest.param(
-            "FOO", "Expected type Float, found FOO", (68, 71), id="enum -> float"
+            "FOO",
+            "Expected type Float, found FOO",
+            (68, 71),
+            id="enum -> float",
         ),
     ],
 )
@@ -329,7 +352,10 @@ def test_invalid_float_values(schema, value, expected_err, loc):
             "2", "Expected type Boolean, found 2", (72, 73), id="int -> boolean"
         ),
         pytest.param(
-            "1.0", "Expected type Boolean, found 1.0", (72, 75), id="float -> boolean"
+            "1.0",
+            "Expected type Boolean, found 1.0",
+            (72, 75),
+            id="float -> boolean",
         ),
         pytest.param(
             '"true"',
@@ -338,7 +364,10 @@ def test_invalid_float_values(schema, value, expected_err, loc):
             id="string -> boolean",
         ),
         pytest.param(
-            "TRUE", "Expected type Boolean, found TRUE", (72, 76), id="enum -> boolean"
+            "TRUE",
+            "Expected type Boolean, found TRUE",
+            (72, 76),
+            id="enum -> boolean",
         ),
     ],
 )
@@ -362,12 +391,17 @@ def test_invalid_boolean_values(schema, value, expected_err, loc):
 @pytest.mark.parametrize(
     "value,expected_err,loc",
     [
-        pytest.param("1.0", "Expected type ID, found 1.0", (62, 65), id="float -> ID"),
+        pytest.param(
+            "1.0", "Expected type ID, found 1.0", (62, 65), id="float -> ID"
+        ),
         pytest.param(
             "true", "Expected type ID, found true", (62, 66), id="boolean -> ID"
         ),
         pytest.param(
-            "SOMETHING", "Expected type ID, found SOMETHING", (62, 71), id="enum -> ID"
+            "SOMETHING",
+            "Expected type ID, found SOMETHING",
+            (62, 71),
+            id="enum -> ID",
         ),
     ],
 )
@@ -395,7 +429,10 @@ def test_invalid_id_values(schema, value, expected_err, loc):
             "1", "Expected type DogCommand, found 1", (61, 62), id="int -> enum"
         ),
         pytest.param(
-            "1.0", "Expected type DogCommand, found 1.0", (61, 64), id="float -> enum"
+            "1.0",
+            "Expected type DogCommand, found 1.0",
+            (61, 64),
+            id="float -> enum",
         ),
         pytest.param(
             '"SIT"',
@@ -618,7 +655,10 @@ def test_valid_non_nullable_value(schema, value):
           }
         }
         """,
-            ['Expected type Int!, found "two"', 'Expected type Int!, found "one"'],
+            [
+                'Expected type Int!, found "two"',
+                'Expected type Int!, found "one"',
+            ],
             [(70, 75), (83, 88)],
             id="Incorrect value type",
         ),
@@ -816,7 +856,9 @@ def test_valid_input_object_value(schema, value):
           invalidArg(arg: 123)
         }
         """,
-            ["Expected type Invalid, found 123 (Invalid scalar is always invalid)"],
+            [
+                "Expected type Invalid, found 123 (Invalid scalar is always invalid)"
+            ],
             [(37, 40)],
             id="reports original error for custom scalar which throws",
         ),
@@ -854,7 +896,10 @@ def test_directive_arguments_with_directive_with_incorrect_types(schema):
         }
     }
     """,
-        ['Expected type Boolean!, found "yes"', "Expected type Boolean!, found ENUM"],
+        [
+            'Expected type Boolean!, found "yes"',
+            "Expected type Boolean!, found ENUM",
+        ],
         [(33, 38), (68, 72)],
     )
 

@@ -32,7 +32,8 @@ from ..exc import (
 EOL_CHARS = frozenset([0x000A, 0x000D])  # "\n"  # "\r"
 
 IGNORED_CHARS = (
-    frozenset([0xFEFF, 0x0009, 0x0020, 0x002C]) | EOL_CHARS  # BOM  # \t  # SPACE  # ,
+    frozenset([0xFEFF, 0x0009, 0x0020, 0x002C])
+    | EOL_CHARS  # BOM  # \t  # SPACE  # ,
 )
 
 SYMBOLS = {
@@ -107,7 +108,9 @@ def is_name_lead(code):
     Returns:
         bool:
     """
-    return code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
+    return (
+        code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
+    )
 
 
 def is_name_character(code):
@@ -292,7 +295,11 @@ class Lexer(object):
                 value = parse_block_string("".join(acc))
                 return token.BlockString(start, self._position, value)
             elif char == "\\":
-                if (self._peek(), self._peek(2), self._peek(3)) == ('"', '"', '"'):
+                if (self._peek(), self._peek(2), self._peek(3)) == (
+                    '"',
+                    '"',
+                    '"',
+                ):
                     for _ in range(3):
                         acc.append(self._advance())
                 else:
@@ -321,7 +328,9 @@ class Lexer(object):
         elif code == 0x0075:  # unicode character: uXXXX
             return self._read_escaped_unicode()
         else:
-            raise InvalidEscapeSequence(u"\%s" % char, self._position - 1, self._source)
+            raise InvalidEscapeSequence(
+                u"\%s" % char, self._position - 1, self._source
+            )
 
     def _read_escaped_unicode(self):
         """ Advance lexer over a unicode character
@@ -340,12 +349,16 @@ class Lexer(object):
         escape = self._source[start : self._position]
 
         if len(escape) != 4:
-            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self._source)
+            raise InvalidEscapeSequence(
+                u"\\u%s" % escape, start - 1, self._source
+            )
 
         try:
             return u"%c" % six.unichr(int(escape, 16))
         except ValueError:
-            raise InvalidEscapeSequence(u"\\u%s" % escape, start - 1, self._source)
+            raise InvalidEscapeSequence(
+                u"\\u%s" % escape, start - 1, self._source
+            )
 
     def _read_number(self):
         """ Advance lexer over a number
@@ -401,7 +414,9 @@ class Lexer(object):
             char = self._peek()
             if char is not None and ord(char) == 0x0030:
                 raise UnexpectedCharacter(
-                    'Unexpected character "%s"' % char, self._position, self._source
+                    'Unexpected character "%s"' % char,
+                    self._position,
+                    self._source,
                 )
         else:
             self._read_over_digits()

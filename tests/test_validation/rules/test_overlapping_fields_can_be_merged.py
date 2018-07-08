@@ -285,7 +285,11 @@ def test_reports_each_conflict_once(schema):
             "Use different aliases on the fields to fetch both if this was "
             "intentional.",
         ],
-        [[(302, 306), (358, 362)], [(232, 236), (302, 306)], [(232, 236), (358, 362)]],
+        [
+            [(302, 306), (358, 362)],
+            [(232, 236), (302, 306)],
+            [(232, 236), (358, 362)],
+        ],
     )
 
 
@@ -619,7 +623,9 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
     )
 
 
-def test_disallows_differing_return_type_nullability_despite_no_overlap(schema_2):
+def test_disallows_differing_return_type_nullability_despite_no_overlap(
+    schema_2
+):
     run_test(
         OverlappingFieldsCanBeMergedChecker,
         schema_2,
