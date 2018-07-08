@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import json
 
 from py_gql.schema import (
-    Arg,
+    Argument,
     EnumType,
     EnumValue,
     Field,
@@ -1256,7 +1256,7 @@ def test_intropsection_on_input_object():
             Field(
                 "field",
                 String,
-                [Arg("complex", test_input)],
+                [Argument("complex", test_input)],
                 resolve=lambda _, args, *__: json.dumps(args.get("complex")),
             )
         ],

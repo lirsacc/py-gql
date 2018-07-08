@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """ Utilitiy classes to define custom types.
-
-All types used in a schema should be instances of
-:class:`py_gql.schema.types.Type`.
 """
 
 import six
@@ -28,6 +25,9 @@ _UNDEF = object()
 
 
 class Type(object):
+    """ Base type class, all types used in a :class:`py_gql.schema.Schema`
+    should be instances of this (or a subclass). """
+
     def __repr__(self):
         return str(self)
 
@@ -43,11 +43,11 @@ class Type(object):
 
 
 class NamedType(Type):
-    """
-    :vartype name: py_gql.schema.types.Type
-    :ivar name:
-        Name of the type, must be unique across a single
-        :class:`py_gql.schema.Schema` instance
+    """ Named type. The name **must be unique** across a single
+    :class:`py_gql.schema.Schema` instance.
+
+    Attributes:
+        name (str): Type name.
     """
 
     def __str__(self):
@@ -57,27 +57,23 @@ class NamedType(Type):
 class WrappingType(Type):
     """ Types wrapping other types.
 
-    :vartype node: Optional[py_gql.lang.ast.NonNullType]
-    :ivar node: Source node when building type from the SDL
+    Attributes:
+        node (:class:`py_gql.lang.ast.Type`):
+            Source node used when building type from the SDL
+
+    Args:
+        type_ (Lazy[py_gql.schema.Type]): Wrapped type.
+        node (Optional[py_gql.lang.ast.Type]):
+            Source node used when building type from the SDL
     """
 
     def __init__(self, type_, node=None):
-        """
-        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
-        :param type_: Wrapped type.
-            Can be a callable for lazy definitions.
-
-        :type node: Optional[py_gql.lang.ast.NonNullType]
-        :param node: Source node when building type from the SDL
-        """
         self._type = type_
         self.node = node
 
     @cached_property
     def type(self):
-        """
-        :rtype: py_gql.schema.types.Type
-        """
+        """ :class:`py_gql.schema.Type`: Wrapped type """
         return lazy(self._type)
 
 
@@ -90,19 +86,17 @@ class NonNullType(WrappingType):
     fields which you can make a strong guarantee on non-nullability, for example
     usually the id field of a database row will never be null.
 
-    :vartype node: Optional[py_gql.lang.ast.NonNullType]
-    :ivar node: Source node when building type from the SDL
+    Attributes:
+        node (:class:`py_gql.lang.ast.NonNullType`):
+            Source node used when building type from the SDL
+
+    Args:
+        type_ (Lazy[py_gql.schema.Type]): Wrapped type.
+        node (Optional[py_gql.lang.ast.NonNullType]):
+            Source node used when building type from the SDL
     """
 
     def __init__(self, type_, node=None):
-        """
-        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
-        :param type_: Wrapped type.
-            Can be a callable for lazy definitions.
-
-        :type node: Optional[py_gql.lang.ast.NonNullType]
-        :param node: Source node when building type from the SDL
-        """
         assert not isinstance(type_, NonNullType)
         self._type = type_
         self.node = node
@@ -118,8 +112,16 @@ class ListType(WrappingType):
     Lists are often created within the context of defining the fields of
     an object type.
 
-    :vartype node: Optional[py_gql.lang.ast.NonNullType]
-    :ivar node: Source node when building type from the SDL
+    Attributes:
+        node (:class:`py_gql.lang.ast.ListType`):
+            Source node used when building type from the SDL
+
+    Args:
+        type_ (Union[py_gql.schema.Type, Callable[[], py_gql.schema.Type]]):
+            Type or callable returning the type (lazy / cyclic definitions).
+
+        node (Optional[py_gql.lang.ast.ListType]):
+            Source node used when building type from the SDL
     """
 
     def __str__(self):
@@ -127,24 +129,22 @@ class ListType(WrappingType):
 
 
 class InputField(object):
-    """ Field definitions for of an :class:`InputType`
+    """ Member of an :class:`py_gql.schema.InputObjectType`
 
-    :vartype name: str
-    :ivar name: Fieldname
+    Args:
+        name (str): Field name
+        type_ (Lazy[py_gql.schema.Type]): Field type (must be input type)
+        default_value (Optional[any]): Default value
+        description (Optional[str]): Field description
+        node (Optional[py_gql.lang.ast.InputValueDefinition]):
+            Source node used when building type from the SDL
 
-    :vartype default_value: any
-    :ivar default_value: Default value
-
-    :vartype has_default_value: bool
-    :ivar has_default_value: Whether the default value is set or not.
-        You should only use the :attr:`default_value` attribute if this
-        attribute is ``True``.
-
-    :vartype description: Optional[str]
-    :ivar description: Field description.
-
-    :vartype node: Optional[py_gql.lang.ast.InputValueDefinition]
-    :ivar node: Source node when building type from the SDL
+    Attributes:
+        name (str): Field name
+        description (Optional[str]): Field description
+        has_default_value (bool): ``True`` if default value is set
+        node (Optional[py_gql.lang.ast.InputValueDefinition]):
+            Source node used when building type from the SDL
     """
 
     # Yikes! Didn't find a better way to differentiate None as value and no
@@ -153,52 +153,31 @@ class InputField(object):
     def __init__(
         self, name, type_, default_value=_UNDEF, description=None, node=None
     ):
-        """
-        :type name: str
-        :param name: Fieldname
-
-        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
-        :param type_: Field type.
-            Can be a callable for lazy definitions.
-            Must result in a input type.
-
-        :type default_value: Optional[any]
-        :param default_value: Default value for this field.
-            As `None` is a valid value, you must omit this argument if you want
-            to have no default value.
-
-        :type description: Optional[str]
-        :param description: Field description
-
-        :type node: Optional[py_gql.lang.ast.InputValueDefinition]
-        :ivar node: Source node when building type from the SDL
-        """
         self.name = name
         self._type = type_
-        self.default_value = default_value
+        self._default_value = default_value
         self.description = description
-        self.has_default_value = self.default_value is not _UNDEF
+        self.has_default_value = self._default_value is not _UNDEF
         self.node = node
+
+    @property
+    def default_value(self):
+        """ Default value if it was set """
+        if self._default_value is _UNDEF:
+            raise AttributeError("No default value")
+        return self._default_value
 
     @cached_property
     def type(self):
-        """ Field type
-
-        :rtype: py_gql.schema.types.Type
-        """
+        """ py_gql.schema.Type: Field type """
         return lazy(self._type)
 
     @cached_property
     def required(self):
-        """ Whether that field is required or not.
-
-        A field is required if it's type is :class:`NonNullType` and it has no
-        default value.
-
-        :rtype: bool
-        """
+        """ bool: Whether this field is required (non nullable and does
+        not have a default value) """
         return (
-            isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+            isinstance(self.type, NonNullType) and self._default_value is _UNDEF
         )
 
     def __str__(self):
@@ -209,21 +188,24 @@ class InputObjectType(NamedType):
     """ Input Object Type Definition
 
     An input object defines a structured collection of fields which may be
-    supplied to a field argument.
+    supplied to a field argument or a directive.
 
-    Using `NonNullType` will ensure that a value must be provided by the query.
+    Args:
+        name (str): Type name
+        fields (Lazy[List[py_gql.schema.InputField]]): Fields
+        description (Optional[str]): Type description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
 
-    When two types need to refer to each other, or a type needs to refer to
-    itself in a field, you can use a lambda expression to supply the
-    fields lazily.
+    Attributes:
+        name (str): Type name
+        description (Optional[str]): Directive description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
     """
 
     def __init__(self, name, fields, description=None, nodes=None):
-        """
-        :type name: str
-        :type fields: dict(str, InputField)|[InputField]|callable
-        :type description: str
-        """
         self.name = name
         self.description = description
         self._fields = fields
@@ -231,19 +213,48 @@ class InputObjectType(NamedType):
 
     @cached_property
     def fields(self):
+        """ List[py_gql.schema.InputField]: Object fields """
         return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
+        """ Dict[str, py_gql.schema.InputField]: Object fields map """
         return {f.name: f for f in self.fields}
 
 
 class EnumValue(object):
-    """ Enum value definition
+    """ Enum value definition.
+
+    Args:
+        name (str): Name of the value
+        value (Optional[any]): Python value.
+            Defaults to ``name`` if unset, must be hashable to support reverse
+            lookups
+        deprecation_reason (Optional[str]):
+            If set, the field will be marked as deprecated and include this as
+            the reason
+        description (Optional[str]): Enum value description
+        node (Optional[py_gql.lang.ast.EnumValueDefinition]):
+            Source node used when building type from the SDL
+
+    Attributes:
+        name (str): Enum value name
+        value: Enum value value
+        description (Optional[str]): Enum value description
+        deprecation_reason (Optional[str]):
+        deprecated (bool):
+        node (Optional[py_gql.lang.ast.FieldDefinition]):
+            Source node used when building type from the SDL
     """
 
     @classmethod
     def from_def(cls, definition):
+        """ Create an enum value from various source objects.
+
+        This supports existing `EnumValue` instances, strings,
+        (name, value) tuples and dictionnaries matching the signature of
+        `EnumValue.__init__`.
+        """
         if isinstance(definition, cls):
             return definition
         elif isinstance(definition, str):
@@ -264,12 +275,6 @@ class EnumValue(object):
         description=None,
         node=None,
     ):
-        """
-        :type name: str
-        :type value: Hashable
-        :type deprecation_reason: str
-        :type description: str
-        """
         assert name not in ("true", "false", "null")
         self.name = name
         self.value = value if value is not _UNDEF else name
@@ -289,18 +294,31 @@ class EnumType(NamedType):
     Enum values as strings, however internally Enums can be represented by any
     kind of type, often integers.
 
-    .. warning::
-
-        Enum values must be hashable to provide revere-lookup
+    Warning:
+        Enum values must be hashable to provide reverse lookup
         capabilities when coercing python values into enum values.
+
+    Args:
+        name (str): Enum name
+        values (list): List of enum value definition support by
+            `EnumValue.from_def`
+        description (Optional[str]): Enum description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
+    Attributes:
+        name (str): Enum name
+        values (Dict[str, py_gql.schema.EnumValue]):
+            Values by name
+        reverse_values (Dict[any, py_gql.schema.EnumValue]):
+            Values by value
+        description (Optional[str]): Enum description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
     """
 
     def __init__(self, name, values, description=None, nodes=None):
-        """
-        :type name: str
-        :type values: [EnumValue|str|Tuple[str, Hashable]|dict]
-        :type description: str
-        """
         self.name = name
         self.description = description
         self.nodes = [] if nodes is None else nodes
@@ -316,13 +334,14 @@ class EnumType(NamedType):
     def get_value(self, name):
         """ Extract the value for a given name.
 
-        :type name: str
-        :param name:
-            Name of the value to extract.
+        Args:
+            name (str): Name of the value to extract
 
-        :rtype: EnumValue
-        :returns:
-            The corresponding EnumValue
+        Returns:
+            :class:`py_gql.schema.EnumValue`: The corresponding EnumValue
+
+        Raises:
+            :class:`~py_gql.exc.UnknownEnumValue` when the name is unknown
         """
         try:
             return self.values[name].value
@@ -334,13 +353,14 @@ class EnumType(NamedType):
     def get_name(self, value):
         """ Extract the name for a given value.
 
-        :type name: Hashable
-        :param name:
-            Value for the name to extract.
+        Args:
+            value (any): Value of the value to extract, must be hashable
 
-        :rtype: EnumValue
-        :returns:
-            The corresponding EnumValue
+        Returns:
+            :class:`py_gql.schema.EnumValue`: The corresponding EnumValue
+
+        Raises:
+            :class:`~py_gql.exc.UnknownEnumValue` when the value is unknown
         """
         try:
             return self.reverse_values[value].name
@@ -357,12 +377,40 @@ class ScalarType(NamedType):
     Scalars (or Enums) and are defined with a name and a series of functions
     used to parse input from ast or variables and to ensure validity.
 
-    - To raise an error on serialization (output), raise a
-    ``ScalarSerializationError``, ``ValueError`` or ``TypeError``
-    in ``serialize``.
+    Args:
+        name (str): Type name
 
-    - To raise an error on parsing (input), raise a ``ScalarParsingError``,
-    ``ValueError``, or ``TypeError`` in ``parse`` or ``parse_literal``.
+        serialize (callable): Type serializer
+            This function receives Python value and must output JSON scalars
+            (that is string, number, boolean and null).
+            Raise :class:`~py_gql.exc.ScalarSerializationError`,
+            :py:class:`ValueError` or :py:class:`TypeError` to signify that the
+            value cannot be serialized.
+
+        parse (callable): Type de-serializer
+            This function receives JSON scalars and outputs Python values.
+            Raise :class:`~py_gql.exc.ScalarParsingError`, :py:class:`ValueError`
+            or :py:class:`TypeError` to signify that the value cannot be parsed.
+
+        parse_literal (Optional[callable]): Type de-serializer for value nodes
+            This function receives a :class:`py_gql.lang.ast.Value`
+            and outputs Python values.
+            Raise :class:`~py_gql.exc.ScalarParsingError`, :py:class:`ValueError`
+            or :py:class:`TypeError` to signify that the value cannot be parsed.
+            If unset, the ``parse`` argument is used and gets passed the
+            ``value`` attribute of the node.
+
+        description (Optional[str]): Type description
+
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
+    Attributes:
+        name (str): Type name
+        description (Optional[str]): Type description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
     """
 
     def __init__(
@@ -374,36 +422,53 @@ class ScalarType(NamedType):
         description=None,
         nodes=None,
     ):
-        """
-        :type name: str
-        :type serialize: callable
-        :type parse: callable
-        :type parse_literal: callable
-        :type description: str
-        """
         self.name = name
         self.description = description
+        assert callable(serialize)
         self._serialize = serialize
+        assert callable(parse)
         self._parse = parse
+        assert parse_literal is None or callable(parse_literal)
         self._parse_literal = parse_literal
         self.nodes = [] if nodes is None else nodes
 
     def serialize(self, value):
-        """ Transform a Python value in a JSON serializable one """
+        """ Transform a Python value in a JSON serializable one.
+
+        Args:
+            value: Python level value
+
+        Returns:
+            JSON scalar
+        """
         try:
             return self._serialize(value)
         except (ValueError, TypeError) as err:
             six.raise_from(ScalarSerializationError(str(err)), err)
 
     def parse(self, value):
-        """ Transform a GraphQL value in a valid Python value """
+        """ Transform a GraphQL value in a valid Python value
+
+        Args:
+            value: JSON scalar
+
+        Returns:
+            Python level value
+        """
         try:
             return self._parse(value)
         except (ValueError, TypeError) as err:
             six.raise_from(ScalarParsingError(str(err)), err)
 
     def parse_literal(self, node, variables=None):
-        """ Transform an AST node in a valid Python value """
+        """ Transform an AST node in a valid Python value
+
+        Args:
+            value (py_gql.lang.ast.Value): Parse node
+
+        Returns:
+            Python level value
+        """
         try:
             if (
                 hasattr(self, "_parse_literal")
@@ -417,7 +482,27 @@ class ScalarType(NamedType):
 
 
 class Argument(object):
-    """ Field or Directive argument definition
+    """ Field or Directive argument definition.
+
+    Warning:
+        As ``None`` is a valid default value, in order to define an
+        argument wihtout any default value, the ``default_value`` argument
+        must be omitted.
+
+    Args:
+        name (str): Argument name
+        type_ (Lazy[py_gql.schema.Type]): Argument type (must be input type)
+        default_value (Optional[any]): Default value
+        description (Optional[str]): Argument description
+        node (Optional[py_gql.lang.ast.InputValueDefinition]):
+            Source node used when building type from the SDL
+
+    Attributes:
+        name (str): Argument name
+        description (Optional[str]): Argument description
+        has_default_value (bool): ``True`` if default value is set
+        node (Optional[py_gql.lang.ast.InputValueDefinition]):
+            Source node used when building type from the SDL
     """
 
     # Yikes! Didn't find a better way to differentiate None as value and no
@@ -426,38 +511,62 @@ class Argument(object):
     def __init__(
         self, name, type_, default_value=_UNDEF, description=None, node=None
     ):
-        """
-        :type name: str
-        :type type_: Type
-        :type default_value: any
-        :type description: str
-        """
         self.name = name
         self._type = type_
-        self.default_value = default_value
+        self._default_value = default_value
         self.description = description
-        self.has_default_value = self.default_value is not _UNDEF
+        self.has_default_value = self._default_value is not _UNDEF
         self.node = node
+
+    @property
+    def default_value(self):
+        """ Default value if it was set """
+        if self._default_value is _UNDEF:
+            raise AttributeError("No default value")
+        return self._default_value
 
     @cached_property
     def type(self):
+        """ py_gql.schema.Type: Argument type """
         return lazy(self._type)
 
     @cached_property
     def required(self):
+        """ bool: Whether this argument is required (non nullable and does
+        not have a default value) """
         return (
-            isinstance(self.type, NonNullType) and self.default_value is _UNDEF
+            isinstance(self.type, NonNullType) and self._default_value is _UNDEF
         )
 
     def __str__(self):
         return "Argument(%s: %s)" % (self.name, self.type)
 
 
-Arg = Argument
-
-
 class Field(object):
-    """ Member of an ``ObjectType``
+    """ Member of an :class:`py_gql.schema.ObjectType`.
+
+    Args:
+        name (str): Field name
+        type_ (Lazy[py_gql.schema.Type]): Field type (must be output type)
+        args (Lazy[List[py_gql.schema.Argument]]): Field arguments
+        description (Optional[str]): Field description
+        deprecation_reason (Optional[str]):
+            If set, the field will be marked as deprecated and include this as
+            the reason
+        resolve (callable):
+            Resolver function. If not set, :func:`py_gql.utilities.default_resolver`
+            will be used during execution
+        node (Optional[py_gql.lang.ast.FieldDefinition]):
+            Source node used when building type from the SDL
+
+    Attributes:
+        name (str): Field name
+        description (Optional[str]): Field description
+        deprecation_reason (Optional[str]):
+        deprecated (bool):
+        resolve (Optional[callable]): Resolver function
+        node (Optional[py_gql.lang.ast.FieldDefinition]):
+            Source node used when building type from the SDL
     """
 
     def __init__(
@@ -468,20 +577,9 @@ class Field(object):
         description=None,
         deprecation_reason=None,
         resolve=None,
-        subscribe=None,
         node=None,
     ):
-        """
-        :type name: str
-        :type type_: Type
-        :type args: callable|[Argument]|dict(str, Argument)
-        :type fields: [Field]|dict(str, Field)
-        :type resolve: callable
-        :type deprecation_reason: str
-        :type description: str
-        """
         assert resolve is None or callable(resolve)
-        assert subscribe is None or callable(subscribe)
 
         self.name = name
         self._type = type_
@@ -489,22 +587,24 @@ class Field(object):
         self.deprecated = bool(deprecation_reason)
         self.deprecation_reason = deprecation_reason
         self.resolve = resolve
-        self.subscribe = subscribe
         self._args = args
         self.node = node
 
     @cached_property
     def type(self):
+        """ py_gql.schema.Type: Field type """
         return lazy(self._type)
 
     @cached_property
     def args(self):
+        """ List[py_gql.schema.Argument]: Field arguments """
         return _evaluate_lazy_list(self._args)
 
     arguments = args
 
     @cached_property
     def arg_map(self):
+        """ Dict[str, py_gql.schema.Argument]: Field arguments map """
         return {arg.name: arg for arg in self.args}
 
     def __str__(self):
@@ -517,9 +617,24 @@ class ObjectType(NamedType):
     Almost all of the GraphQL types you define will be object types. Object
     types have a name, but most importantly describe their fields.
 
-    When two types need to refer to each other, or a type needs to refer to
-    itself in a field, you can use a lambda expression to supply the
-    fields lazily.
+    Args:
+        name (str): Type name
+        fields (Lazy[List[py_gql.schema.Field]]): Fields
+        interfaces (Lazy[List[py_gql.schema.InterfaceType]]):
+            Implemented interfaces
+        is_type_of:
+            Either ``None``, a callable or a class used to identify an
+            object's interface.
+        description (Optional[str]): Type description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
+    Attributes:
+        name (str): Type name
+        is_type_of (Optional[callable]): Type resolver
+        description (Optional[str]): Directive description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
     """
 
     def __init__(
@@ -531,13 +646,6 @@ class ObjectType(NamedType):
         description=None,
         nodes=None,
     ):
-        """
-        :type name: str
-        :type fields: callable|dict(str, InputField)|[InputField]
-        :type interfaces: callable|[InterfaceType]|dict(str, InterfaceType)
-        :type is_type_of: callable|type
-        :type description: str
-        """
         self.name = name
         self.description = description
         self._fields = fields
@@ -552,14 +660,17 @@ class ObjectType(NamedType):
 
     @cached_property
     def interfaces(self):
+        """ List[py_gql.schema.InterfaceType]: Implemented interfaces """
         return _evaluate_lazy_list(self._interfaces)
 
     @cached_property
     def fields(self):
+        """ List[py_gql.schema.Field]: Object fields """
         return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
+        """ Dict[str, py_gql.schema.Field]: Object fields map """
         return {f.name: f for f in self.fields}
 
 
@@ -570,16 +681,26 @@ class InterfaceType(NamedType):
     type is used to describe what types are possible, what fields are in
     common across all types, as well as a function to determine which type
     is actually used when the field is resolved.
+
+    Args:
+        name (str): Type name
+        fields (Lazy[List[py_gql.schema.Field]]): Fields
+        resolve_type (Optional[callable]): Type resolver
+        description (Optional[str]): Type description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
+    Attributes:
+        name (str): Type name
+        resolve_type (Optional[callable]): Type resolver
+        description (Optional[str]): Directive description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
     """
 
     def __init__(
         self, name, fields, resolve_type=None, description=None, nodes=None
     ):
-        """
-        :type name: str
-        :type fields: callable|dict(str, InputField)|[InputField]
-        :type description: str
-        """
         self.name = name
         self.description = description
         self._fields = fields
@@ -590,10 +711,12 @@ class InterfaceType(NamedType):
 
     @cached_property
     def fields(self):
+        """ List[py_gql.schema.Field]: Interface fields """
         return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
+        """ Dict[str, py_gql.schema.Field]: Interface fields map """
         return {f.name: f for f in self.fields}
 
 
@@ -603,6 +726,22 @@ class UnionType(NamedType):
     When a field can return one of a heterogeneous set of types, a Union type
     is used to describe what types are possible as well as providing a function
     to determine which type is actually used when the field is resolved.
+
+    Args:
+        name (str): Type name
+        types (Lazy[List[py_gql.schema.ObjectType]]): Member types
+        resolve_type (Optional[callable]): Type resolver
+        description (Optional[str]): Type description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
+    Attributes:
+        name (str): Type name
+        resolve_type (Optional[callable]): Type resolver
+        description (Optional[str]): Directive description
+        nodes (Optional[List[py_gql.lang.ast.Node]]):
+            Source nodes used when building type from the SDL
+
     """
 
     def __init__(
@@ -623,6 +762,7 @@ class UnionType(NamedType):
 
     @cached_property
     def types(self):
+        """ List[py_gql.schema.ObjectType]: Member types """
         return _evaluate_lazy_list(self._types)
 
 
@@ -632,33 +772,36 @@ class Directive(Type):
     Directives are used by the GraphQL runtime as a way of modifying
     execution behavior. Type system creators will usually not create
     these directly.
+
+    Args:
+        name (str): Directive name
+        locations (List[str]): Possible locations for that directive
+        args (List[py_gql.schena.Argument]): Argument definitions
+        description (Optional[str]): Directive description
+        node (Optional[py_gql.lang.ast.DirectiveDefinition]):
+            Source node used when building type from the SDL.
+
+    Attributes:
+        name (str): Directive name
+        locations (List[str]): Possible locations for that directive
+        args (List[py_gql.schena.Argument]): Argument definitions
+        arguments (List[py_gql.schena.Argument]): Argument definitions
+        arg_map: (Dict[str, py_gql.schena.Argument]): ``arg name -> arg definition``
+        description (Optional[str]): Directive description
+        node (Optional[py_gql.lang.ast.DirectiveDefinition]):
+            Source node used when building type from the SDL.
     """
 
     def __init__(self, name, locations, args=None, description=None, node=None):
-        """
-        :type name: str
-        :type locations: [str]
-        :type args: callable|[Argument]|dict(str, Argument)
-        :type description: str
-        """
         assert locations and all(
             [loc in DIRECTIVE_LOCATIONS for loc in locations]
         )
         self.name = name
         self.description = description
         self.locations = locations
-        self._args = args
+        self.arguments = self.args = args or []
+        self.arg_map = {arg.name: arg for arg in self.args}
         self.node = node
-
-    @cached_property
-    def args(self):
-        return _evaluate_lazy_list(self._args)
-
-    arguments = args
-
-    @cached_property
-    def arg_map(self):
-        return {arg.name: arg for arg in self.args}
 
     def __str__(self):
         return "@%s" % self.name
@@ -667,10 +810,11 @@ class Directive(Type):
 def is_input_type(type_):
     """ These types may be used as input types for arguments and directives.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
+    Args:
+        type_ (py_gql.schema.Type): Type under test
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return isinstance(
         unwrap_type(type_), (ScalarType, EnumType, InputObjectType)
@@ -680,10 +824,11 @@ def is_input_type(type_):
 def is_output_type(type_):
     """ These types may be used as output types as the result of fields.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
+    Args:
+        type_ (py_gql.schema.Type): Type under test
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return isinstance(
         unwrap_type(type_),
@@ -694,10 +839,11 @@ def is_output_type(type_):
 def is_leaf_type(type_):
     """  These types may describe types which may be leaf values.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
+    Args:
+        type_ (py_gql.schema.Type): Type under test
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return isinstance(type_, (ScalarType, EnumType))
 
@@ -705,10 +851,11 @@ def is_leaf_type(type_):
 def is_composite_type(type_):
     """ These types may describe the parent context of a selection set.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
+    Args:
+        type_ (py_gql.schema.Type): Type under test
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return isinstance(type_, (ObjectType, InterfaceType, UnionType))
 
@@ -716,10 +863,11 @@ def is_composite_type(type_):
 def is_abstract_type(type_):
     """ These types may describe the parent context of a selection set.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_:
+    Args:
+        type_ (py_gql.schema.Type): Type under test
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return isinstance(type_, (InterfaceType, UnionType))
 
@@ -728,10 +876,13 @@ def unwrap_type(type_):
     """ Recursively extract type for a potentially wrapping type like
     :class:`ListType` or :class:`NonNullType`.
 
-    :type type_: py_gql.schema.types.Type
-    :rtype: py_gql.schema.types.Type
+    Args:
+        type_ (py_gql.schema.Type): Potentially wrapped type
 
-    >>> from py_gql.schema.scalars import Int
+    Returns:
+        Unwrapped type
+
+    >>> from py_gql.schema import Int, NonNullType, ListType
     >>> unwrap_type(NonNullType(ListType(NonNullType(Int)))) is Int
     True
     """
@@ -743,13 +894,13 @@ def unwrap_type(type_):
 def nullable_type(type_):
     """ Extract nullable type from a potentially non nulllable one.
 
-    :type type_: py_gql.schema.types.Type
-    :param type_: Potentially non-nullable type
+    Args:
+        type_ (py_gql.schema.Type): Potentially non-nullable type
 
-    :rtype: py_gql.schema.types.Type
-    :returns: Nullable type
+    Returns:
+        py_gql.schema.Type:  Nullable type
 
-    >>> from py_gql.schema.scalars import Int
+    >>> from py_gql.schema import Int, NonNullType
     >>> unwrap_type(NonNullType(Int)) is Int
     True
     """

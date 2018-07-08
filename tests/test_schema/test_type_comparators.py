@@ -102,11 +102,11 @@ def test_not_implementation_is_not_subtype_of_interface():
 
 
 def test_references_overlap():
-    assert _schema.overlap(Int, Int)
+    assert _schema.types_overlap(Int, Int)
 
 
 def test_int_and_float_do_not_overlap():
-    assert not _schema.overlap(Int, Float)
+    assert not _schema.types_overlap(Int, Float)
 
 
 def test_disjoint_unions_do_not_overlap():
@@ -117,7 +117,7 @@ def test_disjoint_unions_do_not_overlap():
     schema = Schema(
         ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
     )
-    assert not schema.overlap(union1, union2)
+    assert not schema.types_overlap(union1, union2)
 
 
 def test_common_unions_not_overlap():
@@ -128,7 +128,7 @@ def test_common_unions_not_overlap():
     schema = Schema(
         ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
     )
-    assert schema.overlap(union1, union2)
+    assert schema.types_overlap(union1, union2)
 
 
 def test_union_and_interface_with_common_types_overlap():
@@ -138,4 +138,4 @@ def test_union_and_interface_with_common_types_overlap():
     schema = Schema(
         ObjectType("Query", [Field("field1", union), Field("field2", iface)])
     )
-    assert schema.overlap(iface, union)
+    assert schema.types_overlap(iface, union)

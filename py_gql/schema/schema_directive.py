@@ -231,9 +231,7 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
         for directive_name, schema_directive in schema_directives.items():
             assert issubclass(schema_directive, SchemaDirective)
             if schema_directive.definition:
-                directive_definitions[
-                    directive_name
-                ] = schema_directive.definition
+                directive_definitions[directive_name] = schema_directive.definition
 
         for directive_name, definition in directive_definitions.items():
             visitor_cls = schema_directives.get(directive_name)
@@ -254,16 +252,12 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
             name = directive_node.name.value
             directive_def = self._directive_definitions.get(name)
             if directive_def is None:
-                raise SDLError(
-                    'Unknown directive "@%s' % name, [directive_node]
-                )
+                raise SDLError('Unknown directive "@%s' % name, [directive_node])
 
             schema_directive = self._schema_directives.get(name)
             if schema_directive is None:
                 if name not in _SPECIFIED_NAMES or self._strict:
-                    raise SDLError(
-                        'Missing directive implementation for "@%s"' % name
-                    )
+                    raise SDLError('Missing directive implementation for "@%s"' % name)
                 continue
 
             loc = _CLS_TO_LOC.get(type(entity))
@@ -368,8 +362,6 @@ def apply_schema_directives(schema, schema_directives, strict=False):
     :rtype: py_gql.schema.Schema
     :returns: Updated schema
     """
-    _SchemaDirectivesApplicator(schema, schema_directives, strict=strict).visit(
-        schema
-    )
+    _SchemaDirectivesApplicator(schema, schema_directives, strict=strict).visit(schema)
     heal_schema(schema)
     schema.validate()

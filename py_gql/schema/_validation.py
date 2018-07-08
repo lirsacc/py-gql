@@ -32,20 +32,18 @@ def validate_schema(schema):
     Useful for handling untrusted schemas or during development, but ideally
     you do not need to run this in production when controlling the schema.
 
-    Main difference with the reference implementation is that this raises on
-    errors instead of collecting them as you should mostly be using it in
-    development.
+    Args:
+        schema (py_gql.schema.Schema):
 
-    :type schema: py_gql.schema.Schema
-    :param schema: The schema to validate
+    Returns:
+        bool: Whether or not the schema is valid
 
-    :rtype: bool
-    :returns: ``True`` if valid, raises if invalid so should never return False
+    Raises:
+        :class:`py_gql.exc.SchemaError` if the schema is invalid.
     """
     for type_ in schema.types.values():
         _assert(
-            type_ and hasattr(type_, "name"),
-            "Expected named type but got %s" % type_,
+            type_ and hasattr(type_, "name"), "Expected named type but got %s" % type_
         )
         _assert(
             is_introspection_type(type_)
@@ -112,9 +110,7 @@ def _is_valid_name(name):
     >>> _is_valid_name('42')
     False
     """
-    return bool(
-        name and not name.startswith("__") and VALID_NAME_RE.match(name)
-    )
+    return bool(name and not name.startswith("__") and VALID_NAME_RE.match(name))
 
 
 def _assert_valid_name(name):
@@ -126,7 +122,8 @@ def _assert_valid_name(name):
 
 def validate_root_types(schema):
     """
-    :type schema: py_gql.schema.Schema
+    Args:
+        schema (py_gql.schema.Schema):
     """
     _assert(schema.query_type is not None, "Must provide Query type")
     if schema.query_type is not None:
@@ -146,15 +143,15 @@ def validate_root_types(schema):
     if schema.subscription_type is not None:
         _assert(
             isinstance(schema.subscription_type, ObjectType),
-            'Subscription must be ObjectType but got "%s"'
-            % schema.subscription_type,
+            'Subscription must be ObjectType but got "%s"' % schema.subscription_type,
         )
         _assert_valid_name(schema.subscription_type.name)
 
 
 def validate_directives(schema):
     """
-    :type schema: py_gql.schema.Schema
+    Args:
+        schema (py_gql.schema.Schema):
     """
     for directive in schema.directives.values():
         _assert(
@@ -193,8 +190,9 @@ def validate_directives(schema):
 
 def validate_fields(schema, type_):
     """
-    :type schema: py_gql.schema.Schema
-    :type type_: ObjectType|InterfaceType
+    Args:
+        schema (py_gql.schema.Schema):
+        type_ (Union[py_gql.schema.ObjectType,py_gql.schema.InterfaceType]):
     """
     _assert(type_.fields, 'Type "%s" must define at least one field' % type_)
     fieldnames = set()
@@ -224,16 +222,14 @@ def validate_fields(schema, type_):
 
             _assert(
                 isinstance(arg, Argument),
-                'Expected Argument in "%s.%s" but got "%s"'
-                % (type_, field.name, arg),
+                'Expected Argument in "%s.%s" but got "%s"' % (type_, field.name, arg),
             )
 
             _assert_valid_name(arg.name)
 
             _assert(
                 arg.name not in argnames,
-                'Duplicate argument "%s" on "%s.%s"'
-                % (arg.name, type_, field.name),
+                'Duplicate argument "%s" on "%s.%s"' % (arg.name, type_, field.name),
             )
 
             _assert(
@@ -249,8 +245,9 @@ def validate_fields(schema, type_):
 
 def validate_interfaces(schema, type_):
     """
-    :type schema: py_gql.schema.Schema
-    :type type_: ObjectType
+    Args:
+        schema (py_gql.schema.Schema):
+        type_ (py_gql.schema.ObjectType):
     """
     imlemented_types = set()
     for interface in type_.interfaces:
@@ -273,9 +270,10 @@ def validate_interfaces(schema, type_):
 
 def validate_implementation(schema, type_, interface):
     """
-    :type schema: py_gql.schema.Schema
-    :type type_: ObjectType
-    :type interface: InterfaceType
+    Args:
+        schema (py_gql.schema.Schema):
+        type_ (py_gql.schema.ObjectType):
+        interface (py_gql.schema.InterfaceType):
     """
 
     for field in interface.fields:
@@ -308,13 +306,7 @@ def validate_implementation(schema, type_, interface):
                 object_arg is not None,
                 'Interface field argument "%s.%s.%s" is not provided by '
                 '"%s.%s"'
-                % (
-                    interface.name,
-                    field.name,
-                    arg.name,
-                    type_.name,
-                    field.name,
-                ),
+                % (interface.name, field.name, arg.name, type_.name, field.name),
             )
 
             # TODO: Should this use is_subtype ?
@@ -356,12 +348,12 @@ def validate_implementation(schema, type_, interface):
 
 def validate_union_members(schema, union_type):
     """
-    :type schema: py_gql.schema.Schema
-    :type union_type: UnionType
+    Args:
+        schema (py_gql.schema.Schema):
+        union_type (py_gql.schema.UnionType):
     """
     _assert(
-        union_type.types,
-        'UnionType "%s" must at least define one member' % union_type,
+        union_type.types, 'UnionType "%s" must at least define one member' % union_type
     )
 
     member_types = set()
@@ -384,12 +376,12 @@ def validate_union_members(schema, union_type):
 
 def validate_enum_values(schema, enum_type):
     """
-    :type schema: py_gql.schema.Schema
-    :type enum_type: EnumType
+    Args:
+        schema (py_gql.schema.Schema):
+        enum_type (py_gql.schema.EnumType)
     """
     _assert(
-        enum_type.values,
-        'EnumType "%s" must at least define one value' % enum_type,
+        enum_type.values, 'EnumType "%s" must at least define one value' % enum_type
     )
 
     for enum_value in enum_type.values.values():
@@ -405,12 +397,12 @@ def validate_enum_values(schema, enum_type):
 
 def validate_input_fields(schema, input_object):
     """
-    :type schema: py_gql.schema.Schema
-    :type input_object: InputObjectType
+    Args:
+        schema (py_gql.schema.Schema):
+        union_type (py_gql.schema.InputObjectType)
     """
     _assert(
-        input_object.fields,
-        'Type "%s" must define at least one field' % input_object,
+        input_object.fields, 'Type "%s" must define at least one field' % input_object
     )
 
     fieldnames = set()

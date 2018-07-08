@@ -105,10 +105,7 @@ def test_many_duplicate_directives_in_one_location(schema):
         field @directive @directive @directive
     }
     """,
-        [
-            'Duplicate directive "@directive"',
-            'Duplicate directive "@directive"',
-        ],
+        ['Duplicate directive "@directive"', 'Duplicate directive "@directive"'],
         [(54, 64), (65, 75)],
     )
 
@@ -122,10 +119,7 @@ def test_different_duplicate_directives_in_one_location(schema):
         field @directiveA @directiveB @directiveA @directiveB
     }
     """,
-        [
-            'Duplicate directive "@directiveA"',
-            'Duplicate directive "@directiveB"',
-        ],
+        ['Duplicate directive "@directiveA"', 'Duplicate directive "@directiveB"'],
         [(67, 78), (79, 90)],
     )
 
@@ -139,9 +133,6 @@ def test_duplicate_directives_in_many_locations(schema):
     field @directive @directive
     }
     """,
-        [
-            'Duplicate directive "@directive"',
-            'Duplicate directive "@directive"',
-        ],
+        ['Duplicate directive "@directive"', 'Duplicate directive "@directive"'],
         [(38, 48), (72, 82)],
     )

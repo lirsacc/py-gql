@@ -20,8 +20,8 @@ from py_gql.schema import (
     Schema,
     String,
     UnionType,
-    validate_schema,
 )
+from py_gql.schema._validation import validate_schema
 
 SomeScalar = ScalarType(
     "SomeScalar",

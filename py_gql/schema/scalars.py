@@ -91,7 +91,7 @@ Int = ScalarType(
     "Int",
     description=(
         "The `Int` scalar type represents non-fractional signed whole numeric "
-        "values. Int can represent values between -(2^31) and 2^31 - 1. "
+        "values. Int can represent values between -(2^31) and 2^31 - 1."
     ),
     serialize=coerce_int,
     parse=coerce_int,
@@ -187,7 +187,17 @@ UUID = ScalarType(
 
 
 class RegexType(ScalarType):
-    """ Build types to validate regex patterns """
+    """ Types to validate regex patterns.
+
+    Args:
+        name (str): Type name
+        regex (Union[str, compiled pattern]): Regular expression
+        description (Optional[str]): Type description
+
+    Attributes:
+        name (str): Type name
+        description (str): Type description
+    """
 
     def __init__(self, name, regex, description=None):
         """

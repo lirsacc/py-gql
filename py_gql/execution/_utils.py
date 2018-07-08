@@ -199,9 +199,7 @@ class ResolveInfo(object):
         definition = self.schema.directives[directive_name]
         values = {}
         for node in self.nodes:
-            values.update(
-                directive_arguments(definition, node, self.variables) or {}
-            )
+            values.update(directive_arguments(definition, node, self.variables) or {})
         self._directive_values[directive_name] = values
         return values
 

@@ -109,10 +109,7 @@ def test_field_not_defined_on_fragment(schema):
             meowVolume
         }
         """,
-        [
-            'Cannot query field "meowVolume" on type "Dog", '
-            'did you mean "barkVolume"'
-        ],
+        ['Cannot query field "meowVolume" on type "Dog", ' 'did you mean "barkVolume"'],
     )
 
 
@@ -157,10 +154,7 @@ def test_field_not_defined_on_inline_fragment(schema):
             }
         }
         """,
-        [
-            'Cannot query field "meowVolume" on type "Dog", '
-            'did you mean "barkVolume"'
-        ],
+        ['Cannot query field "meowVolume" on type "Dog", ' 'did you mean "barkVolume"'],
     )
 
 
@@ -173,10 +167,7 @@ def test_aliased_field_target_not_defined(schema):
             volume : mooVolume
         }
         """,
-        [
-            'Cannot query field "mooVolume" on type "Dog", '
-            'did you mean "barkVolume"'
-        ],
+        ['Cannot query field "mooVolume" on type "Dog", ' 'did you mean "barkVolume"'],
     )
 
 
@@ -189,10 +180,7 @@ def test_aliased_lying_field_target_not_defined(schema):
             barkVolume : kawVolume
         }
         """,
-        [
-            'Cannot query field "kawVolume" on type "Dog", '
-            'did you mean "barkVolume"'
-        ],
+        ['Cannot query field "kawVolume" on type "Dog", ' 'did you mean "barkVolume"'],
     )
 
 

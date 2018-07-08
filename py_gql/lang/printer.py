@@ -23,9 +23,7 @@ def print_ast(node):  # noqa: C901
     _print = print_ast
     _map = lambda c: map(_print, c if c is not None else [])
     _value = lambda: _print(node.value)
-    _var_defs = lambda: _wrap(
-        "(", _join(_map(node.variable_definitions), ", "), ")"
-    )
+    _var_defs = lambda: _wrap("(", _join(_map(node.variable_definitions), ", "), ")")
     _directives = lambda: _join(_map(node.directives), " ")
     _name = lambda: node.name.value
     _type = lambda: _print(node.type)
@@ -70,9 +68,7 @@ def print_ast(node):  # noqa: C901
                 and (not var_defs)
                 and (op == "query" or not op)
             )
-            else _join(
-                [op, _join([name, var_defs]), directives, selection_set], " "
-            )
+            else _join([op, _join([name, var_defs]), directives, selection_set], " ")
         )
 
     if kind is _ast.VariableDefinition:
@@ -164,9 +160,7 @@ def print_ast(node):  # noqa: C901
         )
 
     if kind is _ast.SchemaDefinition:
-        return _join(
-            ["schema", _directives(), _block(_map(node.operation_types))]
-        )
+        return _join(["schema", _directives(), _block(_map(node.operation_types))])
 
     if kind is _ast.OperationTypeDefinition:
         return "%s: %s" % (node.operation, _type())
@@ -204,9 +198,7 @@ def print_ast(node):  # noqa: C901
         )
 
     if kind is _ast.FieldDefinition:
-        return _join(
-            [_name(), _arg_defs(), ": ", _type(), _wrap(" ", _directives())]
-        )
+        return _join([_name(), _arg_defs(), ": ", _type(), _wrap(" ", _directives())])
 
     if kind is _ast.InputValueDefinition:
         return _join(
@@ -219,26 +211,12 @@ def print_ast(node):  # noqa: C901
 
     if kind is _ast.InterfaceTypeDefinition:
         return _with_desc(
-            _join(
-                [
-                    "interface",
-                    _name(),
-                    _directives(),
-                    _block(_map(node.fields)),
-                ],
-                " ",
-            )
+            _join(["interface", _name(), _directives(), _block(_map(node.fields))], " ")
         )
 
     if kind is _ast.InterfaceTypeExtension:
         return _join(
-            [
-                "extend interface",
-                _name(),
-                _directives(),
-                _block(_map(node.fields)),
-            ],
-            " ",
+            ["extend interface", _name(), _directives(), _block(_map(node.fields))], " "
         )
 
     if kind is _ast.UnionTypeDefinition:
@@ -267,15 +245,12 @@ def print_ast(node):  # noqa: C901
 
     if kind is _ast.EnumTypeDefinition:
         return _with_desc(
-            _join(
-                ["enum", _name(), _directives(), _block(_map(node.values))], " "
-            )
+            _join(["enum", _name(), _directives(), _block(_map(node.values))], " ")
         )
 
     if kind is _ast.EnumTypeExtension:
         return _join(
-            ["extend enum", _name(), _directives(), _block(_map(node.values))],
-            " ",
+            ["extend enum", _name(), _directives(), _block(_map(node.values))], " "
         )
 
     if kind is _ast.EnumValueDefinition:
@@ -283,16 +258,12 @@ def print_ast(node):  # noqa: C901
 
     if kind is _ast.InputObjectTypeDefinition:
         return _with_desc(
-            _join(
-                ["input", _name(), _directives(), _block(_map(node.fields))],
-                " ",
-            )
+            _join(["input", _name(), _directives(), _block(_map(node.fields))], " ")
         )
 
     if kind is _ast.InputObjectTypeExtension:
         return _join(
-            ["extend input", _name(), _directives(), _block(_map(node.fields))],
-            " ",
+            ["extend input", _name(), _directives(), _block(_map(node.fields))], " "
         )
 
     if kind is _ast.DirectiveDefinition:

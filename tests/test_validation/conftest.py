@@ -4,7 +4,7 @@ import pytest
 
 from py_gql.schema import (
     ID,
-    Arg,
+    Argument,
     Boolean,
     Directive,
     EnumType,
@@ -29,15 +29,15 @@ from py_gql.schema import (
 def schema():
 
     Being = InterfaceType(
-        "Being", [Field("name", String, [Arg("surname", Boolean)])]
+        "Being", [Field("name", String, [Argument("surname", Boolean)])]
     )
 
     Pet = InterfaceType(
-        "Pet", [Field("name", String, [Arg("surname", Boolean)])]
+        "Pet", [Field("name", String, [Argument("surname", Boolean)])]
     )
 
     Canine = InterfaceType(
-        "Canine", [Field("name", String, [Arg("surname", Boolean)])]
+        "Canine", [Field("name", String, [Argument("surname", Boolean)])]
     )
 
     DogCommand = EnumType(
@@ -60,15 +60,15 @@ def schema():
     Dog = ObjectType(
         "Dog",
         [
-            Field("name", String, args=[Arg("surname", Boolean)]),
+            Field("name", String, args=[Argument("surname", Boolean)]),
             Field("nickname", String),
             Field("barkVolume", Int),
             Field("barks", Boolean),
-            Field("doesKnowCommand", Boolean, [Arg("dogCommand", DogCommand)]),
+            Field("doesKnowCommand", Boolean, [Argument("dogCommand", DogCommand)]),
             Field(
-                "isHousetrained", Boolean, [Arg("atOtherHomes", Boolean, True)]
+                "isHousetrained", Boolean, [Argument("atOtherHomes", Boolean, True)]
             ),
-            Field("isAtLocation", Boolean, [Arg("x", Int), Arg("y", Int)]),
+            Field("isAtLocation", Boolean, [Argument("x", Int), Argument("y", Int)]),
         ],
         [Being, Pet, Canine],
     )
@@ -76,7 +76,7 @@ def schema():
     Cat = ObjectType(
         "Cat",
         [
-            Field("name", String, args=[Arg("surname", Boolean)]),
+            Field("name", String, args=[Argument("surname", Boolean)]),
             Field("nickname", String),
             Field("meowVolume", Int),
             Field("meows", Boolean),
@@ -92,7 +92,7 @@ def schema():
     Human = ObjectType(
         "Human",
         lambda: [
-            Field("name", String, args=[Arg("surname", Boolean)]),
+            Field("name", String, args=[Argument("surname", Boolean)]),
             Field("iq", Int),
             Field("pets", ListType(Pet)),
             Field("relatives", ListType(Human)),
@@ -103,7 +103,7 @@ def schema():
     Alien = ObjectType(
         "Alien",
         [
-            Field("name", String, args=[Arg("surname", Boolean)]),
+            Field("name", String, args=[Argument("surname", Boolean)]),
             Field("iq", Int),
             Field("numEyes", Int),
         ],
@@ -131,51 +131,51 @@ def schema():
     ComplicatedArgs = ObjectType(
         "ComplicatedArgs",
         [
-            Field("intArgField", String, [Arg("intArg", Int)]),
+            Field("intArgField", String, [Argument("intArg", Int)]),
             Field(
                 "nonNullIntArgField",
                 String,
-                [Arg("nonNullIntArg", NonNullType(Int))],
+                [Argument("nonNullIntArg", NonNullType(Int))],
             ),
-            Field("stringArgField", String, [Arg("stringArg", String)]),
-            Field("booleanArgField", String, [Arg("booleanArg", Boolean)]),
-            Field("enumArgField", String, [Arg("enumArg", FurColor)]),
-            Field("floatArgField", String, [Arg("floatArg", Float)]),
-            Field("idArgField", String, [Arg("idArg", ID)]),
+            Field("stringArgField", String, [Argument("stringArg", String)]),
+            Field("booleanArgField", String, [Argument("booleanArg", Boolean)]),
+            Field("enumArgField", String, [Argument("enumArg", FurColor)]),
+            Field("floatArgField", String, [Argument("floatArg", Float)]),
+            Field("idArgField", String, [Argument("idArg", ID)]),
             Field(
                 "stringListArgField",
                 String,
-                [Arg("stringListArg", ListType(String))],
+                [Argument("stringListArg", ListType(String))],
             ),
             Field(
                 "stringListNonNullArgField",
                 String,
-                [Arg("stringListNonNullArg", ListType(NonNullType(String)))],
+                [Argument("stringListNonNullArg", ListType(NonNullType(String)))],
             ),
-            Field("complexArgField", String, [Arg("complexArg", ComplexInput)]),
+            Field("complexArgField", String, [Argument("complexArg", ComplexInput)]),
             Field(
                 "multipleReqs",
                 String,
-                [Arg("req1", NonNullType(Int)), Arg("req2", NonNullType(Int))],
+                [Argument("req1", NonNullType(Int)), Argument("req2", NonNullType(Int))],
             ),
             Field(
                 "nonNullFieldWithDefault",
                 String,
-                [Arg("arg", NonNullType(Int), default_value=0)],
+                [Argument("arg", NonNullType(Int), default_value=0)],
             ),
             Field(
                 "multipleOpts",
                 String,
-                [Arg("opt1", Int, 0), Arg("opt2", Int, 0)],
+                [Argument("opt1", Int, 0), Argument("opt2", Int, 0)],
             ),
             Field(
                 "multipleOptAndReq",
                 String,
                 [
-                    Arg("req1", NonNullType(Int)),
-                    Arg("req2", NonNullType(Int)),
-                    Arg("opt1", Int, 0),
-                    Arg("opt2", Int, 0),
+                    Argument("req1", NonNullType(Int)),
+                    Argument("req2", NonNullType(Int)),
+                    Argument("opt1", Int, 0),
+                    Argument("opt2", Int, 0),
                 ],
             ),
         ],
@@ -191,7 +191,7 @@ def schema():
         ObjectType(
             "QueryRoot",
             [
-                Field("human", Human, [Arg("id", ID)]),
+                Field("human", Human, [Argument("id", ID)]),
                 Field("alien", Alien),
                 Field("dog", Dog),
                 Field("cat", Cat),
@@ -201,8 +201,8 @@ def schema():
                 Field("humanOrAlien", HumanOrAlien),
                 Field("humanOrAlien", HumanOrAlien),
                 Field("complicatedArgs", ComplicatedArgs),
-                Field("invalidArg", String, [Arg("arg", InvalidScalar)]),
-                Field("anydArg", String, [Arg("arg", AnyScalar)]),
+                Field("invalidArg", String, [Argument("arg", InvalidScalar)]),
+                Field("anydArg", String, [Argument("arg", AnyScalar)]),
             ],
         ),
         types=[Cat, Dog, Human, Alien],

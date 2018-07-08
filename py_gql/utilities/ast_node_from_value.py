@@ -47,10 +47,7 @@ def ast_node_from_value(value, input_type):  # noqa
     if isinstance(input_type, ListType):
         if isinstance(value, (list, tuple)):
             return _ast.ListValue(
-                values=[
-                    ast_node_from_value(entry, input_type.type)
-                    for entry in value
-                ]
+                values=[ast_node_from_value(entry, input_type.type) for entry in value]
             )
         return ast_node_from_value(value, input_type.type)
 
@@ -61,9 +58,7 @@ def ast_node_from_value(value, input_type):  # noqa
         field_nodes = []
         for field_def in input_type.fields:
             if field_def.name in value:
-                field_value = ast_node_from_value(
-                    value[field_def.name], field_def.type
-                )
+                field_value = ast_node_from_value(value[field_def.name], field_def.type)
                 field_nodes.append(
                     _ast.ObjectField(
                         name=_ast.Name(value=field_def.name), value=field_value
@@ -71,8 +66,7 @@ def ast_node_from_value(value, input_type):  # noqa
                 )
             elif field_def.required:
                 raise ValueError(
-                    'Field "%s" of type "%s" is required'
-                    % (field_def.name, input_type)
+                    'Field "%s" of type "%s" is required' % (field_def.name, input_type)
                 )
 
         return _ast.ObjectValue(fields=field_nodes)
@@ -123,6 +117,4 @@ def ast_node_from_value(value, input_type):  # noqa
 
         return _ast.StringValue(value=serialized)
 
-    raise ValueError(
-        'Cannot convert value %r of type "%s"' % (value, input_type)
-    )
+    raise ValueError('Cannot convert value %r of type "%s"' % (value, input_type))

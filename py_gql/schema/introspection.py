@@ -92,10 +92,7 @@ __Directive__ = ObjectType(
     fields=lambda: [
         Field("name", NonNullType(String)),
         Field("description", String),
-        Field(
-            "locations",
-            NonNullType(ListType(NonNullType(__DirectiveLocation__))),
-        ),
+        Field("locations", NonNullType(ListType(NonNullType(__DirectiveLocation__)))),
         Field("args", NonNullType(ListType(NonNullType(__InputValue__)))),
     ],
 )
@@ -104,15 +101,10 @@ __Directive__ = ObjectType(
 __DirectiveLocation__ = EnumType(
     "__DirectiveLocation",
     [
+        EnumValue("QUERY", description="Location adjacent to a query operation."),
+        EnumValue("MUTATION", description="Location adjacent to a mutation operation."),
         EnumValue(
-            "QUERY", description="Location adjacent to a query operation."
-        ),
-        EnumValue(
-            "MUTATION", description="Location adjacent to a mutation operation."
-        ),
-        EnumValue(
-            "SUBSCRIPTION",
-            description="Location adjacent to a subscription operation.",
+            "SUBSCRIPTION", description="Location adjacent to a subscription operation."
         ),
         EnumValue("FIELD", description="Location adjacent to a field."),
         EnumValue(
@@ -120,56 +112,38 @@ __DirectiveLocation__ = EnumType(
             description="Location adjacent to a fragment definition.",
         ),
         EnumValue(
-            "FRAGMENT_SPREAD",
-            description="Location adjacent to a fragment spread.",
+            "FRAGMENT_SPREAD", description="Location adjacent to a fragment spread."
         ),
         EnumValue(
-            "INLINE_FRAGMENT",
-            description="Location adjacent to an inline fragment.",
+            "INLINE_FRAGMENT", description="Location adjacent to an inline fragment."
+        ),
+        EnumValue("SCHEMA", description="Location adjacent to a schema definition."),
+        EnumValue("SCALAR", description="Location adjacent to a scalar definition."),
+        EnumValue(
+            "OBJECT", description="Location adjacent to an object type definition."
         ),
         EnumValue(
-            "SCHEMA", description="Location adjacent to a schema definition."
-        ),
-        EnumValue(
-            "SCALAR", description="Location adjacent to a scalar definition."
-        ),
-        EnumValue(
-            "OBJECT",
-            description="Location adjacent to an object type definition.",
-        ),
-        EnumValue(
-            "FIELD_DEFINITION",
-            description="Location adjacent to a field definition.",
+            "FIELD_DEFINITION", description="Location adjacent to a field definition."
         ),
         EnumValue(
             "ARGUMENT_DEFINITION",
             description="Location adjacent to an argument definition.",
         ),
         EnumValue(
-            "INTERFACE",
-            description="Location adjacent to an interface definition.",
+            "INTERFACE", description="Location adjacent to an interface definition."
         ),
+        EnumValue("UNION", description="Location adjacent to a union definition."),
+        EnumValue("ENUM", description="Location adjacent to an enum definition."),
         EnumValue(
-            "UNION", description="Location adjacent to a union definition."
-        ),
-        EnumValue(
-            "ENUM", description="Location adjacent to an enum definition."
-        ),
-        EnumValue(
-            "ENUM_VALUE",
-            description="Location adjacent to an enum value definition.",
+            "ENUM_VALUE", description="Location adjacent to an enum value definition."
         ),
         EnumValue(
             "INPUT_OBJECT",
-            description=(
-                "Location adjacent to an input object type definition."
-            ),
+            description=("Location adjacent to an input object type definition."),
         ),
         EnumValue(
             "INPUT_FIELD_DEFINITION",
-            description=(
-                "Location adjacent to an input object field definition."
-            ),
+            description=("Location adjacent to an input object field definition."),
         ),
     ],
     description=(
@@ -241,10 +215,7 @@ __Type__ = ObjectType(
             ListType(NonNullType(__Type__)),
             resolve=lambda type_, a, c, info: (
                 list(
-                    sorted(
-                        info.schema.get_possible_types(type_),
-                        key=lambda t: t.name,
-                    )
+                    sorted(info.schema.get_possible_types(type_), key=lambda t: t.name)
                 )
                 if is_abstract_type(type_)
                 else None
@@ -295,14 +266,10 @@ __EnumValue__ = ObjectType(
         Field("name", NonNullType(String)),
         Field("description", String),
         Field(
-            "isDeprecated",
-            NonNullType(Boolean),
-            resolve=lambda ev, *_: ev.deprecated,
+            "isDeprecated", NonNullType(Boolean), resolve=lambda ev, *_: ev.deprecated
         ),
         Field(
-            "deprecationReason",
-            String,
-            resolve=lambda ev, *_: ev.deprecation_reason,
+            "deprecationReason", String, resolve=lambda ev, *_: ev.deprecation_reason
         ),
     ],
 )
@@ -396,15 +363,13 @@ __TypeKind__ = EnumType(
         EnumValue(
             "UNION",
             description=(
-                "Indicates this type is a union. `possibleTypes` is "
-                "a valid field."
+                "Indicates this type is a union. `possibleTypes` is " "a valid field."
             ),
         ),
         EnumValue(
             "ENUM",
             description=(
-                "Indicates this type is an enum. `enumValues` is a "
-                "valid field."
+                "Indicates this type is an enum. `enumValues` is a " "valid field."
             ),
         ),
         EnumValue(
@@ -423,8 +388,7 @@ __TypeKind__ = EnumType(
         EnumValue(
             "NON_NULL",
             description=(
-                "Indicates this type is a non-null. `ofType` is a "
-                "valid field."
+                "Indicates this type is a non-null. `ofType` is a " "valid field."
             ),
         ),
     ],

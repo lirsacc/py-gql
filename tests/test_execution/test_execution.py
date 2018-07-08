@@ -10,7 +10,7 @@ from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
     ID,
-    Arg,
+    Argument,
     Boolean,
     Field,
     Int,
@@ -195,7 +195,7 @@ def test_default_resolution_evaluates_methods(exe_cls, exe_kwargs):
         def test(self, args, ctx, info):
             return self._num + args["addend1"] + ctx["addend2"]
 
-    schema = _test_schema(Field("test", Int, [Arg("addend1", Int)]))
+    schema = _test_schema(Field("test", Int, [Argument("addend1", Int)]))
     root = Adder(700)
 
     with exe_cls(**exe_kwargs) as executor:
@@ -316,7 +316,7 @@ def test_forwarded_resolver_arguments(mocker, exe_cls, exe_kwargs):
 
     resolver, context, root = mocker.Mock(), {}, {}
 
-    field = Field("test", String, [Arg("arg", String)], resolve=resolver)
+    field = Field("test", String, [Argument("arg", String)], resolve=resolver)
     query_type = ObjectType("Test", [field])
     doc = parse("query ($var: String) { result: test(arg: $var) }")
     schema = Schema(query_type)
@@ -662,7 +662,7 @@ def _complex_schema():
         [
             Field("id", String),
             Field("name", String),
-            Field("pic", BlogImage, [Arg("width", Int), Arg("height", Int)]),
+            Field("pic", BlogImage, [Argument("width", Int), Argument("height", Int)]),
             Field("recentArticle", lambda: BlogArticle),
         ],
     )
@@ -685,7 +685,7 @@ def _complex_schema():
             Field(
                 "article",
                 BlogArticle,
-                [Arg("id", ID)],
+                [Argument("id", ID)],
                 resolve=lambda _, args, *r: article(args["id"]),
             ),
             Field(
@@ -884,7 +884,7 @@ class TestNonNullArguments(object):
                 Field(
                     "withNonNullArg",
                     String,
-                    args=[Arg("cannotBeNull", NonNullType(String))],
+                    args=[Argument("cannotBeNull", NonNullType(String))],
                     resolve=lambda _, a, *__: json.dumps(
                         a.get("cannotBeNull", "NOT PROVIDED")
                     ),

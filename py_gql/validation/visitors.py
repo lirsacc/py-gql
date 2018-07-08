@@ -92,11 +92,7 @@ class VariablesCollector(ValidationVisitor):
         if self._in_var_def:
             pass
         elif self._op is not None:
-            self._op_variables[self._op][var] = (
-                node,
-                input_type,
-                input_value_def,
-            )
+            self._op_variables[self._op][var] = (node, input_type, input_value_def)
         elif self._fragment is not None:
             self._fragment_variables[self._fragment][var] = (
                 node,

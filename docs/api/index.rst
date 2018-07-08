@@ -7,4 +7,5 @@ API Reference
 
     exc
     lang
+    schema
     utilities

@@ -4,7 +4,7 @@ import pytest
 
 from py_gql.exc import SchemaError, UnknownType
 from py_gql.schema import (
-    Arg,
+    Argument,
     Boolean,
     Directive,
     Field,
@@ -29,7 +29,7 @@ DirInput = InputObjectType("DirInput", [Field("field", String)])
 WrappedDirInput = InputObjectType("WrappedDirInput", [Field("field", String)])
 
 Dir = Directive(
-    "dir", ["OBJECT"], [Arg("arg", DirInput), Arg("argList", ListType(WrappedDirInput))]
+    "dir", ["OBJECT"], [Argument("arg", DirInput), Argument("argList", ListType(WrappedDirInput))]
 )
 
 BlogImage = ObjectType(
@@ -41,7 +41,7 @@ BlogAuthor = ObjectType(
     [
         Field("id", String),
         Field("name", String),
-        Field("pic", BlogImage, [Arg("width", Int), Arg("height", Int)]),
+        Field("pic", BlogImage, [Argument("width", Int), Argument("height", Int)]),
         Field("recentArticle", lambda: BlogArticle),
     ],
 )
@@ -60,7 +60,7 @@ BlogArticle = ObjectType(
 BlogQuery = ObjectType(
     "Query",
     [
-        Field("article", BlogArticle, [Arg("id", String)]),
+        Field("article", BlogArticle, [Argument("id", String)]),
         Field("feed", ListType(BlogArticle)),
     ],
 )
@@ -68,7 +68,7 @@ BlogQuery = ObjectType(
 BlogMutation = ObjectType("Mutation", [Field("writeArticle", BlogArticle)])
 
 BlogSubscription = ObjectType(
-    "Subscription", [Field("articleSubscribe", BlogArticle, [Arg("id", String)])]
+    "Subscription", [Field("articleSubscribe", BlogArticle, [Argument("id", String)])]
 )
 
 
@@ -119,11 +119,11 @@ def test_Schema_includes_nested_input_objects_in_the_map():
     )
     SomeMutation = ObjectType(
         "SomeMutation",
-        [Field("mutateSomething", BlogArticle, [Arg("input", SomeInputObject)])],
+        [Field("mutateSomething", BlogArticle, [Argument("input", SomeInputObject)])],
     )
     SomeSubscription = ObjectType(
         "SomeSubscription",
-        [Field("subscribeToSomething", BlogArticle, [Arg("input", SomeInputObject)])],
+        [Field("subscribeToSomething", BlogArticle, [Argument("input", SomeInputObject)])],
     )
 
     schema = Schema(

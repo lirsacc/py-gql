@@ -331,7 +331,7 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
         if (
             is_composite_type(frag_type)
             and is_composite_type(parent_type)
-            and not self.schema.overlap(frag_type, parent_type)
+            and not self.schema.types_overlap(frag_type, parent_type)
         ):
             self.add_error(
                 'Fragment "%s" cannot be spread here as types "%s" and "%s"'
@@ -347,7 +347,7 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
         if (
             is_composite_type(type_)
             and is_composite_type(parent_type)
-            and not self.schema.overlap(type_, parent_type)
+            and not self.schema.types_overlap(type_, parent_type)
         ):
             self.add_error(
                 'Inline fragment cannot be spread here as types "%s" and "%s"'

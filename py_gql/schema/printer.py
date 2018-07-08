@@ -21,17 +21,46 @@ from .types import (
 )
 
 
-def print_schema(schema, **opts):
+def print_schema(
+    schema,
+    include_descriptions=True,
+    description_format="block",
+    indent="  ",
+    include_introspection_types=False,
+):
     """ Print a GraphQL schema object in a standard SDL formatted string.
 
-    :type **opts: dict
-    :param opts: Keyword arguments passed to `SchemaPrinter`
+    Args:
+        schema (py_gql.schema.Schema): Schema to format
 
-    :rtype: str
-    :returns: Formatted GraphQL schema
+        include_descriptions (bool):
+            Control how descriptions are printed.
+            Falsy values disable the inclusion of descriptions while truthy
+            values enable including descriptions as comments above the related type.
+
+        description_format ("comments"|"block"):
+            Control how descriptions are formatted. ``"comments"`` is the old
+            standard and will be compatible with most GraphQL parsers while
+            ``"block"`` is part of the most recent release and includes
+            descriptions as block strings that can be extracted according to
+            the spec.
+
+        include_descriptions (bool):
+            If ``True``, include introspection types in the output.
+
+        indent (str):
+            Indent character, defaults to 4 spaces.
+
+    Returns:
+        str: Formatted GraphQL schema
     """
     assert isinstance(schema, Schema), "Expected Schema object"
-    return SchemaPrinter(**opts)(schema)
+    return SchemaPrinter(
+        include_descriptions=include_descriptions,
+        description_format=description_format,
+        indent=indent,
+        include_introspection_types=include_introspection_types,
+    )(schema)
 
 
 class SchemaPrinter(object):
@@ -42,21 +71,27 @@ class SchemaPrinter(object):
         indent="  ",
         include_introspection_types=False,
     ):
-        """ Format a GraphQL schema object into a valid SDL string.
+        """
+        Args:
+            schema (py_gql.schema.Schema): Schema to format
 
-        :type include_descriptions: bool
-        :param include_descriptions: Control how descriptions are printed.
-            Falsy values disable the inclusion of descriptions while truthy values
-            enable including descriptions as comments above the related type.
+            include_descriptions (bool):
+                Control how descriptions are printed.
+                Falsy values disable the inclusion of descriptions while truthy
+                values enable including descriptions as comments above the related type.
 
-        :type description_format: "comments"|"block"
-        :param description_format: Control how descriptions are formatted.
-            "comments" is the old standard and will be compatible with most GraphQL
-            parser while "block" is part of the most recent release and includes
-            descriptions as block strings that can be extracted.
+            description_format ("comments"|"block"):
+                Control how descriptions are formatted. ``"comments"`` is the old
+                standard and will be compatible with most GraphQL parsers while
+                ``"block"`` is part of the most recent release and includes
+                descriptions as block strings that can be extracted according to
+                the spec.
 
-        :type indent: int
-        :param indent: Control indent size
+            include_descriptions (bool):
+                If ``True``, include introspection types in the output.
+
+            indent (str):
+                Indent character
         """
         self.include_descriptions = include_descriptions
         self.description_format = description_format
@@ -65,11 +100,10 @@ class SchemaPrinter(object):
 
     def __call__(self, schema):
         """
-        :type schema: py_gql.schema.Schema
-        :param schema: Schema to print
+        schema (py_gql.schema.Schema): Schema to format
 
-        :rtype: str
-        :returns: Formatted GraphQL schema
+        Returns:
+            str: Formatted GraphQL schema
         """
         directives = sorted(
             [
@@ -112,17 +146,15 @@ class SchemaPrinter(object):
         return "\n\n".join((p for p in parts if p)) + "\n"
 
     def print_description(self, definition, depth=0, first_in_block=True):
-        """
-        :type definitions: any
-        :param definition: Described object
+        """ Format a dobject description according to current configuration.
 
-        :type depth: int
-        :parma depth: Level of indentation
+        Args:
+            definitions (any): Described object
+            depth (int): Level of indentation
+            first_in_block (bool):
 
-        :type first_in_block: bool
-        :param first_in_block:
-
-        :rtype: str
+        Returns:
+            str:
         """
         if not self.include_descriptions or not getattr(
             definition, "description"
@@ -216,9 +248,6 @@ class SchemaPrinter(object):
 
     def print_scalar_type(self, type_):
         """
-        :type type_: py_gql.schema.ScalarType
-
-        :rtype str
         """
         return "%sscalar %s" % (
             self.print_description(type_, 0, True),
@@ -226,11 +255,6 @@ class SchemaPrinter(object):
         )
 
     def print_enum_type(self, type_):
-        """
-        :type type_: py_gql.schema.EnumType
-
-        :rtype: str
-        """
         return "%senum %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -250,11 +274,6 @@ class SchemaPrinter(object):
         )
 
     def print_union_type(self, type_):
-        """
-        :type type_: py_gql.schema.UnionType
-
-        :rtype: str
-        """
         return "%sunion %s = %s" % (
             self.print_description(type_),
             type_.name,
@@ -262,11 +281,6 @@ class SchemaPrinter(object):
         )
 
     def print_object_type(self, type_):
-        """
-        :type type_: py_gql.schema.ObjectType
-
-        :rtype: str
-        """
         return "%stype %s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -278,11 +292,6 @@ class SchemaPrinter(object):
         )
 
     def print_interface_type(self, type_):
-        """
-        :type type_: py_gql.schema.InterfaceType
-
-        :rtype: str
-        """
         return "%sinterface %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -290,11 +299,6 @@ class SchemaPrinter(object):
         )
 
     def print_fields(self, type_):
-        """
-        :type type_: py_gql.schema.ObjectType|py_gql.schema.InterfaceType
-
-        :rtype: str
-        """
         return "\n".join(
             [
                 "".join(
@@ -312,11 +316,6 @@ class SchemaPrinter(object):
         )
 
     def print_input_object_type(self, type_):
-        """
-        :type type_: py_gql.schema.InputObjectType
-
-        :rtype: str
-        """
         return "%sinput %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -334,10 +333,6 @@ class SchemaPrinter(object):
         )
 
     def print_directive(self, directive):
-        """
-        :type directive: py_gql.schema.Directive
-        :param directive: Directive to print
-        """
         return "%sdirective @%s%s on %s" % (
             self.print_description(directive),
             directive.name,
@@ -346,13 +341,6 @@ class SchemaPrinter(object):
         )
 
     def print_arguments(self, args, depth=0):
-        """
-        :type args: py_gql.schema.Argument
-        :param args: Argument to print
-
-        :type depth: int
-        :parma depth: Level of indentation
-        """
         if not args:
             return ""
 
@@ -380,12 +368,6 @@ class SchemaPrinter(object):
             )
 
     def print_input_value(self, arg_or_inut_field):
-        """
-        :type arg: py_gql.schema.Argument|py_gql.schema.InputObjectField
-        :param arg:
-
-        :rtype: str
-        """
         s = "%s: %s" % (arg_or_inut_field.name, arg_or_inut_field.type)
         if arg_or_inut_field.has_default_value:
             s += " = %s" % print_ast(
@@ -397,12 +379,6 @@ class SchemaPrinter(object):
 
 
 def _schema_definition(schema, indent):
-    """
-    :type schema: py_gql.schema.Schema
-    :param schema: Schema to print
-
-    :rtype: str
-    """
     if (
         (not schema.query_type or schema.query_type.name == "Query")
         and (

@@ -8,7 +8,7 @@ import pytest
 
 from py_gql.exc import VariablesCoercionError
 from py_gql.schema import (
-    Arg,
+    Argument,
     Field,
     InputField,
     InputObjectType,
@@ -54,7 +54,7 @@ _inspect = lambda name: lambda _, args, *a: json.dumps(
 )
 
 _field = lambda name, argType, **kw: Field(
-    name, String, [Arg("input", argType, **kw)], resolve=_inspect("input")
+    name, String, [Argument("input", argType, **kw)], resolve=_inspect("input")
 )
 
 TestType = ObjectType(

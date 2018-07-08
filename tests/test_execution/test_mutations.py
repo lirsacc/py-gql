@@ -4,7 +4,7 @@
 import pytest
 
 from py_gql.exc import ResolverError
-from py_gql.schema import Arg, Field, Int, ObjectType, Schema
+from py_gql.schema import Argument, Field, Int, ObjectType, Schema
 
 from ._test_utils import TESTED_EXECUTORS, check_execution
 
@@ -55,13 +55,13 @@ schema = Schema(
             Field(
                 "incrementTheNumber",
                 number_holder,
-                args=[Arg("steps", Int)],
+                args=[Argument("steps", Int)],
                 resolve=lambda obj, args, *_: obj.incrementTheNumber(args["steps"]),
             ),
             Field(
                 "immediatelyChangeTheNumber",
                 number_holder,
-                args=[Arg("newNumber", Int)],
+                args=[Argument("newNumber", Int)],
                 resolve=lambda obj, args, *_: (
                     obj.immediatelyChangeTheNumber(args["newNumber"])
                 ),
@@ -69,7 +69,7 @@ schema = Schema(
             Field(
                 "lazilyChangeTheNumber",
                 number_holder,
-                args=[Arg("newNumber", Int)],
+                args=[Argument("newNumber", Int)],
                 resolve=lambda obj, args, *_: (
                     obj.lazilyChangeTheNumber(args["newNumber"])
                 ),
@@ -77,7 +77,7 @@ schema = Schema(
             Field(
                 "failToChangeTheNumber",
                 number_holder,
-                args=[Arg("newNumber", Int)],
+                args=[Argument("newNumber", Int)],
                 resolve=lambda obj, args, *_: (
                     obj.failToChangeTheNumber(args["newNumber"])
                 ),
@@ -85,7 +85,7 @@ schema = Schema(
             Field(
                 "lazilyFailToChangeTheNumber",
                 number_holder,
-                args=[Arg("newNumber", Int)],
+                args=[Argument("newNumber", Int)],
                 resolve=lambda obj, args, *_: (
                     obj.lazilyFailToChangeTheNumber(args["newNumber"])
                 ),

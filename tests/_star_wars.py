@@ -13,7 +13,7 @@ JSON objects in a more complex demo.
 
 from py_gql.exc import ResolverError
 from py_gql.schema import (
-    Arg,
+    Argument,
     EnumType,
     EnumValue,
     Field,
@@ -224,7 +224,7 @@ Query = ObjectType(
             "hero",
             Character,
             [
-                Arg(
+                Argument(
                     "episode",
                     Episode,
                     description=(
@@ -238,13 +238,13 @@ Query = ObjectType(
         Field(
             "human",
             Human,
-            [Arg("id", NonNullType(String), description="Id of the human")],
+            [Argument("id", NonNullType(String), description="Id of the human")],
             resolve=lambda _, args, *r: get_human(args.get("id")),
         ),
         Field(
             "droid",
             Droid,
-            [Arg("id", NonNullType(String), description="Id of the droid")],
+            [Argument("id", NonNullType(String), description="Id of the droid")],
             resolve=lambda _, args, *r: get_droid(args.get("id")),
         ),
     ],

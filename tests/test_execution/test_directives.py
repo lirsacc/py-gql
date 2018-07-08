@@ -5,7 +5,15 @@ import pytest
 
 from py_gql.execution import execute
 from py_gql.lang import parse
-from py_gql.schema import Arg, Directive, Field, Int, ObjectType, Schema, String
+from py_gql.schema import (
+    Argument,
+    Directive,
+    Field,
+    Int,
+    ObjectType,
+    Schema,
+    String,
+)
 
 test_type = ObjectType("TestType", [Field("a", String), Field("b", String)])
 schema = Schema(test_type)
@@ -120,7 +128,7 @@ def test_include_and_skip(include, skip, expected):
 
 def test_custom_directive_on_field(mocker):
     CustomDirective = Directive(
-        "custom", ["FIELD"], [Arg("a", String), Arg("b", Int)]
+        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
     )
     schema = Schema(test_type, directives=[CustomDirective])
     resolver = mocker.Mock()

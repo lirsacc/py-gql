@@ -12,9 +12,7 @@ IncludeDirective = Directive(
         "the `if` argument is true."
     ),
     locations=["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
-    args=[
-        Argument("if", NonNullType(Boolean), description="Included when true")
-    ],
+    args=[Argument("if", NonNullType(Boolean), description="Included when true")],
 )
 
 SkipDirective = Directive(
@@ -24,9 +22,7 @@ SkipDirective = Directive(
         "argument is true."
     ),
     locations=["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
-    args=[
-        Argument("if", NonNullType(Boolean), description="Skipped when true")
-    ],
+    args=[Argument("if", NonNullType(Boolean), description="Skipped when true")],
 )
 
 DEFAULT_DEPRECATION = "No longer supported"

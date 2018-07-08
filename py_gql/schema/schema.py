@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
+from ._validation import validate_schema
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import __Schema__
 from .scalars import SPECIFIED_SCALAR_TYPES
@@ -21,17 +22,65 @@ from .types import (
     is_abstract_type,
     unwrap_type,
 )
-from .validation import validate_schema
 
 _unset = object()
 
 
 class Schema(object):
-    """ Schema definition.
+    """ A GraphQL schema definition.
 
-    A Schema is created by supplying the root types of each type of operation,
-    query and mutation (optional). A schema definition is then supplied to the
-    validator and executor. """
+    Args:
+        query_type (py_gql.schema.ObjectType):
+            The root query type for the schema
+
+        mutation_type (py_gql.schema.ObjectType):
+            The root mutation type for the schema
+
+        subscription_type (py_gql.schema.ObjectType):
+            The root subscription type for the schema
+
+        directives (List[py_gql.schema.Directive]):
+            List of possible directives to use.
+            The default, specified directives (``@include``, ``@skip``) will
+            always be included.
+
+        types (List[py_gql.schema.Type]):
+            List of additional types on top of the types that would be infered
+            from the root types.
+
+        node (py_gql.lang.ast.SchemaDefinition):
+            AST node for the schema if applicable, i.e. when creating the schema
+            from a GraphQL (SDL) document.
+
+    Attributes:
+        query_type (py_gql.schema.ObjectType):
+            The root query type for the schema (required)
+
+        mutation_type (py_gql.schema.ObjectType):
+            The root mutation type for the schema (optional)
+
+        subscription_type (py_gql.schema.ObjectType):
+            The root subscription type for the schema (optional)
+
+        node (py_gql.lang.ast.SchemaDefinition):
+            AST node for the schema if applicable, i.e. when creating the schema
+            from a GraphQL (SDL) document.
+
+        type_map (Dict[str, py_gql.schema.Type]):
+            Mapping ``type name -> Type instance`` of all types used in the
+            schema, including directives.
+
+        types (Dict[str, py_gql.schema.Type]):
+            Mapping ``type name -> Type instance`` of all types used in the
+            schema, excluding directives.
+
+        directives (Dict[str, py_gql.schema.Directive]):
+            Mapping ``directive name -> Directive instance`` of all directives
+            used in the schema.
+
+        implementations (Dict[str, List[py_gql.schema.Directive]]):
+            Mapping of ``interface name -> [implementing object types]``.
+    """
 
     def __init__(
         self,
@@ -42,32 +91,6 @@ class Schema(object):
         types=None,
         node=None,
     ):
-        """
-        :type query_type: py_gql.schema.types.ObjectType
-        :param query_type:
-            The root query type for the schema (required)
-
-        :type mutation_type: py_gql.schema.types.ObjectType
-        :param mutation_type:
-            The root mutation type for the schema (optional)
-
-        :type subscription_type: py_gql.schema.types.ObjectType
-        :param subscription_type:
-            The root subscription type for the schema (optional)
-
-        :type directives: [py_gql.schema.types.Directive]
-        :param directives:
-            List of possible directives to use. The default specified
-            directives will always be added.
-
-        :type types:
-        :param types:
-            List of additional types on top of the types infered from the
-            root types.
-
-        :type node: py_gql.lang.ast.Node
-        :param node: AST node for the schema if applicable
-        """
         self.query_type = query_type
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
@@ -105,14 +128,10 @@ class Schema(object):
 
     def _rebuild_caches(self):
         self.types = {
-            name: t
-            for name, t in self.type_map.items()
-            if not isinstance(t, Directive)
+            name: t for name, t in self.type_map.items() if not isinstance(t, Directive)
         }
         self.directives = {
-            name: t
-            for name, t in self.type_map.items()
-            if isinstance(t, Directive)
+            name: t for name, t in self.type_map.items() if isinstance(t, Directive)
         }
         self.implementations = defaultdict(list)
         for type_ in self.types.values():
@@ -122,36 +141,58 @@ class Schema(object):
         self._is_valid = None
 
     def validate(self):
+        """ Check that the schema is valid and cache the result.
+
+        Returns:
+            bool: ``True`` if the schema is valid
+
+        Raises:
+            :class:`py_gql.exc.SchemaError` if the schema is invalid.
+        """
         if self._is_valid is None:
             self._is_valid = validate_schema(self)
         return self._is_valid
 
-    def get_type(self, type_name, default=_unset):
+    def get_type(self, name, default=_unset):
         """ Get a type by name.
 
-        :type type_name: str
-        :rtype: py_gql.schema.types.Type
+        Args:
+            name (str): Requested type name
+            default: If set, will be returned in case there is no matching type
+
+        Returns:
+            py_gql.schema.Type: Type instance
+
+        Raises:
+            :class:`py_gql.exc.UnknownType`:
+                if ``default`` is not set and the type is not found
+
         """
         try:
-            return self.types[type_name]
+            return self.types[name]
         except KeyError:
             if default is not _unset:
                 return default
-            raise UnknownType(type_name)
+            raise UnknownType(name)
 
     def get_type_from_literal(self, ast_node):
-        """ Given a Schema and an AST node describing a type, return a
-        `Type` definition which applies to that type.
-        For example, if provided the parsed AST node for `[User]`,
-        a `ListType` instance will be returned, containing the type called
-        "User" found in the schema. If a type called "User" is not found in
-        the schema, then `UnknownType` will be raised.
+        """ Given an AST node describing a type, return a
+        corresponding :class:`py_gql.schema.Type` instance.
 
-        This is the equivalent of ``type_from_ast`` in the reference JS
-        implementation.
+        For example, if provided the parsed AST node for ``[User]``,
+        a :class:`py_gql.schema.ListType` instance will be returned, containing
+        the type called ``User`` found in the schema.
+        If a type called ``User`` is not found in the schema, then
+        :class:`py_gql.exc.UnknownType` will be raised.
 
-        :type ast_node: py_gql.lang.ast.Type
-        :rtype: py_gql.schema.types.Type
+        Args:
+            ast_node (py_gql.lang.ast.Type)
+
+        Returns:
+            py_gql.schema.Type: Corresponding type instance
+
+        Raises:
+            :class:`py_gql.exc.UnknownType`: if  any named type is not found
         """
         if ast_node in self._literal_types_cache:
             return self._literal_types_cache[ast_node]
@@ -173,14 +214,12 @@ class Schema(object):
     def get_possible_types(self, type_):
         """ Get the possible implementations of an abstract type.
 
-        :type type_: py_gql.schema.types.UnionType|\
-            py_gql.schema.types.InterfaceType
-        :param type_:
-            Abstract type to check.
+        Args:
+            type_ (Union[py_gql.schema.types.UnionType, py_gql.schema.types.InterfaceType]):
+                Abstract type to check.
 
-        :rtype: [py_gql.schema.types.Type]
-        :return:
-            List of possible implementations.
+        Returns:
+            List[py_gql.schema.types.ObjectType]: List of possible implementations.
         """
         if type_ in self._possible_types:
             return self._possible_types[type_]
@@ -189,27 +228,20 @@ class Schema(object):
             self._possible_types[type_] = type_.types or []
             return self._possible_types[type_]
         elif isinstance(type_, InterfaceType):
-            self._possible_types[type_] = self.implementations.get(
-                type_.name, []
-            )
+            self._possible_types[type_] = self.implementations.get(type_.name, [])
             return self._possible_types[type_]
 
         raise TypeError("Not an abstract type: %s" % type_)
 
     def is_possible_type(self, abstract_type, type_):
-        """ Check that ``possible_type`` is a possible realization of
-        ``abstract_type``.
+        """ Check that ``type_`` is a possible realization of ``abstract_type``.
 
-        :type type_: py_gql.schema.types.UnionType|\
-            py_gql.schema.types.InterfaceType
-        :param type_:
-            Abstract type to check against.
+        Args:
+            abstract_type (Union[py_gql.schema.types.UnionType, py_gql.schema.types.InterfaceType]):
+            type_ (py_gql.schema.Type): Concrete type to check
 
-        :type possible_type: py_gql.schema.types.Type
-        :param possible_type:
-            Realization type to check.
-
-        :rtype: bool
+        Returns:
+            bool: ``True`` if ``type_`` is valid for ``abstract_type``
         """
         return type_ in self.get_possible_types(abstract_type)
 
@@ -217,9 +249,13 @@ class Schema(object):
         """ Provided a type and a super type, return true if the first type is
         either equal or a subset of the second super type (covariant).
 
-        :type type_: py_gql.schema.types.Type
-        :type super_type: py_gql.schema.types.Type
-        :rtype: bool
+        Args:
+            type_ (py_gql.schema.Type):
+            super_type (py_gql.schema.Type):
+
+        Returns:
+            bool:
+
         """
         if type_ == super_type:
             return True
@@ -243,7 +279,7 @@ class Schema(object):
             and self.is_possible_type(super_type, type_)
         )
 
-    def overlap(self, rhs, lhs):
+    def types_overlap(self, rhs, lhs):
         """ Provided two composite types, determine if they "overlap". Two
         composite types overlap when the Sets of possible concrete types for
         each intersect.
@@ -252,9 +288,12 @@ class Schema(object):
         possibly be visited in a context of another type. This function is
         commutative.
 
-        :type rhs: py_gql.schema.types.Type
-        :type lhs: py_gql.schema.types.Type
-        :rtype: bool
+        Args:
+            rhs (py_gql.schema.Type):
+            lhs (py_gql.schema.Type):
+
+        Returns:
+            bool:
         """
         if rhs == lhs:
             return True
@@ -273,8 +312,16 @@ def _build_type_map(types, _type_map=None):
     """ Recursively build a mapping name <> Type from a list of types to include
     all referenced types.
 
-    :type types: List[py_gql.schema.Type]
-    :rtype: dict[str, py_gql.schema.Type]
+    Warning:
+        This will flatten all lazy type definitions and attributes.
+
+    Args:
+        types (List[py_gql.schema.Type]): List of types
+        _type_map (Dict[str, py_gql.schema.Type]):
+            Pre-built type map ( recursive calls)
+
+    Returns:
+        Dict[str, py_gql.schema.Type]
     """
     type_map = _type_map or {}
     for type_ in types or []:
@@ -285,8 +332,7 @@ def _build_type_map(types, _type_map=None):
 
         if not (isinstance(type_, Type) and hasattr(type_, "name")):
             raise SchemaError(
-                'Expected named types but got "%s" of type %s'
-                % (type_, type(type_))
+                'Expected named types but got "%s" of type %s' % (type_, type(type_))
             )
 
         name = type_.name
