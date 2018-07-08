@@ -3,7 +3,7 @@ import os
 
 import invoke
 
-from setup import PKG_NAME
+from py_gql import __pkg__ as pkg
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,13 +41,13 @@ def test(ctx, coverage=False, bail=True, verbose=False, grep=None, file_=None):
         "--exitfirst" if bail else None,
         (
             "--cov %s --cov-config test.ini --no-cov-on-fail "
-            "--cov-report term --cov-report html --cov-report xml " % PKG_NAME
+            "--cov-report term --cov-report html --cov-report xml " % pkg.NAME
         )
         if coverage
         else None,
         "-vvl --full-trace" if verbose else "--quiet",
         "-k %s" % grep if grep else None,
-        "%s tests" % PKG_NAME if file_ is None else file_,
+        "%s tests" % pkg.NAME if file_ is None else file_,
     ]
     with ctx.cd(ROOT):
         ctx.run(_join(cmd), echo=True, pty=True)
@@ -77,7 +77,7 @@ def lint(ctx, verbose=False, config=".flake8"):
                     "flake8",
                     "--config %s" % config,
                     "--show-source" if verbose else None,
-                    "%s tests" % PKG_NAME,
+                    "%s tests" % pkg.NAME,
                 ]
             ),
             echo=True,
@@ -94,4 +94,35 @@ def fmt(ctx, verbose=False, files=None):
             "py_gql/**/*.py tests/**/*.py",
             echo=True,
         )
-        ctx.run("black --line-length=80 py_gql/**/*.py tests/**/*/*.py", echo=True)
+        ctx.run(
+            "black --line-length=80 py_gql/**/*.py tests/**/*/*.py", echo=True
+        )
+        ctx.run("black py_gql/**/*.py tests/**/*/*.py", echo=True)
+
+
+@invoke.task
+def docs(ctx, clean=True, regenerate_reference=False, strict=False):
+    """ """
+    with ctx.cd(os.path.join(ROOT, "docs")):
+        if clean:
+            ctx.run("rm -rf _build", echo=True)
+        if regenerate_reference:
+            if clean:
+                ctx.run("rm -rf ref", echo=True)
+            ctx.run(
+                "sphinx-apidoc -Mef -o ref ../%s" % pkg.NAME,
+                pty=True,
+                echo=True,
+            )
+        ctx.run(
+            _join(
+                [
+                    "sphinx-build",
+                    "-W" if strict else None,
+                    "-b html",
+                    '"." "_build"',
+                ]
+            ),
+            pty=True,
+            echo=True,
+        )

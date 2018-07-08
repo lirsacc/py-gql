@@ -3,17 +3,9 @@
 """
 """
 
-from importlib import import_module
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-
-PKG_NAME = "py_gql"
-PKG_AUTHOR = "Charles Lirsac"
-PKG_AUTHOR_EMAIL = "c.lirsac@gmail.com"
-PKG_URL = ""
-
-VERSION = (0, 0, 1)
-__version__ = ".".join(map(str, VERSION))
+from py_gql import __pkg__ as pkg
 
 
 def run_setup():
@@ -34,16 +26,16 @@ def run_setup():
         if line and not line.startswith("#")
     ]
 
-    version = ".".join(map(str, VERSION))
+    version = pkg.VERSION
 
     setup(
-        name=PKG_NAME,
+        name=pkg.NAME,
         version=version,
         description=__doc__.split("\n")[0],
         long_description=readme,
-        author=PKG_AUTHOR,
-        author_email=PKG_AUTHOR_EMAIL,
-        # url='',
+        author=pkg.pkg.AUTHOR,
+        author_email=pkg.AUTHOR_EMAIL,
+        url=pkg.URL,
         license=license_,
         packages=find_packages(exclude=("tests", "docs")),
         install_requires=requirements,
@@ -61,9 +53,6 @@ def run_setup():
             "Intended Audience :: Developers",
             "Topic :: Software Development :: Libraries",
         ],
-        # entry_points={
-        #     'console_scripts': ['mycli=mymodule:cli'],
-        # },
     )
 
 
