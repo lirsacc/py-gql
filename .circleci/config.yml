@@ -201,6 +201,20 @@ jobs:
                     . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                     inv lint
 
+    docs:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - run:
+                name: Generating documentation
+                command: |
+                    . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                    inv docs --strict
+                    mkdir -p "$(pwd)/workspace/docs"
+                    mv venv${PY}/src/docs/_build/* "$(pwd)/workspace/docs/"
+            - store_artifacts: {path: workspace/docs, destination: .}
+
 workflows:
   version: 2
 
@@ -229,6 +243,11 @@ workflows:
             requires:
                 - deps-37
         - collect-tests:
+            requires:
+                - test
+                - test-27
+                - test-37
+        - docs:
             requires:
                 - test
                 - test-27
