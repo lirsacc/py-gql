@@ -25,7 +25,7 @@ def clean(ctx):
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\.py[cod]|\.pyo$|\.so)" '
+            '| grep -E "(__pycache__|\.py[cod]|\.pyo$|\.so|.pytest_cache)" '
             "| xargs rm -rf",
             echo=True,
         )
