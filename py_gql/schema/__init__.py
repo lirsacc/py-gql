@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Creating, validating and inspecting a GraphQL schema.
+""" Creating, validating and inspecting GraphQL schemas.
 """
 
 # flake8: noqa

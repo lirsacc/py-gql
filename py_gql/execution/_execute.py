@@ -327,10 +327,10 @@ def _resolve_type(value, context, schema, abstract_type):
         return value.__typename__
     else:
         possible_types = schema.get_possible_types(abstract_type)
-        for typ in possible_types:
-            if callable(getattr(typ, "is_type_of", None)):
-                if typ.is_type_of(value, context=context, schema=schema):
-                    return typ
+        for type_ in possible_types:
+            if callable(getattr(type_, "is_type_of", None)):
+                if type_.is_type_of(value, context=context, schema=schema):
+                    return type_
         return None
 
 

@@ -24,17 +24,15 @@ _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 def ast_node_from_value(value, input_type):  # noqa
     """ Infer an ast Node for a Python value given an input type.
 
-    :type value: any
-    :param value: Any python value that can be transformed into a node
+    Args:
+        value (any): Any python value that can be transformed into a node
+        input_type (py_gql.schema.Type): Input type to consider
 
-    :type input_type: py_gql.schema.Type
-    :param input_type: Input type to consider
+    Return:
+        py_gql.lang.ast.Node: Inferred value node
 
-    :rtype: py_gql.lang.ast.Node
-
-    :Raises:
-
-        ``ValueError`` when coercion into a node fails
+    Raises:
+        :py:class:`ValueError` when coercion into a node fails
     """
     assert is_input_type(input_type), "Only supports input types"
     if isinstance(input_type, NonNullType):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Some generic laguage level utilities. """
+""" Some generic laguage level utilities for internal use. """
 
 import collections
 import functools as ft
@@ -56,16 +56,12 @@ class cached_property(property):
 def deduplicate(iterable, key=None):
     """ Deduplicate an iterable.
 
-    The return type is a generator and can only be consumed once,
-    wrap with `list` if you need a static result.
+    Args:
+        iterable (Iterator[any]): source iterator
+        key (callable): Identity function
 
-    :type iterable: Iterable
-    :param iterable: Source iterable.
-
-    :type key: Optional[callable]
-    :param key: Key used to identify equal entries.
-
-    :type: Iterable
+    Yields:
+        any: next deduplicated entry in order of original appearance
 
     >>> list(deduplicate([1, 2, 1, 3, 3]))
     [1, 2, 3]
@@ -106,11 +102,9 @@ def maybe_first(iterable, default=None):
         return default
 
 
-def find_one(iterable, predicate):
+def find_one(iterable, predicate, default=None):
     """ Extract first item matching a predicate function in an iterable.
-
-    Returns None if no entry is found. Basically a shortcut for ``maybe_first``
-    when extracting based on a predicate.
+    Returns ``None`` if no entry is found.
 
     >>> find_one([1, 2, 3, 4], lambda x: x == 2)
     2
@@ -118,20 +112,20 @@ def find_one(iterable, predicate):
     >>> find_one([1, 2, 3, 4], lambda x: x == 5) is None
     True
     """
-    return maybe_first((entry for entry in iterable if predicate(entry)), None)
+    return maybe_first(
+        (entry for entry in iterable if predicate(entry)), default=default
+    )
 
 
 if sys.version >= "3.7":  # flake8: noqa
-    # Take advantage that dicts are guaranteed ordred from 3.7 onward
+    # Take advantage that dicts are guaranteed ordered from 3.7 onward
     OrderedDict = dict
     DefaultOrderedDict = collections.defaultdict
 else:
     OrderedDict = collections.OrderedDict
 
+    # Source: http://stackoverflow.com/a/6190500/562769
     class DefaultOrderedDict(OrderedDict):
-        """ OrderedDict with default values """
-
-        # Source: http://stackoverflow.com/a/6190500/562769
         def __init__(self, default_factory=None, *a, **kw):
             if default_factory is not None and not callable(default_factory):
                 raise TypeError("first argument must be callable")
@@ -197,6 +191,13 @@ def is_iterable(value, strings=True):
     This does no type comparisons.
     Note that by default strings are iterables too!
 
+    Args:
+        value (any): Maybe iterable
+        strings (bool): Include strings as iterable, defaults to ``True``
+
+    Returns:
+        bool: Whether ``value`` is iterable
+
     >>> is_iterable([])
     True
 
@@ -208,16 +209,6 @@ def is_iterable(value, strings=True):
 
     >>> is_iterable(False)
     False
-
-    :type value: any
-    :param value:
-        Object to inspect
-
-    :type strings: bool
-    :param strings:
-        Are strings allowed as iterators?
-
-    :rtype: bool
     """
     try:
         iter(value)

@@ -30,7 +30,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         msg = "Expected type %s, found %s" % (input_type, node)
         if extra:
             msg += " (%s)" % extra
-        self.add_error(msg, node)
+        self.add_error(msg, [node])
 
     def _check_scalar(self, node):
         input_type = self.type_info.input_type
@@ -84,7 +84,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 self.add_error(
                     "Required field %s.%s of type %s was not provided"
                     % (named_type.name, field_def.name, field_def.type),
-                    node,
+                    [node],
                 )
 
     def enter_object_field(self, node):
@@ -102,11 +102,11 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                         parent_type,
                         quoted_options_list(suggestions),
                     ),
-                    node,
+                    [node],
                 )
             else:
                 self.add_error(
                     "Field %s is not defined by type %s"
                     % (node.name.value, parent_type),
-                    node,
+                    [node],
                 )

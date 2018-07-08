@@ -115,10 +115,10 @@ class Schema(object):
             if isinstance(t, Directive)
         }
         self.implementations = defaultdict(list)
-        for typ in self.types.values():
-            if isinstance(typ, ObjectType):
-                for iface in typ.interfaces:
-                    self.implementations[iface.name].append(typ)
+        for type_ in self.types.values():
+            if isinstance(type_, ObjectType):
+                for iface in type_.interfaces:
+                    self.implementations[iface.name].append(type_)
         self._is_valid = None
 
     def validate(self):
@@ -170,37 +170,39 @@ class Schema(object):
             return t
         raise TypeError("Invalid type node %r" % ast_node)
 
-    def get_possible_types(self, typ):
+    def get_possible_types(self, type_):
         """ Get the possible implementations of an abstract type.
 
-        :type typ: py_gql.schema.types.UnionType|\
+        :type type_: py_gql.schema.types.UnionType|\
             py_gql.schema.types.InterfaceType
-        :param typ:
+        :param type_:
             Abstract type to check.
 
         :rtype: [py_gql.schema.types.Type]
         :return:
             List of possible implementations.
         """
-        if typ in self._possible_types:
-            return self._possible_types[typ]
+        if type_ in self._possible_types:
+            return self._possible_types[type_]
 
-        if isinstance(typ, UnionType):
-            self._possible_types[typ] = typ.types or []
-            return self._possible_types[typ]
-        elif isinstance(typ, InterfaceType):
-            self._possible_types[typ] = self.implementations.get(typ.name, [])
-            return self._possible_types[typ]
+        if isinstance(type_, UnionType):
+            self._possible_types[type_] = type_.types or []
+            return self._possible_types[type_]
+        elif isinstance(type_, InterfaceType):
+            self._possible_types[type_] = self.implementations.get(
+                type_.name, []
+            )
+            return self._possible_types[type_]
 
-        raise TypeError("Not an abstract type: %s" % typ)
+        raise TypeError("Not an abstract type: %s" % type_)
 
-    def is_possible_type(self, abstract_type, possible_type):
+    def is_possible_type(self, abstract_type, type_):
         """ Check that ``possible_type`` is a possible realization of
         ``abstract_type``.
 
-        :type typ: py_gql.schema.types.UnionType|\
+        :type type_: py_gql.schema.types.UnionType|\
             py_gql.schema.types.InterfaceType
-        :param typ:
+        :param type_:
             Abstract type to check against.
 
         :type possible_type: py_gql.schema.types.Type
@@ -209,36 +211,36 @@ class Schema(object):
 
         :rtype: bool
         """
-        return possible_type in self.get_possible_types(abstract_type)
+        return type_ in self.get_possible_types(abstract_type)
 
-    def is_subtype(self, typ, super_type):
+    def is_subtype(self, type_, super_type):
         """ Provided a type and a super type, return true if the first type is
         either equal or a subset of the second super type (covariant).
 
-        :type typ: py_gql.schema.types.Type
+        :type type_: py_gql.schema.types.Type
         :type super_type: py_gql.schema.types.Type
         :rtype: bool
         """
-        if typ == super_type:
+        if type_ == super_type:
             return True
 
         if (
-            isinstance(typ, WrappingType)
+            isinstance(type_, WrappingType)
             and isinstance(super_type, WrappingType)
-            and type(typ) == type(super_type)
+            and type(type_) == type(super_type)
         ):
-            return self.is_subtype(typ.type, super_type.type)
+            return self.is_subtype(type_.type, super_type.type)
 
-        if isinstance(typ, NonNullType):
-            return self.is_subtype(typ.type, super_type)
+        if isinstance(type_, NonNullType):
+            return self.is_subtype(type_.type, super_type)
 
-        if isinstance(typ, ListType):
+        if isinstance(type_, ListType):
             return False
 
         return (
             is_abstract_type(super_type)
-            and isinstance(typ, ObjectType)
-            and self.is_possible_type(super_type, typ)
+            and isinstance(type_, ObjectType)
+            and self.is_possible_type(super_type, type_)
         )
 
     def overlap(self, rhs, lhs):
@@ -260,7 +262,7 @@ class Schema(object):
         if is_abstract_type(rhs) and is_abstract_type(lhs):
             rhs_types = self.get_possible_types(rhs)
             lhs_types = self.get_possible_types(lhs)
-            return any((typ in lhs_types for typ in rhs_types))
+            return any((t in lhs_types for t in rhs_types))
 
         return (is_abstract_type(rhs) and self.is_possible_type(rhs, lhs)) or (
             is_abstract_type(lhs) and self.is_possible_type(lhs, rhs)
@@ -275,44 +277,44 @@ def _build_type_map(types, _type_map=None):
     :rtype: dict[str, py_gql.schema.Type]
     """
     type_map = _type_map or {}
-    for typ in types or []:
-        if not typ:
+    for type_ in types or []:
+        if not type_:
             continue
 
-        typ = unwrap_type(typ)
+        type_ = unwrap_type(type_)
 
-        if not (isinstance(typ, Type) and hasattr(typ, "name")):
+        if not (isinstance(type_, Type) and hasattr(type_, "name")):
             raise SchemaError(
                 'Expected named types but got "%s" of type %s'
-                % (typ, type(typ))
+                % (type_, type(type_))
             )
 
-        name = typ.name
+        name = type_.name
         if name in type_map:
-            if typ is not type_map[name]:
+            if type_ is not type_map[name]:
                 raise SchemaError('Duplicate type "%s"' % name)
             continue
 
-        type_map[name] = typ
+        type_map[name] = type_
         child_types = []
 
-        if isinstance(typ, UnionType):
-            child_types.extend(typ.types)
+        if isinstance(type_, UnionType):
+            child_types.extend(type_.types)
 
-        if isinstance(typ, ObjectType):
-            child_types.extend(typ.interfaces)
+        if isinstance(type_, ObjectType):
+            child_types.extend(type_.interfaces)
 
-        if isinstance(typ, (ObjectType, InterfaceType)):
-            for field in typ.fields:
+        if isinstance(type_, (ObjectType, InterfaceType)):
+            for field in type_.fields:
                 child_types.append(field.type)
                 child_types.extend([arg.type for arg in field.args or []])
 
-        if isinstance(typ, InputObjectType):
-            for field in typ.fields:
+        if isinstance(type_, InputObjectType):
+            for field in type_.fields:
                 child_types.append(field.type)
 
-        if isinstance(typ, Directive):
-            child_types.extend([arg.type for arg in typ.args or []])
+        if isinstance(type_, Directive):
+            child_types.extend([arg.type for arg in type_.args or []])
 
         type_map.update(_build_type_map(child_types, _type_map=type_map))
 

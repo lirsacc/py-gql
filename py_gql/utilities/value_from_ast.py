@@ -16,29 +16,25 @@ def value_from_ast(node, type_, variables=None):
     """ Convert an ast value node into a valid python value while validating
     against a given type.
 
-    :type node: py_gql.lang.ast.Value
-    :param node: The value node which value is required
-
-    :type type_: py_gql.schema.Type
-    :param type_: Type to validate against
-
-    :type variables: Optional[dict]
-    :param variables: Variables mapping
-
-    :rtype: any
-    :returns: Coerced value
-
-    :Raises:
-
-        - ``TypeError`` when node is not a value node
-        - :class:`py_gql.exc.InvalidValue` if the value cannot be converted
-        - :class:`py_gql.exc.UnknownVariable` if a variable is required and
-          doesn't exist
-
-    .. warning::
-
+    Warning:
         No validation is done with regard to the variable values which are
         assumed to have been validated before.
+
+    Args:
+        node (py_gql.lang.ast.Value): The value node
+        variables (Optional[dict]): Variables mapping (coerced)
+        type_ (py_gql.schema.Type): Type to validate against
+
+    Returns:
+        any: Extracted value
+
+    Raises:
+        :py:class:`TypeError`
+            when node is not a value node
+        :class:`py_gql.exc.InvalidValue`
+            if the value cannot be converted
+        :class:`py_gql.exc.UnknownVariable`
+            if a variable is required and doesn't exist
     """
     kind = type(node)
 

@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-""" """
 
 import six
 
 
 class Path(object):
-    """ Helper class to encode traversal paths into nested structures.
+    """ Encode traversal paths into nested structures.
 
-    You can interact with it naturally with list, strings or integers (treated as
-    list indices)
+    You can interact with instances naturally with list, strings or integers
+    (treated as list indices)
 
     >>> Path(['foo', 0, 'bar'])
     <Path foo[0].bar>
@@ -16,10 +15,13 @@ class Path(object):
     >>> Path()
     <Path empty>
 
+    >>> bool(Path())
+    False
+
     >>> list(Path(['foo', 0, 'bar']))
     ['foo', 0, 'bar']
 
-    >>> str(Path() + 'foo' + 1 + 'bar')
+    >>> str(Path() + 'foo' + 1 + ['bar'])
     'foo[1].bar'
     """
 

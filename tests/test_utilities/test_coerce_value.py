@@ -17,13 +17,13 @@ from py_gql.schema import (
 from py_gql.utilities import coerce_value
 
 
-def _test(value, typ, expected_result, expected_error=None):
+def _test(value, type_, expected_result, expected_error=None):
     if expected_error is not None:
         with pytest.raises(CoercionError) as exc_info:
-            coerce_value(value, typ)
+            coerce_value(value, type_)
         assert str(exc_info.value) == expected_error
     else:
-        assert coerce_value(value, typ) == expected_result
+        assert coerce_value(value, type_) == expected_result
 
 
 def test_String_raises_on_list():

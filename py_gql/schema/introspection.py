@@ -239,14 +239,14 @@ __Type__ = ObjectType(
         Field(
             "possibleTypes",
             ListType(NonNullType(__Type__)),
-            resolve=lambda typ, a, c, info: (
+            resolve=lambda type_, a, c, info: (
                 list(
                     sorted(
-                        info.schema.get_possible_types(typ),
+                        info.schema.get_possible_types(type_),
                         key=lambda t: t.name,
                     )
                 )
-                if is_abstract_type(typ)
+                if is_abstract_type(type_)
                 else None
             ),
         ),
@@ -469,5 +469,5 @@ type_name_field = Field(
 )
 
 
-def is_introspection_type(typ):
-    return typ in INTROPSPECTION_TYPES
+def is_introspection_type(type_):
+    return type_ in INTROPSPECTION_TYPES

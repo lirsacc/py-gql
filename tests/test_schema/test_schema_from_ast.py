@@ -591,7 +591,7 @@ def test_allows_only_a_single_schema_definition():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 6}],
         "message": "Must provide only one schema definition",
     }
@@ -615,7 +615,7 @@ def test_allows_only_a_single_query_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
         "message": "Can only define one query in schema",
     }
@@ -640,7 +640,7 @@ def test_allows_only_a_single_mutation_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
         "message": "Can only define one mutation in schema",
     }
@@ -665,7 +665,7 @@ def test_allows_only_a_single_subscription_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
         "message": "Can only define one subscription in schema",
     }
@@ -684,7 +684,7 @@ def test_unknown_type_referenced():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 22, "line": 7}],
         "message": "Type Bar not found in document",
     }
@@ -693,7 +693,7 @@ def test_unknown_type_referenced():
 def test_unknown_type_in_interface_list():
     with pytest.raises(SDLError) as exc_info:
         schema_from_ast("type Query implements Bar { field: String }")
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 23, "line": 1}],
         "message": "Type Bar not found in document",
     }
@@ -707,7 +707,7 @@ def test_unknown_type_in_union_list():
             type Query { testUnion: TestUnion }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 31, "line": 2}],
         "message": "Type Bar not found in document",
     }
@@ -726,7 +726,7 @@ def test_unknown_query_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 3}],
         "message": "query type Wat not found in document",
     }
@@ -746,7 +746,7 @@ def test_unknown_mutation_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
         "message": "mutation type Wat not found in document",
     }
@@ -766,7 +766,7 @@ def test_unknown_subscription_type():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
         "message": "subscription type Wat not found in document",
     }
@@ -785,7 +785,7 @@ def test_does_not_consider_operation_names_or_fragment_name():
             fragment Foo on Type { field }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 3}],
         "message": "query type Foo not found in document",
     }
@@ -808,7 +808,7 @@ def test_forbids_duplicate_type_definitions():
             }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 10}],
         "message": "Duplicate type Repeated",
     }
@@ -826,7 +826,7 @@ def test_forbids_duplicate_directive_definition():
             directive @foo on MUTATION
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 7}],
         "message": "Duplicate directive @foo",
     }
@@ -917,7 +917,7 @@ def test_raise_on_unused_extensions_with_flag():
             """,
             _raise_on_unknown_extension=True,
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 6}],
         "message": 'Cannot extend unknown type "Object"',
     }

@@ -198,39 +198,42 @@ class SchemaPrinter(object):
             ast_node_from_value(field_or_enum_value.deprecation_reason, String)
         )
 
-    def print_type(self, typ):
-        if isinstance(typ, ScalarType):
-            return self.print_scalar_type(typ)
-        elif isinstance(typ, ObjectType):
-            return self.print_object_type(typ)
-        elif isinstance(typ, InterfaceType):
-            return self.print_interface_type(typ)
-        elif isinstance(typ, UnionType):
-            return self.print_union_type(typ)
-        elif isinstance(typ, EnumType):
-            return self.print_enum_type(typ)
-        elif isinstance(typ, InputObjectType):
-            return self.print_input_object_type(typ)
+    def print_type(self, type_):
+        if isinstance(type_, ScalarType):
+            return self.print_scalar_type(type_)
+        elif isinstance(type_, ObjectType):
+            return self.print_object_type(type_)
+        elif isinstance(type_, InterfaceType):
+            return self.print_interface_type(type_)
+        elif isinstance(type_, UnionType):
+            return self.print_union_type(type_)
+        elif isinstance(type_, EnumType):
+            return self.print_enum_type(type_)
+        elif isinstance(type_, InputObjectType):
+            return self.print_input_object_type(type_)
 
-        raise TypeError(typ)
+        raise TypeError(type_)
 
-    def print_scalar_type(self, typ):
+    def print_scalar_type(self, type_):
         """
-        :type typ: py_gql.schema.ScalarType
+        :type type_: py_gql.schema.ScalarType
 
         :rtype str
         """
-        return "%sscalar %s" % (self.print_description(typ, 0, True), typ.name)
+        return "%sscalar %s" % (
+            self.print_description(type_, 0, True),
+            type_.name,
+        )
 
-    def print_enum_type(self, typ):
+    def print_enum_type(self, type_):
         """
-        :type typ: py_gql.schema.EnumType
+        :type type_: py_gql.schema.EnumType
 
         :rtype: str
         """
         return "%senum %s {\n%s\n}" % (
-            self.print_description(typ),
-            typ.name,
+            self.print_description(type_),
+            type_.name,
             "\n".join(
                 [
                     "".join(
@@ -241,54 +244,54 @@ class SchemaPrinter(object):
                             self.print_deprecated(enum_value),
                         ]
                     )
-                    for i, enum_value in enumerate(typ.values.values())
+                    for i, enum_value in enumerate(type_.values.values())
                 ]
             ),
         )
 
-    def print_union_type(self, typ):
+    def print_union_type(self, type_):
         """
-        :type typ: py_gql.schema.UnionType
+        :type type_: py_gql.schema.UnionType
 
         :rtype: str
         """
         return "%sunion %s = %s" % (
-            self.print_description(typ),
-            typ.name,
-            " | ".join((t.name for t in typ.types)),
+            self.print_description(type_),
+            type_.name,
+            " | ".join((t.name for t in type_.types)),
         )
 
-    def print_object_type(self, typ):
+    def print_object_type(self, type_):
         """
-        :type typ: py_gql.schema.ObjectType
+        :type type_: py_gql.schema.ObjectType
 
         :rtype: str
         """
         return "%stype %s%s {\n%s\n}" % (
-            self.print_description(typ),
-            typ.name,
+            self.print_description(type_),
+            type_.name,
             " implements %s"
-            % " & ".join([iface.name for iface in typ.interfaces])
-            if typ.interfaces
+            % " & ".join([iface.name for iface in type_.interfaces])
+            if type_.interfaces
             else "",
-            self.print_fields(typ),
+            self.print_fields(type_),
         )
 
-    def print_interface_type(self, typ):
+    def print_interface_type(self, type_):
         """
-        :type typ: py_gql.schema.InterfaceType
+        :type type_: py_gql.schema.InterfaceType
 
         :rtype: str
         """
         return "%sinterface %s {\n%s\n}" % (
-            self.print_description(typ),
-            typ.name,
-            self.print_fields(typ),
+            self.print_description(type_),
+            type_.name,
+            self.print_fields(type_),
         )
 
-    def print_fields(self, typ):
+    def print_fields(self, type_):
         """
-        :type typ: py_gql.schema.ObjectType|py_gql.schema.InterfaceType
+        :type type_: py_gql.schema.ObjectType|py_gql.schema.InterfaceType
 
         :rtype: str
         """
@@ -304,19 +307,19 @@ class SchemaPrinter(object):
                         self.print_deprecated(field),
                     ]
                 )
-                for i, field in enumerate(typ.fields)
+                for i, field in enumerate(type_.fields)
             ]
         )
 
-    def print_input_object_type(self, typ):
+    def print_input_object_type(self, type_):
         """
-        :type typ: py_gql.schema.InputObjectType
+        :type type_: py_gql.schema.InputObjectType
 
         :rtype: str
         """
         return "%sinput %s {\n%s\n}" % (
-            self.print_description(typ),
-            typ.name,
+            self.print_description(type_),
+            type_.name,
             "\n".join(
                 [
                     "%s%s%s"
@@ -325,7 +328,7 @@ class SchemaPrinter(object):
                         self.indent,
                         self.print_input_value(field),
                     )
-                    for i, field in enumerate(typ.fields)
+                    for i, field in enumerate(type_.fields)
                 ]
             ),
         )

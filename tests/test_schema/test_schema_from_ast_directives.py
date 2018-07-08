@@ -68,7 +68,7 @@ def test_directive_on_wrong_location():
             schema_directives={"upper": UppercaseDirective},
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 24, "line": 4}],
         "message": 'Directive "@upper" not applicable to "OBJECT"',
     }
@@ -86,7 +86,7 @@ def test_ignores_unknown_directive_implementation():
             """
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "message": 'Missing directive implementation for "@upper"'
     }
 
@@ -227,7 +227,7 @@ def test_location_not_supported():
             schema_directives={"upper": NoopDirective},
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "message": (
             "SchemaDirective implementation for @upper must "
             "support FIELD_DEFINITION"
@@ -255,7 +255,7 @@ def test_location_not_supported_2():
             schema_directives={"upper": NoopDirective},
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "message": (
             "SchemaDirective implementation for @upper must support SCHEMA"
         )
@@ -276,7 +276,7 @@ def test_missing_definition():
             schema_directives={"upper": NoopDirective},
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 29, "line": 3}],
         "message": 'Unknown directive "@upper',
     }
@@ -328,10 +328,10 @@ def test_multiple_directives_applied_in_order():
 def test_input_values():
     class LimitedLengthScalarType(ScalarType):
         @classmethod
-        def wrap(cls, typ, *args, **kwargs):
-            if isinstance(typ, (NonNullType, ListType)):
-                return type(typ)(cls.wrap(typ.type, *args, **kwargs))
-            return cls(typ, *args, **kwargs)
+        def wrap(cls, type_, *args, **kwargs):
+            if isinstance(type_, (NonNullType, ListType)):
+                return type(type_)(cls.wrap(type_.type, *args, **kwargs))
+            return cls(type_, *args, **kwargs)
 
         def __init__(self, type, min, max):
             assert isinstance(type, ScalarType)

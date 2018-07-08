@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-py_gql.utilities
-~~~~~~~~~~~~~~~~
-
-Mixed bag of exposed utility function and classes that could be useful externally if
-you are building custom GraphQL tooling on top of this library.
+Mixed bag of exposed utility functions and classes that are used internally and
+can be useful if you are building custom GraphQL tooling on top of this
+library.
 """
 
 # flake8: noqa
@@ -24,8 +22,6 @@ from .untyped_value_from_ast import untyped_value_from_ast
 from .value_from_ast import value_from_ast
 
 __all__ = [
-    "Path",
-    "TypeInfoVisitor",
     "ast_node_from_value",
     "coerce_argument_values",
     "coerce_value",
@@ -35,4 +31,6 @@ __all__ = [
     "introspection_query",
     "untyped_value_from_ast",
     "value_from_ast",
+    "Path",
+    "TypeInfoVisitor",
 ]

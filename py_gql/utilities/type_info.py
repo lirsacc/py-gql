@@ -48,6 +48,9 @@ def _get_field_def(schema, parent_type, field):
     return None
 
 
+# This is a very basic re-implementation of the reference javascript
+# implementation which is compatible with our version of AST visitors
+# and it can most likley be improved.
 class TypeInfoVisitor(DispatchingVisitor):
     """ Visitor that tracks current types while traversing a Document.
 
@@ -56,18 +59,16 @@ class TypeInfoVisitor(DispatchingVisitor):
     null values in order to not crash the traversal. This leaves the consumer
     responsible to handle such cases.
 
-    .. note::
-
-        This is a very basic re-implementation of the reference javascript
-        implementation which is compatible with our version of AST visitors
-        and it can most likley be improved.
-
-    .. warning::
-
+    Warning:
         When using this alongside other visitors (such as when using
-        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs**
+        :class:`py_gql.lang.visitor.ParrallelVisitor`), this visitor **needs**
         to be the first one to visit the nodes in order for the information
         provided donwstream to be accurate.
+
+    Attributes:
+        directive (Optional[py_gql.schema.Directive]): Current directive if applicable
+        argument (Optional[py_gql.schema.Argument]): Current argument if applicable
+        enum_value (Optional[py_gql.schema.EnumValue]): Current enum value if applicable
     """
 
     __slots__ = (
@@ -91,61 +92,43 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._field_stack = []
         self._input_value_def_stack = []
 
-        #: Optional[py_gql.schema.Directive]: Current directive if applicable
         self.directive = None
-        #: Optional[py_gql.schema.Argument]: Current argument if applicable
         self.argument = None
-        #: Optional[py_gql.schema.EnumValue]: Current enum value if applicable
         self.enum_value = None
 
     @property
     def type(self):
-        """ Current type if applicable, else ``None``
-
-        :rtype: Optional[py_gql.schema.Type]
-        """
+        """ Optional[py_gql.schema.Type]: Current type if applicable """
         return _peek(self._type_stack)
 
     @property
     def parent_type(self):
-        """ Current type if applicable, else ``None``
-
-        :rtype: Optional[py_gql.schema.Type]
-        """
+        """ Optional[py_gql.schema.Type]: Current type if applicable """
         return _peek(self._parent_type_stack, 1)
 
     @property
     def input_type(self):
-        """ Current input type if applicable, else ``None``
-        (when visiting arguments)
-
-        :rtype: Optional[py_gql.schema.Type]
-        """
+        """ Optional[py_gql.schema.Type]: Current input type if applicable
+        (when visiting arguments) """
         return _peek(self._input_type_stack, 1)
 
     @property
     def parent_input_type(self):
-        """ Current parent input type if applicable, else ``None``
-        (when visiting input objects)
-
-        :rtype: Optional[py_gql.schema.Type]
-        """
+        """ Optional[py_gql.schema.Type]: Current parent input type if applicable
+        (when visiting input objects) """
         return _peek(self._input_type_stack, 2)
 
     @property
     def field(self):
-        """ Current field definition if applicable, else ``None``
-
-        :rtype: Optional[py_gql.schema.Field]
+        """ Optional[py_gql.schema.Field]: Current field definition if applicable
+        (when visiting object)
         """
         return _peek(self._field_stack)
 
     @property
     def input_value_def(self):
-        """ Current input value definition (arg def, input field) if
-        applicable, else ``None``
-
-        :rtype: Optional[Union[py_gql.schema.Argument, py_gql.schema.InputField]]
+        """ Optional[Union[py_gql.schema.Argument, py_gql.schema.InputField]]:
+        Current input value definition (e.g. arg def, input field) if applicable
         """
         return _peek(self._input_value_def_stack)
 
@@ -193,12 +176,14 @@ class TypeInfoVisitor(DispatchingVisitor):
         self.directive = None
 
     def enter_operation_definition(self, node):
-        typ = {
+        type_ = {
             "query": self._schema.query_type,
             "mutation": self._schema.mutation_type,
             "subscription": self._schema.subscription_type,
         }.get(node.operation, None)
-        self._type_stack.append(typ if isinstance(typ, ObjectType) else None)
+        self._type_stack.append(
+            type_ if isinstance(type_, ObjectType) else None
+        )
 
     def leave_operation_definition(self, node):
         self._type_stack.pop()

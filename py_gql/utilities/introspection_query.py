@@ -4,10 +4,12 @@
 def introspection_query(description=True):
     """ Return a generic introspection query to be used by GraphQL clients.
 
-    :type description: int
-    :param description: If ``True`` the query will require descriptions to be included
+    Args:
+        description (bool):
+            If ``True`` the query will require descriptions to be included.
 
-    :rtype: str
+    Returns:
+        str: Canonical intropsection query
     """
     return """
     query IntrospectionQuery {

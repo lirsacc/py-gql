@@ -883,18 +883,18 @@ class Parser(object):
         if self.skip(_token.BracketOpen):
             inner_type = self.parse_type_reference()
             self.expect(_token.BracketClose)
-            typ = _ast.ListType(
+            type_ = _ast.ListType(
                 type=inner_type, loc=self._loc(start), source=self.source
             )
         else:
-            typ = self.parse_named_type()
+            type_ = self.parse_named_type()
 
         if self.skip(_token.ExclamationMark):
             return _ast.NonNullType(
-                type=typ, loc=self._loc(start), source=self.source
+                type=type_, loc=self._loc(start), source=self.source
             )
 
-        return typ
+        return type_
 
     def parse_named_type(self):
         """ NamedType : Name

@@ -109,7 +109,7 @@ def test_object_type_extension_duplicate_field():
             extend type Object { one: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 34, "line": 4}],
         "message": 'Duplicate field "one" when extending type "Object"',
     }
@@ -125,7 +125,7 @@ def test_object_type_extension_already_implemented_interface():
             extend type Object implements IFace1
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 43, "line": 5}],
         "message": 'Interface "IFace1" already implemented for type "Object"',
     }
@@ -140,7 +140,7 @@ def test_object_type_extension_bad_extension():
             extend input Object { two: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
             "Expected ObjectTypeExtension for ObjectType "
@@ -193,7 +193,7 @@ def test_interface_type_extension_duplicate_field():
             extend interface IFace { one: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 38, "line": 4}],
         "message": 'Duplicate field "one" when extending interface "IFace"',
     }
@@ -208,7 +208,7 @@ def test_interface_type_extension_bad_extension():
             extend type IFace { one: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
             "Expected InterfaceTypeExtension for InterfaceType "
@@ -276,7 +276,7 @@ def test_enum_extension_duplicate_value():
             """
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 17, "line": 13}],
         "message": 'Duplicate enum value "RED" when extending EnumType "Foo"',
     }
@@ -302,7 +302,7 @@ def test_enum_extension_bad_extension():
             """
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 12}],
         "message": 'Expected EnumTypeExtension for EnumType "Foo" but got '
         "ObjectTypeExtension",
@@ -353,7 +353,7 @@ def test_input_object_type_extension_duplicate_field():
             extend input Foo { one: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 32, "line": 4}],
         "message": 'Duplicate field "one" when extending input object "Foo"',
     }
@@ -368,7 +368,7 @@ def test_input_object_type_extension_bad_extension():
             extend type Foo { two: Int }
             """
         )
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
             "Expected InputObjectTypeExtension for InputObjectType "
@@ -443,7 +443,7 @@ def test_union_type_extension_duplicate_type():
             """
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 32, "line": 16}],
         "message": 'Duplicate type "Bar" when extending EnumType "Foo"',
     }
@@ -473,7 +473,7 @@ def test_union_type_extension_bad_extension():
             """
         )
 
-    assert exc_info.value.to_json() == {
+    assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 16}],
         "message": (
             'Expected UnionTypeExtension for UnionType "Foo" '

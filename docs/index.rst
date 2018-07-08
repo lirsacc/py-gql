@@ -32,6 +32,10 @@ Documentation
 .. toctree::
    :maxdepth: 3
 
+   getting-started
+   guides
+   api/index
+
 
 Indices and tables
 ------------------

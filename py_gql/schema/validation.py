@@ -42,33 +42,34 @@ def validate_schema(schema):
     :rtype: bool
     :returns: ``True`` if valid, raises if invalid so should never return False
     """
-    for typ in schema.types.values():
+    for type_ in schema.types.values():
         _assert(
-            typ and hasattr(typ, "name"), "Expected named type but got %s" % typ
+            type_ and hasattr(type_, "name"),
+            "Expected named type but got %s" % type_,
         )
         _assert(
-            is_introspection_type(typ)
-            or typ in SPECIFIED_SCALAR_TYPES
-            or _is_valid_name(typ.name),
+            is_introspection_type(type_)
+            or type_ in SPECIFIED_SCALAR_TYPES
+            or _is_valid_name(type_.name),
             'Invalid type name "%s", '
-            "must match /^[_a-zA-Z][_a-zA-Z0-9]*$/" % typ.name,
+            "must match /^[_a-zA-Z][_a-zA-Z0-9]*$/" % type_.name,
         )
 
     validate_root_types(schema)
     validate_directives(schema)
 
-    for typ in schema.types.values():
-        if isinstance(typ, ObjectType):
-            validate_fields(schema, typ)
-            validate_interfaces(schema, typ)
-        elif isinstance(typ, InterfaceType):
-            validate_fields(schema, typ)
-        elif isinstance(typ, UnionType):
-            validate_union_members(schema, typ)
-        elif isinstance(typ, EnumType):
-            validate_enum_values(schema, typ)
-        elif isinstance(typ, InputObjectType):
-            validate_input_fields(schema, typ)
+    for type_ in schema.types.values():
+        if isinstance(type_, ObjectType):
+            validate_fields(schema, type_)
+            validate_interfaces(schema, type_)
+        elif isinstance(type_, InterfaceType):
+            validate_fields(schema, type_)
+        elif isinstance(type_, UnionType):
+            validate_union_members(schema, type_)
+        elif isinstance(type_, EnumType):
+            validate_enum_values(schema, type_)
+        elif isinstance(type_, InputObjectType):
+            validate_input_fields(schema, type_)
 
     return True
 
@@ -190,31 +191,31 @@ def validate_directives(schema):
             argnames.add(arg.name)
 
 
-def validate_fields(schema, typ):
+def validate_fields(schema, type_):
     """
     :type schema: py_gql.schema.Schema
-    :type typ: ObjectType|InterfaceType
+    :type type_: ObjectType|InterfaceType
     """
-    _assert(typ.fields, 'Type "%s" must define at least one field' % typ)
+    _assert(type_.fields, 'Type "%s" must define at least one field' % type_)
     fieldnames = set()
-    for field in typ.fields:
+    for field in type_.fields:
 
         _assert(
             isinstance(field, Field),
-            'Expected Field in "%s" but got "%s"' % (typ, field),
+            'Expected Field in "%s" but got "%s"' % (type_, field),
         )
 
         _assert_valid_name(field.name)
 
         _assert(
             field.name not in fieldnames,
-            'Duplicate field "%s" on "%s"' % (field.name, typ),
+            'Duplicate field "%s" on "%s"' % (field.name, type_),
         )
 
         _assert(
             is_output_type(field.type),
             'Expected output type for field "%s" on "%s" but got "%s"'
-            % (field.name, typ, field.type),
+            % (field.name, type_, field.type),
         )
 
         argnames = set()
@@ -224,7 +225,7 @@ def validate_fields(schema, typ):
             _assert(
                 isinstance(arg, Argument),
                 'Expected Argument in "%s.%s" but got "%s"'
-                % (typ, field.name, arg),
+                % (type_, field.name, arg),
             )
 
             _assert_valid_name(arg.name)
@@ -232,13 +233,13 @@ def validate_fields(schema, typ):
             _assert(
                 arg.name not in argnames,
                 'Duplicate argument "%s" on "%s.%s"'
-                % (arg.name, typ, field.name),
+                % (arg.name, type_, field.name),
             )
 
             _assert(
                 is_input_type(arg.type),
                 'Expected input type for argument "%s" on "%s.%s" '
-                'but got "%s"' % (arg.name, typ, field.name, arg.type),
+                'but got "%s"' % (arg.name, type_, field.name, arg.type),
             )
 
             argnames.add(arg.name)
@@ -246,44 +247,44 @@ def validate_fields(schema, typ):
         fieldnames.add(field.name)
 
 
-def validate_interfaces(schema, typ):
+def validate_interfaces(schema, type_):
     """
     :type schema: py_gql.schema.Schema
-    :type typ: ObjectType
+    :type type_: ObjectType
     """
     imlemented_types = set()
-    for interface in typ.interfaces:
+    for interface in type_.interfaces:
         _assert(
             isinstance(interface, InterfaceType),
             'Type "%s" mut only implement InterfaceType but got "%s"'
-            % (typ, interface),
+            % (type_, interface),
         )
 
         _assert(
             interface.name not in imlemented_types,
             'Type "%s" mut only implement interface "%s" once'
-            % (typ, interface.name),
+            % (type_, interface.name),
         )
 
         imlemented_types.add(interface.name)
 
-        validate_implementation(schema, typ, interface)
+        validate_implementation(schema, type_, interface)
 
 
-def validate_implementation(schema, typ, interface):
+def validate_implementation(schema, type_, interface):
     """
     :type schema: py_gql.schema.Schema
-    :type typ: ObjectType
+    :type type_: ObjectType
     :type interface: InterfaceType
     """
 
     for field in interface.fields:
-        object_field = typ.field_map.get(field.name, None)
+        object_field = type_.field_map.get(field.name, None)
 
         _assert(
             object_field is not None,
             'Interface field "%s.%s" is not implemented by type "%s"'
-            % (interface.name, field.name, typ),
+            % (interface.name, field.name, type_),
         )
 
         _assert(
@@ -294,7 +295,7 @@ def validate_implementation(schema, typ, interface):
                 interface.name,
                 field.name,
                 field.type,
-                typ,
+                type_,
                 field.name,
                 object_field.type,
             ),
@@ -307,7 +308,13 @@ def validate_implementation(schema, typ, interface):
                 object_arg is not None,
                 'Interface field argument "%s.%s.%s" is not provided by '
                 '"%s.%s"'
-                % (interface.name, field.name, arg.name, typ.name, field.name),
+                % (
+                    interface.name,
+                    field.name,
+                    arg.name,
+                    type_.name,
+                    field.name,
+                ),
             )
 
             # TODO: Should this use is_subtype ?
@@ -320,7 +327,7 @@ def validate_implementation(schema, typ, interface):
                     field.name,
                     arg.name,
                     arg.type,
-                    typ.name,
+                    type_.name,
                     field.name,
                     arg.name,
                     object_arg.type,
@@ -337,7 +344,7 @@ def validate_implementation(schema, typ, interface):
                     'Object field argument "%s.%s.%s" is of required type '
                     '"%s" but is not provided by interface field "%s.%s"'
                     % (
-                        typ.name,
+                        type_.name,
                         field.name,
                         arg.name,
                         arg.type,

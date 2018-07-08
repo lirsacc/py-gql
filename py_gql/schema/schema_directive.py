@@ -254,7 +254,9 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
             name = directive_node.name.value
             directive_def = self._directive_definitions.get(name)
             if directive_def is None:
-                raise SDLError('Unknown directive "@%s' % name, directive_node)
+                raise SDLError(
+                    'Unknown directive "@%s' % name, [directive_node]
+                )
 
             schema_directive = self._schema_directives.get(name)
             if schema_directive is None:
@@ -268,7 +270,7 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
             if loc not in directive_def.locations:
                 raise SDLError(
                     'Directive "@%s" not applicable to "%s"' % (name, loc),
-                    directive_node,
+                    [directive_node],
                 )
 
             args = coerce_argument_values(directive_def, directive_node)

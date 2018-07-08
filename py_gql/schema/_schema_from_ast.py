@@ -83,10 +83,10 @@ def schema_from_ast(
         if known_types:
             type_names |= set((t.name for t in known_types))
 
-        for type_name, ext_node in extension_nodes.items():
+        for type_name, ext_nodes in extension_nodes.items():
             if type_name not in type_names:
                 raise SDLError(
-                    'Cannot extend unknown type "%s"' % type_name, ext_node
+                    'Cannot extend unknown type "%s"' % type_name, ext_nodes
                 )
 
     # Second pass = translate types in schema object and apply extensions
@@ -315,7 +315,7 @@ def _build_types_and_directives(  # noqa
             type_def = type_nodes.get(type_name) or _known_types.get(type_name)
             if type_def is None:
                 raise SDLError(
-                    "Type %s not found in document" % type_name, type_node
+                    "Type %s not found in document" % type_name, [type_node]
                 )
             # Leverage the ususal lazy evaluation of fields and types
             # to prevent recursion issues

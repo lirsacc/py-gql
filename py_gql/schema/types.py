@@ -2,7 +2,7 @@
 """ Utilitiy classes to define custom types.
 
 All types used in a schema should be instances of
-``py_gql.schema.types.Type``.
+:class:`py_gql.schema.types.Type`.
 """
 
 import six
@@ -12,7 +12,7 @@ from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
 from ..lang.parser import DIRECTIVE_LOCATIONS
 
 
-def evaluate_lazy_list(entries):
+def _evaluate_lazy_list(entries):
     _entries = lazy(entries)
     if not _entries:
         return []
@@ -28,8 +28,6 @@ _UNDEF = object()
 
 
 class Type(object):
-    """ Base Type class. """
-
     def __repr__(self):
         return str(self)
 
@@ -45,7 +43,11 @@ class Type(object):
 
 
 class NamedType(Type):
-    """ Base Type class.
+    """
+    :vartype name: py_gql.schema.types.Type
+    :ivar name:
+        Name of the type, must be unique across a single
+        :class:`py_gql.schema.Schema` instance
     """
 
     def __str__(self):
@@ -53,15 +55,29 @@ class NamedType(Type):
 
 
 class WrappingType(Type):
-    """ Represent types which wraps other types.
+    """ Types wrapping other types.
+
+    :vartype node: Optional[py_gql.lang.ast.NonNullType]
+    :ivar node: Source node when building type from the SDL
     """
 
-    def __init__(self, typ, node=None):
-        self._type = typ
+    def __init__(self, type_, node=None):
+        """
+        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
+        :param type_: Wrapped type.
+            Can be a callable for lazy definitions.
+
+        :type node: Optional[py_gql.lang.ast.NonNullType]
+        :param node: Source node when building type from the SDL
+        """
+        self._type = type_
         self.node = node
 
     @cached_property
     def type(self):
+        """
+        :rtype: py_gql.schema.types.Type
+        """
         return lazy(self._type)
 
 
@@ -73,11 +89,22 @@ class NonNullType(WrappingType):
     an error is raised if this ever occurs during a request. It is useful for
     fields which you can make a strong guarantee on non-nullability, for example
     usually the id field of a database row will never be null.
+
+    :vartype node: Optional[py_gql.lang.ast.NonNullType]
+    :ivar node: Source node when building type from the SDL
     """
 
-    def __init__(self, typ, node=None):
-        assert not isinstance(typ, NonNullType)
-        self._type = typ
+    def __init__(self, type_, node=None):
+        """
+        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
+        :param type_: Wrapped type.
+            Can be a callable for lazy definitions.
+
+        :type node: Optional[py_gql.lang.ast.NonNullType]
+        :param node: Source node when building type from the SDL
+        """
+        assert not isinstance(type_, NonNullType)
+        self._type = type_
         self.node = node
 
     def __str__(self):
@@ -90,6 +117,9 @@ class ListType(WrappingType):
     A list is a wrapping type which points to another type.
     Lists are often created within the context of defining the fields of
     an object type.
+
+    :vartype node: Optional[py_gql.lang.ast.NonNullType]
+    :ivar node: Source node when building type from the SDL
     """
 
     def __str__(self):
@@ -97,23 +127,54 @@ class ListType(WrappingType):
 
 
 class InputField(object):
-    """ Field of an ``InputType``
+    """ Field definitions for of an :class:`InputType`
+
+    :vartype name: str
+    :ivar name: Fieldname
+
+    :vartype default_value: any
+    :ivar default_value: Default value
+
+    :vartype has_default_value: bool
+    :ivar has_default_value: Whether the default value is set or not.
+        You should only use the :attr:`default_value` attribute if this
+        attribute is ``True``.
+
+    :vartype description: Optional[str]
+    :ivar description: Field description.
+
+    :vartype node: Optional[py_gql.lang.ast.InputValueDefinition]
+    :ivar node: Source node when building type from the SDL
     """
 
     # Yikes! Didn't find a better way to differentiate None as value and no
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
     def __init__(
-        self, name, typ, default_value=_UNDEF, description=None, node=None
+        self, name, type_, default_value=_UNDEF, description=None, node=None
     ):
         """
         :type name: str
-        :type typ: Type
-        :type default_value: any
-        :type description: str
+        :param name: Fieldname
+
+        :type type_: Union[py_gql.schema.types.Type, Callable[[], py_gql.schema.types.Type]]
+        :param type_: Field type.
+            Can be a callable for lazy definitions.
+            Must result in a input type.
+
+        :type default_value: Optional[any]
+        :param default_value: Default value for this field.
+            As `None` is a valid value, you must omit this argument if you want
+            to have no default value.
+
+        :type description: Optional[str]
+        :param description: Field description
+
+        :type node: Optional[py_gql.lang.ast.InputValueDefinition]
+        :ivar node: Source node when building type from the SDL
         """
         self.name = name
-        self._type = typ
+        self._type = type_
         self.default_value = default_value
         self.description = description
         self.has_default_value = self.default_value is not _UNDEF
@@ -121,10 +182,21 @@ class InputField(object):
 
     @cached_property
     def type(self):
+        """ Field type
+
+        :rtype: py_gql.schema.types.Type
+        """
         return lazy(self._type)
 
     @cached_property
     def required(self):
+        """ Whether that field is required or not.
+
+        A field is required if it's type is :class:`NonNullType` and it has no
+        default value.
+
+        :rtype: bool
+        """
         return (
             isinstance(self.type, NonNullType) and self.default_value is _UNDEF
         )
@@ -159,7 +231,7 @@ class InputObjectType(NamedType):
 
     @cached_property
     def fields(self):
-        return evaluate_lazy_list(self._fields)
+        return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
@@ -352,16 +424,16 @@ class Argument(object):
     # value in arguments... at least it's not exposed to callers.
     # Maybe we could wrap default value in a singleton type ?
     def __init__(
-        self, name, typ, default_value=_UNDEF, description=None, node=None
+        self, name, type_, default_value=_UNDEF, description=None, node=None
     ):
         """
         :type name: str
-        :type typ: Type
+        :type type_: Type
         :type default_value: any
         :type description: str
         """
         self.name = name
-        self._type = typ
+        self._type = type_
         self.default_value = default_value
         self.description = description
         self.has_default_value = self.default_value is not _UNDEF
@@ -391,7 +463,7 @@ class Field(object):
     def __init__(
         self,
         name,
-        typ,
+        type_,
         args=None,
         description=None,
         deprecation_reason=None,
@@ -401,7 +473,7 @@ class Field(object):
     ):
         """
         :type name: str
-        :type typ: Type
+        :type type_: Type
         :type args: callable|[Argument]|dict(str, Argument)
         :type fields: [Field]|dict(str, Field)
         :type resolve: callable
@@ -412,7 +484,7 @@ class Field(object):
         assert subscribe is None or callable(subscribe)
 
         self.name = name
-        self._type = typ
+        self._type = type_
         self.description = description
         self.deprecated = bool(deprecation_reason)
         self.deprecation_reason = deprecation_reason
@@ -427,7 +499,7 @@ class Field(object):
 
     @cached_property
     def args(self):
-        return evaluate_lazy_list(self._args)
+        return _evaluate_lazy_list(self._args)
 
     arguments = args
 
@@ -480,11 +552,11 @@ class ObjectType(NamedType):
 
     @cached_property
     def interfaces(self):
-        return evaluate_lazy_list(self._interfaces)
+        return _evaluate_lazy_list(self._interfaces)
 
     @cached_property
     def fields(self):
-        return evaluate_lazy_list(self._fields)
+        return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
@@ -518,7 +590,7 @@ class InterfaceType(NamedType):
 
     @cached_property
     def fields(self):
-        return evaluate_lazy_list(self._fields)
+        return _evaluate_lazy_list(self._fields)
 
     @cached_property
     def field_map(self):
@@ -551,7 +623,7 @@ class UnionType(NamedType):
 
     @cached_property
     def types(self):
-        return evaluate_lazy_list(self._types)
+        return _evaluate_lazy_list(self._types)
 
 
 class Directive(Type):
@@ -580,7 +652,7 @@ class Directive(Type):
 
     @cached_property
     def args(self):
-        return evaluate_lazy_list(self._args)
+        return _evaluate_lazy_list(self._args)
 
     arguments = args
 
@@ -592,65 +664,95 @@ class Directive(Type):
         return "@%s" % self.name
 
 
-def is_input_type(typ):
+def is_input_type(type_):
     """ These types may be used as input types for arguments and directives.
-    """
-    return isinstance(unwrap_type(typ), (ScalarType, EnumType, InputObjectType))
 
+    :type type_: py_gql.schema.types.Type
+    :param type_:
 
-def is_output_type(typ):
-    """ These types may be used as output types as the result of fields.
+    :rtype: bool
     """
     return isinstance(
-        unwrap_type(typ),
+        unwrap_type(type_), (ScalarType, EnumType, InputObjectType)
+    )
+
+
+def is_output_type(type_):
+    """ These types may be used as output types as the result of fields.
+
+    :type type_: py_gql.schema.types.Type
+    :param type_:
+
+    :rtype: bool
+    """
+    return isinstance(
+        unwrap_type(type_),
         (ScalarType, EnumType, ObjectType, InterfaceType, UnionType),
     )
 
 
-def is_leaf_type(typ):
-    """ These types may describe types which may be leaf values.
+def is_leaf_type(type_):
+    """  These types may describe types which may be leaf values.
+
+    :type type_: py_gql.schema.types.Type
+    :param type_:
+
+    :rtype: bool
     """
-    return isinstance(typ, (ScalarType, EnumType))
+    return isinstance(type_, (ScalarType, EnumType))
 
 
-def is_composite_type(typ):
+def is_composite_type(type_):
     """ These types may describe the parent context of a selection set.
+
+    :type type_: py_gql.schema.types.Type
+    :param type_:
+
+    :rtype: bool
     """
-    return isinstance(typ, (ObjectType, InterfaceType, UnionType))
+    return isinstance(type_, (ObjectType, InterfaceType, UnionType))
 
 
-def is_abstract_type(typ):
+def is_abstract_type(type_):
     """ These types may describe the parent context of a selection set.
+
+    :type type_: py_gql.schema.types.Type
+    :param type_:
+
+    :rtype: bool
     """
-    return isinstance(typ, (InterfaceType, UnionType))
+    return isinstance(type_, (InterfaceType, UnionType))
 
 
-def unwrap_type(typ):
+def unwrap_type(type_):
     """ Recursively extract type for a potentially wrapping type like
-    ``ListType`` or ``NonNullType``.
+    :class:`ListType` or :class:`NonNullType`.
 
-    :type typ: Type
-    :rtype: Type
+    :type type_: py_gql.schema.types.Type
+    :rtype: py_gql.schema.types.Type
 
     >>> from py_gql.schema.scalars import Int
     >>> unwrap_type(NonNullType(ListType(NonNullType(Int)))) is Int
     True
     """
-    if isinstance(typ, WrappingType):
-        return unwrap_type(typ.type)
-    return typ
+    if isinstance(type_, WrappingType):
+        return unwrap_type(type_.type)
+    return type_
 
 
-def nullable_type(typ):
+def nullable_type(type_):
     """ Extract nullable type from a potentially non nulllable one.
 
-    :type typ: Type
-    :rtype: Type
+    :type type_: py_gql.schema.types.Type
+    :param type_: Potentially non-nullable type
+
+    :rtype: py_gql.schema.types.Type
+    :returns: Nullable type
 
     >>> from py_gql.schema.scalars import Int
     >>> unwrap_type(NonNullType(Int)) is Int
     True
     """
-    if isinstance(typ, NonNullType):
-        return typ.type
-    return typ
+    if isinstance(type_, NonNullType):
+        return type_.type
+    return type_

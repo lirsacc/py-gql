@@ -83,7 +83,7 @@ class ExecutionContext(object):
         :param path: The traversal path where this error was occuring
         """
         if isinstance(err, six.string_types):
-            err = ResolverError(err, node, path)
+            err = ResolverError(err, [node], path)
         elif isinstance(err, MultiCoercionError):
             for child_error in err.errors:
                 self.add_error(child_error)
@@ -240,7 +240,7 @@ class GraphQLResult(object):
         """ Generate an ordered response dict """
         d = OrderedDict()
         if self._errors is not _unset and self._errors:
-            d["errors"] = [error.to_json() for error in self._errors]
+            d["errors"] = [error.to_dict() for error in self._errors]
         if self._data is not _unset:
             d["data"] = self._data
         if self._extensions:

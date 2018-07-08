@@ -19,9 +19,13 @@ def ensure_unicode(string):
 
 
 def leading_whitespace(string):
-    r"""
-    :type string: str
-    :rtype: int
+    r""" Detect of leading whitespace in a string.
+
+    Args:
+        string (str): Input value
+
+    Returns:
+        int: Length of leading whitespace
 
     >>> leading_whitespace('  \t  foo')
     5
@@ -35,8 +39,11 @@ def leading_whitespace(string):
 
 def is_blank(string):
     """
-    :type string: str
-    :rtype: bool
+    Args:
+        string (str): Input value
+
+    Returns:
+        bool: Whether the string is blank
     """
     return not string.strip()
 
@@ -44,18 +51,18 @@ def is_blank(string):
 def parse_block_string(
     raw_string, strip_trailing_newlines=True, strip_leading_newlines=True
 ):
-    r""" Parse a raw string according to the GraphQL spec's BlockStringValue()
+    """ Parse a raw string according to the GraphQL spec's BlockStringValue()
     http://facebook.github.io/graphql/draft/#BlockStringValue() static
     algorithm. Similar to Coffeescript's block string, Python's docstring trim
     or Ruby's strip_heredoc.
 
-    See https://github.com/facebook/graphql/pull/327 and
-    http://facebook.github.io/graphql/draft/#sec-String-Value for information
-    on the implementation as this is not in the published spec at the time
-    of writing (in the Draft though).
+    Args:
+        raw_string (str): Input value
+        strip_trailing_newlines (bool): Remove trailing newlines
+        strip_leading_newlines (bool): Remove leading newlines
 
-    :type raw_string: str
-    :rtype: str
+    Returns:
+        str: Block string value
     """
     lines = LINE_SEPARATOR.split(raw_string)
     common_indent = None
@@ -90,11 +97,17 @@ dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
 def index_to_loc(body, position):
-    r""" Get the (lineno, col) tuple from a zero-indexed offset.
+    r""" Get the (line number, column number) tuple from a zero-indexed offset.
 
-    :type body: py_gql.lang.source.Source|str
-    :type index: int
-    :rtype: tuple(int, int)
+    Args:
+        body (str): Source string
+        position (int): 0-indexed position of the character
+
+    Returns:
+        Tuple[int, int]: (line number, column number)
+
+    Raises:
+        :py:class:`IndexError` if ``position`` is out of bounds
 
     >>> index_to_loc("ab\ncd\ne", 0)
     (1, 1)
@@ -116,7 +129,7 @@ def index_to_loc(body, position):
     if not body and not position:
         return (1, 1)
 
-    if position > len(body):
+    if position > len(body) or position < 0:
         raise IndexError(position)
 
     lines, cols = 0, 0
@@ -134,9 +147,15 @@ def index_to_loc(body, position):
 def loc_to_index(body, loc):
     r""" Get the zero-indexed offset from a (lineno, col) tuple.
 
-    :type body: py_gql.lang.source.Source|str
-    :type loc: tuple(int, int)
-    :rtype: int
+    Args:
+        body (str): Source string
+        loc (Tuple[int, int]): (line number, column number)
+
+    Returns:
+        int: 0-indexed position of the character
+
+    Raises:
+        :py:class:`IndexError` if ``loc`` is out of bounds
 
     >>> loc_to_index("ab\ncd\ne", (1, 1))
     0
@@ -171,12 +190,15 @@ def loc_to_index(body, loc):
 
 
 def highlight_location(body, position, delta=2):
-    """ Nicely format a position in a source string.
+    """ Nicely format a highlited view of a position into a source string.
 
-    :type body: py_gql.lang.source.Source|str
-    :type position: int
-    :type delta: int
-    :rtype: str
+    Args:
+        body (str): Source string
+        position (int): 0-indexed position of the character
+        delta (int): How many lines around the position should this conserve
+
+    Returns:
+        str: Formatted view
 
     >>> print(highlight_location('''{
     ...     query {
@@ -194,8 +216,7 @@ def highlight_location(body, position, delta=2):
       4:            id
       5:            name
     """
-    # [REVIEW] Hackish for now, but There mist be a more readable way to write
-    # this
+    # REVIEW: There must be a more readable way to write this
     line, col = index_to_loc(body, position)
     line_index = line - 1
     lines = LINE_SEPARATOR.split(body)
@@ -247,7 +268,19 @@ def _split_words_with_boundaries(string, word_boundaries):
 
 
 def wrapped_lines(lines, max_len, word_boundaries=" -_"):
-    """ Generator of wrapped strings in a source iterator to a given length.
+    """ Wrap provided lines to a given length.
+
+    Lines that are under ``max_len`` are left as is, otherwise this splits
+    them based on the specified word boundaries and yields parts of the line
+    that under ``max_len`` until the line has been exhausted,
+
+    Args:
+        lines (Iterator[str]): Source lines
+        max_len (int): Maximum line length
+        word_boundaries (Iterator[str]): Which charcaters are used to split lines
+
+    Yields:
+        str: The next wrapped line
     """
     for line in lines:
         if len(line) <= max_len:
@@ -270,13 +303,12 @@ def wrapped_lines(lines, max_len, word_boundaries=" -_"):
 def levenshtein(s1, s2):
     """ Compute the Levenshtein edit distance between 2 strings.
 
-    :type s1: str
-    :param s1:
+    Args:
+        s1 (str): First string
+        s2 (str): Second string
 
-    :type s2: str
-    :param s2:
-
-    :rtype: int
+    Returns:
+        int: Computed edit distance
     """
     if len(s1) < len(s2):
         return levenshtein(s2, s1)
@@ -298,18 +330,19 @@ def levenshtein(s1, s2):
 
 
 def infer_suggestions(candidate, options, distance=levenshtein):
-    """ Extract the most similar entries to an input string from multiple options
+    """ Extract the most similar entries to an input string given multiple
+    options and a distance function.
 
-    :type candidate: str
-    :param candidate:
+    Args:
+        candidate (str): Input string
+        options (Iterator[str]): Possible options
+        distance (callable):
+            Distance function, must have the signature ``(s1, s2) -> int``
+            where the more similar the inputs are, the lower the result is.
 
-    :type options: List[str]
-    :param options:
-
-    :type distance: (str, str) -> int
-    :param distance:
-
-    :rtype: List[str]
+    Returns:
+        List[str]: Most similar options sorted by similarity (most similar to
+        least similar)
     """
     distances = OrderedDict()
     half = len(candidate) / 2
@@ -322,12 +355,13 @@ def infer_suggestions(candidate, options, distance=levenshtein):
 
 
 def quoted_options_list(options):
-    """ Quote a list of strings
+    """ Quote a list of possible strings.
 
-    :type options: List[str]
-    :param options:
+    Args:
+        options (Iterator[str]): Possible options
 
-    :rtype: str
+    Returns:
+        str: Quoted options
 
     >>> quoted_options_list([])
     ''

@@ -7,20 +7,18 @@ def untyped_value_from_ast(node, variables=None):
     """ Convert an ast value node into a valid python value without type
     validation.
 
-    :type node: py_gql.lang.ast.Value
-    :param node: The value node which value is required
+    Args:
+        node (py_gql.lang.ast.Value): The value node
+        variables (Optional[dict]): Variables mapping (coerced)
 
-    :type variables: Optional[dict]
-    :param variables: Variables mapping
+    Returns:
+        any: Extracted value
 
-    :rtype: any
-    :returns: Extracted value
+    Raises:
 
-    :Raises:
-
-        - ``TypeError`` when node is not a value node
-        - :class:`py_gql.exc.UnknownVariable` if a variable is required and
-          doesn't exist
+        ``TypeError`` when node is not a value node
+        :class:`py_gql.exc.UnknownVariable` if a variable is required and
+        doesn't exist
     """
     kind = type(node)
 
