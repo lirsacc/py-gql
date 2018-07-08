@@ -17,6 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 from recommonmark.parser import CommonMarkParser
+from docs import graphql_pygments  # flake8: noqa
 
 
 # -- Project information -----------------------------------------------------
