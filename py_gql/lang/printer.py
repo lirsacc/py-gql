@@ -7,14 +7,16 @@ from six.moves import map
 from py_gql.lang import ast as _ast
 
 
+# REVIEW: Should split this up somehow...
+# TODO: Support custom identation, look at schema printer.
 def print_ast(node):  # noqa: C901
     """ Converts an AST into a string, using a set of reasonable formatting rules.
 
-    :type node: py_gql.lang.ast.Node
-    :param node:
+    Args:
+        node (py_gql.lang.ast.Node): Input node
 
-    :rtype: str
-    :returns: Formatted value for the provided node
+    Returns:
+        str: Formatted value for the provided node
     """
     kind = type(node)
 

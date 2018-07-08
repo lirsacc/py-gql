@@ -107,7 +107,7 @@ def index_to_loc(body, position):
         Tuple[int, int]: (line number, column number)
 
     Raises:
-        :py:class:`IndexError` if ``position`` is out of bounds
+        :py:class:`IndexError`: if ``position`` is out of bounds
 
     >>> index_to_loc("ab\ncd\ne", 0)
     (1, 1)
@@ -155,7 +155,7 @@ def loc_to_index(body, loc):
         int: 0-indexed position of the character
 
     Raises:
-        :py:class:`IndexError` if ``loc`` is out of bounds
+        :py:class:`IndexError`: if ``loc`` is out of bounds
 
     >>> loc_to_index("ab\ncd\ne", (1, 1))
     0

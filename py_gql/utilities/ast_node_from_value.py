@@ -32,7 +32,7 @@ def ast_node_from_value(value, input_type):  # noqa
         py_gql.lang.ast.Node: Inferred value node
 
     Raises:
-        :py:class:`ValueError` when coercion into a node fails
+        :py:class:`ValueError`: when coercion into a node fails
     """
     assert is_input_type(input_type), "Only supports input types"
     if isinstance(input_type, NonNullType):
@@ -47,7 +47,7 @@ def ast_node_from_value(value, input_type):  # noqa
     if isinstance(input_type, ListType):
         if isinstance(value, (list, tuple)):
             return _ast.ListValue(
-                value=[
+                values=[
                     ast_node_from_value(entry, input_type.type)
                     for entry in value
                 ]

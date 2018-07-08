@@ -26,6 +26,8 @@ It supports:
 Quick Links
 -----------
 
+- The source code is available on `Github <https://github.com/lirsacc/py-gql>`_
+
 Documentation
 -------------
 

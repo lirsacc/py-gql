@@ -4,7 +4,7 @@
 
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
-from py_gql.lang.visitor import SkipNode, Visitor, visit_document
+from py_gql.lang.visitor import SkipNode, Visitor, visit
 
 
 class NullVisitor(Visitor):
@@ -17,19 +17,19 @@ class NullVisitor(Visitor):
 
 def test_null_visitor_does_not_crash():
     ast = parse("{ a }", no_location=True)
-    visit_document(NullVisitor(), ast)
+    visit(NullVisitor(), ast)
 
 
 def test_null_visitor_does_not_crash_on_kitchen_sink(fixture_file):
     source = fixture_file("kitchen-sink.graphql")
     ast = parse(source, no_location=True)
-    visit_document(NullVisitor(), ast)
+    visit(NullVisitor(), ast)
 
 
 def test_null_visitor_does_not_crash_on_kitchen_sink_schema(fixture_file):
     source = fixture_file("schema-kitchen-sink.graphql")
     ast = parse(source, no_location=True)
-    visit_document(NullVisitor(), ast)
+    visit(NullVisitor(), ast)
 
 
 class Tracker(NullVisitor):
@@ -46,7 +46,7 @@ class Tracker(NullVisitor):
 def test_it_processes_nodes_in_the_correct_order():
     ast = parse("{ a }", no_location=True)
     visitor = Tracker()
-    visit_document(visitor, ast)
+    visit(visitor, ast)
     assert visitor.stack == [
         ("enter", "Document"),
         ("enter", "OperationDefinition"),
@@ -70,7 +70,7 @@ def test_it_allows_early_exit():
                 raise SkipNode()
 
     visitor = _Visitor()
-    visit_document(visitor, ast)
+    visit(visitor, ast)
 
     assert visitor.stack == [
         ("enter", "Document"),

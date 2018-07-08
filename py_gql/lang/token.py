@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-Encode all the valid source tokens found in a GraphQL document as described in
-`this document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_.
+All the valid source tokens found in a valid GraphQL document (as
+described in `this document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_)
+can be encoded as an instance of :class:`Token`.
 """
 
 
 class Token(object):
-    """ Base token class
+    """ Base token class.
 
-    :ivar start: Starting position for this token (0-indexed)
-    :ivar end: Final position for this token (0-indexed)
-    :ivar value: Characters making up this token
+    All token instances can be compared by simple equality.
+
+    Attributes:
+        start (int): Starting position for this token (0-indexed)
+        end (int): End position for this token (0-indexed)
+        value (Optional[str]): Characters making up this token
+
+    Args:
+        start (int): Starting position for this token (0-indexed)
+        end (int): End position for this token (0-indexed)
+        value (Optional[str]): Characters making up this token
     """
 
     __slots__ = "start", "end", "value"
 
     def __init__(self, start, end, value=None):
-        """
-        :type start: int
-        :param start: Starting position for this token (0-indexed)
-
-        :type end: int
-        :param end: Final position for this token (0-indexed)
-
-        :type value: Optional[str]
-        :param value: Characters making up this token
-        """
         self.start = start
         self.end = end
         self.value = value

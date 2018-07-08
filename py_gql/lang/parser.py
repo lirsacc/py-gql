@@ -69,17 +69,15 @@ def _unexpected_token(msg_or_token, *args):
 def parse(source, **kwargs):
     """ Parse a string as a GraphQL Document.
 
-    :type source: Union[str, bytes]
-    :param source: The GraphQL document to parse
+    Args:
+        source (Union[str, bytes]): source document
+        **kwargs: Remaining keyword arguments passed to :class:`Parser`
 
-    :param kwargs: Remaining keyword arguments to :class:`Parser`
+    Returns:
+        py_gql.lang.ast.Document: Parsed document
 
-    :rtype: py_gql.lang.ast.Document
-    :returns: Parsed document
-
-    :Raises:
-
-        :class:`py_gql.exc.GraphQLSyntaxError` if a syntax error is encountered.
+    Raises:
+        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
 
     """
     return Parser(source, **kwargs).parse_document()
@@ -88,22 +86,21 @@ def parse(source, **kwargs):
 def parse_value(source, **kwargs):
     """ Parse a string as a single GraphQL value.
 
-    This is useful within tools that operate upon GraphQL values (eg. ``[42]``) directly
-    and in isolation of complete GraphQL documents. Consider providing the results
-    to the utility functions :func:`py_gql.utilities.untyped_value_from_ast` and
+    This is useful within tools that operate upon GraphQL values (eg. ``[42]``)
+    directly and in isolation of complete GraphQL documents. Consider providing
+    the results to the utility functions
+    :func:`py_gql.utilities.untyped_value_from_ast` and
     :func:`py_gql.utilities.value_from_ast`.
 
-    :type source: Union[str, bytes]
-    :param source: The GraphQL document to parse
+    Args:
+        source (Union[str, bytes]): source document
+        **kwargs: Remaining keyword arguments passed to :class:`Parser`
 
-    :param kwargs: Remaining keyword arguments to :class:`Parser`
+    Returns:
+        py_gql.lang.ast.Value: Parsed value
 
-    :rtype: py_gql.lang.ast.Value
-    :returns: Parsed node
-
-    :Raises:
-
-        :class:`py_gql.exc.GraphQLSyntaxError` if a syntax error is encountered.
+    Raises:
+        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
     parser.expect(_token.SOF)
@@ -116,20 +113,18 @@ def parse_type(source, **kwargs):
     """ Parse a string as a single GraphQL type.
 
     This is useful within tools that operate upon GraphQL types (eg. ``[Int!]``)
-    directly and in isolation of complete GraphQL documents such as when building a
-    schema from the SDL or stitching schemas together.
+    directly and in isolation of complete GraphQL documents such as when
+    building a schema from the SDL or stitching schemas together.
 
-    :type source: Union[str, bytes]
-    :param source: The GraphQL document to parse
+    Args:
+        source (Union[str, bytes]): source document
+        **kwargs: Remaining keyword arguments passed to :class:`Parser`
 
-    :param kwargs: Remaining keyword arguments to :class:`Parser`
+    Returns:
+        py_gql.lang.ast.Type: Parsed type
 
-    :rtype: py_gql.lang.ast.Type
-    :returns: Parsed node
-
-    :Raises:
-
-        :class:`py_gql.exc.GraphQLSyntaxError` if a syntax error is encountered.
+    Raises:
+        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
     parser.expect(_token.SOF)
@@ -154,8 +149,59 @@ class Parser(object):
 
     Call :meth:`parse_document` to parse a GraphQL document.
 
-    All ``parse_*`` methods will raise :class:`py_gql.exc.GraphQLSyntaxError` if a
-    syntax error is encountered.
+    All ``parse_*`` methods will raise :class:`py_gql.exc.GraphQLSyntaxError`
+    if a syntax error is encountered.
+
+    Args:
+        source (Union[str, bytes]): source document
+
+        no_location (bool):
+            By default, the parser creates AST nodes that know the location
+            in the source that they correspond to. This configuration flag
+            disables that behavior for performance or testing reasons.
+
+        allow_type_system (bool):
+            By default, the parser will accept schema definition nodes, when
+            only executing GraphQL queries setting this to ``False`` can save
+            operations and remove the need for some later validation.
+
+        allow_legacy_sdl_empty_fields (bool):
+            If enabled, the parser will parse empty fields sets in the Schema
+            Definition Language. Otherwise, the parser will follow the current
+            specification.
+
+            Warning:
+                This option is provided to ease adoption of the final SDL
+                specification and will be removed in a future major release.
+
+        allow_legacy_sdl_implements_interfaces (bool):
+            If enabled, the parser will parse implemented interfaces with no
+            ``&`` character between each interface. Otherwise, the parser will
+            follow the current specification.
+
+            Warning:
+                This option is provided to ease adoption of the final SDL
+                specification and will be removed in a future major release.
+
+        experimental_fragment_variables (bool):
+            If enabled, the parser will understand and parse variable
+            definitions contained in a fragment definition. They'll be
+            represented in the ``variable_definitions`` field of the
+            FragmentDefinition.
+
+            The syntax is identical to normal, query-defined variables,
+            for example:
+
+            .. code-block:: graphql
+
+                fragment A($var: Boolean = false) on T  {
+                    ...
+                }
+
+            Warning:
+                This feature is experimental and may change or be removed
+                in the future.
+
     """
 
     def __init__(
@@ -167,75 +213,16 @@ class Parser(object):
         allow_legacy_sdl_implements_interfaces=False,
         experimental_fragment_variables=False,
     ):
-        """
-        :type source: Union[str, bytes]
-        :param source: The GraphQL document to parse
+        self._lexer = Lexer(source)
+        self._source = self._lexer._source
 
-        :type no_location: `bool`
-        :param no_location:
-            By default, the parser creates AST nodes that know the location
-            in the source that they correspond to. This configuration flag
-            disables that behavior for performance or testing reasons.
-
-        :type allow_type_system: bool
-        :param allow_type_system:
-            By default, the parser will accept schema definition nodes, when
-            only executing GraphQL queries setting this to ``False`` can save
-            operations and remove the need for some later validation.
-
-        :type allow_legacy_sdl_empty_fields: bool
-        :param allow_legacy_sdl_empty_fields:
-            If enabled, the parser will parse empty fields sets in the Schema
-            Definition Language. Otherwise, the parser will follow the current
-            specification.
-
-            .. warning::
-
-                This option is provided to ease adoption of the final SDL
-                specification and will be removed in a future major release.
-
-        :type allow_legacy_sdl_implements_interfaces: bool
-        :param allow_legacy_sdl_implements_interfaces:
-            If enabled, the parser will parse implemented interfaces with no
-            `&` character between each interface. Otherwise, the parser will
-            follow the current specification.
-
-            .. warning::
-
-                This option is provided to ease adoption of the final SDL
-                specification and will be removed in a future major release.
-
-        :type experimental_fragment_variables: bool
-        :param experimental_fragment_variables:
-            If enabled, the parser will understand and parse variable
-            definitions contained in a fragment definition. They'll be
-            represented in the `variable_definitions` field of the
-            FragmentDefinition.
-
-            The syntax is identical to normal, query-defined variables.
-            For example:
-
-            .. code-block:: graphql
-
-                fragment A($var: Boolean = false) on T  {
-                    ...
-                }
-
-            .. warning::
-
-                This feature is experimental and may change or be removed
-                in the future.
-        """
-        self.lexer = Lexer(source)
-        self.source = self.lexer._source
-
-        self.no_location = no_location
-        self.allow_type_system = allow_type_system
-        self.allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
-        self.allow_legacy_sdl_implements_interfaces = (
+        self._no_location = no_location
+        self._allow_type_system = allow_type_system
+        self._allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
+        self._allow_legacy_sdl_implements_interfaces = (
             allow_legacy_sdl_implements_interfaces
         )
-        self.experimental_fragment_variables = experimental_fragment_variables
+        self._experimental_fragment_variables = experimental_fragment_variables
 
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead
@@ -252,24 +239,24 @@ class Parser(object):
             self._window = []
 
         try:
-            self._window.append(next(self.lexer))
+            self._window.append(next(self._lexer))
         except StopIteration:
             if len(self._window) == 0:
-                raise UnexpectedEOF(self.lexer._len, self.lexer._source)
+                raise UnexpectedEOF(self._lexer._len, self._lexer._source)
 
     def peek(self, count=1):
-        """ Look at a token ahead of the current position without advancing the parsing
-        position.
+        """ Look at a token ahead of the current position without advancing the
+        parsing position.
 
-        :type count: int
-        :param count: How many tokens to look ahead.
+        Args:
+            count (int): How many tokens should we look ahead
 
-        :rtype: py_gql.lang.token.Token
-        :returns: Token a ``current position + count``
+        Returns:
+            py_gql.lang.token.Token: token at ``count`` past current position
 
-        :Raises:
-            :class:`py_gql.exc.UnexpectedEOF` if there is not enough tokens left in the
-            lexer.
+        Raises:
+            :class:`py_gql.exc.UnexpectedEOF`:
+                if there is not enough tokens left in the lexer.
         """
         delta = 1 if self._window is None else (count - len(self._window))
         for _ in range(delta):
@@ -281,11 +268,12 @@ class Parser(object):
     def advance(self):
         """ Move parsing window forward and return the next token.
 
-        :rtype: py_gql.lang.token.Token
+        Returns:
+            py_gql.lang.token.Token: next token
 
-        :Raises:
-            :class:`py_gql.exc.UnexpectedEOF` if there is not enough tokens left in the
-            lexer.
+        Raises:
+            :class:`py_gql.exc.UnexpectedEOF`:
+                if there is not enough tokens left in the lexer.
         """
         self._advance_window()
         self._last = self._window.pop(0)
@@ -295,10 +283,12 @@ class Parser(object):
         """ Advance the parser and check that the next token is of the
         given token class otherwise raises :class:`py_gql.exc.UnexpectedToken`.
 
-        :type kind: type
-        :param kind: A subclass of ``py_gql.lang.token.Token``
+        Args:
+            kind: Expected token kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :rtype: py_gql.lang.token.Token
+        Returns:
+            py_gql.lang.token.Token: Next token
         """
         next_token = self.peek()
         if _is(next_token, kind):
@@ -307,17 +297,18 @@ class Parser(object):
         raise _unexpected_token(
             'Expected %s but found "%s"' % (kind.__name__, next_token),
             next_token.start,
-            self.lexer._source,
+            self._lexer._source,
         )
 
     def expect_keyword(self, keyword):
-        """ Advance the parser and check that the next token is a Name with the given
-        valueof otherwise raises :class:`py_gql.exc.UnexpectedToken`.
+        """ Advance the parser and check that the next token is a Name with
+        the given value otherwise raises :class:`py_gql.exc.UnexpectedToken`.
 
-        :type keyword: str
-        :param keyword: Expectd keyword
+        Args:
+            keyword (str): Expected keyword
 
-        :rtype: py_gql.lang.token.Name
+        Returns:
+            py_gql.lang.token.Name: Keyword token
         """
         next_token = self.peek()
         if _is(next_token, _token.Name) and next_token.value == keyword:
@@ -326,7 +317,7 @@ class Parser(object):
         raise _unexpected_token(
             'Expected "%s" but found "%s"' % (keyword, next_token),
             next_token.start,
-            self.lexer._source,
+            self._lexer._source,
         )
 
     def skip(self, kind):
@@ -334,10 +325,12 @@ class Parser(object):
         advancing the parser. Otherwise, do not change the parser state and
         return ``False``.
 
-        :type kind: type
-        :param kind: A subclass of ``py_gql.lang.token.Token``
+        Args:
+            kind: Token kind to read over. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :rtype: bool
+        Returns:
+            bool: Whether anything was read
         """
         if _is(self.peek(), kind):
             self.advance()
@@ -349,22 +342,22 @@ class Parser(object):
         ``parse_fn`` which are surrounded by ``open_kind`` and ``close_kind`` tokens.
         Advances the parser to the next lex token after the closing token.
 
-        :type open_kind: type
-        :param open_kind: A subclass of ``py_gql.lang.token.Token``
+        Args:
+            open_kind: Opening token kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :type parse_fn: callable
-        :param parse_fn:
-            Function to call for every item, should be a method of :class:`Parser`
+            parse_fn (callable): Function to call for every item, should be a
+                method of the :class:`Parser` instance
 
-        :type close_kind: type
-        :param close_kind: A subclass of ``py_gql.lang.token.Token``
+            close_kind: Closing token kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :rtype: List[py_gql.lang.ast.Node]
+        Returns:
+            List[py_gql.lang.ast.Node]:
 
-        :Raises:
-
-            :class:`py_gql.exc.UnexpectedToken` if opening, entry or closing token do
-            not match.
+        Raises:
+            :class:`py_gql.exc.UnexpectedToken`:
+                if opening, entry or closing token do not match.
         """
         self.expect(open_kind)
         nodes = []
@@ -374,27 +367,27 @@ class Parser(object):
                 break
         return nodes
 
-    def any(self, open_kind, parse_fn, close_kind):
+    def any_(self, open_kind, parse_fn, close_kind):
         """ Return a non-empty list of parse nodes, determined by
         ``parse_fn`` which are surrounded by ``open_kind`` and ``close_kind`` tokens.
         Advances the parser to the next lex token after the closing token.
 
-        :type open_kind: type
-        :param open_kind: A subclass of ``py_gql.lang.token.Token``
+        Args:
+            open_kind: Opening token kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :type parse_fn: callable
-        :param parse_fn:
-            Function to call for every item, should be a method of :class:`Parser`
+            parse_fn (callable): Function to call for every item, should be a
+                method of the :class:`Parser` instance
 
-        :type close_kind: type
-        :param close_kind: A subclass of ``py_gql.lang.token.Token``
+            close_kind: Closing token kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :rtype: List[py_gql.lang.ast.Node]
+        Returns:
+            List[py_gql.lang.ast.Node]:
 
-        :Raises:
-
-            :class:`py_gql.exc.UnexpectedToken` if opening, entry or closing token do
-            not match.
+        Raises:
+            :class:`py_gql.exc.UnexpectedToken`:
+                if opening, entry or closing token do not match.
         """
         self.expect(open_kind)
         nodes = []
@@ -407,19 +400,19 @@ class Parser(object):
         separated by a delimiter token of type ``delimiter`` Advances the parser to
         the next lex token after the last token.
 
-        :type delimiter: type
-        :param delimiter: A subclass of ``py_gql.lang.token.Token``
+        Args:
+            delimiter: Delimiter kind. Must be a subclass of
+                :class:`py_gql.lang.token.Token`
 
-        :type parse_fn: callable
-        :param parse_fn:
-            Function to call for every item, should be a method of :class:`Parser`
+            parse_fn (callable): Function to call for every item, should be a
+                method of the :class:`Parser` instance
 
-        :rtype: List[py_gql.lang.ast.Node]
+        Returns:
+            List[py_gql.lang.ast.Node]:
 
-        :Raises:
-
-            :class:`py_gql.exc.UnexpectedToken` if opening, entry or closing token do
-            not match.
+        Raises:
+            :class:`py_gql.exc.UnexpectedToken`:
+                if opening, entry or closing token do not match.
         """
         items = []
         self.skip(delimiter)
@@ -430,16 +423,17 @@ class Parser(object):
         return items
 
     def _loc(self, start):
-        """ Return the location tuple or ``None`` if the instance is set to not track
-        locations. """
-        if self.no_location:
+        """ Return the current location tuple or ``None`` if the instance is
+        set to not track locations. """
+        if self._no_location:
             return None
         return (start.start, self._last.end)
 
     def parse_document(self):
         """ Document : Definition+
 
-        :rtype: py_gql.lang.ast.Document
+        Returns:
+            py_gql.lang.ast.Document:
         """
         start = self.peek()
         self.expect(_token.SOF)
@@ -449,7 +443,7 @@ class Parser(object):
             if self.skip(_token.EOF):
                 break
         return _ast.Document(
-            definitions=definitions, loc=self._loc(start), source=self.source
+            definitions=definitions, loc=self._loc(start), source=self._source
         )
 
     def parse_definition(self):
@@ -457,37 +451,40 @@ class Parser(object):
 
         Ignores type system definitions if ``allow_type_system`` was set to ``False``.
 
-        :rtype: py_gql.lang.ast.Definition
+        Returns:
+            py_gql.lang.ast.Definition:
         """
         start = self.peek()
         if _is(start, _token.Name):
             if start.value in EXECUTABLE_DEFINITIONS:
                 return self.parse_executable_definition()
-            elif self.allow_type_system and start.value in SCHEMA_DEFINITIONS:
+            elif self._allow_type_system and start.value in SCHEMA_DEFINITIONS:
                 return self.parse_type_system_definition()
         elif _is(start, _token.CurlyOpen):
             return self.parse_executable_definition()
-        elif self.allow_type_system and _is(
+        elif self._allow_type_system and _is(
             start, _token.String, _token.BlockString
         ):
             return self.parse_type_system_definition()
 
-        raise _unexpected_token(start, start.start, self.lexer._source)
+        raise _unexpected_token(start, start.start, self._lexer._source)
 
     def parse_name(self):
         """ Convert a name lex token into a name parse node.
 
-        :rtype: py_gql.lang.ast.Name
+        Returns:
+            py_gql.lang.ast.Name:
         """
         token = self.expect(_token.Name)
         return _ast.Name(
-            value=token.value, loc=self._loc(token), source=self.source
+            value=token.value, loc=self._loc(token), source=self._source
         )
 
     def parse_executable_definition(self):
         """ ExecutableDefinition : OperationDefinition | FragmentDefinition
 
-        :rtype: py_gql.lang.ast.ExecutableDefinition
+        Returns:
+            py_gql.lang.ast.ExecutableDefinition:
         """
         start = self.peek()
         if _is(start, _token.Name):
@@ -497,13 +494,14 @@ class Parser(object):
                 return self.parse_fragment_definition()
         elif _is(start, _token.CurlyOpen):
             return self.parse_operation_definition()
-        raise _unexpected_token(start, start.start, self.lexer._source)
+        raise _unexpected_token(start, start.start, self._lexer._source)
 
     def parse_operation_definition(self):
         """ OperationDefinition : SelectionSet
         | OperationType Name? VariableDefinitions? Directives? SelectionSet
 
-        :rtype: py_gql.lang.ast.OperationDefinition
+        Returns:
+            py_gql.lang.ast.OperationDefinition:
         """
         start = self.peek()
         if _is(start, _token.CurlyOpen):
@@ -514,7 +512,7 @@ class Parser(object):
                 directives=[],
                 selection_set=self.parse_selection_set(),
                 loc=self._loc(start),
-                source=self.source,
+                source=self._source,
             )
 
         return _ast.OperationDefinition(
@@ -529,17 +527,19 @@ class Parser(object):
     def parse_operation_type(self):
         """ OperationType : one of "query" "mutation" "subscription"
 
-        :rtype: str
+        Returns:
+            str:
         """
         token = self.expect(_token.Name)
         if token.value in ("query", "mutation", "subscription"):
             return token.value
-        raise _unexpected_token(token, token.start, self.lexer._source)
+        raise _unexpected_token(token, token.start, self._lexer._source)
 
     def parse_variable_definitions(self):
         """ VariableDefinitions : ( VariableDefinition+ )
 
-        :rtype: List[py_gql.lang.ast.VariableDefinition]
+        Returns:
+            List[py_gql.lang.ast.VariableDefinition]:
         """
         if _is(self.peek(), _token.ParenOpen):
             return self.many(
@@ -552,7 +552,8 @@ class Parser(object):
     def parse_variable_definition(self):
         """ VariableDefinition : Variable : Type DefaultValue?
 
-        :rtype: py_gql.lang.ast.VariableDefinition
+        Returns:
+            py_gql.lang.ast.VariableDefinition:
         """
         start = self.peek()
         return _ast.VariableDefinition(
@@ -564,24 +565,26 @@ class Parser(object):
                 else None
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_variable(self):
         """ Variable : $ Name
 
-        :rtype: py_gql.lang.ast.Variable
+        Returns:
+            py_gql.lang.ast.Variable:
         """
         start = self.peek()
         self.expect(_token.Dollar)
         return _ast.Variable(
-            name=self.parse_name(), loc=self._loc(start), source=self.source
+            name=self.parse_name(), loc=self._loc(start), source=self._source
         )
 
     def parse_selection_set(self):
         """ SelectionSet : { Selection+ }
 
-        :rtype: py_gql.lang.ast.SelectionSet
+        Returns:
+            py_gql.lang.ast.SelectionSet:
         """
         start = self.peek()
         return _ast.SelectionSet(
@@ -589,13 +592,14 @@ class Parser(object):
                 _token.CurlyOpen, self.parse_selection, _token.CurlyClose
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_selection(self):
         """ Selection : Field | FragmentSpread | InlineFragment
 
-        :rtype: py_gql.lang.ast.Selection
+        Returns:
+            py_gql.lang.ast.Selection:
         """
         if _is(self.peek(), _token.Ellipsis):
             return self.parse_fragment()
@@ -606,7 +610,8 @@ class Parser(object):
 
         - Alias : Name :
 
-        :rtype: py_gql.lang.ast.Field
+        Returns:
+            py_gql.lang.ast.Field:
         """
         start = self.peek()
         name_or_alias = self.parse_name()
@@ -626,7 +631,7 @@ class Parser(object):
                 else None
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_arguments(self, const=False):
@@ -635,7 +640,8 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: List[py_gql.lang.ast.Argument]
+        Returns:
+            List[py_gql.lang.ast.Argument]:
         """
         parse = ft.partial(self.parse_argument, const)
         if _is(self.peek(), _token.ParenOpen):
@@ -648,7 +654,8 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.Argument
+        Returns:
+            py_gql.lang.ast.Argument:
         """
         start = self.peek()
         return _ast.Argument(
@@ -657,7 +664,7 @@ class Parser(object):
                 self.expect(_token.Colon) and self.parse_value_literal(False)
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_fragment(self):
@@ -666,7 +673,8 @@ class Parser(object):
         - FragmentSpread : ... FragmentName Directives?
         - InlineFragment : ... TypeCondition? Directives? SelectionSet
 
-        :rtype: Union[py_gql.lang.ast.FragmentSpread, py_gql.lang.ast.InlineFragment]
+        Returns:
+            Union[py_gql.lang.ast.FragmentSpread, py_gql.lang.ast.InlineFragment]:
         """
         start = self.peek()
         self.expect(_token.Ellipsis)
@@ -677,7 +685,7 @@ class Parser(object):
                 name=self.parse_fragment_name(),
                 directives=self.parse_directives(False),
                 loc=self._loc(start),
-                source=self.source,
+                source=self._source,
             )
 
         return _ast.InlineFragment(
@@ -689,7 +697,7 @@ class Parser(object):
             directives=self.parse_directives(False),
             selection_set=self.parse_selection_set(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_fragment_definition(self):
@@ -698,7 +706,8 @@ class Parser(object):
 
         - TypeCondition : NamedType
 
-        :rtype: py_gql.lang.ast.FragmentDefinition
+        Returns:
+            py_gql.lang.ast.FragmentDefinition:
         """
         start = self.peek()
         self.expect_keyword("fragment")
@@ -706,7 +715,7 @@ class Parser(object):
             name=self.parse_fragment_name(),
             variable_definitions=(
                 self.parse_variable_definitions()
-                if self.experimental_fragment_variables
+                if self._experimental_fragment_variables
                 else None
             ),
             type_condition=(
@@ -715,17 +724,18 @@ class Parser(object):
             directives=self.parse_directives(False),
             selection_set=self.parse_selection_set(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_fragment_name(self):
         """ FragmentName : Name but not "on"
 
-        :rtype: py_gql.lang.ast.Name
+        Returns:
+            py_gql.lang.ast.Name:
         """
         token = self.peek()
         if token.value == "on":
-            raise _unexpected_token(token, token.start, self.lexer._source)
+            raise _unexpected_token(token, token.start, self._lexer._source)
         return self.parse_name()
 
     def parse_value_literal(self, const=False):
@@ -740,7 +750,8 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.Value
+        Returns:
+            py_gql.lang.ast.Value:
         """
         token = self.peek()
         kind = type(token)
@@ -753,12 +764,12 @@ class Parser(object):
         elif kind == _token.Integer:
             self.advance()
             return _ast.IntValue(
-                value=value, loc=self._loc(token), source=self.source
+                value=value, loc=self._loc(token), source=self._source
             )
         elif kind == _token.Float:
             self.advance()
             return _ast.FloatValue(
-                value=value, loc=self._loc(token), source=self.source
+                value=value, loc=self._loc(token), source=self._source
             )
         elif kind in (_token.String, _token.BlockString):
             return self.parse_string_literal()
@@ -768,23 +779,24 @@ class Parser(object):
                 return _ast.BooleanValue(
                     value=value == "true",
                     loc=self._loc(token),
-                    source=self.source,
+                    source=self._source,
                 )
             elif value == "null":
                 self.advance()
-                return _ast.NullValue(loc=self._loc(token), source=self.source)
+                return _ast.NullValue(loc=self._loc(token), source=self._source)
             else:
                 self.advance()
                 return _ast.EnumValue(
-                    value=value, loc=self._loc(token), source=self.source
+                    value=value, loc=self._loc(token), source=self._source
                 )
         elif kind == _token.Dollar and not const:
             return self.parse_variable()
-        raise _unexpected_token(token, token.start, self.lexer._source)
+        raise _unexpected_token(token, token.start, self._lexer._source)
 
     def parse_string_literal(self):
         """
-        :rtype: py_gql.lang.ast.StringValue
+        Returns:
+            py_gql.lang.ast.StringValue:
         """
         token = self.advance()
 
@@ -792,7 +804,7 @@ class Parser(object):
             value=token.value,
             block=_is(token, _token.BlockString),
             loc=self._loc(token),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_list(self, const=False):
@@ -801,14 +813,15 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.ListValue
+        Returns:
+            py_gql.lang.ast.ListValue:
         """
         start = self.peek()
         item = ft.partial(self.parse_value_literal, const)
         return _ast.ListValue(
-            values=self.any(_token.BracketOpen, item, _token.BracketClose),
+            values=self.any_(_token.BracketOpen, item, _token.BracketClose),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_object(self, const=False):
@@ -817,14 +830,15 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.ObjectValue
+        Returns:
+            py_gql.lang.ast.ObjectValue:
         """
         start = self.expect(_token.CurlyOpen)
         fields = []
         while not self.skip(_token.CurlyClose):
             fields.append(self.parse_object_field(const))
         return _ast.ObjectValue(
-            fields=fields, loc=self._loc(start), source=self.source
+            fields=fields, loc=self._loc(start), source=self._source
         )
 
     def parse_object_field(self, const=False):
@@ -833,7 +847,8 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.ObjectField
+        Returns:
+            py_gql.lang.ast.ObjectField:
         """
         start = self.peek()
         return _ast.ObjectField(
@@ -842,7 +857,7 @@ class Parser(object):
                 self.expect(_token.Colon) and self.parse_value_literal(const)
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_directives(self, const=False):
@@ -851,7 +866,8 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: List[py_gql.lang.ast.Directive]
+        Returns:
+            List[py_gql.lang.ast.Directive]:
         """
         directives = []
         while _is(self.peek(), _token.At):
@@ -864,34 +880,36 @@ class Parser(object):
         :type const: bool
         :param const: Whether or not to parse the Const variant
 
-        :rtype: py_gql.lang.ast.
+        Returns:
+            py_gql.lang.ast.:
         """
         start = self.expect(_token.At)
         return _ast.Directive(
             name=self.parse_name(),
             arguments=self.parse_arguments(const),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_type_reference(self):
         """ Type : NamedType | ListType | NonNullType
 
-        :rtype: py_gql.lang.ast.Type
+        Returns:
+            py_gql.lang.ast.Type:
         """
         start = self.peek()
         if self.skip(_token.BracketOpen):
             inner_type = self.parse_type_reference()
             self.expect(_token.BracketClose)
             type_ = _ast.ListType(
-                type=inner_type, loc=self._loc(start), source=self.source
+                type=inner_type, loc=self._loc(start), source=self._source
             )
         else:
             type_ = self.parse_named_type()
 
         if self.skip(_token.ExclamationMark):
             return _ast.NonNullType(
-                type=type_, loc=self._loc(start), source=self.source
+                type=type_, loc=self._loc(start), source=self._source
             )
 
         return type_
@@ -899,11 +917,12 @@ class Parser(object):
     def parse_named_type(self):
         """ NamedType : Name
 
-        :rtype: py_gql.lang.ast.NamedType
+        Returns:
+            py_gql.lang.ast.NamedType:
         """
         start = self.peek()
         return _ast.NamedType(
-            name=self.parse_name(), loc=self._loc(start), source=self.source
+            name=self.parse_name(), loc=self._loc(start), source=self._source
         )
 
     def parse_type_system_definition(self):
@@ -914,7 +933,8 @@ class Parser(object):
         | InterfaceTypeDefinition | UnionTypeDefinition | EnumTypeDefinition \
         | InputObjectTypeDefinition
 
-        :rtype: py_gql.lang.ast.TypeSystemDefinition
+        Returns:
+            py_gql.lang.ast.TypeSystemDefinition:
         """
         keyword = (
             self.peek(2)
@@ -942,12 +962,13 @@ class Parser(object):
             elif keyword.value == "directive":
                 return self.parse_directive_definition()
 
-        raise _unexpected_token(keyword, keyword.start, self.lexer._source)
+        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
 
     def parse_description(self):
         """ Description : StringValue
 
-        :rtype: py_gql.lang.ast.StringValue
+        Returns:
+            py_gql.lang.ast.StringValue:
         """
         return (
             self.parse_string_literal()
@@ -958,7 +979,8 @@ class Parser(object):
     def parse_schema_definition(self):
         """ SchemaDefinition : schema Directives[Const]? { OperationTypeDefinition+ }
 
-        :rtype: py_gql.lang.ast.SchemaDefinition
+        Returns:
+            py_gql.lang.ast.SchemaDefinition:
         """
         start = self.peek()
         self.expect_keyword("schema")
@@ -970,13 +992,14 @@ class Parser(object):
                 _token.CurlyClose,
             ),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_operation_type_definition(self):
         """ OperationTypeDefinition : OperationType : NamedType
 
-        :rtype: py_gql.lang.ast.OperationTypeDefinition
+        Returns:
+            py_gql.lang.ast.OperationTypeDefinition:
         """
         start = self.peek()
         operation = self.parse_operation_type()
@@ -985,13 +1008,14 @@ class Parser(object):
             operation=operation,
             type=self.parse_named_type(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_scalar_type_definition(self):
         """ ScalarTypeDefinition : Description? scalar Name Directives[Const]?
 
-        :rtype: py_gql.lang.ast.ScalarTypeDefinition
+        Returns:
+            py_gql.lang.ast.ScalarTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1001,14 +1025,15 @@ class Parser(object):
             name=self.parse_name(),
             directives=self.parse_directives(True),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_object_type_definition(self):
         """ ObjectTypeDefinition : Description? type Name ImplementsInterfaces? \
         Directives[Const]? FieldsDefinition?
 
-        :rtype: py_gql.lang.ast.ObjectTypeDefinition
+        Returns:
+            py_gql.lang.ast.ObjectTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1020,14 +1045,15 @@ class Parser(object):
             directives=self.parse_directives(True),
             fields=self.parse_fields_definition(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_implements_interfaces(self):
         """ ImplementsInterfaces : implements `&`? NamedType \
         | ImplementsInterfaces & NamedType
 
-        :rtype: List[py_gql.lang.ast.NamedType]
+        Returns:
+            List[py_gql.lang.ast.NamedType]:
         """
         token = self.peek()
         types = []
@@ -1039,7 +1065,7 @@ class Parser(object):
                 if not (
                     self.skip(_token.Ampersand)
                     or (
-                        self.allow_legacy_sdl_implements_interfaces
+                        self._allow_legacy_sdl_implements_interfaces
                         and _is(self.peek(), _token.Name)
                     )
                 ):
@@ -1049,10 +1075,11 @@ class Parser(object):
     def parse_fields_definition(self):
         """ FieldsDefinition : { FieldDefinition+ }
 
-        :rtype: List[py_gql.lang.ast.FieldDefinition]
+        Returns:
+            List[py_gql.lang.ast.FieldDefinition]:
         """
         if (
-            self.allow_legacy_sdl_empty_fields
+            self._allow_legacy_sdl_empty_fields
             and _is(self.peek(), _token.CurlyOpen)
             and type(self.peek(2)) == _token.CurlyClose
         ):
@@ -1071,7 +1098,8 @@ class Parser(object):
         """ FieldDefinition : \
         Description? Name ArgumentsDefinition? : Type Directives[Const]?
 
-        :rtype: py_gql.lang.ast.FieldDefinition
+        Returns:
+            py_gql.lang.ast.FieldDefinition:
         """
         start = self.peek()
         desc, name = self.parse_description(), self.parse_name()
@@ -1084,13 +1112,14 @@ class Parser(object):
             type=self.parse_type_reference(),
             directives=self.parse_directives(True),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_argument_defs(self):
         """ ArgumentsDefinition : ( InputValueDefinition+ )
 
-        :rtype: List[py_gql.lang.ast.InputValueDefinition]
+        Returns:
+            List[py_gql.lang.ast.InputValueDefinition]:
         """
         return (
             self.many(
@@ -1104,7 +1133,8 @@ class Parser(object):
         """ InputValueDefinition : \
         Description? Name : Type DefaultValue? Directives[Const]?
 
-        :rtype: py_gql.lang.ast.
+        Returns:
+            py_gql.lang.ast.:
         """
         start = self.peek()
         desc, name = self.parse_description(), self.parse_name()
@@ -1120,14 +1150,15 @@ class Parser(object):
             ),
             directives=self.parse_directives(True),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_interface_type_definition(self):
         """ InterfaceTypeDefinition : \
         Description? interface Name Directives[Const]? FieldsDefinition?
 
-        :rtype: py_gql.lang.ast.InterfaceTypeDefinition
+        Returns:
+            py_gql.lang.ast.InterfaceTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1138,14 +1169,15 @@ class Parser(object):
             directives=self.parse_directives(True),
             fields=self.parse_fields_definition(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_union_type_definition(self):
         """ UnionTypeDefinition : \
         Description? union Name Directives[Const]? UnionMemberTypes?
 
-        :rtype: py_gql.lang.ast.UnionTypeDefinition
+        Returns:
+            py_gql.lang.ast.UnionTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1156,13 +1188,14 @@ class Parser(object):
             directives=self.parse_directives(True),
             types=self.parse_union_member_types(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_union_member_types(self):
         """ UnionMemberTypes : = `|`? NamedType | UnionMemberTypes | NamedType
 
-        :rtype: List[py_gql.lang.ast.NamedType]
+        Returns:
+            List[py_gql.lang.ast.NamedType]:
         """
         if self.skip(_token.Equals):
             return self.delimited_list(_token.Pipe, self.parse_named_type)
@@ -1172,7 +1205,8 @@ class Parser(object):
         """ EnumTypeDefinition : \
         Description? enum Name Directives[Const]? EnumValuesDefinition?
 
-        :rtype: py_gql.lang.ast.EnumTypeDefinition
+        Returns:
+            py_gql.lang.ast.EnumTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1183,13 +1217,14 @@ class Parser(object):
             directives=self.parse_directives(True),
             values=self.parse_enum_values_definition(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_enum_values_definition(self):
         """ EnumValuesDefinition : { EnumValueDefinition+ }
 
-        :rtype: List[py_gql.lang.ast.EnumValueDefinition]
+        Returns:
+            List[py_gql.lang.ast.EnumValueDefinition]:
         """
         return (
             self.many(
@@ -1206,7 +1241,8 @@ class Parser(object):
 
         - EnumValue : Name
 
-        :rtype: py_gql.lang.ast.EnumValueDefinition
+        Returns:
+            py_gql.lang.ast.EnumValueDefinition:
         """
         start = self.peek()
         return _ast.EnumValueDefinition(
@@ -1214,14 +1250,15 @@ class Parser(object):
             name=self.parse_name(),
             directives=self.parse_directives(True),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_input_object_type_definition(self):
         """ InputObjectTypeDefinition : \
         Description? input Name Directives[Const]? InputFieldsDefinition?
 
-        :rtype: py_gql.lang.ast.InputObjectTypeDefinition
+        Returns:
+            py_gql.lang.ast.InputObjectTypeDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1232,13 +1269,14 @@ class Parser(object):
             directives=self.parse_directives(True),
             fields=self.parse_input_fields_definition(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_input_fields_definition(self):
         """ InputFieldsDefinition : { InputValueDefinition+ }
 
-        :rtype: List[py_gql.lang.ast.InputValueDefinition]
+        Returns:
+            List[py_gql.lang.ast.InputValueDefinition]:
         """
         return (
             self.many(
@@ -1253,7 +1291,8 @@ class Parser(object):
         InterfaceTypeExtension | UnionTypeExtension | EnumTypeExtension | \
         InputObjectTypeDefinition
 
-        :rtype: py_gql.lang.ast.
+        Returns:
+            py_gql.lang.ast.:
         """
         keyword = self.peek(2)
         if _is(keyword, _token.Name):
@@ -1270,12 +1309,13 @@ class Parser(object):
             elif keyword.value == "input":
                 return self.parse_input_object_type_extension()
 
-        raise _unexpected_token(keyword, keyword.start, self.lexer._source)
+        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
 
     def parse_scalar_type_extension(self):
         """ ScalarTypeExtension : extend scalar Name Directives[Const]
 
-        :rtype: py_gql.lang.ast.ScalarTypeExtension
+        Returns:
+            py_gql.lang.ast.ScalarTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1283,12 +1323,12 @@ class Parser(object):
         name = self.parse_name()
         directives = self.parse_directives(True)
         if not directives:
-            raise _unexpected_token(start, start.start, self.lexer._source)
+            raise _unexpected_token(start, start.start, self._lexer._source)
         return _ast.ScalarTypeExtension(
             name=name,
             directives=directives,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_object_type_extension(self):
@@ -1297,7 +1337,8 @@ class Parser(object):
         | extend type Name ImplementsInterfaces? Directives[Const] \
         | extend type Name ImplementsInterfaces
 
-        :rtype: py_gql.lang.ast.ObjectTypeExtension
+        Returns:
+            py_gql.lang.ast.ObjectTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1308,14 +1349,14 @@ class Parser(object):
         fields = self.parse_fields_definition()
         if (not interfaces) and (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self.lexer._source)
+            raise _unexpected_token(tok, tok.start, self._lexer._source)
         return _ast.ObjectTypeExtension(
             name=name,
             interfaces=interfaces,
             directives=directives,
             fields=fields,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_interface_type_extension(self):
@@ -1323,7 +1364,8 @@ class Parser(object):
         extend interface Name Directives[Const]? FieldsDefinition \
         | extend interface Name Directives[Const]
 
-        :rtype: py_gql.lang.ast.InterfaceTypeExtension
+        Returns:
+            py_gql.lang.ast.InterfaceTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1333,14 +1375,14 @@ class Parser(object):
         fields = self.parse_fields_definition()
         if (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self.lexer._source)
+            raise _unexpected_token(tok, tok.start, self._lexer._source)
 
         return _ast.InterfaceTypeExtension(
             name=name,
             directives=directives,
             fields=fields,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_union_type_extension(self):
@@ -1348,7 +1390,8 @@ class Parser(object):
         | extend union Name Directives[Const]? UnionMemberTypes \
         | extend union Name Directives[Const]
 
-        :rtype: py_gql.lang.ast.UnionTypeExtension
+        Returns:
+            py_gql.lang.ast.UnionTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1358,14 +1401,14 @@ class Parser(object):
         types = self.parse_union_member_types()
         if (not directives) and (not types):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self.lexer._source)
+            raise _unexpected_token(tok, tok.start, self._lexer._source)
 
         return _ast.UnionTypeExtension(
             name=name,
             directives=directives,
             types=types,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_enum_type_extension(self):
@@ -1373,7 +1416,8 @@ class Parser(object):
         extend enum Name Directives[Const]? EnumValuesDefinition \
         | extend enum Name Directives[Const]
 
-        :rtype: py_gql.lang.ast.EnumTypeExtension
+        Returns:
+            py_gql.lang.ast.EnumTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1383,14 +1427,14 @@ class Parser(object):
         values = self.parse_enum_values_definition()
         if (not directives) and (not values):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self.lexer._source)
+            raise _unexpected_token(tok, tok.start, self._lexer._source)
 
         return _ast.EnumTypeExtension(
             name=name,
             directives=directives,
             values=values,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_input_object_type_extension(self):
@@ -1398,7 +1442,8 @@ class Parser(object):
         extend input Name Directives[Const]? InputFieldsDefinition \
         | extend input Name Directives[Const]
 
-        :rtype: py_gql.lang.ast.InputObjectTypeExtension
+        Returns:
+            py_gql.lang.ast.InputObjectTypeExtension:
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1407,21 +1452,22 @@ class Parser(object):
         directives = self.parse_directives(True)
         fields = self.parse_input_fields_definition()
         if (not directives) and (not fields):
-            raise _unexpected_token("", start.start, self.lexer._source)
+            raise _unexpected_token("", start.start, self._lexer._source)
 
         return _ast.InputObjectTypeExtension(
             name=name,
             directives=directives,
             fields=fields,
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_directive_definition(self):
-        """ DirectiveDefinition : Description? directive @ Name ArgumentsDefinition? \
-        on DirectiveLocations
+        """ DirectiveDefinition : Description? directive @ Name \
+        ArgumentsDefinition? on DirectiveLocations
 
-        :rtype: py_gql.lang.ast.DirectiveDefinition
+        Returns:
+            py_gql.lang.ast.DirectiveDefinition:
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1436,14 +1482,15 @@ class Parser(object):
             arguments=args,
             locations=self.parse_directive_locations(),
             loc=self._loc(start),
-            source=self.source,
+            source=self._source,
         )
 
     def parse_directive_locations(self):
         """ DirectiveLocations : \
         `|`? DirectiveLocation \ `|` DirectiveLocations `|` DirectiveLocation
 
-        :rtype: List[py_gql.lang.ast.DirectiveLocation]
+        Returns:
+            List[py_gql.lang.ast.DirectiveLocation]:
         """
         return self.delimited_list(_token.Pipe, self.parse_directive_location)
 
@@ -1458,12 +1505,13 @@ class Parser(object):
         ARGUMENT_DEFINITION INTERFACE UNION ENUM ENUM_VALUE INPUT_OBJECT \
         INPUT_FIELD_DEFINITION
 
-        :rtype: py_gql.lang.ast.Name
+        Returns:
+            py_gql.lang.ast.Name:
         """
         start = self.peek()
         name = self.parse_name()
         if name.value in DIRECTIVE_LOCATIONS:
             return name
         raise _unexpected_token(
-            "Unexpected Name %s" % name.value, start.start, self.lexer._source
+            "Unexpected Name %s" % name.value, start.start, self._lexer._source
         )

@@ -35,7 +35,11 @@ from py_gql.utilities import ast_node_from_value
         (-1, Int, _ast.IntValue(value="-1")),
         (123.0, Int, _ast.IntValue(value="123")),
         (1e4, Int, _ast.IntValue(value="10000")),
-        (123.5, Int, ValueError("Int cannot represent non-integer value: 123.5")),
+        (
+            123.5,
+            Int,
+            ValueError("Int cannot represent non-integer value: 123.5"),
+        ),
         (
             1e40,
             Int,
@@ -100,14 +104,20 @@ def test_ast_node_from_value_with_enums(value, expected):
             ["FOO", "BAR"],
             ListType(String),
             _ast.ListValue(
-                value=[_ast.StringValue(value="FOO"), _ast.StringValue(value="BAR")]
+                values=[
+                    _ast.StringValue(value="FOO"),
+                    _ast.StringValue(value="BAR"),
+                ]
             ),
         ),
         (
             ["HELLO", "GOODBYE"],
             ListType(Enum),
             _ast.ListValue(
-                value=[_ast.EnumValue(value="HELLO"), _ast.EnumValue(value="GOODBYE")]
+                values=[
+                    _ast.EnumValue(value="HELLO"),
+                    _ast.EnumValue(value="GOODBYE"),
+                ]
             ),
         ),
         ("FOO", ListType(String), _ast.StringValue(value="FOO")),
@@ -123,7 +133,8 @@ def test_ast_node_from_value_with_list_types(value, input_type, expected):
 
 
 InputObject = InputObjectType(
-    "MyInputObj", [InputField("foo", Float), InputField("bar", NonNullType(Enum))]
+    "MyInputObj",
+    [InputField("foo", Float), InputField("bar", NonNullType(Enum))],
 )
 
 
@@ -135,10 +146,12 @@ InputObject = InputObjectType(
             _ast.ObjectValue(
                 fields=[
                     _ast.ObjectField(
-                        name=_ast.Name(value="foo"), value=_ast.IntValue(value="3")
+                        name=_ast.Name(value="foo"),
+                        value=_ast.IntValue(value="3"),
                     ),
                     _ast.ObjectField(
-                        name=_ast.Name(value="bar"), value=_ast.EnumValue(value="HELLO")
+                        name=_ast.Name(value="bar"),
+                        value=_ast.EnumValue(value="HELLO"),
                     ),
                 ]
             ),
@@ -151,7 +164,8 @@ InputObject = InputObjectType(
                         name=_ast.Name(value="foo"), value=_ast.NullValue()
                     ),
                     _ast.ObjectField(
-                        name=_ast.Name(value="bar"), value=_ast.EnumValue(value="HELLO")
+                        name=_ast.Name(value="bar"),
+                        value=_ast.EnumValue(value="HELLO"),
                     ),
                 ]
             ),
@@ -161,7 +175,8 @@ InputObject = InputObjectType(
             _ast.ObjectValue(
                 fields=[
                     _ast.ObjectField(
-                        name=_ast.Name(value="bar"), value=_ast.EnumValue(value="HELLO")
+                        name=_ast.Name(value="bar"),
+                        value=_ast.EnumValue(value="HELLO"),
                     )
                 ]
             ),

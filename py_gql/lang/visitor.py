@@ -12,6 +12,9 @@ from ..exc import GraphQLError
 
 
 class SkipNode(GraphQLError):
+    """ Raise this in :meth:`Visitor.enter` to ignore all children of that node.
+    """
+
     def __init__(self):
         self.message = ""
 
@@ -20,8 +23,7 @@ class SkipNode(GraphQLError):
 class Visitor:
     """ Visitor metaclass
 
-    .. note::
-
+    Note:
         This doesn't support editing the ast, tracking of the visitor
         path or providing shared context by default like the JS reference
         implementation.
@@ -31,22 +33,21 @@ class Visitor:
     def enter(self, node):
         """ Function called when entering a node.
 
-        Raising `SkipNode` in this function will lead to ignoring the node and
-        all it's descendants.
+        Raising :class:`SkipNode` in this function will lead to ignoring the
+        current node and all it's descendants.
 
-        :type node: _ast.Node
-        :param node: Node being visited.
+        Args:
+            node (py_gql.lang.ast.Node) Node being visited
         """
         pass
 
     @abc.abstractmethod
     def leave(self, node):
-        """ Function called when leaving a node.
+        """ Function called when leaving a node. Will not be called if
+        :class:`SkipNode` was raised in `enter`.
 
-        - Will not be called if `SkipNode` was raised in `enter`.
-
-        :type node: _ast.Node
-        :param node: Node being visited.
+        Args:
+            node (py_gql.lang.ast.Node) Node being visited
         """
         pass
 
@@ -57,19 +58,12 @@ def visit(visitor, ast_root):
     All side effects and results of traversal should be contained in the
     visitor instance.
 
-    :type visitor: Visitor
-    :param visitor:
-        Visitor instance
-
-    :type ast_root: py_gql.lang.ast.Document
-    :param ast_root:
-        GraphQL document
+    Args:
+        visitor (Visitor): Visitor instance
+        ast_root (py_gql.lang.ast.Document): Parsed GraphQL document
     """
     assert isinstance(ast_root, _ast.Document)
-    # While the Visitor abstraction is kept,this encodes the depth-first
-    # traversal in semantic procedures instead of an abstract loop as opposed
-    # to the GraphQL JS implementation
-    visit_document(visitor, ast_root)
+    _visit_document(visitor, ast_root)
 
 
 def _visiting(func):
@@ -101,185 +95,185 @@ def _many(fn, visitor, nodes):
 
 
 @_visiting
-def visit_document(visitor, document):
+def _visit_document(visitor, document):
     for definition in document.definitions:
-        visit_definition(visitor, definition)
+        _visit_definition(visitor, definition)
 
 
-def visit_definition(visitor, definition):
+def _visit_definition(visitor, definition):
     func = {
-        _ast.OperationDefinition: visit_operation_definition,
-        _ast.FragmentDefinition: visit_fragment_definition,
-        _ast.SchemaDefinition: visit_schema_definition,
-        _ast.ScalarTypeDefinition: visit_scalar_type_definition,
-        _ast.ObjectTypeDefinition: visit_object_type_definition,
-        _ast.InterfaceTypeDefinition: visit_interface_type_definition,
-        _ast.UnionTypeDefinition: visit_union_type_definition,
+        _ast.OperationDefinition: _visit_operation_definition,
+        _ast.FragmentDefinition: _visit_fragment_definition,
+        _ast.SchemaDefinition: _visit_schema_definition,
+        _ast.ScalarTypeDefinition: _visit_scalar_type_definition,
+        _ast.ObjectTypeDefinition: _visit_object_type_definition,
+        _ast.InterfaceTypeDefinition: _visit_interface_type_definition,
+        _ast.UnionTypeDefinition: _visit_union_type_definition,
         _ast.EnumTypeDefinition: visit_enum_type_definition,
-        _ast.InputObjectTypeDefinition: visit_input_object_type_definition,
-        _ast.ScalarTypeExtension: visit_scalar_type_definition,
-        _ast.ObjectTypeExtension: visit_object_type_definition,
-        _ast.InterfaceTypeExtension: visit_interface_type_definition,
-        _ast.UnionTypeExtension: visit_union_type_definition,
+        _ast.InputObjectTypeDefinition: _visit_input_object_type_definition,
+        _ast.ScalarTypeExtension: _visit_scalar_type_definition,
+        _ast.ObjectTypeExtension: _visit_object_type_definition,
+        _ast.InterfaceTypeExtension: _visit_interface_type_definition,
+        _ast.UnionTypeExtension: _visit_union_type_definition,
         _ast.EnumTypeExtension: visit_enum_type_definition,
-        _ast.InputObjectTypeExtension: visit_input_object_type_definition,
-        _ast.DirectiveDefinition: visit_directive_definition,
+        _ast.InputObjectTypeExtension: _visit_input_object_type_definition,
+        _ast.DirectiveDefinition: _visit_directive_definition,
     }.get(type(definition), None)
     if func is not None:
         func(visitor, definition)
 
 
 @_visiting
-def visit_operation_definition(visitor, definition):
-    _many(visit_variable_definition, visitor, definition.variable_definitions)
-    _many(visit_directive, visitor, definition.directives)
-    visit_selection_set(visitor, definition.selection_set)
+def _visit_operation_definition(visitor, definition):
+    _many(_visit_variable_definition, visitor, definition.variable_definitions)
+    _many(_visit_directive, visitor, definition.directives)
+    _visit_selection_set(visitor, definition.selection_set)
 
 
 @_visiting
-def visit_fragment_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
-    visit_selection_set(visitor, definition.selection_set)
+def _visit_fragment_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
+    _visit_selection_set(visitor, definition.selection_set)
 
 
 @_visiting
-def visit_variable_definition(visitor, variable_definition):
+def _visit_variable_definition(visitor, variable_definition):
     if variable_definition.default_value:
-        visit_input_value(visitor, variable_definition.default_value)
-    visit_named_type(visitor, variable_definition.type)
+        _visit_input_value(visitor, variable_definition.default_value)
+    _visit_named_type(visitor, variable_definition.type)
 
 
 @_visiting
-def visit_named_type(visitor, named_type):
+def _visit_named_type(visitor, named_type):
     pass
 
 
 @_visiting
-def visit_directive(visitor, directive):
-    _many(visit_argument, visitor, directive.arguments)
+def _visit_directive(visitor, directive):
+    _many(_visit_argument, visitor, directive.arguments)
 
 
 @_visiting
-def visit_argument(visitor, argument):
-    visit_input_value(visitor, argument.value)
+def _visit_argument(visitor, argument):
+    _visit_input_value(visitor, argument.value)
 
 
 @_visiting
-def visit_selection_set(visitor, selection_set):
-    _many(visit_selection, visitor, selection_set.selections)
+def _visit_selection_set(visitor, selection_set):
+    _many(_visit_selection, visitor, selection_set.selections)
 
 
-def visit_selection(visitor, selection):
+def _visit_selection(visitor, selection):
     func = {
-        _ast.Field: visit_field,
-        _ast.FragmentSpread: visit_fragment_spread,
-        _ast.InlineFragment: visit_inline_fragment,
+        _ast.Field: _visit_field,
+        _ast.FragmentSpread: _visit_fragment_spread,
+        _ast.InlineFragment: _visit_inline_fragment,
     }[type(selection)]
     func(visitor, selection)
 
 
 @_visiting
-def visit_field(visitor, field):
-    _many(visit_argument, visitor, field.arguments)
-    _many(visit_directive, visitor, field.directives)
-    visit_selection_set(visitor, field.selection_set)
+def _visit_field(visitor, field):
+    _many(_visit_argument, visitor, field.arguments)
+    _many(_visit_directive, visitor, field.directives)
+    _visit_selection_set(visitor, field.selection_set)
 
 
 @_visiting
-def visit_fragment_spread(visitor, spread):
-    _many(visit_directive, visitor, spread.directives)
+def _visit_fragment_spread(visitor, spread):
+    _many(_visit_directive, visitor, spread.directives)
 
 
 @_visiting
-def visit_inline_fragment(visitor, fragment):
-    _many(visit_directive, visitor, fragment.directives)
+def _visit_inline_fragment(visitor, fragment):
+    _many(_visit_directive, visitor, fragment.directives)
     if fragment.selection_set:
-        visit_selection_set(visitor, fragment.selection_set)
+        _visit_selection_set(visitor, fragment.selection_set)
 
 
 @_visiting
-def visit_input_value(visitor, input_value):
+def _visit_input_value(visitor, input_value):
     kind = type(input_value)
     if kind == _ast.ObjectValue:
-        _many(visit_object_field, visitor, input_value.fields)
+        _many(_visit_object_field, visitor, input_value.fields)
     elif kind == _ast.ListValue:
-        _many(visit_input_value, visitor, input_value.values)
+        _many(_visit_input_value, visitor, input_value.values)
 
 
 @_visiting
-def visit_object_field(visitor, field):
-    visit_input_value(visitor, field.value)
+def _visit_object_field(visitor, field):
+    _visit_input_value(visitor, field.value)
 
 
 @_visiting
-def visit_schema_definition(visitor, definition):
-    _many(visit_operation_type_definition, visitor, definition.operation_types)
-    _many(visit_directive, visitor, definition.directives)
+def _visit_schema_definition(visitor, definition):
+    _many(_visit_operation_type_definition, visitor, definition.operation_types)
+    _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def visit_operation_type_definition(visitor, definition):
-    visit_named_type(visitor, definition.type)
+def _visit_operation_type_definition(visitor, definition):
+    _visit_named_type(visitor, definition.type)
 
 
 @_visiting
-def visit_scalar_type_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
+def _visit_scalar_type_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def visit_object_type_definition(visitor, definition):
-    _many(visit_named_type, visitor, definition.interfaces)
-    _many(visit_directive, visitor, definition.directives)
-    _many(visit_field_definition, visitor, definition.fields)
+def _visit_object_type_definition(visitor, definition):
+    _many(_visit_named_type, visitor, definition.interfaces)
+    _many(_visit_directive, visitor, definition.directives)
+    _many(_visit_field_definition, visitor, definition.fields)
 
 
 @_visiting
-def visit_interface_type_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
-    _many(visit_field_definition, visitor, definition.fields)
+def _visit_interface_type_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
+    _many(_visit_field_definition, visitor, definition.fields)
 
 
 @_visiting
-def visit_union_type_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
-    _many(visit_named_type, visitor, definition.types)
+def _visit_union_type_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
+    _many(_visit_named_type, visitor, definition.types)
 
 
 @_visiting
 def visit_enum_type_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
-    _many(visit_enum_value_definition, visitor, definition.values)
+    _many(_visit_directive, visitor, definition.directives)
+    _many(_visit_enum_value_definition, visitor, definition.values)
 
 
 @_visiting
-def visit_input_object_type_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
-    _many(visit_input_value_definition, visitor, definition.fields)
+def _visit_input_object_type_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
+    _many(_visit_input_value_definition, visitor, definition.fields)
 
 
 @_visiting
-def visit_field_definition(visitor, definition):
-    visit_named_type(visitor, definition.type)
-    _many(visit_input_value_definition, visitor, definition.arguments)
-    _many(visit_directive, visitor, definition.directives)
+def _visit_field_definition(visitor, definition):
+    _visit_named_type(visitor, definition.type)
+    _many(_visit_input_value_definition, visitor, definition.arguments)
+    _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def visit_input_value_definition(visitor, definition):
-    visit_named_type(visitor, definition.type)
-    visit_input_value(visitor, definition.default_value)
-    _many(visit_directive, visitor, definition.directives)
+def _visit_input_value_definition(visitor, definition):
+    _visit_named_type(visitor, definition.type)
+    _visit_input_value(visitor, definition.default_value)
+    _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def visit_enum_value_definition(visitor, definition):
-    _many(visit_directive, visitor, definition.directives)
+def _visit_enum_value_definition(visitor, definition):
+    _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def visit_directive_definition(visitor, definition):
-    _many(visit_input_value_definition, visitor, definition.arguments)
+def _visit_directive_definition(visitor, definition):
+    _many(_visit_input_value_definition, visitor, definition.arguments)
 
 
 _HANDLERS = {
@@ -344,13 +338,12 @@ class DispatchingVisitor(Visitor):
     def handler(self, node, stage="enter"):
         """ Resolve the handler based on the node type and visiting stage.
 
-        :type node: _ast.Node
-        :param node: AST node to visit
+        Args:
+            node (py_gql.lang.ast.Node): AST node to visit
+            stage (str): One of `enter` or `leave`
 
-        :type stage: str
-        :param stage: One of 'enter' or 'leave'
-
-        :rtype: callable|None
+        Returns:
+            callable: Visitor function or ``None``
         """
         handler_name = _HANDLERS.get(type(node), None)
         if handler_name is None:
@@ -369,7 +362,11 @@ class DispatchingVisitor(Visitor):
 
 
 class ParrallelVisitor(Visitor):
-    """ Abstraction to run multiple visitor instances as one. """
+    """ Abstraction to run multiple visitor instances as one.
+
+    Args:
+        *visitors (List[Visitor]): List of visitors to run
+    """
 
     def __init__(self, *visitors):
         self.visitors = visitors

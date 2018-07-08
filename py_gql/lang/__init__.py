@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This modules encapsulates all operations related to working with GraphQL source
-files. It is used internally by the :func:`py_gql.graphql` entrypoint and the
-schema builder.
+The :mod:`py_gql.lang` module is responsible for parsing and operating on
+the GraphQL language and source files.
 """
 
 # flake8: noqa

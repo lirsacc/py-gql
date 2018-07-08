@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """ Iterable interface for the GraphQL Language lexer.
 
-The ``py_gql.lang.lexer.Lexer`` provides an iterable interface over
-tokenizing the Grahpql source.
-- All valid tokens returned by the lexer can be found in ``py_gql.lang.token``.
+- The :class:`py_gql.lang.lexer.Lexer` provides an iterable interface over
+  tokenizing the Grahpql source.
+- All valid tokens returned by the lexer can be found in
+  :mod:`py_gql.lang.token`.
 - All exceptions relevant to tokenizking are subclasses of
-  ``py_gql.exc.GQLSyntaxError``.
+  :class:`py_gql.exc.GQLSyntaxError`.
+
 """
 
 # [TODO] Review the various `Lexer.read_*` methods as the use of `peek` and
@@ -67,40 +69,44 @@ QUOTED_CHARS = {
 
 def is_source_character(code):
     """
-    :type code: int
-    :param code:
+    Args:
+        code (int): Character code
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return code >= 0x0020 or code == 0x0009
 
 
 def is_number_lead(code):
     """
-    :type code: int
-    :param code:
+    Args:
+        code (int): Character code
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return code == 0x002d or is_digit(code)
 
 
 def is_digit(code):
     """
-    :type code: int
-    :param code:
+    Args:
+        code (int): Character code
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return 0x0030 <= code <= 0x0039
 
 
 def is_name_lead(code):
     """
-    :type code: int
-    :param code:
+    Args:
+        code (int): Character code
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return (
         code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
@@ -109,10 +115,11 @@ def is_name_lead(code):
 
 def is_name_character(code):
     """
-    :type code: int
-    :param code:
+    Args:
+        code (int): Character code
 
-    :rtype: bool
+    Returns:
+        bool:
     """
     return is_name_lead(code) or is_digit(code)
 
@@ -121,11 +128,15 @@ class Lexer(object):
     """ Iterable GraphQL language lexer.
 
     This class is not typically exposed through the parser but can be used
-    independently.
+    independently to build custom parsers.
 
     Each call to ``__next__`` will read over a number of characters required
     to form a valid :class:`py_gql.lang.token.Token` and otherwise raise
     :class:`py_gql.exc.GraphQLSyntaxError` if that is not possible.
+
+    Args:
+        source (Union[str, bytes]): Source string.
+            Bytestrings will be converted to unicode.
     """
 
     __slots__ = ("_source", "_len", "_done", "_position", "_started")
@@ -142,14 +153,16 @@ class Lexer(object):
         self._position = 0
 
     def _peek(self, count=1, raise_on_eof=False):
-        """
-        :type count: int
-        :param count:
+        """ Read character after current position.
 
-        :type raise_on_eof: bool
-        :param raise_on_eof:
+        Args:
+            count(int): How many charcaters to read over
+            raise_on_eof (int):
+                Raise :class:`py_gql.exc.UnexpectedEOF` if EOF is encountered
 
-        :rtype: Optional[char]
+        Returns:
+            chr: Characters at current position + ``count`` or ``None`` if
+            EOF was encountered.
         """
         if self._done or self._position + count - 1 >= self._len:
             if raise_on_eof:
@@ -158,11 +171,18 @@ class Lexer(object):
         return self._source[self._position + count - 1]
 
     def _advance(self, expected=None):
-        """
-        :type expected: Optional[char]
-        :param expected:
+        """ Read next charcater and advance current position.
 
-        :rtype: Optional[char]
+        Args:
+            expected (char): Expected character
+
+        Returns:
+            chr: next character
+
+        Raises:
+            :class:`py_gql.exc.UnexpectedCharacter`:
+                if the character is not the expected one
+            :class:`py_gql.exc.UnexpectedEOF`: if EOF is encountered
         """
         char = self._peek(raise_on_eof=expected is not None)
         self._position += 1
@@ -208,7 +228,8 @@ class Lexer(object):
     def _read_ellipsis(self):
         """ Advance lexer over an ellipsis token (...).
 
-        :rtype: py_gql.lang.token.Ellipsis
+        Returns:
+            py_gql.lang.token.Ellipsis: parse token
         """
         start = self._position
         for _ in range(3):
@@ -218,7 +239,8 @@ class Lexer(object):
     def _read_string(self):
         """ Advance lexer over a quoted string.
 
-        :rtype: py_gql.lang.token.String
+        Returns:
+            py_gql.lang.token.String: parse token
         """
         start = self._position
         self._advance(expected='"')
@@ -249,7 +271,8 @@ class Lexer(object):
     def _read_block_string(self):
         """ Advance lexer over a triple quoted block string.
 
-        :rtype: py_gql.lang.token.BlockString
+        Returns:
+            py_gql.lang.token.BlockString: parse token
         """
         start = self._position
         self._advance(expected='"')
@@ -291,7 +314,8 @@ class Lexer(object):
     def _read_escape_sequence(self):
         """ Advance lexer over an escape character
 
-        :rtype: char
+        Returns:
+            chr: Escaped character value
         """
         char = self._advance()
         if char is None:
@@ -311,7 +335,8 @@ class Lexer(object):
     def _read_escaped_unicode(self):
         """ Advance lexer over a unicode character
 
-        :rtype: char
+        Returns:
+            chr: Escaped character value
         """
         start = self._position
         for _ in range(4):
@@ -338,7 +363,9 @@ class Lexer(object):
     def _read_number(self):
         """ Advance lexer over a number
 
-        :rtype: Union[py_gql.lang.token.Integer, py_gql.lang.token.Float]
+        Returns:
+            Union[py_gql.lang.token.Integer, py_gql.lang.token.Float]:
+                parse token
         """
         start = self._position
         is_float = False
@@ -376,7 +403,8 @@ class Lexer(object):
     def _read_over_integer(self):
         """ Advance lexer over an integer
 
-        :rtype: int
+        Returns:
+            int: parsed value
         """
         char = self._peek(raise_on_eof=True)
         code = ord(char)
@@ -412,7 +440,8 @@ class Lexer(object):
     def _read_name(self):
         """ Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
 
-        :rtype: py_gql.lang.token.Name
+        Returns:
+            py_gql.lang.token.Name: parse token
         """
         start = self._position
         char = self._peek(raise_on_eof=True)
@@ -431,16 +460,17 @@ class Lexer(object):
         return self
 
     def __next__(self):
-        """
+        """ Advance lexer and return the next :class:`py_gql.lang.token.Token`
+        instance.
 
-        :rtype: py_gql.lang.token.Token
+        Returns:
+            py_gql.lang.token.Token: parse token
 
-        :Raises:
-
-            - :class:`py_gql.exc.UnexpectedEOF`
-            - :class:`py_gql.exc.InvalidCharacter`
-            - :class:`py_gql.exc.UnexpectedCharacter`
-            - :class:`py_gql.exc.NonTerminatedString`
+        Raises:
+            :class:`py_gql.exc.UnexpectedEOF`
+            :class:`py_gql.exc.InvalidCharacter`
+            :class:`py_gql.exc.UnexpectedCharacter`
+            :class:`py_gql.exc.NonTerminatedString`
         """
         if self._done:
             raise StopIteration()
