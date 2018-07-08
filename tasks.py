@@ -3,7 +3,7 @@ import os
 
 import invoke
 
-from py_gql import __pkg__ as pkg
+import setup as pkg
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 

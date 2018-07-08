@@ -22,7 +22,7 @@ from docs import graphql_pygments  # flake8: noqa
 
 # -- Project information -----------------------------------------------------
 
-from py_gql import __pkg__ as pkg
+import setup as pkg
 
 project = pkg.NAME
 copyright = "2018, Charles Lirsac"

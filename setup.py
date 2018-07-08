@@ -5,7 +5,13 @@
 
 from setuptools import find_packages, setup
 
-from py_gql import __pkg__ as pkg
+NAME = "py_gql"
+AUTHOR = "Charles Lirsac"
+AUTHOR_EMAIL = "c.lirsac@gmail.com"
+URL = "https://github.com/lirsacc/py-gql"
+
+VERSION_TUPLE = (0, 0, 1)
+VERSION = ".".join(map(str, VERSION_TUPLE))
 
 
 def run_setup():
@@ -26,16 +32,16 @@ def run_setup():
         if line and not line.startswith("#")
     ]
 
-    version = pkg.VERSION
+    version = VERSION
 
     setup(
-        name=pkg.NAME,
+        name=NAME,
         version=version,
         description=__doc__.split("\n")[0],
         long_description=readme,
-        author=pkg.pkg.AUTHOR,
-        author_email=pkg.AUTHOR_EMAIL,
-        url=pkg.URL,
+        author=AUTHOR,
+        author_email=AUTHOR_EMAIL,
+        url=URL,
         license=license_,
         packages=find_packages(exclude=("tests", "docs")),
         install_requires=requirements,
