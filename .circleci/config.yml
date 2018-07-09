@@ -209,10 +209,11 @@ jobs:
             - run:
                 name: Generating documentation
                 command: |
+                    mkdir -p "$(pwd)/workspace/docs/"
+                    results="$(pwd)/workspace/docs"
                     . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                     inv docs --strict
-                    mkdir -p "$(pwd)/workspace/docs"
-                    mv venv${PY}/src/docs/_build/* "$(pwd)/workspace/docs/"
+                    mv docs/_build/* "${results}"
             - store_artifacts: {path: workspace/docs, destination: .}
 
 workflows:
