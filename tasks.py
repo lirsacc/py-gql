@@ -101,7 +101,7 @@ def fmt(ctx, verbose=False, files=None):
 
 @invoke.task
 def docs(ctx, clean=True, regenerate_reference=False, strict=False):
-    """ """
+    """ Generate documentation """
     with ctx.cd(os.path.join(ROOT, "docs")):
         if clean:
             ctx.run("rm -rf _build", echo=True)
