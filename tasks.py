@@ -29,42 +29,66 @@ def clean(ctx):
             "| xargs rm -rf",
             echo=True,
         )
-        ctx.run("rm -rf tox .cache htmlcov coverage.xml", echo=True)
+        ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
 @invoke.task
-def test(ctx, coverage=False, bail=True, verbose=False, grep=None, file_=None):
+def test(
+    ctx,
+    coverage=False,
+    bail=True,
+    verbose=False,
+    grep=None,
+    file_=None,
+    junit=False,
+):
     """ Run test suite (using: py.test) """
-    cmd = [
-        "py.test --color=yes --doctest-modules",
-        "-c test.ini",
-        "--exitfirst" if bail else None,
-        (
-            "--cov %s --cov-config test.ini --no-cov-on-fail "
-            "--cov-report term --cov-report html --cov-report xml " % pkg.NAME
-        )
-        if coverage
-        else None,
-        "-vvl --full-trace" if verbose else "--quiet",
-        "-k %s" % grep if grep else None,
-        "%s tests" % pkg.NAME if file_ is None else file_,
-    ]
     with ctx.cd(ROOT):
-        ctx.run(_join(cmd), echo=True, pty=True)
+        ctx.run(
+            _join(
+                [
+                    "py.test",
+                    "-c test.ini",
+                    "--color yes",
+                    "--doctest-modules --doctest-continue-on-failure",
+                    "--exitfirst" if bail else None,
+                    (
+                        "--cov %s --cov-config test.ini --no-cov-on-fail "
+                        "--cov-report term --cov-report html --cov-report xml "
+                        % pkg.NAME
+                    )
+                    if coverage
+                    else None,
+                    "--junit-xml junit.xml" if junit else None,
+                    "-vvl --full-trace" if verbose else "--quiet",
+                    "-k %s" % grep if grep else None,
+                    "%s tests" % pkg.NAME if file_ is None else file_,
+                ]
+            ),
+            echo=True,
+            pty=True,
+        )
 
 
 @invoke.task(name="tox", aliases=["test.tox"])
 def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
     """ Run test suite against multiple python versions (using: tox) """
-    cmd = [
-        "tox -c test.ini",
-        "--recreate" if rebuild else None,
-        "--hashseed %s" % hashseed if hashseed is not None else None,
-        "-e %s" % envlist if envlist is not None else None,
-        "--skip-missing-interpreters" if strict else None,
-    ]
     with ctx.cd(ROOT):
-        ctx.run(_join(cmd), echo=True, pty=True)
+        ctx.run(
+            _join(
+                [
+                    "tox -c test.ini",
+                    "--recreate" if rebuild else None,
+                    "--hashseed %s" % hashseed
+                    if hashseed is not None
+                    else None,
+                    "-e %s" % envlist if envlist is not None else None,
+                    "--skip-missing-interpreters" if strict else None,
+                ]
+            ),
+            echo=True,
+            pty=True,
+        )
 
 
 @invoke.task
