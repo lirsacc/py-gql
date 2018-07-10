@@ -215,9 +215,10 @@ fragment frag on Friend {
 
 def test_schema_kitchen_sink(fixture_file):
     ks = fixture_file("schema-kitchen-sink.graphql")
+    print(print_ast(parse(ks)))
     assert print_ast(parse(ks)) == dedent(
         '''
-schema{
+schema {
   query: QueryType
   mutation: MutationType
 }
@@ -323,5 +324,11 @@ directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 directive @include2(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+extend schema @onSchema
+
+extend schema @onSchema {
+  subscription: SubscriptionType
+}
 '''
     )

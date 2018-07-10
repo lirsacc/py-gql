@@ -958,7 +958,7 @@ class Parser(object):
             elif keyword.value == "input":
                 return self.parse_input_object_type_definition()
             elif keyword.value == "extend":
-                return self.parse_type_extension()
+                return self.parse_type_system_extension()
             elif keyword.value == "directive":
                 return self.parse_directive_definition()
 
@@ -1286,17 +1286,21 @@ class Parser(object):
             else []
         )
 
-    def parse_type_extension(self):
-        """ TypeExtension : ScalarTypeExtension | ObjectTypeExtension | \
+    def parse_type_system_extension(self):
+        """ TypeSystemExtension : SchemaExtension | TypeExtension
+
+        - TypeExtension : ScalarTypeExtension | ObjectTypeExtension | \
         InterfaceTypeExtension | UnionTypeExtension | EnumTypeExtension | \
         InputObjectTypeDefinition
 
         Returns:
-            py_gql.lang.ast.:
+            py_gql.lang.ast.TypeSystemDefinition:
         """
         keyword = self.peek(2)
         if _is(keyword, _token.Name):
-            if keyword.value == "scalar":
+            if keyword.value == "schema":
+                return self.parse_schema_extension()
+            elif keyword.value == "scalar":
                 return self.parse_scalar_type_extension()
             elif keyword.value == "type":
                 return self.parse_object_type_extension()
@@ -1310,6 +1314,32 @@ class Parser(object):
                 return self.parse_input_object_type_extension()
 
         raise _unexpected_token(keyword, keyword.start, self._lexer._source)
+
+    def parse_schema_extension(self):
+        """ SchemaExtension : extend schema Directives[Const] \
+        { [OperationTypeDefinition] } | extend schema Directives[Const]
+
+        Returns:
+            py_gql.lang.ast.SchemaExtension:
+        """
+        start = self.peek()
+        self.expect_keyword("extend")
+        self.expect_keyword("schema")
+        directives = self.parse_directives(True)
+        if _is(self.peek(), _token.CurlyOpen):
+            operation_types = self.many(
+                _token.CurlyOpen,
+                self.parse_operation_type_definition,
+                _token.CurlyClose,
+            )
+        else:
+            operation_types = []
+        return _ast.SchemaExtension(
+            directives=directives,
+            operation_types=operation_types,
+            loc=self._loc(start),
+            source=self._source,
+        )
 
     def parse_scalar_type_extension(self):
         """ ScalarTypeExtension : extend scalar Name Directives[Const]

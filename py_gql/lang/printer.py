@@ -165,7 +165,17 @@ def print_ast(node):  # noqa: C901
 
     if kind is _ast.SchemaDefinition:
         return _join(
-            ["schema", _directives(), _block(_map(node.operation_types))]
+            ["schema", _directives(), _block(_map(node.operation_types))], " "
+        )
+
+    if kind is _ast.SchemaExtension:
+        return _join(
+            [
+                "extend schema",
+                _directives(),
+                _block(_map(node.operation_types)),
+            ],
+            " ",
         )
 
     if kind is _ast.OperationTypeDefinition:

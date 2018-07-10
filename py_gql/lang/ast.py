@@ -805,6 +805,22 @@ class InputObjectTypeDefinition(TypeDefinition):
         self.description = description
 
 
+class SchemaExtension(TypeSystemDefinition):
+    __slots__ = ("source", "loc", "directives", "operation_types")
+
+    def __init__(
+        self, directives=None, operation_types=None, source=None, loc=None
+    ):
+        #: List[py_gql.lang.ast.Directives]:
+        self.directives = directives or []
+        #: List[py_gql.lang.ast.OperationTypeDefinition]:
+        self.operation_types = operation_types or []
+        #: str: source document
+        self.source = source
+        #: Tuple[int, int]: Node position as (start position, end position)
+        self.loc = loc
+
+
 class TypeExtension(TypeSystemDefinition):
     pass
 
