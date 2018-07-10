@@ -48,7 +48,8 @@ class Schema(object):
             List of additional types on top of the types that would be infered
             from the root types.
 
-        node (py_gql.lang.ast.SchemaDefinition):
+        node (List[Union[py_gql.lang.ast.SchemaDefinition, \
+                         py_gql.lang.ast.SchemaExtension]]):
             AST node for the schema if applicable, i.e. when creating the schema
             from a GraphQL (SDL) document.
 
@@ -62,7 +63,8 @@ class Schema(object):
         subscription_type (py_gql.schema.ObjectType):
             The root subscription type for the schema (optional)
 
-        node (py_gql.lang.ast.SchemaDefinition):
+        node (List[Union[py_gql.lang.ast.SchemaDefinition, \
+                         py_gql.lang.ast.SchemaExtension]]):
             AST node for the schema if applicable, i.e. when creating the schema
             from a GraphQL (SDL) document.
 
@@ -89,7 +91,7 @@ class Schema(object):
         subscription_type=None,
         directives=None,
         types=None,
-        node=None,
+        nodes=None,
     ):
         self.query_type = query_type
         self.mutation_type = mutation_type
@@ -97,7 +99,7 @@ class Schema(object):
 
         self._types = [query_type, mutation_type, subscription_type]
         self._types.append(__Schema__)
-        self.node = node
+        self.nodes = nodes
 
         # NOTE: This is the notion of the specified types being always
         # available. As a result of this line, intropection queries will always

@@ -171,7 +171,9 @@ def _find_directives(entity):
 
     nodes = getattr(entity, "nodes", None)
     if nodes:
-        return list(flatten(node.directives or [] for node in entity.nodes))
+        return list(
+            flatten(node.directives or [] for node in entity.nodes if node)
+        )
 
     return []
 
@@ -260,7 +262,7 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
 
             schema_directive = self._schema_directives.get(name)
             if schema_directive is None:
-                if name not in _SPECIFIED_NAMES or self._strict:
+                if name not in _SPECIFIED_NAMES and self._strict:
                     raise SDLError(
                         'Missing directive implementation for "@%s"' % name
                     )

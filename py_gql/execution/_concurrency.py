@@ -7,7 +7,7 @@ from concurrent import futures as _f
 _UNDEF = object()
 
 
-def is_deferred(value, cache={}):
+def is_deferred(value):
     return callable(getattr(value, "add_done_callback", None))
 
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pprint
+
 import pytest
 
 from py_gql._string_utils import stringify_path

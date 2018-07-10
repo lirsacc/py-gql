@@ -8,8 +8,8 @@ import functools as ft
 import six
 
 from . import _concurrency
-from .._utils import OrderedDict, find_one, flatten, is_iterable
 from .._string_utils import stringify_path
+from .._utils import OrderedDict, find_one, flatten, is_iterable
 from ..exc import (
     CoercionError,
     ExecutionError,

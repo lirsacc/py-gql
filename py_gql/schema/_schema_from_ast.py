@@ -8,7 +8,7 @@ import six
 
 from . import types as _schema
 from .._utils import is_iterable, nested_key
-from ..exc import SDLError, TypeExtensionError
+from ..exc import ExtensionError, SDLError, TypeExtensionError
 from ..lang import ast as _ast, parse
 from ..utilities import directive_arguments, value_from_ast
 from ._validation import RESERVED_NAMES
@@ -30,9 +30,9 @@ def schema_from_ast(
     _raise_on_unknown_extension=False,
     _raise_on_missing_directive=False,
 ):
-    """ Build a valid schema from a schema definition.
+    """ Build a valid schema from a schema definition file.
 
-    The schema is validate at the end to ensure not invalid schema gets created.
+    The schema is validated at the end to ensure no invalid schema gets created.
 
     :type document: Union[py_gql.lang.ast.Document, str, List[str]]
     :param document: Schema definition AST(s)
@@ -73,6 +73,7 @@ def schema_from_ast(
     # First pass = parse and extract relevant informaton
     (
         schema_definition,
+        schema_extensions,
         type_nodes,
         extension_nodes,
         directive_nodes,
@@ -103,7 +104,11 @@ def schema_from_ast(
                     resolvers, schema_type.name, field.name
                 )
 
-    operation_types = _operation_types(schema_definition, types)
+    operation_types = _operation_types(
+        schema_definition, schema_extensions, types
+    )
+
+    _check_schema_directives(schema_definition, schema_extensions)
 
     schema = Schema(
         query_type=operation_types.get("query"),
@@ -111,7 +116,10 @@ def schema_from_ast(
         subscription_type=operation_types.get("subscription"),
         types=types.values(),
         directives=directives.values(),
-        node=schema_definition,
+        nodes=(
+            ([schema_definition] if schema_definition else [])
+            + schema_extensions
+        ),
     )
 
     # Schema must be valid before applying directives
@@ -163,6 +171,7 @@ def _extract_types(definitions):
     types = {}
     extensions = collections.defaultdict(list)
     directives = {}
+    schema_extensions = []
 
     for definition in definitions:
         if isinstance(definition, _ast.SchemaDefinition):
@@ -179,6 +188,9 @@ def _extract_types(definitions):
                 )
             types[definition.name.value] = definition
 
+        elif isinstance(definition, _ast.SchemaExtension):
+            schema_extensions.append(definition)
+
         elif isinstance(definition, _ast.TypeExtension):
             extensions[definition.name.value].append(definition)
 
@@ -190,34 +202,65 @@ def _extract_types(definitions):
                 )
             directives[definition.name.value] = definition
 
-    return schema_definition, types, extensions, directives
+    return schema_definition, schema_extensions, types, extensions, directives
 
 
-def _operation_types(schema_definition, type_map):
+def _check_schema_directives(schema_definition, schema_extensions):
+    """ Validate schema directives application
+
+    Args:
+        schema_definition (Optional[py_gql.lang.ast.SchemaDefinition]):
+        schema_extensions (List[py_gql.lang.ast.SchemaExtension])
+    """
+    directives = set()
+    if schema_definition is not None:
+        for d in schema_definition.directives:
+            directives.add(d.name.value)
+
+    for ext in schema_extensions:
+        for d in ext.directives:
+            name = d.name.value
+            if d.name.value in directives:
+                raise ExtensionError(
+                    'Directive "@%s" already applied to the schema' % (name,),
+                    [ext],
+                )
+            directives.add(name)
+
+
+def _operation_types(schema_definition, schema_extensions, type_map):
     """ Extract operation types from a schema_definiton and a type map.
     """
-    if schema_definition is None:
-        return {
-            k: type_map.get(k.capitalize(), None)
-            for k in ("query", "mutation", "subscription")
-        }
-    else:
+
+    def _extract(def_or_ext):
         operation_types = {}
-        for opdef in schema_definition.operation_types:
+        for opdef in def_or_ext.operation_types:
             type_name = opdef.type.name.value
             op = opdef.operation
             if op in operation_types:
                 raise SDLError(
-                    "Can only define one %s in schema" % op,
-                    [schema_definition, opdef],
+                    "Can only define one %s in schema" % op, [def_or_ext, opdef]
                 )
             if type_name not in type_map:
                 raise SDLError(
                     "%s type %s not found in document" % (op, type_name),
-                    [schema_definition, opdef],
+                    [def_or_ext, opdef],
                 )
             operation_types[op] = type_map[type_name]
         return operation_types
+
+    if schema_definition is None:
+        base_schema = {
+            k: type_map.get(k.capitalize(), None)
+            for k in ("query", "mutation", "subscription")
+        }
+    else:
+        base_schema = _extract(schema_definition)
+
+    for ext in schema_extensions:
+        base_schema.update(_extract(ext))
+
+    return base_schema
 
 
 class Ref(object):

@@ -2,8 +2,8 @@
 
 import pytest
 
-from py_gql._string_utils import stringify_path
 from py_gql._graphql import graphql
+from py_gql._string_utils import stringify_path
 from py_gql.execution.middleware import GraphQLMiddleware, apply_middlewares
 
 

@@ -565,3 +565,67 @@ def test_injected_scalar_type_extension():
     ]
 
     assert schema.types["UUID"] is not UUID
+
+
+def test_schema_extension():
+    schema = schema_from_ast(
+        """
+        type Query { a: Boolean }
+
+        type Foo { foo: String }
+        type Bar { bar: String }
+
+        extend schema {
+            query: Foo
+            mutation: Bar
+        }
+        """
+    )
+
+    assert schema.query_type.name == "Foo"
+    assert schema.mutation_type.name == "Bar"
+    assert schema.subscription_type is None
+
+
+def test_schema_extension_directive():
+    schema_from_ast(
+        """
+        directive @onSchema on SCHEMA
+
+        type Foo { foo: String }
+        type Bar { bar: String }
+
+        schema {
+            query: Foo
+        }
+
+        extend schema @onSchema {
+            query: Bar
+        }
+        """
+    )
+
+
+def test_schema_extension_duplicate_directive():
+    with pytest.raises(SDLError) as exc_info:
+        schema_from_ast(
+            """
+            directive @onSchema on SCHEMA
+
+            type Foo { foo: String }
+            type Bar { bar: String }
+
+            schema @onSchema {
+                query: Foo
+            }
+
+            extend schema @onSchema {
+                query: Bar
+            }
+            """
+        )
+
+    assert exc_info.value.to_dict() == {
+        "locations": [{"column": 13, "line": 11}],
+        "message": 'Directive "@onSchema" already applied to the schema',
+    }

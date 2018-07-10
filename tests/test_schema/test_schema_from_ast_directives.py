@@ -75,6 +75,19 @@ def test_directive_on_wrong_location():
 
 
 def test_ignores_unknown_directive_implementation():
+    schema_from_ast(
+        """
+        directive @upper on FIELD_DEFINITION
+
+        type Query @upper {
+            foo: String
+        }
+        """,
+        _raise_on_missing_directive=False,
+    )
+
+
+def test_raises_on_unknown_directive_implementation_if_specified():
     with pytest.raises(SDLError) as exc_info:
         schema_from_ast(
             """
@@ -83,7 +96,8 @@ def test_ignores_unknown_directive_implementation():
             type Query @upper {
                 foo: String
             }
-            """
+            """,
+            _raise_on_missing_directive=True,
         )
 
     assert exc_info.value.to_dict() == {
