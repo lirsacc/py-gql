@@ -567,6 +567,23 @@ def test_injected_scalar_type_extension():
     assert schema.types["UUID"] is not UUID
 
 
+def test_raises_on_extending_specified_scala():
+    with pytest.raises(SDLError) as exc_info:
+        schema_from_ast(
+            """
+            directive @protected on SCALAR
+
+            type Query {
+                foo: String
+            }
+
+            extend scalar String @protected
+            """
+        )
+
+    assert str(exc_info.value) == "Cannot extend specified type String"
+
+
 def test_schema_extension():
     schema = schema_from_ast(
         """

@@ -903,6 +903,9 @@ def nullable_type(type_):
     >>> from py_gql.schema import Int, NonNullType
     >>> unwrap_type(NonNullType(Int)) is Int
     True
+
+    >>> unwrap_type(Int) is Int
+    True
     """
     if isinstance(type_, NonNullType):
         return type_.type

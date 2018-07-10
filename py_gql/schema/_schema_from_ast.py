@@ -79,16 +79,20 @@ def schema_from_ast(
         directive_nodes,
     ) = _extract_types(ast.definitions)
 
-    if _raise_on_unknown_extension:
-        type_names = set(type_nodes.keys())
-        if known_types:
-            type_names |= set((t.name for t in known_types))
+    type_names = set(type_nodes.keys())
+    if known_types:
+        type_names |= set((t.name for t in known_types))
 
-        for type_name, ext_nodes in extension_nodes.items():
-            if type_name not in type_names:
-                raise SDLError(
-                    'Cannot extend unknown type "%s"' % type_name, ext_nodes
-                )
+    for type_name, ext_nodes in extension_nodes.items():
+        if _raise_on_unknown_extension and type_name not in type_names:
+            raise SDLError(
+                'Cannot extend unknown type "%s"' % type_name, ext_nodes
+            )
+        if type_name in RESERVED_NAMES:
+            raise TypeExtensionError(
+                "Cannot extend specified type %s" % (type_name),
+                ext_nodes,
+            )
 
     # Second pass = translate types in schema object and apply extensions
     types, directives = _build_types_and_directives(
@@ -779,12 +783,6 @@ def _build_types_and_directives(  # noqa
             raise TypeExtensionError(
                 'Expected ScalarTypeExtension for ScalarType "%s" but got %s'
                 % (source_type.name, type(extension_node).__name__),
-                [extension_node],
-            )
-
-        if source_type.name in RESERVED_NAMES:
-            raise TypeExtensionError(
-                "Cannot extend specified scalar %s" % (source_type.name),
                 [extension_node],
             )
 

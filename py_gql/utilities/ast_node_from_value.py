@@ -79,8 +79,7 @@ def ast_node_from_value(value, input_type):  # noqa
 
     if isinstance(input_type, ScalarType):
         serialized = input_type.serialize(value)
-
-    if isinstance(input_type, EnumType):
+    elif isinstance(input_type, EnumType):
         serialized = input_type.get_name(value)
 
     if serialized is None:
@@ -97,7 +96,7 @@ def ast_node_from_value(value, input_type):  # noqa
                 return _ast.IntValue(value=str(int(serialized)))
             elif MIN_INT < serialized < MAX_INT:
                 return _ast.FloatValue(value=str(serialized))
-            return _ast.FloatValue(value="%.g" % serialized)
+        return _ast.FloatValue(value="%s" % serialized)
 
     if isinstance(serialized, six.string_types):
         if isinstance(input_type, EnumType):
@@ -115,11 +114,11 @@ def ast_node_from_value(value, input_type):  # noqa
                 else:
                     return _ast.FloatValue(value=serialized)
             try:
-                float(serialized)
+                fl = float(serialized)
             except ValueError:
                 pass
             else:
-                return _ast.FloatValue(value="%.g" % serialized)
+                return _ast.FloatValue(value="%s" % fl)
 
         return _ast.StringValue(value=serialized)
 

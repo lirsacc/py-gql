@@ -221,7 +221,7 @@ class GraphQLResult(object):
         self.extensions = OrderedDict()
 
     def __bool__(self):
-        return not self.errors
+        return self.errors is _unset or not self.errors
 
     __nonzero__ = __bool__
 
@@ -233,10 +233,6 @@ class GraphQLResult(object):
         if name in self.extensions:
             raise ValueError('Duplicate extension "%s"' % name)
         self.extensions[name] = ext.payload()
-
-    def add_extensions(self, exts):
-        for ext in exts:
-            self.add_extension(ext)
 
     def response(self):
         """ Generate an ordered response dict """
@@ -255,7 +251,10 @@ class GraphQLResult(object):
 
 
 class GraphQLExtension(object):
-    """
+    """ Encode a GraphQL response extension.
+
+    Use in conjonction with :meth:`GraphQLResult.add_extension` to encode the
+    response alongside an execution result.
     """
 
     def payload(self):

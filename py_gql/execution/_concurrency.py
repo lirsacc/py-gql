@@ -29,20 +29,6 @@ def deferred(value):
     return future
 
 
-def ensure_deferred(maybe_future):
-    """ Make sure an object is deferred as a ``Future`` if not already.
-
-    :type maybe_future: any
-    :param maybe_future: Original value
-
-    :rtype: concurrent.futures.Future
-    :returns: Value wrapped in a ``Future`` if not alrady the case
-    """
-    if is_deferred(maybe_future):
-        return maybe_future
-    return deferred(maybe_future)
-
-
 def all_(futures):
     """ Create a ``concurrent.futures.Future`` wrapping a list of futures.
 

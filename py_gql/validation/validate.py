@@ -47,12 +47,6 @@ class ValidationResult(object):
 
     __nonzero__ = __bool__
 
-    def __iter__(self):
-        return self.errors
-
-    def __str__(self):
-        return "<%s (%s)>" % (type(self).__name__, bool(self))
-
 
 def validate_ast(schema, ast_root, validators=None):
     """ Check that an ast is a valid GraphQL query docuemnt.

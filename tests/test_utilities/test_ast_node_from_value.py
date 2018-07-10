@@ -14,8 +14,21 @@ from py_gql.schema import (
     ListType,
     NonNullType,
     String,
+    ScalarType,
 )
+from py_gql.schema.scalars import MAX_INT
 from py_gql.utilities import ast_node_from_value
+
+
+def _custom_serialize(x):
+    if x == 42:
+        return None
+    return x
+
+
+CustomScalar = ScalarType(
+    name="CustomScalar", serialize=_custom_serialize, parse=lambda x: x
+)
 
 
 @pytest.mark.parametrize(
@@ -61,6 +74,11 @@ from py_gql.utilities import ast_node_from_value
         (123, ID, _ast.IntValue(value="123")),
         ("01", ID, _ast.StringValue(value="01")),
         (None, ID, _ast.NullValue()),
+        (42, CustomScalar, _ast.NullValue()),
+        ("42.42", CustomScalar, _ast.FloatValue(value="42.42")),
+        (42.42, CustomScalar, _ast.FloatValue(value="42.42")),
+        (MAX_INT + 2, CustomScalar, _ast.FloatValue(value="2147483649")),
+        ("foo", CustomScalar, _ast.StringValue(value="foo")),
     ],
 )
 def test_ast_node_from_value_with_scalars(value, input_type, expected):
