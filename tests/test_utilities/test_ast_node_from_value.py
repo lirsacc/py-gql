@@ -13,8 +13,8 @@ from py_gql.schema import (
     Int,
     ListType,
     NonNullType,
-    String,
     ScalarType,
+    String,
 )
 from py_gql.schema.scalars import MAX_INT
 from py_gql.utilities import ast_node_from_value

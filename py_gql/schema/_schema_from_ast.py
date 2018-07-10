@@ -90,8 +90,7 @@ def schema_from_ast(
             )
         if type_name in RESERVED_NAMES:
             raise TypeExtensionError(
-                "Cannot extend specified type %s" % (type_name),
-                ext_nodes,
+                "Cannot extend specified type %s" % (type_name), ext_nodes
             )
 
     # Second pass = translate types in schema object and apply extensions

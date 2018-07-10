@@ -3,7 +3,7 @@
 import pytest
 
 from py_gql._string_utils import dedent
-from py_gql.execution import GraphQLResult, GraphQLExtension
+from py_gql.execution import GraphQLExtension, GraphQLResult
 
 
 def test_GraphQLResult_response_with_nothing():
