@@ -7,7 +7,7 @@ exposing to consumers of your GraphQL API.
 """
 
 from ._utils import cached_property
-from ._string_utils import highlight_location, index_to_loc
+from ._string_utils import highlight_location, index_to_loc, stringify_path
 
 
 class GraphQLError(Exception):
@@ -110,12 +110,12 @@ class GraphQLLocatedError(GraphQLError):
         message (str): Explanatory message
         nodes (Optional[List[py_gql.lang.ast.Node]]):
             Node or nodes relevant to the exception
-        path (py_gql.utilities.Path): Location of the error during execution
+        path (list): Location of the error during execution
 
     Attributes:
         message (str): Explanatory message
         nodes (List[py_gql.lang.ast.Node]): Node or nodes relevant to the exception
-        path (py_gql.utilities.Path): Location of the error during execution
+        path (list): Location of the error during execution
     """
 
     def __init__(self, message, nodes=None, path=None):
@@ -146,7 +146,7 @@ class GraphQLLocatedError(GraphQLError):
                     )
                 ],
             ),
-            ("path", list(self.path) if self.path is not None else None),
+            ("path", self.path if self.path is not None else None),
         )
         return {k: v for k, v in kv if v}
 
@@ -233,7 +233,7 @@ class CoercionError(GraphQLLocatedError):
 
     def __str__(self):
         if self.value_path:
-            return "%s at %s" % (self.message, self.value_path)
+            return "%s at %s" % (self.message, stringify_path(self.value_path))
         return self.message
 
 
@@ -268,13 +268,13 @@ class ResolverError(GraphQLLocatedError):
         message (str): Explanatory message
         nodes (Optional[Union[List[py_gql.lang.ast.Node], py_gql.lang.ast.Node]]):
             Node or nodes relevant to the exception
-        path (py_gql.utilities.Path): Location of the error during execution
+        path (list): Location of the error during execution
         extensions (Optional[dict]): Error extensions
 
     Attributes:
         message (str): Explanatory message
         nodes (List[py_gql.lang.ast.Node]): Node or nodes relevant to the exception
-        path (py_gql.utilities.Path): Location of the error during execution
+        path (list): Location of the error during execution
         extensions (Optional[dict]): Error extensions
 
     """

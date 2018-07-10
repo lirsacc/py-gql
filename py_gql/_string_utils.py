@@ -385,3 +385,27 @@ def quoted_options_list(options):
         ", ".join(('"%s"' % option for option in options[:-1])),
         '"%s"' % options[-1],
     )
+
+
+def stringify_path(path):
+    """ Concatenate traversal path into a string.
+
+    >>> stringify_path(['foo', 0, 'bar'])
+    'foo[0].bar'
+
+    >>> stringify_path(['foo'])
+    'foo'
+
+    >>> stringify_path([1, 'foo'])
+    '[1].foo'
+
+    >>> stringify_path([])
+    ''
+    """
+    path_str = ""
+    for entry in path:
+        if isinstance(entry, int):
+            path_str += "[%s]" % entry
+        else:
+            path_str += ".%s" % entry
+    return path_str.lstrip(".")

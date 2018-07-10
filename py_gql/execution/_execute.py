@@ -9,6 +9,7 @@ import six
 
 from . import _concurrency
 from .._utils import OrderedDict, find_one, flatten, is_iterable
+from .._string_utils import stringify_path
 from ..exc import (
     CoercionError,
     ExecutionError,
@@ -32,7 +33,6 @@ from ..schema import (
 )
 from ..schema.introspection import schema_field, type_field, type_name_field
 from ..utilities import (
-    Path,
     coerce_argument_values,
     coerce_variable_values,
     default_resolver,
@@ -116,7 +116,7 @@ def execute(  # flake8: noqa : C901
     fragments = {
         d.name.value: d
         for d in ast.definitions
-        if isinstance(d, _ast.FragmentDefinition)
+        if d.is_(_ast.FragmentDefinition)
     }
 
     coerced_variables = coerce_variable_values(schema, operation, variables)
@@ -165,7 +165,7 @@ def get_operation(document, operation_name):
     operations = [
         definition
         for definition in document.definitions
-        if isinstance(definition, _ast.OperationDefinition)
+        if definition.is_(_ast.OperationDefinition)
     ]
 
     if not operations:
@@ -226,7 +226,8 @@ def collect_fields(
             grouped_fields[key].extend(gf)
 
     for selection in selections:
-        if isinstance(selection, _ast.Field):
+
+        if selection.is_(_ast.Field):
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -239,7 +240,7 @@ def collect_fields(
                 grouped_fields[key] = []
             grouped_fields[key].append(selection)
 
-        elif isinstance(selection, _ast.InlineFragment):
+        elif selection.is_(_ast.InlineFragment):
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -248,7 +249,7 @@ def collect_fields(
 
             _collect_fragment_fields(selection.selection_set.selections)
 
-        elif isinstance(selection, _ast.FragmentSpread):
+        elif selection.is_(_ast.FragmentSpread):
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -337,7 +338,7 @@ def _resolve_type(value, context, schema, abstract_type):
 def _execute_selections(ctx, selections, object_type, object_value, path=None):
     fields = collect_fields(ctx, object_type, selections)
     deferred_fields = []
-    path = path or Path()
+    path = path or []
 
     def _handlers(key, nodes, field_path):
         def _handle_error(err):
@@ -345,7 +346,7 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
             return (key, None)
 
         def _handle_success(completed):
-            return _concurrency.deferred((key, completed))
+            return (key, completed)
 
         return _handle_success, _handle_error
 
@@ -354,7 +355,7 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
         if field_def is None:
             continue
 
-        field_path = path + key
+        field_path = path + [key]
         _handle_success, _handle_error = _handlers(key, nodes, field_path)
 
         deferred_fields.append(
@@ -379,8 +380,7 @@ def _execute_selections_serially(
     fields = collect_fields(ctx, object_type, selections)
     resolved_fields = []
     steps = []
-
-    path = path or Path()
+    path = path or []
 
     def _handlers(key, nodes, field_path):
         def _handle_error(err):
@@ -397,7 +397,7 @@ def _execute_selections_serially(
         if field_def is None:
             continue
 
-        field_path = path + key
+        field_path = path + [key]
         _handle_success, _handle_error = _handlers(key, nodes, field_path)
 
         steps.append(
@@ -422,7 +422,7 @@ def _unwrap_resolved_value(value):
     value = value() if callable(value) else value
     if _concurrency.is_deferred(value):
         return _concurrency.unwrap(value)
-    return _concurrency.deferred(value)
+    return value
 
 
 def resolve_field(
@@ -451,7 +451,6 @@ def resolve_field(
             _unwrap_resolved_value,
             ft.partial(complete_value, ctx, field_def.type, nodes, path),
         )
-        return ctx.executor.submit(resolver, root, args, context, info)
 
     if ctx.middlewares:
         resolve = apply_middlewares(resolve, ctx.middlewares)
@@ -459,7 +458,7 @@ def resolve_field(
     try:
         args = coerce_argument_values(field_def, nodes[0], ctx.variables)
     except CoercionError as err:
-        return _concurrency.deferred(on_error(err))
+        return on_error(err)
 
     return _concurrency.except_(
         _concurrency.chain(
@@ -471,7 +470,8 @@ def resolve_field(
 
 
 def complete_value(ctx, field_type, nodes, path, resolved_value):
-    if isinstance(field_type, NonNullType):
+    field_type_type = type(field_type)
+    if field_type_type is NonNullType:
         # REVIEW:
         # - Error is different than ref implementation
         # - Shouldn't this be a RuntimeError ? As in the developer should
@@ -480,9 +480,11 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         def _handle_null(value):
             if value is None:
                 ctx.add_error(
-                    'Field "%s" is not nullable' % path, nodes[0], path
+                    'Field "%s" is not nullable' % stringify_path(path),
+                    nodes[0],
+                    path,
                 )
-            return _concurrency.deferred(value)
+            return value
 
         return _concurrency.chain(
             complete_value(ctx, field_type.type, nodes, path, resolved_value),
@@ -490,14 +492,14 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         )
 
     if resolved_value is None:
-        return _concurrency.deferred(None)
+        return None
 
-    if isinstance(field_type, ListType):
+    if field_type_type is ListType:
         return _complete_list_value(
             ctx, field_type.type, nodes, resolved_value, path
         )
 
-    if isinstance(field_type, ScalarType):
+    if field_type_type is ScalarType:
         try:
             serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:
@@ -506,9 +508,9 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
                 % (path, field_type, err)
             )
         else:
-            return _concurrency.deferred(serialized)
+            return serialized
 
-    if isinstance(field_type, EnumType):
+    if field_type_type is EnumType:
         try:
             serialized = field_type.get_name(resolved_value)
         except UnknownEnumValue as err:
@@ -517,9 +519,9 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
                 % (path, field_type, err)
             )
         else:
-            return _concurrency.deferred(serialized)
+            return serialized
 
-    if isinstance(field_type, (ObjectType, InterfaceType, UnionType)):
+    if field_type_type in (ObjectType, InterfaceType, UnionType):
         return _complete_object_value(
             ctx, field_type, nodes, resolved_value, path
         )
@@ -529,19 +531,20 @@ def _complete_list_value(ctx, item_type, nodes, list_value, path):
     if not is_iterable(list_value, False):
         raise RuntimeError(
             'Field "%s" is a list type and resolved value '
-            "should be iterable" % path
+            "should be iterable" % stringify_path(path)
         )
 
     return _concurrency.all_(
         [
-            complete_value(ctx, item_type, nodes, path + i, entry)
+            complete_value(ctx, item_type, nodes, path + [i], entry)
             for i, entry in enumerate(list_value)
         ]
     )
 
 
 def _complete_object_value(ctx, field_type, nodes, object_value, path):
-    if isinstance(field_type, (InterfaceType, UnionType)):
+    field_type_type = type(field_type)
+    if field_type_type in (InterfaceType, UnionType):
         runtime_type = _resolve_type(
             object_value, ctx.context, ctx.schema, field_type
         )
@@ -561,7 +564,8 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path):
         if not ctx.schema.is_possible_type(field_type, runtime_type):
             raise RuntimeError(
                 'Runtime ObjectType "%s" is not a possible type for '
-                'field "%s" of type "%s".' % (runtime_type, path, field_type)
+                'field "%s" of type "%s".'
+                % (runtime_type, stringify_path(path), field_type)
             )
 
     else:

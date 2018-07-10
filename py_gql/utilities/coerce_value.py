@@ -23,14 +23,13 @@ from ..schema import (
     ScalarType,
     is_input_type,
 )
-from .path import Path
 from .value_from_ast import value_from_ast
 
 
 def _path(path):
     if not path:
-        return Path()
-    return Path(["value"]) + path
+        return []
+    return ["value"] + path
 
 
 def coerce_value(value, type_, node=None, path=None):
@@ -40,7 +39,7 @@ def coerce_value(value, type_, node=None, path=None):
         value (any): Value to coerce
         type_ (py_gql.schema.Type): Expected type
         node (Optional[py_gql.lang.ast.Node]): Relevant node
-        path: (Optional[py_gql.utilities.Path]):
+        path: (Optional[list]):
             Path into the value for nested values (lists, objects).
             Should only be set on recursive calls.
 

@@ -53,6 +53,9 @@ class Node(object):
             **{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__}
         )
 
+    def is_(self, cls):
+        return type(self) == cls
+
     def to_dict(self):
         """ Convert the current node to a JSON serializable ``dict`` using
         :func:`node_to_dict`.

@@ -314,7 +314,7 @@ def test_merge_of_parallel_fragments(exe_cls, exe_kwargs):
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
 def test_forwarded_resolver_arguments(mocker, exe_cls, exe_kwargs):
 
-    resolver, context, root = mocker.Mock(), {}, {}
+    resolver, context, root = mocker.Mock(return_value="foo"), {}, {}
 
     field = Field("test", String, [Argument("arg", String)], resolve=resolver)
     query_type = ObjectType("Test", [field])
@@ -662,7 +662,11 @@ def _complex_schema():
         [
             Field("id", String),
             Field("name", String),
-            Field("pic", BlogImage, [Argument("width", Int), Argument("height", Int)]),
+            Field(
+                "pic",
+                BlogImage,
+                [Argument("width", Int), Argument("height", Int)],
+            ),
             Field("recentArticle", lambda: BlogArticle),
         ],
     )

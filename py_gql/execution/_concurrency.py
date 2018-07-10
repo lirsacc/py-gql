@@ -7,8 +7,8 @@ from concurrent import futures as _f
 _UNDEF = object()
 
 
-def is_deferred(value):
-    return isinstance(value, _f.Future)
+def is_deferred(value, cache={}):
+    return callable(getattr(value, "add_done_callback", None))
 
 
 def deferred(value):
@@ -38,7 +38,7 @@ def ensure_deferred(maybe_future):
     :rtype: concurrent.futures.Future
     :returns: Value wrapped in a ``Future`` if not alrady the case
     """
-    if isinstance(maybe_future, _f.Future):
+    if is_deferred(maybe_future):
         return maybe_future
     return deferred(maybe_future)
 
@@ -66,10 +66,16 @@ def all_(futures):
 
     result = _f.Future()
     results_list = [_UNDEF] * len(futures)
+    done_count = [0]
+    len_ = len(futures)
 
     def cancel_remaining():
         for f in futures:
             f.cancel()
+
+    def notify():
+        if done_count[0] == len_:
+            result.set_result(results_list)
 
     def callback_for(index):
         def callback(future):
@@ -90,16 +96,20 @@ def all_(futures):
                 result.set_exception(err)
             else:
                 results_list[index] = res
-
-            if all(x is not _UNDEF for x in results_list):
-                result.set_result(results_list)
+                done_count[0] += 1
+                notify()
 
         return callback
 
     result.set_running_or_notify_cancel()
     for index, future in enumerate(futures):
-        future.add_done_callback(callback_for(index))
+        if is_deferred(future):
+            future.add_done_callback(callback_for(index))
+        else:
+            results_list[index] = future
+            done_count[0] += 1
 
+    notify()
     return result
 
 
@@ -135,7 +145,23 @@ def chain(leader, *funcs):
     if callable(leader):
         leader = leader(None)
 
-    def callback(future):
+    def _next(value):
+        if is_deferred(value):
+            value.add_done_callback(_callback)
+        else:
+            try:
+                func = stack.pop()
+            except IndexError:
+                result.set_result(value)
+            else:
+                try:
+                    mapped = func(value)
+                except Exception as err:
+                    result.set_exception(err)
+                else:
+                    _next(mapped)
+
+    def _callback(future):
         if not future.done():
             raise RuntimeError(
                 "Future callback called while future is not done."
@@ -147,20 +173,10 @@ def chain(leader, *funcs):
         except Exception as err:
             result.set_exception(err)
         else:
-            try:
-                func = stack.pop()
-            except IndexError:
-                result.set_result(res)
-            else:
-                try:
-                    mapped = func(res)
-                except Exception as err:
-                    result.set_exception(err)
-                else:
-                    ensure_deferred(mapped).add_done_callback(callback)
+            _next(res)
 
     result.set_running_or_notify_cancel()
-    ensure_deferred(leader).add_done_callback(callback)
+    _next(leader)
     return result
 
 
@@ -188,7 +204,7 @@ def unwrap(future):
         except Exception as err:
             result.set_exception(err)
         else:
-            if isinstance(res, _f.Future):
+            if is_deferred(res):
                 res.add_done_callback(callback)
             else:
                 result.set_result(res)

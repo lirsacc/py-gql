@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import pprint
 import pytest
 
+from py_gql._string_utils import stringify_path
 from py_gql.execution import execute
 from py_gql.execution.executors import SyncExecutor, ThreadPoolExecutor
 from py_gql.lang import ast as _ast, parse
@@ -18,7 +20,11 @@ def _dict(value):
 
 def _simplify_errors(errors):
     return [
-        (str(err), err.nodes[0].loc if err.nodes else None, str(err.path))
+        (
+            str(err),
+            err.nodes[0].loc if err.nodes else None,
+            stringify_path(err.path),
+        )
         for err in errors
     ]
 
@@ -47,11 +53,15 @@ def check_execution(
     else:
         data, errors = execute(schema, doc, **ex_kwargs).result()
 
-        import pprint
-
+        print("Result:")
+        print("-------")
         pprint.pprint(_dict(data))
-        pprint.pprint(_dict(expected_data))
         pprint.pprint(_simplify_errors(errors))
+
+        print("Expected:")
+        print("---------")
+        pprint.pprint(_dict(expected_data))
+        pprint.pprint(expected_errors)
 
         if expected_data is not None:
             assert data == expected_data

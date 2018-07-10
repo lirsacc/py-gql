@@ -131,7 +131,7 @@ def test_custom_directive_on_field(mocker):
         "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
     )
     schema = Schema(test_type, directives=[CustomDirective])
-    resolver = mocker.Mock()
+    resolver = mocker.Mock(return_value=42)
     root = {"a": resolver}
 
     data, _ = execute(

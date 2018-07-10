@@ -79,7 +79,7 @@ class ExecutionContext(object):
         :type node: py_gql.lang.ast.Node
         :param node: The node corresponding to this error
 
-        :type path: py_gql._utils.Path
+        :type path: list
         :param path: The traversal path where this error was occuring
         """
         if isinstance(err, six.string_types):
@@ -101,7 +101,7 @@ class ExecutionContext(object):
         """ Get a copy of the errors without the risk of modifying the internal
         structure.
 
-        :rtype: list[tuple[str|Exception, py_gql.lang.ast.Node, py_gql._utils.Path]]
+        :rtype: list[tuple[str|Exception, py_gql.lang.ast.Node, list]]
         """
         return self._errors[:]
 
@@ -147,7 +147,7 @@ class ResolveInfo(object):
         :type parent_type: py_gql.schema.ObjectType
         :param parent_type: ObjectType definition where the field originated from
 
-        :type path: py_gql._utils.Path
+        :type path: list
         :param path: Current traversal path
 
         :type schema: py_gql.schema.Schema
@@ -213,24 +213,26 @@ class GraphQLResult(object):
     """ Wrapper encoding the behaviour described in the Response part of the
     spec. """
 
+    __slots__ = "data", "errors", "extensions"
+
     def __init__(self, data=_unset, errors=_unset):
-        self._data = data
-        self._errors = errors
-        self._extensions = OrderedDict()
+        self.data = data
+        self.errors = errors
+        self.extensions = OrderedDict()
 
     def __bool__(self):
-        return not self._errors
+        return not self.errors
 
     __nonzero__ = __bool__
 
     def __iter__(self):
-        return iter((self._data, self._errors))
+        return iter((self.data, self.errors))
 
     def add_extension(self, ext):
         name = ext.name()
-        if name in self._extensions:
+        if name in self.extensions:
             raise ValueError('Duplicate extension "%s"' % name)
-        self._extensions[name] = ext.payload()
+        self.extensions[name] = ext.payload()
 
     def add_extensions(self, exts):
         for ext in exts:
@@ -239,12 +241,12 @@ class GraphQLResult(object):
     def response(self):
         """ Generate an ordered response dict """
         d = OrderedDict()
-        if self._errors is not _unset and self._errors:
-            d["errors"] = [error.to_dict() for error in self._errors]
-        if self._data is not _unset:
-            d["data"] = self._data
-        if self._extensions:
-            d["extensions"] = self._extensions
+        if self.errors is not _unset and self.errors:
+            d["errors"] = [error.to_dict() for error in self.errors]
+        if self.data is not _unset:
+            d["data"] = self.data
+        if self.extensions:
+            d["extensions"] = self.extensions
         return d
 
     def json(self, **kw):
