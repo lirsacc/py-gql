@@ -7,5 +7,6 @@ API Reference
 
     exc
     lang
+    validation
     schema
     utilities

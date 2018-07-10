@@ -20,8 +20,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all value literals are of the type
     expected at their position.
 
-    .. warning::
-
+    Warning:
         This check ignores cases where the input type is not known, which
         should be caught by other validators.
     """

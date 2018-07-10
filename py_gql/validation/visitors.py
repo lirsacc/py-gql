@@ -10,16 +10,21 @@ from ..lang.visitor import DispatchingVisitor
 class ValidationVisitor(DispatchingVisitor):
     """ Visitor class used for validating GraphQL documents.
 
-    :ivar schema: py_gql.schema.Schema
-    :ivar type_info: py_gql.utilities.TypeInfoVisitor
-    :ivar errors: List[Tuple[str, Optional[py_gql.lang.ast.Node]]]
+    Subclass this to implement custom validators.
+
+    Args:
+        schema (py_gql.schema.Schema):
+            Schema to validate against (for known types, directives, etc.).
+        type_info (py_gql.utilities.TypeInfoVisitor):
+
+    Attributes:
+        schema (py_gql.schema.Schema):
+            Schema to validate against (for known types, directives, etc.).
+        type_info (py_gql.utilities.TypeInfoVisitor):
+        errors (List[py_gql.exc.ValidationError]):
     """
 
     def __init__(self, schema, type_info):
-        """
-        :type schema: py_gql.schema.Schema
-        :type type_info: py_gql.utilities.TypeInfoVisitor
-        """
         super(ValidationVisitor, self).__init__()
         self.schema = schema
         self.type_info = type_info
@@ -28,8 +33,10 @@ class ValidationVisitor(DispatchingVisitor):
     def add_error(self, message, nodes=None):
         """ Register an error
 
-        :type message: str
-        :type nodes: Optional[py_gql.lang.ast.Node|List[py_gql.lang.ast_node]]
+        Args:
+            message (str): Error description
+            nodes (Optional[List[py_gql.lang.ast.Node]]):
+                Nodes where the error comes from
         """
         self.errors.append(ValidationError(message, nodes))
 
@@ -38,11 +45,11 @@ class VariablesCollector(ValidationVisitor):
     """ Custom validation visitor which tracks all variable definitions and
     usage across the document.
 
-    This replaces getRecursiveVariableUsages and getVariableUsages from the ref
-    implementation and allows to work with variables without eagerly visitng
-    subtrees.
+    This replaces ``getRecursiveVariableUsages`` and ``getVariableUsages``
+    from the ref implementation and allows to work with variables without
+    eagerly visitng subtrees.
 
-    Most validation must happen in leave_document though.
+    Most validation must happen in :meth:`leave_document` though.
     """
 
     def __init__(self, *args, **kwargs):
@@ -110,3 +117,6 @@ class VariablesCollector(ValidationVisitor):
                 for op in self._op_fragments.keys():
                     if parent in self._op_fragments[op]:
                         self._op_fragments[op].append(child)
+
+    def leave_document(self, _):
+        self._flatten_fragments()

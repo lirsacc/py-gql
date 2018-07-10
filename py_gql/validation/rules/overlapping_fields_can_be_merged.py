@@ -530,9 +530,12 @@ def _same_arguments(args_1, args_2):
     """ Given two lists of arguments, check all arguments have the same name
     and values with no extra / missing argument.
 
-    :type args_1: List[py_gql.lang.ast.Argument]
-    :type args_2: List[py_gql.lang.ast.Argument]
-    :rtype: bool
+    Args:
+        args_1 (List[py_gql.lang.ast.Argument]):
+        args_2 (List[py_gql.lang.ast.Argument]):
+
+    Returns:
+        bool: Whether ``args_1`` and ``args_2`` are equivalent.
     """
     if len(args_1) != len(args_2):
         return False
@@ -560,9 +563,12 @@ def _types_conflict(type_1, type_2):
     types will be compared later recursively. However List and Non-Null types
     must match.
 
-    :type type_1: py_gql.schema.types.Type
-    :type type_2: py_gql.schema.types.Type
-    :rtype: bool
+     Args:
+        type_1 (py_gql.schema.Type):
+        type_2 (py_gql.schema.Type):
+
+    Returns:
+        bool: Whether ``type_1`` and ``type_2`` conflict.
     """
     if isinstance(type_1, WrappingType) or isinstance(type_2, WrappingType):
         return type(type_1) != type(type_2) or _types_conflict(

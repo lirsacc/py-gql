@@ -448,7 +448,7 @@ class NoUndefinedVariablesChecker(VariablesCollector):
     directly and via fragment spreads, are defined by that operation. """
 
     def leave_document(self, node):
-        self._flatten_fragments()
+        super(NoUndefinedVariablesChecker, self).leave_document(node)
 
         for op, fragments in self._op_fragments.items():
             defined = self._op_defined_variables[op]
@@ -483,7 +483,8 @@ class NoUnusedVariablesChecker(VariablesCollector):
     operation are used, either directly or within a spread fragment. """
 
     def leave_document(self, node):
-        self._flatten_fragments()
+        super(NoUnusedVariablesChecker, self).leave_document(node)
+
         used_variables = DefaultOrderedDict(set)
 
         for op, fragments in self._op_fragments.items():
@@ -617,9 +618,11 @@ class KnownDirectivesChecker(ValidationVisitor):
 
 class UniqueDirectivesPerLocationChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all directives at a given location
-    are uniquely named. """
+    are uniquely named.
 
-    # [WARN] Type system definition locations are not implemented.
+    Warning:
+        Type system definition locations are not implemented.
+    """
 
     def _validate_unique_directive_names(self, node):
         seen = set()
@@ -751,7 +754,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
     """ Variables passed to field arguments conform to type """
 
     def leave_document(self, node):
-        self._flatten_fragments()
+        super(VariablesInAllowedPositionChecker, self).leave_document(node)
+
         for op, vardefs in self._op_defined_variables.items():
             variables = self._op_variables[op]
             fragments = self._op_fragments[op]
@@ -834,3 +838,33 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
                 [node],
             )
         names.add(fieldname)
+
+
+__all__ = (
+    "ExecutableDefinitionsChecker",
+    "UniqueOperationNameChecker",
+    "LoneAnonymousOperationChecker",
+    "SingleFieldSubscriptionsChecker",
+    "KnownTypeNamesChecker",
+    "FragmentsOnCompositeTypesChecker",
+    "VariablesAreInputTypesChecker",
+    "ScalarLeafsChecker",
+    "FieldsOnCorrectTypeChecker",
+    "UniqueFragmentNamesChecker",
+    "KnownFragmentNamesChecker",
+    "NoUnusedFragmentsChecker",
+    "PossibleFragmentSpreadsChecker",
+    "NoFragmentCyclesChecker",
+    "UniqueVariableNamesChecker",
+    "NoUndefinedVariablesChecker",
+    "NoUnusedVariablesChecker",
+    "KnownDirectivesChecker",
+    "UniqueDirectivesPerLocationChecker",
+    "KnownArgumentNamesChecker",
+    "UniqueArgumentNamesChecker",
+    "ValuesOfCorrectTypeChecker",
+    "ProvidedRequiredArgumentsChecker",
+    "VariablesInAllowedPositionChecker",
+    "OverlappingFieldsCanBeMergedChecker",
+    "UniqueInputFieldNamesChecker",
+)
