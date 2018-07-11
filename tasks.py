@@ -25,7 +25,7 @@ def clean(ctx):
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\.py[cod]|\.pyo$|\.so|.pytest_cache)" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache)" '
             "| xargs rm -rf",
             echo=True,
         )
@@ -92,20 +92,23 @@ def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
 
 
 @invoke.task
-def lint(ctx, verbose=False, config=".flake8"):
+def lint(ctx, pylint=True):
     """ Run flake8 linter """
     with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                [
-                    "flake8",
-                    "--config %s" % config,
-                    "--show-source" if verbose else None,
-                    "%s tests" % pkg.NAME,
-                ]
-            ),
-            echo=True,
-        )
+        ctx.run("flake8 --config .flake8 %s tests" % pkg.NAME, echo=True)
+        if pylint:
+            ctx.run(
+                _join(
+                    [
+                        "pylint",
+                        "--rcfile=.pylintrc",
+                        "--output-format=colorized",
+                        "--errors-only",
+                        "%s tests" % pkg.NAME,
+                    ]
+                ),
+                echo=True,
+            )
 
 
 @invoke.task
