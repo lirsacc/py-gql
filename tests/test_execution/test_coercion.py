@@ -49,9 +49,13 @@ TestNestedInputObject = InputObjectType(
     ],
 )
 
-_inspect = lambda name: lambda _, args, *a: json.dumps(
-    args.get(name, None), sort_keys=True
-)
+
+def _inspect(name):
+    def _inspect_resolver(root, args, ctx, info):
+        return json.dumps(args.get(name, None), sort_keys=True)
+
+    return _inspect_resolver
+
 
 _field = lambda name, argType, **kw: Field(
     name, String, [Argument("input", argType, **kw)], resolve=_inspect("input")

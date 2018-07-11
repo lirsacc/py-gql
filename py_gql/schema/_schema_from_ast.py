@@ -355,8 +355,6 @@ def _build_types_and_directives(  # noqa
         if type_name in _cache:
             return _cache[type_name]
 
-            return _cache[type_name]
-
         if isinstance(type_node, _ast.NamedType):
             type_def = type_nodes.get(type_name) or _known_types.get(type_name)
             if type_def is None:
@@ -489,7 +487,7 @@ def _build_types_and_directives(  # noqa
         return _schema.UnionType(
             name=node.name.value,
             description=(node.description.value if node.description else None),
-            types=[build_type(type) for type in node.types],
+            types=[build_type(type_) for type_ in node.types],
             nodes=[node],
         )
 
@@ -535,15 +533,15 @@ def _build_types_and_directives(  # noqa
 
         :rtype: py_gql.schema.Argument|py_gql.schema.InputField
         """
-        type = build_type(node.type)
+        type_ = build_type(node.type)
         kwargs = dict(
             description=(node.description.value if node.description else None),
             node=node,
         )
         if node.default_value is not None:
-            kwargs["default_value"] = value_from_ast(node.default_value, type)
+            kwargs["default_value"] = value_from_ast(node.default_value, type_)
 
-        return cls(node.name.value, type, **kwargs)
+        return cls(node.name.value, type_, **kwargs)
 
     def extend(schema_type, extension_node):
         """

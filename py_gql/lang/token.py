@@ -61,6 +61,8 @@ class EOF(Token):
 
 
 class CharToken(Token):
+    __char__ = None
+
     def __str__(self):
         return self.__char__
 
@@ -117,7 +119,7 @@ class Ampersand(CharToken):
     __char__ = "&"
 
 
-class Ellipsis(Token):
+class Ellipsis_(Token):
     def __str__(self):
         return "..."
 

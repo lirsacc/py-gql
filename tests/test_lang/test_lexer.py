@@ -256,7 +256,7 @@ def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):
         (u"@", token.At(0, 1)),
         (u"|", token.Pipe(0, 1)),
         (u"&", token.Ampersand(0, 1)),
-        (u"...", token.Ellipsis(0, 3)),
+        (u"...", token.Ellipsis_(0, 3)),
     ],
 )
 def test_it_lexes_punctuation(string, expected):

@@ -13,12 +13,12 @@ def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
         starwars_schema,
         parse(
             """
-    query HeroNameQuery {
-        hero {
-           name
-        }
-    }
-    """
+            query HeroNameQuery {
+                hero {
+                name
+                }
+            }
+            """
         ),
     ).result()
     assert result == {"hero": {"name": "R2-D2"}}
@@ -30,16 +30,16 @@ def test_id_and_friends_of_r2_d2(starwars_schema):
         starwars_schema,
         parse(
             """
-    query HeroNameAndFriendsQuery {
-        hero {
-            id
-            name
-            friends {
-                name
+            query HeroNameAndFriendsQuery {
+                hero {
+                    id
+                    name
+                    friends {
+                        name
+                    }
+                }
             }
-        }
-    }
-    """
+            """
         ),
     ).result()
     assert result == {
@@ -61,19 +61,19 @@ def test_the_friends_of_friends_of_r2_d2(starwars_schema):
         starwars_schema,
         parse(
             """
-    query NestedQuery {
-        hero {
-            name
-            friends {
-                name
-                appearsIn
-                friends {
-                   name
+            query NestedQuery {
+                hero {
+                    name
+                    friends {
+                        name
+                        appearsIn
+                        friends {
+                        name
+                        }
+                    }
                 }
             }
-        }
-    }
-    """
+            """
         ),
     ).result()
     assert result == {
@@ -120,12 +120,12 @@ def test_luke_skywalker_using_id(starwars_schema):
         starwars_schema,
         parse(
             """
-    query FetchLukeQuery {
-        human(id: "1000") {
-           name
-        }
-    }
-    """
+            query FetchLukeQuery {
+                human(id: "1000") {
+                name
+                }
+            }
+            """
         ),
     ).result()
     assert result == {"human": {"name": "Luke Skywalker"}}
@@ -133,26 +133,26 @@ def test_luke_skywalker_using_id(starwars_schema):
 
 
 @pytest.mark.parametrize(
-    "id, expected",
+    "id_, expected",
     [
         ("1000", {"name": "Luke Skywalker"}),
         ("1002", {"name": "Han Solo"}),
         ("not a valid id", None),
     ],
 )
-def test_generic_query_using_id_and_variable(starwars_schema, id, expected):
+def test_generic_query_using_id_and_variable(starwars_schema, id_, expected):
     result, errors = execute(
         starwars_schema,
         parse(
             """
-    query FetchSomeIDQuery($someId: String!) {
-        human(id: $someId) {
-           name
-        }
-    }
-    """
+            query FetchSomeIDQuery($someId: String!) {
+                human(id: $someId) {
+                name
+                }
+            }
+            """
         ),
-        variables={"someId": id},
+        variables={"someId": id_},
     ).result()
     assert result == {"human": expected}
     assert errors == []
@@ -163,12 +163,12 @@ def test_changing_key_with_alias(starwars_schema):
         starwars_schema,
         parse(
             """
-    query FetchLukeAliased {
-        luke: human(id: "1000") {
-           name
-        }
-    }
-    """
+            query FetchLukeAliased {
+                luke: human(id: "1000") {
+                name
+                }
+            }
+            """
         ),
     ).result()
     assert result == {"luke": {"name": "Luke Skywalker"}}
@@ -180,17 +180,17 @@ def test_same_root_field_multiple_aliases(starwars_schema):
         starwars_schema,
         parse(
             """
-    query FetchLukeAndLeiaAliased {
-        luke: human(id: "1000") {
-            name
-            homePlanet
-        }
-        leia: human(id: "1003") {
-            name
-            homePlanet
-        }
-    }
-    """
+            query FetchLukeAndLeiaAliased {
+                luke: human(id: "1000") {
+                    name
+                    homePlanet
+                }
+                leia: human(id: "1003") {
+                    name
+                    homePlanet
+                }
+            }
+            """
         ),
     ).result()
     assert result == {
@@ -205,13 +205,13 @@ def test_use_of_fragment_to_avoid_duplicate_content(starwars_schema):
         starwars_schema,
         parse(
             """
-    query FetchLukeAndLeiaAliased {
-        luke: human(id: "1000") { ...HumanFragment }
-        leia: human(id: "1003") { ...HumanFragment }
-    }
+            query FetchLukeAndLeiaAliased {
+                luke: human(id: "1000") { ...HumanFragment }
+                leia: human(id: "1003") { ...HumanFragment }
+            }
 
-    fragment HumanFragment on Human { name homePlanet }
-    """
+            fragment HumanFragment on Human { name homePlanet }
+            """
         ),
     ).result()
     assert result == {
@@ -244,13 +244,13 @@ def test_error_on_accessing_secret_backstory(starwars_schema):
         starwars_schema,
         parse(
             """
-    query HeroNameQuery {
-        hero {
-            name
-            secretBackstory
-        }
-    }
-    """
+            query HeroNameQuery {
+                hero {
+                    name
+                    secretBackstory
+                }
+            }
+            """
         ),
     ).result()
     assert data == {"hero": {"name": "R2-D2", "secretBackstory": None}}
@@ -258,7 +258,7 @@ def test_error_on_accessing_secret_backstory(starwars_schema):
     err = errors[0]
     assert str(err) == "secretBackstory is secret."
     assert err.path == ["hero", "secretBackstory"]
-    assert err.nodes[0].loc == (71, 86)
+    assert err.nodes[0].loc == (103, 118)
 
 
 def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
@@ -266,16 +266,16 @@ def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
         starwars_schema,
         parse(
             """
-    query HeroNameQuery {
-        hero {
-            name
-            friends {
-                name
-                secretBackstory
+            query HeroNameQuery {
+                hero {
+                    name
+                    friends {
+                        name
+                        secretBackstory
+                    }
+                }
             }
-        }
-    }
-    """
+            """
         ),
     ).result()
     assert data == {
@@ -292,7 +292,7 @@ def test_error_on_accessing_secret_backstory_in_a_list(starwars_schema):
     for i, err in enumerate(errors):
         assert str(err) == "secretBackstory is secret."
         assert err.path == ["hero", "friends", i, "secretBackstory"]
-        assert err.nodes[0].loc == (118, 133)
+        assert err.nodes[0].loc == (166, 181)
 
 
 def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
@@ -300,13 +300,13 @@ def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
         starwars_schema,
         parse(
             """
-    query HeroNameQuery {
-        mainHero: hero {
-            name
-            story: secretBackstory
-        }
-    }
-    """
+            query HeroNameQuery {
+                mainHero: hero {
+                    name
+                    story: secretBackstory
+                }
+            }
+            """
         ),
     ).result()
     assert data == {"mainHero": {"name": "R2-D2", "story": None}}
@@ -314,7 +314,7 @@ def test_error_on_accessing_secret_backstory_through_alias(starwars_schema):
     err = errors[0]
     assert str(err) == "secretBackstory is secret."
     assert err.path == ["mainHero", "story"]
-    assert err.nodes[0].loc == (81, 103)
+    assert err.nodes[0].loc == (113, 135)
 
 
 def test_error_on_missing_argument(starwars_schema):

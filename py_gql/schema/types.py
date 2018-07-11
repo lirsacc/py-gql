@@ -35,6 +35,7 @@ class Type(object):
         return self is lhs or (
             isinstance(self, WrappingType)
             and self.__class__ == lhs.__class__
+            # pylint: disable = no-member
             and self.type == lhs.type
         )
 
@@ -49,6 +50,8 @@ class NamedType(Type):
     Attributes:
         name (str): Type name.
     """
+
+    name = "ANONYMOUS"
 
     def __str__(self):
         return self.name
@@ -98,8 +101,7 @@ class NonNullType(WrappingType):
 
     def __init__(self, type_, node=None):
         assert not isinstance(type_, NonNullType)
-        self._type = type_
-        self.node = node
+        super(NonNullType, self).__init__(type_, node=node)
 
     def __str__(self):
         return "%s!" % self.type

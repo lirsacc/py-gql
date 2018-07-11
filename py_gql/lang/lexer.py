@@ -229,12 +229,12 @@ class Lexer(object):
         """ Advance lexer over an ellipsis token (...).
 
         Returns:
-            py_gql.lang.token.Ellipsis: parse token
+            py_gql.lang.token.Ellipsis_: parse token
         """
         start = self._position
         for _ in range(3):
             self._advance(expected=".")
-        return token.Ellipsis(start, self._position)
+        return token.Ellipsis_(start, self._position)
 
     def _read_string(self):
         """ Advance lexer over a quoted string.
@@ -329,7 +329,7 @@ class Lexer(object):
             return self._read_escaped_unicode()
         else:
             raise InvalidEscapeSequence(
-                u"\%s" % char, self._position - 1, self._source
+                u"\\%s" % char, self._position - 1, self._source
             )
 
     def _read_escaped_unicode(self):

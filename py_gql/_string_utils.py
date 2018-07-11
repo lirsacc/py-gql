@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Work with strings """
+from __future__ import division
 
 import re
 

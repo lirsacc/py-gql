@@ -58,12 +58,12 @@ SCHEMA_DEFINITIONS = frozenset(
 OPERATION_TYPES = frozenset(["query", "mutation", "subscription"])
 
 
-def _unexpected_token(msg_or_token, *args):
+def _unexpected_token(msg_or_token, position, source):
     if isinstance(msg_or_token, _token.Token):
         if isinstance(msg_or_token, _token.EOF):
-            return UnexpectedEOF(*args)
+            return UnexpectedEOF(position, source)
         msg_or_token = 'Unexpected "%s"' % msg_or_token
-    return UnexpectedToken(msg_or_token, *args)
+    return UnexpectedToken(msg_or_token, position, source)
 
 
 def parse(source, **kwargs):
@@ -601,7 +601,7 @@ class Parser(object):
         Returns:
             py_gql.lang.ast.Selection:
         """
-        if _is(self.peek(), _token.Ellipsis):
+        if _is(self.peek(), _token.Ellipsis_):
             return self.parse_fragment()
         return self.parse_field()
 
@@ -677,7 +677,7 @@ class Parser(object):
             Union[py_gql.lang.ast.FragmentSpread, py_gql.lang.ast.InlineFragment]:
         """
         start = self.peek()
-        self.expect(_token.Ellipsis)
+        self.expect(_token.Ellipsis_)
 
         lead = self.peek()
         if _is(lead, _token.Name) and lead.value != "on":
@@ -1517,7 +1517,7 @@ class Parser(object):
 
     def parse_directive_locations(self):
         """ DirectiveLocations : \
-        `|`? DirectiveLocation \ `|` DirectiveLocations `|` DirectiveLocation
+        `|`? DirectiveLocation `|` DirectiveLocations `|` DirectiveLocation
 
         Returns:
             List[py_gql.lang.ast.DirectiveLocation]:

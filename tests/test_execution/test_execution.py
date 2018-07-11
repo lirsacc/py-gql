@@ -322,7 +322,7 @@ def test_forwarded_resolver_arguments(mocker, exe_cls, exe_kwargs):
     schema = Schema(query_type)
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(
+        _, errors = execute(
             schema,
             doc,
             context_value=context,
@@ -700,12 +700,12 @@ def _complex_schema():
         ],
     )
 
-    def article(id):
+    def article(id_):
         return {
-            "id": id,
+            "id": id_,
             "isPublished": True,
             "author": lambda *r: john_smith,
-            "title": "My Article " + str(id),
+            "title": "My Article " + str(id_),
             "body": "This is a post",
             "hidden": "This data is not exposed in the schema",
             "keywords": ["foo", "bar", 1, True, None],

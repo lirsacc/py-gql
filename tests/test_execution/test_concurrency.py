@@ -194,7 +194,7 @@ def test_except_wrapper():
 
 def test_except_wrapper_with_mapper():
     f = _f.Future()
-    e = _concurrency.except_(f, map_=lambda err: str(err))
+    e = _concurrency.except_(f, map_=str)
     f.set_exception(ValueError("foo"))
     assert e.result() == "foo"
 

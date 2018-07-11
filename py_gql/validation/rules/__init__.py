@@ -753,22 +753,20 @@ class ProvidedRequiredArgumentsChecker(ValidationVisitor):
 class VariablesInAllowedPositionChecker(VariablesCollector):
     """ Variables passed to field arguments conform to type """
 
+    def iter_op_variables(self, op):
+        for usage in self._op_variables[op].items():
+            yield usage
+        for fragment in self._op_fragments[op]:
+            frament_vars = self._fragment_variables[fragment].items()
+            for usage in frament_vars:
+                yield usage
+
     def leave_document(self, node):
         super(VariablesInAllowedPositionChecker, self).leave_document(node)
 
         for op, vardefs in self._op_defined_variables.items():
-            variables = self._op_variables[op]
-            fragments = self._op_fragments[op]
 
-            def iter_variables():
-                for usage in variables.items():
-                    yield usage
-                for fragment in fragments:
-                    frament_vars = self._fragment_variables[fragment].items()
-                    for usage in frament_vars:
-                        yield usage
-
-            for (varname, usage) in iter_variables():
+            for (varname, usage) in self.iter_op_variables(op):
                 varnode, input_type, input_value_def = usage
                 vardef = vardefs.get(varname)
                 if vardef and input_type:
@@ -831,7 +829,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
 
     def enter_object_field(self, node):
         fieldname = node.name.value
-        parent, names = self._stack[-1]
+        _, names = self._stack[-1]
         if fieldname in names:
             self.add_error(
                 "There can be only one input field named %s." % fieldname,

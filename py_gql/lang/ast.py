@@ -16,6 +16,8 @@ class Node(object):
     - The ``source`` attribute is ignored for comparisons and serialization.
     """
 
+    __slots__ = ()
+
     def __eq__(self, rhs):
         return type(rhs) == type(self) and all(
             (
@@ -46,11 +48,11 @@ class Node(object):
         return getattr(self, key, default)
 
     def __copy__(self):
-        return self.cls(**{k: getattr(self, k) for k in self.__slots__})
+        return type(self)(**{k: getattr(self, k) for k in self.__slots__})
 
-    def __deepcopy__(self):
-        return self.cls(
-            **{k: copy.deepcopy(getattr(self, k)) for k in self.__slots__}
+    def __deepcopy__(self, memo):
+        return type(self)(
+            **{k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__}
         )
 
     def is_(self, cls):
@@ -141,7 +143,7 @@ class VariableDefinition(Node):
     def __init__(
         self,
         variable=None,
-        type=None,
+        type=None,  # pylint: disable = redefined-builtin
         default_value=None,
         source=None,
         loc=None,
@@ -484,6 +486,7 @@ class NamedType(Type):
 class ListType(Type):
     __slots__ = ("source", "loc", "type")
 
+    # pylint: disable = redefined-builtin
     def __init__(self, type=None, source=None, loc=None):
         #: py_gql.lang.ast.Type:
         self.type = type
@@ -496,6 +499,7 @@ class ListType(Type):
 class NonNullType(Type):
     __slots__ = ("source", "loc", "type")
 
+    # pylint: disable = redefined-builtin
     def __init__(self, type=None, source=None, loc=None):
         #: py_gql.lang.ast.Type:
         self.type = type
@@ -528,6 +532,7 @@ class SchemaDefinition(TypeSystemDefinition):
 class OperationTypeDefinition(Node):
     __slots__ = ("source", "loc", "operation", "type")
 
+    # pylint: disable = redefined-builtin
     def __init__(self, operation=None, type=None, source=None, loc=None):
         #: py_gql.lang.ast.Name:
         self.operation = operation
@@ -618,7 +623,7 @@ class FieldDefinition(Node):
         self,
         name=None,
         arguments=None,
-        type=None,
+        type=None,  # pylint: disable = redefined-builtin
         directives=None,
         source=None,
         loc=None,
@@ -654,7 +659,7 @@ class InputValueDefinition(Node):
     def __init__(
         self,
         name=None,
-        type=None,
+        type=None,  # pylint: disable = redefined-builtin
         default_value=None,
         directives=None,
         source=None,

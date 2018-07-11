@@ -83,6 +83,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         "enum_value",
     )
 
+    # pylint: disable = super-init-not-called
     def __init__(self, schema, _get_field_def=None):
         self._schema = schema
 
@@ -273,7 +274,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             try:
                 self.enum_value = enum.get_value(node.value)
             except UnknownEnumValue:
-                self.enter_enum_value = None
+                self.enum_value = None
 
     def leave_enum_value(self, node):
         self.enum_value = None

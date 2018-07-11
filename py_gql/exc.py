@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable = too-many-ancestors
 """ All exceptions for this library are defined here.
 
 Exception classes that expose a ``to_dict`` method, such as
@@ -14,6 +15,7 @@ class GraphQLError(Exception):
     """ Base GraphQL exception from which all other inherit. """
 
     def __init__(self, message):
+        super(GraphQLError, self).__init__(message)
         self.message = message
 
     def __str__(self):
@@ -35,15 +37,14 @@ class GraphQLSyntaxError(GraphQLError):
     """
 
     def __init__(self, message, position, source):
-        self.message = message
+        super(GraphQLSyntaxError, self).__init__(message)
         self.source = source
         self.position = position
 
     @cached_property
     def highlighted(self):
         """ str: Message followed by a view of the source document pointing at
-        the exact location of the error.
-        """
+        the exact location of the error. """
         if self.source is not None:
             return (
                 self.message
@@ -85,9 +86,9 @@ class UnexpectedEOF(GraphQLSyntaxError):
     """
 
     def __init__(self, position, source):
-        self.message = "Unexpected <EOF>"
-        self.source = source
-        self.position = position
+        super(UnexpectedEOF, self).__init__(
+            "Unexpected <EOF>", position, source
+        )
 
 
 class NonTerminatedString(GraphQLSyntaxError):
@@ -119,7 +120,7 @@ class GraphQLLocatedError(GraphQLError):
     """
 
     def __init__(self, message, nodes=None, path=None):
-        self.message = message
+        super(GraphQLLocatedError, self).__init__(message)
         self.path = path
         self.nodes = nodes[:] if nodes else []
 
@@ -218,6 +219,7 @@ class VariablesCoercionError(GraphQLError):
     """
 
     def __init__(self, errors):
+        super(VariablesCoercionError, self).__init__("%d errors" % len(errors))
         self.errors = errors
 
     def __str__(self):
@@ -248,6 +250,7 @@ class MultiCoercionError(CoercionError):
     """
 
     def __init__(self, errors):
+        super(MultiCoercionError, self).__init__("%d errors" % len(errors))
         self.errors = errors
 
     def __str__(self):
@@ -290,10 +293,10 @@ class ResolverError(GraphQLLocatedError):
         Returns:
             dict: Dict representation of the error.
         """
-        d = super(ResolverError, self).to_dict()
+        dict_ = super(ResolverError, self).to_dict()
         if self.extensions:
-            d["extensions"] = dict(self.extensions)
-        return d
+            dict_["extensions"] = dict(self.extensions)
+        return dict_
 
 
 class SDLError(GraphQLLocatedError):

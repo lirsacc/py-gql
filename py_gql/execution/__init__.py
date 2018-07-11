@@ -9,7 +9,7 @@ from .executors import Executor, SyncExecutor, ThreadPoolExecutor
 from .middleware import GraphQLMiddleware
 from .tracing import GraphQLTracer
 
-__all__ = [
+__all__ = (
     "Executor",
     "GraphQLExtension",
     "GraphQLMiddleware",
@@ -19,4 +19,4 @@ __all__ = [
     "SyncExecutor",
     "ThreadPoolExecutor",
     "execute",
-]
+)

@@ -2,7 +2,6 @@
 """ Some generic laguage level utilities for internal use. """
 
 import collections
-import functools as ft
 import sys
 
 import six
@@ -34,6 +33,7 @@ class cached_property(property):
     so no class using __slots__.
     """
 
+    # pylint: disable = super-init-not-called
     def __init__(self, func, name=None, doc=None):
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
@@ -43,6 +43,7 @@ class cached_property(property):
     def __set__(self, obj, value):
         obj.__dict__[self.__name__] = value
 
+    # pylint: disable = redefined-builtin
     def __get__(self, obj, type=None):
         if obj is None:
             return self
@@ -53,12 +54,16 @@ class cached_property(property):
         return value
 
 
-def deduplicate(iterable, key=None):
+def _ident(x):
+    return x
+
+
+def deduplicate(iterable, key=_ident):
     """ Deduplicate an iterable.
 
     Args:
         iterable (Iterator[any]): source iterator
-        key (callable): Identity function
+        key (Callable): Identity function
 
     Yields:
         any: next deduplicated entry in order of original appearance
@@ -69,11 +74,6 @@ def deduplicate(iterable, key=None):
     >>> list(deduplicate([1, 2, 1, 3, 3], key=lambda x: x % 2))
     [1, 2]
     """
-    if key is None:
-
-        def key(x):
-            return x
-
     seen = set()
 
     for entry in iterable:

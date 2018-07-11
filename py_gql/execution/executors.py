@@ -17,8 +17,8 @@ class SyncExecutor(Executor):
             result = func(*args, **kwargs)
             if callable(result):
                 result = result()
-        except Exception as e:
-            future.set_exception(e)
+        except Exception as err:  # pylint: disable = broad-except
+            future.set_exception(err)
         else:
             future.set_result(result)
 

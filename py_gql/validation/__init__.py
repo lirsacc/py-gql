@@ -11,10 +11,10 @@ Note:
 from .validate import ValidationResult, validate_ast, SPECIFIED_RULES
 from .visitors import ValidationVisitor, VariablesCollector
 
-__all__ = [
+__all__ = (
     "ValidationResult",
     "validate_ast",
     "SPECIFIED_RULES",
     "ValidationVisitor",
     "VariablesCollector",
-]
+)

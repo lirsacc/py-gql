@@ -2,10 +2,7 @@
 """ Traverse a GraphQL AST.
 """
 
-import abc
 import functools as ft
-
-import six
 
 from . import ast as _ast
 from ..exc import GraphQLError
@@ -16,11 +13,10 @@ class SkipNode(GraphQLError):
     """
 
     def __init__(self):
-        self.message = ""
+        super(SkipNode, self).__init__("")
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Visitor:
+class Visitor(object):
     """ Visitor metaclass
 
     Note:
@@ -29,7 +25,6 @@ class Visitor:
         implementation.
     """
 
-    @abc.abstractmethod
     def enter(self, node):
         """ Function called when entering a node.
 
@@ -41,7 +36,6 @@ class Visitor:
         """
         pass
 
-    @abc.abstractmethod
     def leave(self, node):
         """ Function called when leaving a node. Will not be called if
         :class:`SkipNode` was raised in `enter`.
@@ -370,6 +364,7 @@ class ParrallelVisitor(Visitor):
         *visitors (List[Visitor]): List of visitors to run
     """
 
+    # pylint: disable = super-init-not-called
     def __init__(self, *visitors):
         self.visitors = visitors
 

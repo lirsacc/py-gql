@@ -68,7 +68,13 @@ tarkin = {
     "appearsIn": [4],
 }
 
-human_data = {"1000": luke, "1001": vader, "1002": han, "1003": leia, "1004": tarkin}
+human_data = {
+    "1000": luke,
+    "1001": vader,
+    "1002": han,
+    "1003": leia,
+    "1004": tarkin,
+}
 
 threepio = {
     "type": "Droid",
@@ -91,8 +97,8 @@ artoo = {
 droid_data = {"2000": threepio, "2001": artoo}
 
 
-def get_character(id):
-    return get_human(id) or get_droid(id)
+def get_character(id_):
+    return get_human(id_) or get_droid(id_)
 
 
 def get_friends(character):
@@ -105,12 +111,12 @@ def get_hero(episode):
     return artoo
 
 
-def get_human(id):
-    return human_data.get(id)
+def get_human(id_):
+    return human_data.get(id_)
 
 
-def get_droid(id):
-    return droid_data.get(id)
+def get_droid(id_):
+    return droid_data.get(id_)
 
 
 Episode = EnumType(
@@ -131,19 +137,28 @@ def resolve_character_type(character, *r, **kw):
 Character = InterfaceType(
     "Character",
     [
-        Field("id", NonNullType(String), description="The id of the character."),
+        Field(
+            "id", NonNullType(String), description="The id of the character."
+        ),
         Field("name", String, description="The name of the character."),
         Field(
             "friends",
             ListType(lambda: Character),
             description=(
-                "The friends of the character, or an empty list if they have " "none."
+                "The friends of the character, or an empty list if they have "
+                "none."
             ),
         ),
         Field(
-            "appearsIn", ListType(Episode), description="Which movies they appear in."
+            "appearsIn",
+            ListType(Episode),
+            description="Which movies they appear in.",
         ),
-        Field("secretBackstory", String, description="All secrets about their past."),
+        Field(
+            "secretBackstory",
+            String,
+            description="All secrets about their past.",
+        ),
     ],
     description="A character in the Star Wars Trilogy",
     resolve_type=resolve_character_type,
@@ -163,17 +178,22 @@ Human = ObjectType(
             "friends",
             ListType(lambda: Character),
             description=(
-                "The friends of the human, or an empty list if they have " "none."
+                "The friends of the human, or an empty list if they have "
+                "none."
             ),
             resolve=lambda human, *r, **k: get_friends(human),
         ),
         Field(
-            "appearsIn", ListType(Episode), description="Which movies they appear in."
+            "appearsIn",
+            ListType(Episode),
+            description="Which movies they appear in.",
         ),
         Field(
             "secretBackstory",
             String,
-            description=("Where are they from and how they came to be who they are."),
+            description=(
+                "Where are they from and how they came to be who they are."
+            ),
             resolve=resolve_secret_backstory,
         ),
         Field(
@@ -195,21 +215,28 @@ Droid = ObjectType(
             "friends",
             ListType(lambda: Character),
             description=(
-                "The friends of the droid, or an empty list if they have " "none."
+                "The friends of the droid, or an empty list if they have "
+                "none."
             ),
             resolve=lambda droid, *r, **k: get_friends(droid),
         ),
         Field(
-            "appearsIn", ListType(Episode), description="Which movies they appear in."
+            "appearsIn",
+            ListType(Episode),
+            description="Which movies they appear in.",
         ),
         Field(
             "secretBackstory",
             String,
-            description=("Where are they from and how they came to be who they are."),
+            description=(
+                "Where are they from and how they came to be who they are."
+            ),
             resolve=resolve_secret_backstory,
         ),
         Field(
-            "primaryFunction", String, description="The primary function of the droid."
+            "primaryFunction",
+            String,
+            description="The primary function of the droid.",
         ),
     ],
     description="A mechanical creature in the Star Wars universe.",
@@ -238,13 +265,21 @@ Query = ObjectType(
         Field(
             "human",
             Human,
-            [Argument("id", NonNullType(String), description="Id of the human")],
+            [
+                Argument(
+                    "id", NonNullType(String), description="Id of the human"
+                )
+            ],
             resolve=lambda _, args, *r: get_human(args.get("id")),
         ),
         Field(
             "droid",
             Droid,
-            [Argument("id", NonNullType(String), description="Id of the droid")],
+            [
+                Argument(
+                    "id", NonNullType(String), description="Id of the droid"
+                )
+            ],
             resolve=lambda _, args, *r: get_droid(args.get("id")),
         ),
     ],

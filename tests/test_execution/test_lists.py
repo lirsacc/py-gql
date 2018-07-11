@@ -35,7 +35,6 @@ def run_test(
         ],
     )
     schema = Schema(data_type)
-    "{ nest { test } }"
 
     check_execution(
         schema,

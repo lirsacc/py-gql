@@ -39,6 +39,7 @@ def test_apply_middlewares_noop():
 
 def test_apply_middlewares_no_yield():
     def never_yields(n, *a, **k):
+        # pylint: disable = using-constant-test
         if False:
             yield n(*a, **k)
 

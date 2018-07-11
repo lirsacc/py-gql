@@ -134,7 +134,7 @@ def test_custom_directive_on_field(mocker):
     resolver = mocker.Mock(return_value=42)
     root = {"a": resolver}
 
-    data, _ = execute(
+    execute(
         schema, parse('{ a @custom(a: "foo", b: 42) }'), initial_value=root
     ).result()
 

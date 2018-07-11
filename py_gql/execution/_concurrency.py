@@ -77,7 +77,7 @@ def all_(futures):
             try:
                 res = future.result()
             # Also includes the case where ``future`` was cancelled.
-            except Exception as err:
+            except Exception as err:  # pylint: disable = broad-except
                 cancel_remaining()
                 result.set_exception(err)
             else:
@@ -142,7 +142,7 @@ def chain(leader, *funcs):
             else:
                 try:
                     mapped = func(value)
-                except Exception as err:
+                except Exception as err:  # pylint: disable = broad-except
                     result.set_exception(err)
                 else:
                     _next(mapped)
@@ -156,7 +156,7 @@ def chain(leader, *funcs):
         try:
             res = future.result()
         # Also includes the case where ``future`` was cancelled.
-        except Exception as err:
+        except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
             _next(res)
@@ -187,7 +187,7 @@ def unwrap(future):
         try:
             res = future.result()
         # Also includes the case where ``future`` was cancelled.
-        except Exception as err:
+        except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
             if is_deferred(res):
@@ -248,7 +248,7 @@ def except_(future, exc_cls=(Exception,), map_=lambda x: None):
             res = future.result()
         except exc_cls as err:
             result.set_result(map_(err))
-        except Exception as err:
+        except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
             result.set_result(res)

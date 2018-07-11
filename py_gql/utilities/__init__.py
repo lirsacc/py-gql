@@ -20,7 +20,7 @@ from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
 from .value_from_ast import value_from_ast
 
-__all__ = [
+__all__ = (
     "ast_node_from_value",
     "coerce_argument_values",
     "coerce_value",
@@ -31,4 +31,4 @@ __all__ = [
     "untyped_value_from_ast",
     "value_from_ast",
     "TypeInfoVisitor",
-]
+)
