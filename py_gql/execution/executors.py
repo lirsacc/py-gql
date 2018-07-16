@@ -3,12 +3,18 @@
 """
 from concurrent import futures as _f
 
-Executor = _f.Executor
+from ._concurrency import DummyFuture
+
+
+class Executor(_f.Executor):
+    future_factory = _f.Future
 
 
 class SyncExecutor(Executor):
     """ Placeholder executor to work synchronously without leaving the
     current execution context. """
+
+    future_factory = DummyFuture
 
     def submit(self, func, *args, **kwargs):
         return func(*args, **kwargs)
@@ -18,4 +24,7 @@ class SyncExecutor(Executor):
 
 
 DefaultExecutor = SyncExecutor
-ThreadPoolExecutor = _f.ThreadPoolExecutor
+
+
+class ThreadPoolExecutor(Executor, _f.ThreadPoolExecutor):
+    pass

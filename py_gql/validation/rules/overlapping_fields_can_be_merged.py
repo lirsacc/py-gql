@@ -475,8 +475,8 @@ def _find_conflict(
         if subconflicts:
             reason = " and ".join(
                 [
-                    'subfields "%s" conflict (%s)' % (name, reason)
-                    for name, reason, _ in subconflicts
+                    'subfields "%s" conflict (%s)' % (name, reason_)
+                    for name, reason_, _ in subconflicts
                 ]
             )
             nodes_1 = [node_1] + [nodes for _, _, (nodes, _) in subconflicts]

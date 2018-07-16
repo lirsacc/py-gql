@@ -94,7 +94,7 @@ def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
 
 @invoke.task
 def lint(ctx, pylint=True):
-    """ Run flake8 linter """
+    """ Run linters """
     with ctx.cd(ROOT):
         ctx.run("flake8 --config .flake8 %s tests" % pkg.NAME, echo=True)
         if pylint:
@@ -113,7 +113,7 @@ def lint(ctx, pylint=True):
 
 @invoke.task
 def fmt(ctx, verbose=False, files=None):
-    """ Run the black https://github.com/ambv/black formatter """
+    """ Run formatters """
 
     if files is None:
         files = "%s/**/*.py tests/**/*.py" % pkg.NAME
@@ -139,13 +139,13 @@ def fmt(ctx, verbose=False, files=None):
 
 
 @invoke.task
-def docs(ctx, clean=True, regenerate_reference=False, strict=False):
+def docs(ctx, clean_=True, regenerate_reference=False, strict=False):
     """ Generate documentation """
     with ctx.cd(os.path.join(ROOT, "docs")):
-        if clean:
+        if clean_:
             ctx.run("rm -rf _build", echo=True)
         if regenerate_reference:
-            if clean:
+            if clean_:
                 ctx.run("rm -rf ref", echo=True)
             ctx.run(
                 "sphinx-apidoc -Mef -o ref ../%s" % pkg.NAME,

@@ -3,7 +3,7 @@
 to promises """
 
 import logging
-from concurrent.futures import Future
+from concurrent.futures import CancelledError, Future
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def is_deferred(value, cache={}):  # pylint: disable = dangerous-default-value
     return cache[t]
 
 
-def deferred(value):
+def deferred(value, factory=Future):
     """ Transform a value into a ``Future`` awaitable object.
 
     :type value: any
@@ -30,12 +30,12 @@ def deferred(value):
     >>> v.result(), v.done()
     (1, True)
     """
-    future = Future()
+    future = factory()
     future.set_result(value)
     return future
 
 
-def all_(futures):
+def all_(futures, factory=Future):
     """ Create a ``concurrent.futures.Future`` wrapping a list of futures.
 
     - The resulting future resolves only when all futures have resolved.
@@ -56,7 +56,7 @@ def all_(futures):
     if not futures:
         return []
 
-    result = Future()
+    result = factory()
     results_list = [_UNDEF] * len(futures)
     done_count = [0]
     len_ = len(futures)
@@ -91,8 +91,8 @@ def all_(futures):
     return result
 
 
-def _chain_one(source_future, map_=lambda x: x):
-    result = Future()
+def _chain_one(source_future, map_=lambda x: x, factory=Future):
+    result = factory()
 
     def _callback(future):
         try:
@@ -106,7 +106,7 @@ def _chain_one(source_future, map_=lambda x: x):
     return result
 
 
-def chain(leader, *funcs):
+def chain(leader, *funcs, **kwargs):
     """ Chain future factories together until all steps have been exhausted.
 
     - Final result can be either a deferred value or not, depends on the return
@@ -133,10 +133,13 @@ def chain(leader, *funcs):
     :rtype: concurrent.futures.Future
     """
     stack = iter(funcs)
+    factory = kwargs.get("factory", Future)
 
     def _next(value):
         if is_deferred(value):
-            return unwrap(_chain_one(value, _next))
+            return unwrap(
+                _chain_one(value, _next, factory=factory), factory=factory
+            )
         try:
             func = next(stack)
         except StopIteration:
@@ -147,7 +150,7 @@ def chain(leader, *funcs):
     return _next(leader)
 
 
-def unwrap(source_future):
+def unwrap(source_future, factory=Future):
     """ Resolve nested futures until a non future is resolved or an
     exception is raised.
 
@@ -157,7 +160,7 @@ def unwrap(source_future):
     :rtype: any
     :returns: Unwrapped value
     """
-    result = Future()
+    result = factory()
 
     def callback(future):
         try:
@@ -174,7 +177,7 @@ def unwrap(source_future):
     return result
 
 
-def serial(steps):
+def serial(steps, factory=Future):
     """ Similar to :func:`chain` but ignoring the intermediate results.
 
     Each step is called only after the result of the previous step has
@@ -190,10 +193,12 @@ def serial(steps):
     def _step(original):
         return lambda _: original()
 
-    return chain(None, *[_step(step) for step in steps])
+    return chain(None, *[_step(step) for step in steps], factory=factory)
 
 
-def except_(source_future, exc_cls=(Exception,), map_=lambda x: None):
+def except_(
+    source_future, exc_cls=(Exception,), map_=lambda x: None, factory=Future
+):
     """ Except for futures.
 
     :type source_future: concurrent.futures.Future
@@ -209,7 +214,7 @@ def except_(source_future, exc_cls=(Exception,), map_=lambda x: None):
         result.
         Default behaviour is to set the result to ``None``.
     """
-    result = Future()
+    result = factory()
 
     def callback(future):
         try:
@@ -223,3 +228,108 @@ def except_(source_future, exc_cls=(Exception,), map_=lambda x: None):
 
     source_future.add_done_callback(callback)
     return result
+
+
+PENDING = "PENDING"
+RUNNING = "RUNNING"
+CANCELLED = "CANCELLED"
+FINISHED = "FINISHED"
+DONE = (CANCELLED, FINISHED)
+
+
+class DummyFuture(object):
+    """ Dummy Future to match the interface in a synchronous & single
+    threaded environment without the synchronisation overhead. """
+
+    __slots__ = "_state", "_result", "_exception", "_callbacks"
+
+    def __init__(self):
+        self._state = PENDING
+        self._result = None
+        self._exception = None
+        self._callbacks = []
+
+    def _invoke_callbacks(self):
+        for callback in self._callbacks:
+            callback(self)
+
+    def __repr__(self):
+        if self._state == FINISHED:
+            if self._exception:
+                return "<%s at %#x state=%s raised %s>" % (
+                    self.__class__.__name__,
+                    id(self),
+                    self._state.lower(),
+                    self._exception.__class__.__name__,
+                )
+            else:
+                return "<%s at %#x state=%s returned %s>" % (
+                    self.__class__.__name__,
+                    id(self),
+                    self._state.lower(),
+                    self._result.__class__.__name__,
+                )
+        return "<%s at %#x state=%s>" % (
+            self.__class__.__name__,
+            id(self),
+            self._state.lower(),
+        )
+
+    def cancel(self):
+        if self._state in (RUNNING, FINISHED):
+            return False
+
+        if self._state == CANCELLED:
+            return True
+
+        self._state = CANCELLED
+        self._invoke_callbacks()
+        return True
+
+    def cancelled(self):
+        return self._state == CANCELLED
+
+    def running(self):
+        return self._state == RUNNING
+
+    def done(self):
+        return self._state in DONE
+
+    def __get_result(self):
+        if self._exception:
+            # Inference fails
+            # pylint: disable = raising-bad-type
+            raise self._exception
+        else:
+            return self._result
+
+    def add_done_callback(self, fn):
+        if self._state not in DONE:
+            self._callbacks.append(fn)
+        else:
+            fn(self)
+
+    def result(self, timeout=None):
+        if self._state == CANCELLED:
+            raise CancelledError()
+        elif self._state == FINISHED:
+            return self.__get_result()
+
+    def exception(self, timeout=None):
+        if self._state == CANCELLED:
+            raise CancelledError()
+        elif self._state == FINISHED:
+            return self._exception
+
+    def set_running_or_notify_cancel(self):
+        pass
+
+    def set_result(self, result):
+        self._result = result
+        self._state = FINISHED
+        self._invoke_callbacks()
+
+    def set_exception(self, exception):
+        self._exception = exception
+        self._state = FINISHED
+        self._invoke_callbacks()

@@ -149,8 +149,12 @@ def execute(  # flake8: noqa : C901
         )
 
     if _concurrency.is_deferred(deferred_result):
-        return _concurrency.chain(deferred_result, _on_end)
-    return _concurrency.deferred(_on_end(deferred_result))
+        return _concurrency.chain(
+            deferred_result, _on_end, factory=ctx.executor.future_factory
+        )
+    return _concurrency.deferred(
+        _on_end(deferred_result), factory=ctx.executor.future_factory
+    )
 
 
 def get_operation(document, operation_name):
@@ -377,7 +381,11 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
             )
         )
 
-    return _concurrency.chain(_concurrency.all_(deferred_fields), OrderedDict)
+    return _concurrency.chain(
+        _concurrency.all_(deferred_fields, factory=ctx.executor.future_factory),
+        OrderedDict,
+        factory=ctx.executor.future_factory,
+    )
 
 
 def _execute_selections_serially(
@@ -407,14 +415,7 @@ def _execute_selections_serially(
         )
 
     steps.append(lambda: OrderedDict(resolved_fields))
-    return _concurrency.serial(steps)
-
-
-def _unwrap(value):
-    value = lazy(value)
-    if _concurrency.is_deferred(value):
-        return _concurrency.unwrap(value)
-    return value
+    return _concurrency.serial(steps, factory=ctx.executor.future_factory)
 
 
 def resolve_field(
@@ -442,12 +443,25 @@ def resolve_field(
         resolver = field_def.resolve or default_resolver
         complete = ft.partial(complete_value, ctx, field_def.type, nodes, path)
 
+        def _unwrap(value):
+            value = lazy(value)
+            if _concurrency.is_deferred(value):
+                return _concurrency.unwrap(
+                    value, factory=ctx.executor.future_factory
+                )
+            return value
+
         def resolve(root, args, context, info):
             resolved = _unwrap(
                 ctx.executor.submit(resolver, root, args, context, info)
             )
             if _concurrency.is_deferred(resolved):
-                return _concurrency.chain(resolved, lazy, complete)
+                return _concurrency.chain(
+                    resolved,
+                    lazy,
+                    complete,
+                    factory=ctx.executor.future_factory,
+                )
             return complete(resolved)
 
         if ctx.middlewares:
@@ -476,9 +490,14 @@ def resolve_field(
     else:
         if _concurrency.is_deferred(resolved_or_deferred):
             return _concurrency.except_(
-                _concurrency.chain(resolved_or_deferred, _on_success),
+                _concurrency.chain(
+                    resolved_or_deferred,
+                    _on_success,
+                    factory=ctx.executor.future_factory,
+                ),
                 (CoercionError, ResolverError),
                 _on_error,
+                factory=ctx.executor.future_factory,
             )
         return _on_success(resolved_or_deferred)
 
@@ -503,6 +522,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         return _concurrency.chain(
             complete_value(ctx, field_type.type, nodes, path, resolved_value),
             _handle_null,
+            factory=ctx.executor.future_factory,
         )
 
     if resolved_value is None:
@@ -552,7 +572,8 @@ def _complete_list_value(ctx, item_type, nodes, list_value, path):
         [
             complete_value(ctx, item_type, nodes, path + [i], entry)
             for i, entry in enumerate(list_value)
-        ]
+        ],
+        factory=ctx.executor.future_factory,
     )
 
 
