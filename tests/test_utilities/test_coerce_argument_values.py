@@ -12,7 +12,9 @@ def _test_node(argument_value=None):
     if argument_value is None:
         arguments = []
     else:
-        arguments = [_ast.Argument(name=_ast.Name(value="foo"), value=argument_value)]
+        arguments = [
+            _ast.Argument(name=_ast.Name(value="foo"), value=argument_value)
+        ]
     return _ast.Field(name=_ast.Name(value="test"), arguments=arguments)
 
 
@@ -48,7 +50,8 @@ def test_missing_non_nullable_arg_without_default():
     with pytest.raises(CoercionError) as exc_info:
         coerce_argument_values(field, node)
     assert (
-        str(exc_info.value) == 'Argument "foo" of required type "Int!" was not provided'
+        str(exc_info.value)
+        == 'Argument "foo" of required type "Int!" was not provided'
     )
 
 

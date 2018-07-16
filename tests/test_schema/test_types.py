@@ -94,7 +94,11 @@ def test_scalar_serialization_ok(type, input, output):
         (Int, 1.1, "Int cannot represent non-integer value: 1.1"),
         (Int, -1.1, "Int cannot represent non-integer value: -1.1"),
         (Int, "-1.1", "Int cannot represent non-integer value: -1.1"),
-        (Int, 9876504321, "Int cannot represent non 32-bit signed integer: 9876504321"),
+        (
+            Int,
+            9876504321,
+            "Int cannot represent non 32-bit signed integer: 9876504321",
+        ),
         (
             Int,
             "-9876504321",
@@ -103,7 +107,11 @@ def test_scalar_serialization_ok(type, input, output):
         (Int, "1e100", "Int cannot represent non 32-bit signed integer: 1e100"),
         (Int, "-1e100", "Int cannot represent non-integer value: -1e100"),
         (Int, "one", "Int cannot represent non-integer value: one"),
-        (Int, "", "Int cannot represent non 32-bit signed integer: (empty string)"),
+        (
+            Int,
+            "",
+            "Int cannot represent non 32-bit signed integer: (empty string)",
+        ),
         (Int, None, "Int cannot represent non 32-bit signed integer: None"),
         (Float, None, "Float cannot represent non numeric value: None"),
         (Float, "one", "Float cannot represent non numeric value: one"),

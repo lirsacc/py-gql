@@ -56,7 +56,9 @@ schema = Schema(
                 "incrementTheNumber",
                 number_holder,
                 args=[Argument("steps", Int)],
-                resolve=lambda obj, args, *_: obj.incrementTheNumber(args["steps"]),
+                resolve=lambda obj, args, *_: obj.incrementTheNumber(
+                    args["steps"]
+                ),
             ),
             Field(
                 "immediatelyChangeTheNumber",
@@ -148,7 +150,10 @@ def test_it_evaluates_mutations_serially_2(exe_cls, exe_kwargs):
             }
             """,
             initial_value=Root(6),
-            expected_data={"first": {"theNumber": 7}, "second": {"theNumber": 4}},
+            expected_data={
+                "first": {"theNumber": 7},
+                "second": {"theNumber": 4},
+            },
             expected_errors=[],
             executor=executor,
         )

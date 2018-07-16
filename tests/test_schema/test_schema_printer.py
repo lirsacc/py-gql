@@ -93,7 +93,8 @@ def test_string_field_with_int_arg_with_default_value():
 
 def test_string_field_with_string_arg_with_default_value():
     schema = _single_field_schema(
-        String, args=[Argument("argOne", String, default_value="tes\t de\fault")]
+        String,
+        args=[Argument("argOne", String, default_value="tes\t de\fault")],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
@@ -146,7 +147,10 @@ def test_string_field_with_multiple_args():
 def test_string_field_with_multiple_args_with_default():
     schema = _single_field_schema(
         String,
-        args=[Argument("argOne", Int, default_value=2), Argument("argTwo", String)],
+        args=[
+            Argument("argOne", Int, default_value=2),
+            Argument("argTwo", String),
+        ],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
@@ -235,7 +239,9 @@ def test_unions():
 
 def test_input_type():
     Input = InputObjectType("InputType", [InputField("int", Int)])
-    Query = ObjectType("Query", [Field("str", String, [Argument("argOne", Input)])])
+    Query = ObjectType(
+        "Query", [Field("str", String, [Argument("argOne", Input)])]
+    )
     assert print_schema(Schema(Query), indent="    ") == dedent(
         """
         input InputType {
@@ -301,7 +307,9 @@ def test_enum():
 
 def test_custom_directive():
     directive = Directive(
-        "customDirective", locations=["FIELD"], args=[Argument("argOne", String)]
+        "customDirective",
+        locations=["FIELD"],
+        args=[Argument("argOne", String)],
     )
     schema = Schema(
         ObjectType("Query", [Field("foo", String)]), directives=[directive]

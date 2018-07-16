@@ -593,5 +593,5 @@ def test_it_processes_schema_kitchen_sink(fixture_file):
         ("enter", "Directive"),
         ("leave", "Directive"),
         ("leave", "SchemaExtension"),
-        ("leave", "Document")
+        ("leave", "Document"),
     ]
