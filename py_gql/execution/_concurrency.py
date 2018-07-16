@@ -3,31 +3,11 @@
 to promises """
 
 import logging
-import threading
-from concurrent.futures import Future as __Future
+from concurrent.futures import Future
 
 logger = logging.getLogger(__name__)
 
 _UNDEF = object()
-
-_CONDITION = threading.Condition()
-
-
-# [Hackish] These futures only exist in a single thread, hence they can share
-# the condition. Ideally there is a way to completely remove synchronisation for
-# these artifical futures.
-class SharedLockFuture(__Future):
-    # pylint: disable = super-init-not-called
-    def __init__(self):
-        self._state = "pending"
-        self._result = None
-        self._exception = None
-        self._waiters = []
-        self._done_callbacks = []
-        self._condition = _CONDITION
-
-
-Future = SharedLockFuture
 
 
 def is_deferred(value, cache={}):  # pylint: disable = dangerous-default-value
