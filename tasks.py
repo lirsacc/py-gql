@@ -103,7 +103,6 @@ def lint(ctx, pylint=True):
                         "pylint",
                         "--rcfile=.pylintrc",
                         "--output-format=colorized",
-                        "--errors-only",
                         "%s tests" % pkg.NAME,
                     ]
                 ),

@@ -130,12 +130,12 @@ def test_custom_directive_on_field(mocker):
     CustomDirective = Directive(
         "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
     )
-    schema = Schema(test_type, directives=[CustomDirective])
     resolver = mocker.Mock(return_value=42)
-    root = {"a": resolver}
 
     execute(
-        schema, parse('{ a @custom(a: "foo", b: 42) }'), initial_value=root
+        Schema(test_type, directives=[CustomDirective]),
+        parse('{ a @custom(a: "foo", b: 42) }'),
+        initial_value={"a": resolver},
     ).result()
 
     (_, _, _, info), _ = resolver.call_args

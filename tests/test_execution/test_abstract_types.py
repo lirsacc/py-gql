@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable = redefined-outer-name
 """ execution tests related to abstract types (Interface, Union) """
 from __future__ import unicode_literals
 
@@ -64,7 +65,10 @@ def test_ObjectType_is_type_of_for_interface_runtime_inference():
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [Dog("Odie", True), Cat("Garfield", False)],
+                    resolve=lambda *_: [
+                        Dog("Odie", True),
+                        Cat("Garfield", False),
+                    ],
                 )
             ],
         ),
@@ -109,7 +113,10 @@ def test_ObjectType_is_type_of_for_union_runtime_inference():
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [Dog("Odie", True), Cat("Garfield", False)],
+                    resolve=lambda *_: [
+                        Dog("Odie", True),
+                        Cat("Garfield", False),
+                    ],
                 )
             ],
         ),
@@ -140,7 +147,9 @@ def test_type_resolution_on_interface_yields_useful_error():
     so we crash """
 
     def _resolve_pet_type(value, **_):
-        return {Dog: DogType, Cat: CatType, Human: HumanType}.get(type(value), None)
+        return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
+            type(value), None
+        )
 
     PetType = InterfaceType(
         "Pet", [Field("name", String)], resolve_type=_resolve_pet_type
@@ -149,11 +158,15 @@ def test_type_resolution_on_interface_yields_useful_error():
     HumanType = ObjectType("Human", [Field("name", String)])
 
     DogType = ObjectType(
-        "Dog", [Field("name", String), Field("woofs", Boolean)], interfaces=[PetType]
+        "Dog",
+        [Field("name", String), Field("woofs", Boolean)],
+        interfaces=[PetType],
     )
 
     CatType = ObjectType(
-        "Cat", [Field("name", String), Field("meows", Boolean)], interfaces=[PetType]
+        "Cat",
+        [Field("name", String), Field("meows", Boolean)],
+        interfaces=[PetType],
     )
 
     schema = Schema(
@@ -197,7 +210,9 @@ def test_type_resolution_on_union_yields_useful_error():
     so we crash """
 
     def _resolve_pet_type(value, **_):
-        return {Dog: DogType, Cat: CatType, Human: HumanType}.get(type(value), None)
+        return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
+            type(value), None
+        )
 
     PetType = InterfaceType(
         "Pet", [Field("name", String)], resolve_type=_resolve_pet_type
@@ -205,11 +220,17 @@ def test_type_resolution_on_union_yields_useful_error():
 
     HumanType = ObjectType("Human", [Field("name", String)])
 
-    DogType = ObjectType("Dog", [Field("name", String), Field("woofs", Boolean)])
+    DogType = ObjectType(
+        "Dog", [Field("name", String), Field("woofs", Boolean)]
+    )
 
-    CatType = ObjectType("Cat", [Field("name", String), Field("meows", Boolean)])
+    CatType = ObjectType(
+        "Cat", [Field("name", String), Field("meows", Boolean)]
+    )
 
-    PetType = UnionType("Pet", [DogType, CatType], resolve_type=_resolve_pet_type)
+    PetType = UnionType(
+        "Pet", [DogType, CatType], resolve_type=_resolve_pet_type
+    )
 
     schema = Schema(
         ObjectType(
@@ -255,11 +276,15 @@ def test_type_resolution_supports_strings():
     )
 
     DogType = ObjectType(
-        "Dog", [Field("name", String), Field("woofs", Boolean)], interfaces=[PetType]
+        "Dog",
+        [Field("name", String), Field("woofs", Boolean)],
+        interfaces=[PetType],
     )
 
     CatType = ObjectType(
-        "Cat", [Field("name", String), Field("meows", Boolean)], interfaces=[PetType]
+        "Cat",
+        [Field("name", String), Field("meows", Boolean)],
+        interfaces=[PetType],
     )
 
     schema = Schema(
@@ -269,7 +294,10 @@ def test_type_resolution_supports_strings():
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [Dog("Odie", True), Cat("Garfield", False)],
+                    resolve=lambda *_: [
+                        Dog("Odie", True),
+                        Cat("Garfield", False),
+                    ],
                 )
             ],
         ),
@@ -294,11 +322,15 @@ def test_type_resolution_supports_object_attribute():
     PetType = InterfaceType("Pet", [Field("name", String)])
 
     DogType = ObjectType(
-        "Dog", [Field("name", String), Field("woofs", Boolean)], interfaces=[PetType]
+        "Dog",
+        [Field("name", String), Field("woofs", Boolean)],
+        interfaces=[PetType],
     )
 
     CatType = ObjectType(
-        "Cat", [Field("name", String), Field("meows", Boolean)], interfaces=[PetType]
+        "Cat",
+        [Field("name", String), Field("meows", Boolean)],
+        interfaces=[PetType],
     )
 
     class Dog(object):
@@ -322,7 +354,10 @@ def test_type_resolution_supports_object_attribute():
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [Dog("Odie", True), Cat("Garfield", False)],
+                    resolve=lambda *_: [
+                        Dog("Odie", True),
+                        Cat("Garfield", False),
+                    ],
                 )
             ],
         ),
@@ -422,7 +457,11 @@ def test_it_can_introspect_on_union_and_intersection_types():
                 "interfaces": None,
                 "kind": "INTERFACE",
                 "name": "Named",
-                "possibleTypes": [{"name": "Cat"}, {"name": "Dog"}, {"name": "Person"}],
+                "possibleTypes": [
+                    {"name": "Cat"},
+                    {"name": "Dog"},
+                    {"name": "Person"},
+                ],
             },
             "Pet": {
                 "enumValues": None,

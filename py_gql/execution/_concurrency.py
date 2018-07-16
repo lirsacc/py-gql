@@ -3,8 +3,8 @@
 to promises """
 
 import logging
-from concurrent.futures import Future as __Future
 import threading
+from concurrent.futures import Future as __Future
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ _CONDITION = threading.Condition()
 # the condition. Ideally there is a way to completely remove synchronisation for
 # these artifical futures.
 class SharedLockFuture(__Future):
+    # pylint: disable = super-init-not-called
     def __init__(self):
         self._state = "pending"
         self._result = None

@@ -643,9 +643,9 @@ class Parser(object):
         Returns:
             List[py_gql.lang.ast.Argument]:
         """
-        parse = ft.partial(self.parse_argument, const)
+        _parse = ft.partial(self.parse_argument, const)
         if _is(self.peek(), _token.ParenOpen):
-            return self.many(_token.ParenOpen, parse, _token.ParenClose)
+            return self.many(_token.ParenOpen, _parse, _token.ParenClose)
         return []
 
     def parse_argument(self, const=False):

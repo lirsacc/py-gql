@@ -181,6 +181,7 @@ enable=
     raising-string,
     redefine-in-handler,
     redefined-builtin,
+    redefined-outer-name,
     redundant-keyword-arg,
     redundant-unittest-assert,
     reimported,
