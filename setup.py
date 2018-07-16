@@ -3,7 +3,11 @@
 """
 """
 
+import itertools
+import os
+
 from setuptools import find_packages, setup
+
 
 NAME = "py_gql"
 AUTHOR = "Charles Lirsac"
@@ -12,6 +16,26 @@ URL = "https://github.com/lirsacc/py-gql"
 
 VERSION_TUPLE = (0, 0, 1)
 VERSION = ".".join(map(str, VERSION_TUPLE))
+
+
+def _cython_ext_modules(*globs):
+    try:
+        from Cython.Build import cythonize
+    except ImportError:
+        return []
+    else:
+        linetrace = bool(os.environ.get("CYTHON_TRACE"))
+        ext_modules = [
+            cythonize(
+                glob,
+                compiler_directives={
+                    "embedsignature": True,
+                    "linetrace": linetrace,
+                },
+            )
+            for glob in globs
+        ]
+        return list(itertools.chain.from_iterable(ext_modules))
 
 
 def run_setup():
@@ -46,6 +70,14 @@ def run_setup():
         packages=find_packages(exclude=("tests", "docs")),
         install_requires=requirements,
         include_package_data=True,
+        ext_modules=_cython_ext_modules(
+            "py_gql/*.py",
+            "py_gql/lang/*.py",
+            "py_gql/validation/*.py",
+            "py_gql/utilities/*.py",
+            "py_gql/schema/*.py",
+            "py_gql/execution/*.py",
+        ),
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Programming Language :: Python",
