@@ -25,10 +25,11 @@ def clean(ctx):
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|\\.c|.pytest_cache)" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache)" '
             "| xargs rm -rf",
             echo=True,
         )
+        ctx.run("rm -rf py_gql/**/*.c", echo=True)
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
@@ -113,16 +114,28 @@ def lint(ctx, pylint=True):
 @invoke.task
 def fmt(ctx, verbose=False, files=None):
     """ Run the black https://github.com/ambv/black formatter """
+
+    if files is None:
+        files = "%s/**/*.py tests/**/*.py" % pkg.NAME
+
     with ctx.cd(ROOT):
         ctx.run(
-            "isort --multi-line=3 --trailing-comma --force-grid-wrap=0 "
-            "--combine-as --apply --line-width=80 "
-            "py_gql/**/*.py tests/**/*.py",
+            _join(
+                [
+                    "isort",
+                    "--multi-line=3",
+                    "--trailing-comma",
+                    "--force-grid-wrap=0",
+                    "--combine-as",
+                    "--apply",
+                    "--line-width=80",
+                    files,
+                ]
+            ),
             echo=True,
         )
-        ctx.run(
-            "black --line-length=80 py_gql/**/*.py tests/**/*/*.py", echo=True
-        )
+
+        ctx.run(_join(["black", "--line-length=80", files]), echo=True)
 
 
 @invoke.task
