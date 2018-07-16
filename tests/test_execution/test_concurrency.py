@@ -7,6 +7,12 @@ import pytest
 from py_gql.execution import _concurrency
 
 
+def test_all_wrapper_sync():
+    futures = [x for x in range(10)]
+    wrapper = _concurrency.all_(futures)
+    assert wrapper == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
 def test_all_wrapper_futures_ok():
     futures = [_f.Future() for _ in range(10)]
 
@@ -17,7 +23,25 @@ def test_all_wrapper_futures_ok():
     assert wrapper.result() == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
-def test_all_wrapper_some_futures_already_done():
+def test_all_wrapper_futures_mixed():
+    futures = []
+
+    for x in range(10):
+        if x % 2:
+            f = _f.Future()
+            futures.append(f)
+        else:
+            futures.append(x)
+
+    wrapper = _concurrency.all_(futures)
+    for i, f in enumerate(futures):
+        if i % 2:
+            f.set_result(i)
+
+    assert wrapper.result() == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+def test_all_wrapper_partially_completed():
     futures = [_f.Future() for _ in range(10)]
 
     for i, f in enumerate(futures):
@@ -49,43 +73,11 @@ def test_all_wrapper_one_future_fails():
     assert str(exc_info.value) == "I don't like 9"
 
 
-def test_all_wrapper_parent_cancellation_noops():
-    futures = [_f.Future() for _ in range(10)]
-    wrapper = _concurrency.all_(futures)
-    # No change from before, this future is running by default
-    assert not wrapper.cancel()
-
-
-def test_all_wrapper_child_cancellation():
-    futures = [_f.Future() for _ in range(10)]
-
-    futures[0].set_result(1)
-    futures[1].cancel()
-
-    with pytest.raises(_f.CancelledError):
-        _concurrency.all_(futures).result()
-
-    assert not futures[0].cancelled()
-    assert all(f.cancelled() for f in futures[2:])
-
-
 def test_chain_wrapper_sync_steps():
     f = _f.Future()
     c = _concurrency.chain(f, lambda x: x + 1, lambda x: x * 2)
     f.set_result(1)
     assert c.result() == 4
-
-
-def test_chain_wrapper_cancel_noops():
-    f = _f.Future()
-    c = _concurrency.chain(f, lambda x: x + 1, lambda x: x * 2)
-    assert f.cancel()
-    assert not c.cancel()
-
-
-def test_chain_wrapper_no_leader():
-    c = _concurrency.chain(lambda _: 1, lambda x: x + 1)
-    assert c.result() == 2
 
 
 def test_chain_wrapper_sync_failure():
@@ -98,7 +90,7 @@ def test_chain_wrapper_sync_failure():
     f.set_result(1)
 
     with pytest.raises(ValueError) as exc_info:
-        c.result()
+        c.result(timeout=1)
 
     assert str(exc_info.value) == "1"
 
@@ -132,19 +124,36 @@ def test_chain_wrapper_async_failure():
         assert str(exc_info.value) == "2"
 
 
-def test_serial_ok():
+def test_serial_ok_sync():
 
     called = []
 
     def make_step(x):
         def _step():
-            print("STEP", x, called)
             assert called == list(range(x))
             called.append(x)
 
         return _step
 
-    _concurrency.serial([make_step(x) for x in range(10)]).result()
+    assert _concurrency.serial([make_step(x) for x in range(10)]) is None
+    assert called == list(range(10))
+
+
+def test_serial_ok_async():
+
+    called = []
+
+    def make_step(x):
+        def _step():
+            assert called == list(range(x))
+            f = _f.Future()
+            f.set_result(x)
+            called.append(x)
+            return f
+
+        return _step
+
+    assert _concurrency.serial([make_step(x) for x in range(10)]).result()
     assert called == list(range(10))
 
 

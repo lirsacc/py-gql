@@ -2,13 +2,38 @@
 """ Helpers to work with futures and the concurrent module in a way similar
 to promises """
 
-from concurrent import futures as _f
+import logging
+from concurrent.futures import Future as __Future
+import threading
+
+logger = logging.getLogger(__name__)
 
 _UNDEF = object()
 
+_CONDITION = threading.Condition()
 
-def is_deferred(value):
-    return callable(getattr(value, "add_done_callback", None))
+
+# [Hackish] These futures only exist in a single thread, hence they can share
+# the condition. Ideally there is a way to completely remove synchronisation for
+# these artifical futures.
+class SharedLockFuture(__Future):
+    def __init__(self):
+        self._state = "pending"
+        self._result = None
+        self._exception = None
+        self._waiters = []
+        self._done_callbacks = []
+        self._condition = _CONDITION
+
+
+Future = SharedLockFuture
+
+
+def is_deferred(value, cache={}):  # pylint: disable = dangerous-default-value
+    t = value.__class__
+    if t not in cache:
+        cache[t] = callable(getattr(t, "add_done_callback", None))
+    return cache[t]
 
 
 def deferred(value):
@@ -20,11 +45,11 @@ def deferred(value):
     :rtype: concurrent.futures.Future
     :returns: Value wrapped in a ``Future``
 
-    >>> deferred = deferred(1)
-    >>> deferred.result(), deferred.done()
+    >>> v = deferred(1)
+    >>> v.result(), v.done()
     (1, True)
     """
-    future = _f.Future()
+    future = Future()
     future.set_result(value)
     return future
 
@@ -48,16 +73,12 @@ def all_(futures):
     """
 
     if not futures:
-        return deferred([])
+        return []
 
-    result = _f.Future()
+    result = Future()
     results_list = [_UNDEF] * len(futures)
     done_count = [0]
     len_ = len(futures)
-
-    def cancel_remaining():
-        for f in futures:
-            f.cancel()
 
     def notify():
         if done_count[0] == len_:
@@ -66,19 +87,9 @@ def all_(futures):
     def callback_for(index):
         def callback(future):
 
-            if result.done():
-                return
-
-            if not future.done():
-                raise RuntimeError(
-                    "Future callback called while future is not done."
-                )
-
             try:
                 res = future.result()
-            # Also includes the case where ``future`` was cancelled.
             except Exception as err:  # pylint: disable = broad-except
-                cancel_remaining()
                 result.set_exception(err)
             else:
                 results_list[index] = res
@@ -87,7 +98,6 @@ def all_(futures):
 
         return callback
 
-    result.set_running_or_notify_cancel()
     for index, future in enumerate(futures):
         if is_deferred(future):
             future.add_done_callback(callback_for(index))
@@ -95,7 +105,23 @@ def all_(futures):
             results_list[index] = future
             done_count[0] += 1
 
-    notify()
+    if done_count[0] == len_:
+        return results_list
+    return result
+
+
+def _chain_one(source_future, map_=lambda x: x):
+    result = Future()
+
+    def _callback(future):
+        try:
+            res = map_(future.result())
+        except Exception as err:  # pylint: disable = broad-except
+            result.set_exception(err)
+        else:
+            result.set_result(res)
+
+    source_future.add_done_callback(_callback)
     return result
 
 
@@ -125,68 +151,36 @@ def chain(leader, *funcs):
 
     :rtype: concurrent.futures.Future
     """
-    result = _f.Future()
-    stack = list(funcs)[::-1]
-
-    if callable(leader):
-        leader = leader(None)
+    stack = iter(funcs)
 
     def _next(value):
         if is_deferred(value):
-            value.add_done_callback(_callback)
-        else:
-            try:
-                func = stack.pop()
-            except IndexError:
-                result.set_result(value)
-            else:
-                try:
-                    mapped = func(value)
-                except Exception as err:  # pylint: disable = broad-except
-                    result.set_exception(err)
-                else:
-                    _next(mapped)
-
-    def _callback(future):
-        if not future.done():
-            raise RuntimeError(
-                "Future callback called while future is not done."
-            )
-
+            return unwrap(_chain_one(value, _next))
         try:
-            res = future.result()
-        # Also includes the case where ``future`` was cancelled.
-        except Exception as err:  # pylint: disable = broad-except
-            result.set_exception(err)
+            func = next(stack)
+        except StopIteration:
+            return value
         else:
-            _next(res)
+            return _next(func(value))
 
-    result.set_running_or_notify_cancel()
-    _next(leader)
-    return result
+    return _next(leader)
 
 
-def unwrap(future):
+def unwrap(source_future):
     """ Resolve nested futures until a non future is resolved or an
     exception is raised.
 
-    :type future: concurrent.futures.Future
-    :param future: Future to unwrap
+    :type source_future: concurrent.futures.Future
+    :param source_future: Future to unwrap
 
     :rtype: any
     :returns: Unwrapped value
     """
-    result = _f.Future()
+    result = Future()
 
     def callback(future):
-        if not future.done():
-            raise RuntimeError(
-                "Future callback called while future is not done."
-            )
-
         try:
             res = future.result()
-        # Also includes the case where ``future`` was cancelled.
         except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
@@ -195,8 +189,7 @@ def unwrap(future):
             else:
                 result.set_result(res)
 
-    result.set_running_or_notify_cancel()
-    future.add_done_callback(callback)
+    source_future.add_done_callback(callback)
     return result
 
 
@@ -214,16 +207,16 @@ def serial(steps):
     """
 
     def _step(original):
-        return lambda _: original()  # Need to force a scope change
+        return lambda _: original()
 
-    return chain(deferred(None), *[_step(step) for step in steps])
+    return chain(None, *[_step(step) for step in steps])
 
 
-def except_(future, exc_cls=(Exception,), map_=lambda x: None):
+def except_(source_future, exc_cls=(Exception,), map_=lambda x: None):
     """ Except for futures.
 
-    :type future: concurrent.futures.Future
-    :param future: Future to wrap
+    :type source_future: concurrent.futures.Future
+    :param source_future: Future to wrap
 
     :type exc_cls: Union[type, Tuple[*type]]
     :param exc_cls: Exception classes to expect.
@@ -235,15 +228,9 @@ def except_(future, exc_cls=(Exception,), map_=lambda x: None):
         result.
         Default behaviour is to set the result to ``None``.
     """
-    result = _f.Future()
+    result = Future()
 
     def callback(future):
-
-        if not future.done():
-            raise RuntimeError(
-                "Future callback called while future is not done."
-            )
-
         try:
             res = future.result()
         except exc_cls as err:
@@ -253,6 +240,5 @@ def except_(future, exc_cls=(Exception,), map_=lambda x: None):
         else:
             result.set_result(res)
 
-    result.set_running_or_notify_cancel()
-    future.add_done_callback(callback)
+    source_future.add_done_callback(callback)
     return result

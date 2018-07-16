@@ -25,6 +25,11 @@ class ExecutionContext(object):
         "middlewares",
         "context",
         "_errors",
+        "grouped_fields",
+        "field_defs",
+        "subselections",
+        "argument_values",
+        "resolvers",
     )
 
     def __init__(
@@ -68,7 +73,14 @@ class ExecutionContext(object):
         self.operation = operation
         self.middlewares = middlewares
         self.context = context
+
         self._errors = []
+
+        self.grouped_fields = {}
+        self.field_defs = {}
+        self.subselections = {}
+        self.argument_values = {}
+        self.resolvers = {}
 
     def add_error(self, err, node=None, path=None):
         """ Register a localized execution error.

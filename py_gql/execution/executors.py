@@ -11,18 +11,7 @@ class SyncExecutor(Executor):
     current execution context. """
 
     def submit(self, func, *args, **kwargs):
-        future = _f.Future()
-
-        try:
-            result = func(*args, **kwargs)
-            if callable(result):
-                result = result()
-        except Exception as err:  # pylint: disable = broad-except
-            future.set_exception(err)
-        else:
-            future.set_result(result)
-
-        return future
+        return func(*args, **kwargs)
 
     def shutdown(self, wait=True):
         return True

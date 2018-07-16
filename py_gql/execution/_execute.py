@@ -9,7 +9,7 @@ import six
 
 from . import _concurrency
 from .._string_utils import stringify_path
-from .._utils import OrderedDict, find_one, flatten, is_iterable
+from .._utils import OrderedDict, find_one, is_iterable, lazy
 from ..exc import (
     CoercionError,
     ExecutionError,
@@ -116,7 +116,7 @@ def execute(  # flake8: noqa : C901
     fragments = {
         d.name.value: d
         for d in ast.definitions
-        if d.is_(_ast.FragmentDefinition)
+        if d.__class__ is _ast.FragmentDefinition
     }
 
     coerced_variables = coerce_variable_values(schema, operation, variables)
@@ -148,7 +148,9 @@ def execute(  # flake8: noqa : C901
             data=data, errors=[err for err, _, _ in ctx.errors]
         )
 
-    return _concurrency.chain(deferred_result, _on_end)
+    if _concurrency.is_deferred(deferred_result):
+        return _concurrency.chain(deferred_result, _on_end)
+    return _concurrency.deferred(_on_end(deferred_result))
 
 
 def get_operation(document, operation_name):
@@ -165,7 +167,7 @@ def get_operation(document, operation_name):
     operations = [
         definition
         for definition in document.definitions
-        if definition.is_(_ast.OperationDefinition)
+        if definition.__class__ is _ast.OperationDefinition
     ]
 
     if not operations:
@@ -213,6 +215,11 @@ def collect_fields(
 
     :rtype: OrderedDict
     """
+
+    cache_key = object_type.name, tuple(selections)
+    if cache_key in ctx.grouped_fields:
+        return ctx.grouped_fields[cache_key]
+
     visited_fragments = visited_fragments or set()
     grouped_fields = OrderedDict()
 
@@ -226,8 +233,9 @@ def collect_fields(
             grouped_fields[key].extend(gf)
 
     for selection in selections:
+        kind = selection.__class__
 
-        if selection.is_(_ast.Field):
+        if kind is _ast.Field:
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -240,7 +248,7 @@ def collect_fields(
                 grouped_fields[key] = []
             grouped_fields[key].append(selection)
 
-        elif selection.is_(_ast.InlineFragment):
+        elif kind is _ast.InlineFragment:
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -249,7 +257,7 @@ def collect_fields(
 
             _collect_fragment_fields(selection.selection_set.selections)
 
-        elif selection.is_(_ast.FragmentSpread):
+        elif kind is _ast.FragmentSpread:
             if not _include_selection(selection, ctx.variables):
                 continue
 
@@ -265,6 +273,7 @@ def collect_fields(
             _collect_fragment_fields(fragment.selection_set.selections)
             visited_fragments.add(name)
 
+    ctx.grouped_fields[cache_key] = grouped_fields
     return grouped_fields
 
 
@@ -308,15 +317,26 @@ def _include_selection(node, variables=None):
     return (not skipped) and included
 
 
-def _field_def(schema, parent_type, name):
-    if name in ("__schema", "__type", "__typename"):
-        if name == "__schema" and schema.query_type == parent_type:
-            return schema_field
-        elif name == "__type" and schema.query_type == parent_type:
-            return type_field
-        elif name == "__typename":
-            return type_name_field
-    return parent_type.field_map.get(name, None)
+def _field_def(ctx, parent_type, name):
+
+    cache_key = parent_type.name, name
+
+    if cache_key not in ctx.field_defs:
+        if name in ("__schema", "__type", "__typename"):
+            if name == "__schema" and ctx.schema.query_type == parent_type:
+                ctx.field_defs[cache_key] = schema_field
+            elif name == "__type" and ctx.schema.query_type == parent_type:
+                ctx.field_defs[cache_key] = type_field
+            elif name == "__typename":
+                ctx.field_defs[cache_key] = type_name_field
+            else:
+                ctx.field_defs[cache_key] = parent_type.field_map.get(
+                    name, None
+                )
+        else:
+            ctx.field_defs[cache_key] = parent_type.field_map.get(name, None)
+
+    return ctx.field_defs.get(cache_key, None)
 
 
 def _resolve_type(value, context, schema, abstract_type):
@@ -340,23 +360,10 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
     deferred_fields = []
     path = path or []
 
-    def _handlers(key, nodes, field_path):
-        def _handle_error(err):
-            ctx.add_error(err, nodes[0], field_path)
-            return (key, None)
-
-        def _handle_success(completed):
-            return (key, completed)
-
-        return _handle_success, _handle_error
-
     for key, nodes in fields.items():
-        field_def = _field_def(ctx.schema, object_type, nodes[0].name.value)
+        field_def = _field_def(ctx, object_type, nodes[0].name.value)
         if field_def is None:
             continue
-
-        field_path = path + [key]
-        _handle_success, _handle_error = _handlers(key, nodes, field_path)
 
         deferred_fields.append(
             resolve_field(
@@ -365,9 +372,8 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
                 object_value,
                 field_def,
                 nodes,
-                field_path,
-                _handle_success,
-                _handle_error,
+                path + [key],
+                lambda x: x,
             )
         )
 
@@ -382,23 +388,10 @@ def _execute_selections_serially(
     steps = []
     path = path or []
 
-    def _handlers(key, nodes, field_path):
-        def _handle_error(err):
-            ctx.add_error(err, nodes[0], field_path)
-            resolved_fields.append((key, None))
-
-        def _handle_success(completed):
-            resolved_fields.append((key, completed))
-
-        return _handle_success, _handle_error
-
     for key, nodes in fields.items():
-        field_def = _field_def(ctx.schema, object_type, nodes[0].name.value)
+        field_def = _field_def(ctx, object_type, nodes[0].name.value)
         if field_def is None:
             continue
-
-        field_path = path + [key]
-        _handle_success, _handle_error = _handlers(key, nodes, field_path)
 
         steps.append(
             ft.partial(
@@ -408,9 +401,8 @@ def _execute_selections_serially(
                 object_value,
                 field_def,
                 nodes,
-                field_path,
-                _handle_success,
-                _handle_error,
+                path + [key],
+                resolved_fields.append,
             )
         )
 
@@ -418,19 +410,20 @@ def _execute_selections_serially(
     return _concurrency.serial(steps)
 
 
-def _unwrap_resolved_value(value):
-    value = value() if callable(value) else value
+def _unwrap(value):
+    value = lazy(value)
     if _concurrency.is_deferred(value):
         return _concurrency.unwrap(value)
     return value
 
 
 def resolve_field(
-    ctx, parent_type, parent_value, field_def, nodes, path, on_success, on_error
+    ctx, parent_type, parent_value, field_def, nodes, path, on_success
 ):
     """ Execute a field resolver in the current executor and expose
     result as a Future. """
 
+    key = path[-1]
     info = ResolveInfo(
         field_def,
         parent_type,
@@ -443,35 +436,56 @@ def resolve_field(
         ctx.executor,
     )
 
-    resolver = field_def.resolve or default_resolver
+    cache_key = (parent_type.name, field_def.name, tuple(nodes))
+    if cache_key not in ctx.resolvers:
 
-    def resolve(root, args, context, info):
-        return _concurrency.chain(
-            ctx.executor.submit(resolver, root, args, context, info),
-            _unwrap_resolved_value,
-            ft.partial(complete_value, ctx, field_def.type, nodes, path),
-        )
+        resolver = field_def.resolve or default_resolver
+        complete = ft.partial(complete_value, ctx, field_def.type, nodes, path)
 
-    if ctx.middlewares:
-        resolve = apply_middlewares(resolve, ctx.middlewares)
+        def resolve(root, args, context, info):
+            resolved = _unwrap(
+                ctx.executor.submit(resolver, root, args, context, info)
+            )
+            if _concurrency.is_deferred(resolved):
+                return _concurrency.chain(resolved, lazy, complete)
+            return complete(resolved)
+
+        if ctx.middlewares:
+            resolve = apply_middlewares(resolve, ctx.middlewares)
+
+        ctx.resolvers[cache_key] = resolve
+    else:
+        resolve = ctx.resolvers[cache_key]
+
+    def _on_success(field_value):
+        return on_success((key, field_value))
+
+    def _on_error(err):
+        ctx.add_error(err, nodes[0], path)
+        return on_success((key, None))
 
     try:
-        args = coerce_argument_values(field_def, nodes[0], ctx.variables)
+        args = _argument_values(ctx, field_def, nodes)
     except CoercionError as err:
-        return on_error(err)
+        return _on_error(err)
 
-    return _concurrency.except_(
-        _concurrency.chain(
-            resolve(parent_value, args, ctx.context, info), on_success
-        ),
-        (CoercionError, ResolverError),
-        on_error,
-    )
+    try:
+        resolved_or_deferred = resolve(parent_value, args, ctx.context, info)
+    except (CoercionError, ResolverError) as err:
+        return _on_error(err)
+    else:
+        if _concurrency.is_deferred(resolved_or_deferred):
+            return _concurrency.except_(
+                _concurrency.chain(resolved_or_deferred, _on_success),
+                (CoercionError, ResolverError),
+                _on_error,
+            )
+        return _on_success(resolved_or_deferred)
 
 
 def complete_value(ctx, field_type, nodes, path, resolved_value):
-    field_type_type = type(field_type)
-    if field_type_type is NonNullType:
+    kind = field_type.__class__
+    if kind is NonNullType:
         # REVIEW:
         # - Error is different than ref implementation
         # - Shouldn't this be a RuntimeError ? As in the developer should
@@ -494,12 +508,12 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
     if resolved_value is None:
         return None
 
-    if field_type_type is ListType:
+    if kind is ListType:
         return _complete_list_value(
             ctx, field_type.type, nodes, resolved_value, path
         )
 
-    if field_type_type is ScalarType:
+    if kind is ScalarType:
         try:
             serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:
@@ -510,7 +524,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         else:
             return serialized
 
-    if field_type_type is EnumType:
+    if kind is EnumType:
         try:
             serialized = field_type.get_name(resolved_value)
         except UnknownEnumValue as err:
@@ -521,7 +535,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         else:
             return serialized
 
-    if field_type_type in (ObjectType, InterfaceType, UnionType):
+    if kind in (ObjectType, InterfaceType, UnionType):
         return _complete_object_value(
             ctx, field_type, nodes, resolved_value, path
         )
@@ -571,7 +585,21 @@ def _complete_object_value(ctx, field_type, nodes, object_value, path):
     else:
         runtime_type = field_type
 
-    selections = list(flatten(f.selection_set.selections for f in nodes))
     return _execute_selections(
-        ctx, selections, runtime_type, object_value, path
+        ctx, list(_sub_selections(nodes)), runtime_type, object_value, path
     )
+
+
+def _sub_selections(nodes):
+    for f in nodes:
+        for s in f.selection_set.selections:
+            yield s
+
+
+def _argument_values(ctx, field_def, nodes):
+    cache_key = (field_def, nodes[0])
+    if cache_key not in ctx.argument_values:
+        ctx.argument_values[cache_key] = coerce_argument_values(
+            field_def, nodes[0], ctx.variables
+        )
+    return ctx.argument_values[cache_key]

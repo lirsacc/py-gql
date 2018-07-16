@@ -28,13 +28,14 @@ def default_resolver(parent_value, args, context, info):
         any: Resolved value
     """
     field_name = info.field_def.name
-    if isinstance(parent_value, dict):
+    try:
         field_value = parent_value.get(field_name, None)
+    except AttributeError:
+        attr_value = getattr(parent_value, field_name, None)
+        if callable(attr_value):
+            return attr_value(args, context, info)
+        return attr_value
+    else:
         if callable(field_value):
             return field_value(parent_value, args, context, info)
         return field_value
-
-    attr_value = getattr(parent_value, field_name, None)
-    if callable(attr_value):
-        return attr_value(args, context, info)
-    return attr_value

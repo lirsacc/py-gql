@@ -178,7 +178,7 @@ def flatten(lst):
     [1, 2, 1, 2, 3]
     """
     for entry in lst:
-        if isinstance(entry, (list, tuple)):
+        if type(entry) in (list, tuple):
             for subentry in flatten(entry):
                 yield subentry
         else:

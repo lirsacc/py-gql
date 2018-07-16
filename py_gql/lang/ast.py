@@ -48,15 +48,12 @@ class Node(object):
         return getattr(self, key, default)
 
     def __copy__(self):
-        return type(self)(**{k: getattr(self, k) for k in self.__slots__})
+        return self.__class__(**{k: getattr(self, k) for k in self.__slots__})
 
     def __deepcopy__(self, memo):
-        return type(self)(
+        return self.__class__(
             **{k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__}
         )
-
-    def is_(self, cls):
-        return type(self) == cls
 
     def to_dict(self):
         """ Convert the current node to a JSON serializable ``dict`` using
