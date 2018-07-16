@@ -2,33 +2,25 @@ version: 2
 
 references:
 
-    python36: &python36
-        image: circleci/python:3.6.5
-        environment:
-            PY: 36
-
-    python37: &python37
-        image: circleci/python:3.7
-        environment:
-            PY: 37
-
-    python27: &python27
-        image: circleci/python:2.7.14
-        environment:
-            PY: 27
-            REQUIREMENTS: -rtest-requirements.txt -e.
-
     docker-python36: &docker-python36
         docker:
-            - *python36
+            - image: circleci/python:3.6.5
+              environment:
+                PY: 36
 
     docker-python37: &docker-python37
         docker:
-            - *python37
+            - image: circleci/python:3.7
+              environment:
+                PY: 37
 
     docker-python27: &docker-python27
         docker:
-            - *python27
+            - image: circleci/python:2.7.14
+              environment:
+                PY: 27
+                REQUIREMENTS: -rtest-requirements.txt -e.
+
 
     workspace: &workspace
         attach_workspace:
@@ -57,17 +49,24 @@ references:
         run:
             name: Run tests
             command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                inv test --coverage --junit --no-bail
+
+    mv-tests: &mv-tests
+        run:
+            name: Format and move test results
+            when: always
+            command: |
                 results="$(pwd)/workspace/test-results"
                 checkout="$(pwd)/workspace/src"
-                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 mkdir -p "${results}/python${PY}"
-                inv test -c -j
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 python -c \
                     'import sys; sys.stdout.write(sys.stdin.read().replace(sys.argv[1], sys.argv[2]))' \
-                    "$(pwd)/" "${checkout}/" <.coverage >"${results}/python${PY}/.coverage"
-                mv coverage.xml ${results}/python${PY}/results.xml
-                mv junit.xml "${results}/python${PY}/junit.xml"
-                mv htmlcov ${results}/python${PY}
+                    "$(pwd)/" "${checkout}/" < .coverage >"${results}/python${PY}/.coverage" || true
+                mv coverage.xml ${results}/python${PY}/results.xml || true
+                mv junit.xml "${results}/python${PY}/junit.xml" || true
+                mv htmlcov ${results}/python${PY} || true
 
     store-tests: &store-tests
         store_test_results:
@@ -131,12 +130,13 @@ jobs:
                 paths: venv37
                 root: .
 
-    test:
+    test-36:
         <<: *docker-python36
         steps:
             - *workspace
             - restore_cache: *cache-python-36
             - *run-tests
+            - *mv-tests
             - *store-tests
             - persist_to_workspace:
                 paths: workspace/test-results/python36
@@ -148,6 +148,7 @@ jobs:
             - *workspace
             - restore_cache: *cache-python-27
             - *run-tests
+            - *mv-tests
             - *store-tests
             - persist_to_workspace:
                 paths: workspace/test-results/python27
@@ -159,6 +160,7 @@ jobs:
             - *workspace
             - restore_cache: *cache-python-37
             - *run-tests
+            - *mv-tests
             - *store-tests
             - persist_to_workspace:
                 paths: workspace/test-results/python37
@@ -230,7 +232,7 @@ workflows:
         - lint:
             requires:
                 - deps-36
-        - test:
+        - test-36:
             requires:
                 - deps-36
         - deps-27:
@@ -247,13 +249,14 @@ workflows:
                 - deps-37
         - collect-tests:
             requires:
-                - test
+                - test-36
                 - test-27
                 - test-37
         - docs:
             requires:
-                - test
+                - test-36
                 - test-27
                 - test-37
+                - lint
 
 
