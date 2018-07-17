@@ -19,6 +19,9 @@ VERSION = ".".join(map(str, VERSION_TUPLE))
 
 
 def _cython_ext_modules(*globs):
+    if bool(os.environ.get("CYTHON_DISABLE")):
+        return []
+
     try:
         from Cython.Build import cythonize
     except ImportError:
