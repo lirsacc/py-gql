@@ -17,7 +17,7 @@ def untyped_value_from_ast(node, variables=None):
     Raises:
 
         :py:class:``TypeError``: when node is not a value node
-        :class:`py_gql.exc.UnknownVariable`:
+        :class:`~py_gql.exc.UnknownVariable`:
             if a variable is required and doesn't exist
     """
     kind = type(node)

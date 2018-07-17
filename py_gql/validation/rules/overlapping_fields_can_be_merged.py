@@ -73,9 +73,9 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
     fragments) either correspond to distinct response names or can be merged
     without ambiguity. """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, schema, type_info):
         super(OverlappingFieldsCanBeMergedChecker, self).__init__(
-            *args, **kwargs
+            schema, type_info
         )
         self.ctx = Context(self.schema, {}, set(), {})
 

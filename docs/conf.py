@@ -17,12 +17,12 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 from recommonmark.parser import CommonMarkParser
-from docs import graphql_pygments  # flake8: noqa
 
+import setup as pkg
+from docs import graphql_pygments  # flake8: noqa
 
 # -- Project information -----------------------------------------------------
 
-import setup as pkg
 
 project = pkg.NAME
 copyright = "2018, Charles Lirsac"
@@ -93,7 +93,7 @@ html_theme = "alabaster"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-FONTS = '"Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "Roboto", sans-serif;'
+FONTS = '"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "Roboto", sans-serif;'
 
 html_theme_options = {
     "logo": "GraphQL_Logo.svg",

@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Iterable interface for the GraphQL Language lexer.
-
-- The :class:`py_gql.lang.lexer.Lexer` provides an iterable interface over
-  tokenizing the Grahpql source.
-- All valid tokens returned by the lexer can be found in
-  :mod:`py_gql.lang.token`.
-- All exceptions relevant to tokenizking are subclasses of
-  :class:`py_gql.exc.GQLSyntaxError`.
-
-"""
+""" Iterable interface for the GraphQL Language lexer. """
 
 # [TODO] Review the various `Lexer.read_*` methods as the use of `peek` and
 # `advance` is fairly inconsistent from tweaking the code around to make the
@@ -125,14 +116,14 @@ def is_name_character(code):
 
 
 class Lexer(object):
-    """ Iterable GraphQL language lexer.
+    """ Iterable GraphQL language lexer / tokenizer.
 
     This class is not typically exposed through the parser but can be used
     independently to build custom parsers.
 
     Each call to ``__next__`` will read over a number of characters required
     to form a valid :class:`py_gql.lang.token.Token` and otherwise raise
-    :class:`py_gql.exc.GraphQLSyntaxError` if that is not possible.
+    :class:`~py_gql.exc.GraphQLSyntaxError` if that is not possible.
 
     Args:
         source (Union[str, bytes]): Source string.
@@ -158,7 +149,7 @@ class Lexer(object):
         Args:
             count(int): How many charcaters to read over
             raise_on_eof (int):
-                Raise :class:`py_gql.exc.UnexpectedEOF` if EOF is encountered
+                Raise :class:`~py_gql.exc.UnexpectedEOF` if EOF is encountered
 
         Returns:
             chr: Characters at current position + ``count`` or ``None`` if
@@ -180,9 +171,9 @@ class Lexer(object):
             chr: next character
 
         Raises:
-            :class:`py_gql.exc.UnexpectedCharacter`:
+            :class:`~py_gql.exc.UnexpectedCharacter`:
                 if the character is not the expected one
-            :class:`py_gql.exc.UnexpectedEOF`: if EOF is encountered
+            :class:`~py_gql.exc.UnexpectedEOF`: if EOF is encountered
         """
         char = self._peek(raise_on_eof=expected is not None)
         self._position += 1
@@ -467,10 +458,10 @@ class Lexer(object):
             py_gql.lang.token.Token: parse token
 
         Raises:
-            :class:`py_gql.exc.UnexpectedEOF`
-            :class:`py_gql.exc.InvalidCharacter`
-            :class:`py_gql.exc.UnexpectedCharacter`
-            :class:`py_gql.exc.NonTerminatedString`
+            :class:`~py_gql.exc.UnexpectedEOF`
+            :class:`~py_gql.exc.InvalidCharacter`
+            :class:`~py_gql.exc.UnexpectedCharacter`
+            :class:`~py_gql.exc.NonTerminatedString`
         """
         if self._done:
             raise StopIteration()

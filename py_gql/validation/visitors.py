@@ -10,7 +10,9 @@ from ..lang.visitor import DispatchingVisitor
 class ValidationVisitor(DispatchingVisitor):
     """ Visitor class used for validating GraphQL documents.
 
-    Subclass this to implement custom validators.
+    Subclass this to implement custom validators. Use :meth:`add_error` to
+    register errors and :class:`py_gql.lang.visitor.SkipNode` to prevent
+    validating child nodes when parent node is invalid.
 
     Args:
         schema (py_gql.schema.Schema):
@@ -52,8 +54,8 @@ class VariablesCollector(ValidationVisitor):
     Most validation must happen in :meth:`leave_document` though.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(VariablesCollector, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(VariablesCollector, self).__init__(schema, type_info)
 
         self._op = None
         self._op_variables = DefaultOrderedDict(OrderedDict)

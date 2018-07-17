@@ -18,12 +18,10 @@ from ..visitors import ValidationVisitor
 
 class ValuesOfCorrectTypeChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all value literals are of the type
-    expected at their position.
+    expected at their position. """
 
-    Warning:
-        This check ignores cases where the input type is not known, which
-        should be caught by other validators.
-    """
+    # WARN: This check ignores cases where the input type is not known, which
+    # should be caught by other validators.
 
     def _report_bad_value(self, input_type, node, extra=None):
         msg = "Expected type %s, found %s" % (input_type, node)

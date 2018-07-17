@@ -1,5 +1,5 @@
-py_gql.lang
-===========
+Language utilities
+==================
 
 .. module: py_gql.lang
 
@@ -8,11 +8,29 @@ py_gql.lang
     :undoc-members:
     :show-inheritance:
 
+Lexer tokens
+------------
 
-**Submodules:**
+.. module: py_gql.lang.token
 
-.. toctree::
+.. automodule:: py_gql.lang.token
+    :members:
+    :show-inheritance:
 
-   lang.token
-   lang.ast
-   lang.visitor
+Parse nodes
+-----------
+
+.. module: py_gql.lang.ast
+
+.. automodule:: py_gql.lang.ast
+    :members:
+    :show-inheritance:
+
+Visitors
+--------
+
+.. module: py_gql.lang.visitor
+
+.. automodule:: py_gql.lang.visitor
+    :members:
+    :show-inheritance:

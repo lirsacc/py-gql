@@ -29,6 +29,8 @@ _unset = object()
 class Schema(object):
     """ A GraphQL schema definition.
 
+    This is the main container for a GraphQL schema and its related types.
+
     Args:
         query_type (py_gql.schema.ObjectType):
             The root query type for the schema
@@ -153,7 +155,7 @@ class Schema(object):
             bool: ``True`` if the schema is valid
 
         Raises:
-            :class:`py_gql.exc.SchemaError` if the schema is invalid.
+            :class:`~py_gql.exc.SchemaError` if the schema is invalid.
         """
         if self._is_valid is None:
             self._is_valid = validate_schema(self)
@@ -170,7 +172,7 @@ class Schema(object):
             py_gql.schema.Type: Type instance
 
         Raises:
-            :class:`py_gql.exc.UnknownType`:
+            :class:`~py_gql.exc.UnknownType`:
                 if ``default`` is not set and the type is not found
 
         """
@@ -189,7 +191,7 @@ class Schema(object):
         a :class:`py_gql.schema.ListType` instance will be returned, containing
         the type called ``User`` found in the schema.
         If a type called ``User`` is not found in the schema, then
-        :class:`py_gql.exc.UnknownType` will be raised.
+        :class:`~py_gql.exc.UnknownType` will be raised.
 
         Args:
             ast_node (py_gql.lang.ast.Type)
@@ -198,7 +200,7 @@ class Schema(object):
             py_gql.schema.Type: Corresponding type instance
 
         Raises:
-            :class:`py_gql.exc.UnknownType`: if  any named type is not found
+            :class:`~py_gql.exc.UnknownType`: if  any named type is not found
         """
         if ast_node in self._literal_types_cache:
             return self._literal_types_cache[ast_node]

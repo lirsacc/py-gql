@@ -5,8 +5,8 @@
  * Custom stylesheet
  *
  */
-@import url("https://fonts.googleapis.com/css?family=Fira+Mono:400,500,700");
-@import url("https://fonts.googleapis.com/css?family=Fira+Sans:300,300i,400,400i,500,500i,700,700i");
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i');
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono:300,300i,400,400i,700,700i');
 
 .admonition-title {
     font-size: 1em !important;
@@ -22,6 +22,6 @@ div.admonition {
 pre,
 tt,
 code {
-    font-family: "Fira Mono", "Menlo", "Deja Vu Sans Mono",
+    font-family: "Roboto Mono", "Menlo", "Deja Vu Sans Mono",
         "Bitstream Vera Sans Mono", monospace;
 }

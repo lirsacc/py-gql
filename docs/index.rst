@@ -6,14 +6,15 @@
 Welcome to py-gql's documentation!
 ==================================
 
-Release v\ |version|
+**Release:** v\ |version|
 
 `py-gql </>`_ is an implementation of GraphQL for Python aimed at creating GraphQL servers.
 
 It supports:
 
 - Parsing the GraphQL language (Query language and SDL)
-- Building a GraphQL type schema programatically and from Schema Definition files
+- Building a GraphQL type schema programatically and from Schema Definition
+  files (including support for schema directives)
 - Validating and Executing a GraphQL request against a type schema
 
 .. note::
@@ -34,7 +35,7 @@ Documentation
 .. toctree::
    :maxdepth: 3
 
-   getting-started
+   install
    guides
    api/index
 

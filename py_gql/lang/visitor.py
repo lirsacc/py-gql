@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-""" Traverse a GraphQL AST.
+""" Visitors are the basic abstraction used to traverse a GraphQL AST.
+
+Note:
+    While the concept is similar to the one used in the reference implementation,
+    this doesn't support editing the ast, tracking of the visitor path or
+    providing shared context. You can refer to :mod:`py_gql.validation` for
+    example implementations.
 """
 
 import functools as ft
@@ -9,27 +15,19 @@ from ..exc import GraphQLError
 
 
 class SkipNode(GraphQLError):
-    """ Raise this in :meth:`Visitor.enter` to ignore all children of that node.
-    """
-
     def __init__(self):
         super(SkipNode, self).__init__("")
 
 
 class Visitor(object):
-    """ Visitor metaclass
-
-    Note:
-        This doesn't support editing the ast, tracking of the visitor
-        path or providing shared context by default like the JS reference
-        implementation.
-    """
+    """ Visitor base class. """
 
     def enter(self, node):
         """ Function called when entering a node.
 
         Raising :class:`SkipNode` in this function will lead to ignoring the
-        current node and all it's descendants.
+        current node and all it's descendants. as well as prevent running
+        :meth:`leave`.
 
         Args:
             node (py_gql.lang.ast.Node) Node being visited
@@ -318,17 +316,17 @@ _HANDLERS = {
 
 
 class DispatchingVisitor(Visitor):
-    """ Class to base specialised visitor on.
+    """ Base class for specialised visitors.
 
-    You can either:
+    You should subclass this and you can either:
 
-    - implement ``handler`` for custom method resolution
-    - implement methods named "enter_*". "leave_*" where * represents one of
-      the values in `_HANDLERS` (essentially the Python / Snake case version of
-      the node class). The method will be called on the matching node class.
+    - Implement :meth:`handler` for custom method resolution
+    - Implement methods named "enter_*". "leave_*" where * represents the node
+      class to be handled. For instance to process
+      :class:`py_gql.lang.ast.FloatValue` nodes, implement ``enter_float_value``.
 
-    If no function is found (``handler`` returns ``None``) for a node, ``enter``
-    and / or ``leave`` will noop.
+    If no function is found (:meth:`handler` returns ``None``) for a node,
+    ``enter`` and / or ``leave`` will noop.
     """
 
     def handler(self, node, stage="enter"):
@@ -359,6 +357,10 @@ class DispatchingVisitor(Visitor):
 
 class ParrallelVisitor(Visitor):
     """ Abstraction to run multiple visitor instances as one.
+
+    - All visitors are run in the order they are defined
+    - raising :class:`SkipNode` in one of them will prevent any later visitor
+      to run
 
     Args:
         *visitors (List[Visitor]): List of visitors to run

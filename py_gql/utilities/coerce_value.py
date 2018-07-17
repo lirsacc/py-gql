@@ -47,7 +47,7 @@ def coerce_value(value, type_, node=None, path=None):
         any: The coerced value
 
     Raises:
-        :class:`py_gql.exc.CoercionError`: if coercion fails
+        :class:`~py_gql.exc.CoercionError`: if coercion fails
     """
     if path is None:
         path = []
@@ -181,7 +181,7 @@ def coerce_argument_values(definition, node, variables=None):
         dict: Coerced arguments
 
     Raises:
-        :class:`py_gql.exc.CoercionError`:
+        :class:`~py_gql.exc.CoercionError`:
             if any argument value fails to coerce, required argument is
             missing, etc.
     """
@@ -247,7 +247,7 @@ def directive_arguments(definition, node, variables=None):
         is not present on the node.
 
     Raises:
-        :class:`py_gql.exc.CoercionError`:
+        :class:`~py_gql.exc.CoercionError`:
             if any directive argument value fails to coerce, required argument
             is missing, etc.
     """
@@ -281,7 +281,7 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
         dict: Coerced variables
 
     Raises:
-        :class:`py_gql.exc.VariablesCoercionError`:
+        :class:`~py_gql.exc.VariablesCoercionError`:
             if any variable cannot be coerced.
     """
     coerced, errors = {}, []

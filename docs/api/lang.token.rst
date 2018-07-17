@@ -1,8 +1,0 @@
-py_gql.lang.token
-=================
-
-.. module: py_gql.lang.token
-
-.. automodule:: py_gql.lang.token
-    :members:
-    :show-inheritance:

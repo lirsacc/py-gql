@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Validation rules from the spec.
-"""
+""" Validation rules defined in `this section
+<http://facebook.github.io/graphql/June2018/#sec-Validation>`_ of the
+specification. """
 
 from ..._string_utils import infer_suggestions, quoted_options_list
 from ..._utils import DefaultOrderedDict, OrderedDict, deduplicate
@@ -50,8 +51,8 @@ class UniqueOperationNameChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all defined operations have
     unique names. """
 
-    def __init__(self, *args, **kwargs):
-        super(UniqueOperationNameChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(UniqueOperationNameChecker, self).__init__(schema, type_info)
         self.names = set()
 
     def enter_operation_definition(self, node):
@@ -243,8 +244,8 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all defined fragments have unique
     names. """
 
-    def __init__(self, *args, **kwargs):
-        super(UniqueFragmentNamesChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(UniqueFragmentNamesChecker, self).__init__(schema, type_info)
         self._names = set()
 
     def enter_fragment_definition(self, node):
@@ -260,8 +261,8 @@ class KnownFragmentNamesChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all `...Fragment` fragment spreads
     refer to fragments defined in the same document. """
 
-    def __init__(self, *args, **kwargs):
-        super(KnownFragmentNamesChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(KnownFragmentNamesChecker, self).__init__(schema, type_info)
 
     def enter_document(self, node):
         self._fragment_names = set(
@@ -283,8 +284,8 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
     within operations, or spread within other fragments spread within
     operations. """
 
-    def __init__(self, *args, **kwargs):
-        super(NoUnusedFragmentsChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(NoUnusedFragmentsChecker, self).__init__(schema, type_info)
         self._fragments = set()
         self._used_fragments = set()
 
@@ -308,8 +309,8 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
     possibly be true: if there is a non-empty intersection of the possible
     parent types, and possible types which pass the type condition. """
 
-    def __init__(self, *args, **kwargs):
-        super(PossibleFragmentSpreadsChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(PossibleFragmentSpreadsChecker, self).__init__(schema, type_info)
         self._fragment_types = dict()
 
     def enter_document(self, node):
@@ -361,8 +362,8 @@ class NoFragmentCyclesChecker(ValidationVisitor):
     """ A GraphQL Document is only valid if fragment definitions are not cyclic.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(NoFragmentCyclesChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(NoFragmentCyclesChecker, self).__init__(schema, type_info)
         self._spreads = OrderedDict()
         self._current = None
 
@@ -507,8 +508,8 @@ class KnownDirectivesChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all `@directives` are known by the
     schema and legally positioned. """
 
-    def __init__(self, *args, **kwargs):
-        super(KnownDirectivesChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(KnownDirectivesChecker, self).__init__(schema, type_info)
         self._ancestors = []
 
     def _enter_ancestor(self, node):
@@ -618,11 +619,7 @@ class KnownDirectivesChecker(ValidationVisitor):
 
 class UniqueDirectivesPerLocationChecker(ValidationVisitor):
     """ A GraphQL document is only valid if all directives at a given location
-    are uniquely named.
-
-    Warning:
-        Type system definition locations are not implemented.
-    """
+    are uniquely named. """
 
     def _validate_unique_directive_names(self, node):
         seen = set()
@@ -817,8 +814,8 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
     uniquely named.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(UniqueInputFieldNamesChecker, self).__init__(*args, **kwargs)
+    def __init__(self, schema, type_info):
+        super(UniqueInputFieldNamesChecker, self).__init__(schema, type_info)
         self._stack = []
 
     def enter_object_value(self, node):

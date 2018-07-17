@@ -77,7 +77,7 @@ def parse(source, **kwargs):
         py_gql.lang.ast.Document: Parsed document
 
     Raises:
-        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+        :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
 
     """
     return Parser(source, **kwargs).parse_document()
@@ -100,7 +100,7 @@ def parse_value(source, **kwargs):
         py_gql.lang.ast.Value: Parsed value
 
     Raises:
-        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+        :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
     parser.expect(_token.SOF)
@@ -124,7 +124,7 @@ def parse_type(source, **kwargs):
         py_gql.lang.ast.Type: Parsed type
 
     Raises:
-        :class:`py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+        :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
     parser.expect(_token.SOF)
@@ -149,7 +149,7 @@ class Parser(object):
 
     Call :meth:`parse_document` to parse a GraphQL document.
 
-    All ``parse_*`` methods will raise :class:`py_gql.exc.GraphQLSyntaxError`
+    All ``parse_*`` methods will raise :class:`~py_gql.exc.GraphQLSyntaxError`
     if a syntax error is encountered.
 
     Args:
@@ -255,7 +255,7 @@ class Parser(object):
             py_gql.lang.token.Token: token at ``count`` past current position
 
         Raises:
-            :class:`py_gql.exc.UnexpectedEOF`:
+            :class:`~py_gql.exc.UnexpectedEOF`:
                 if there is not enough tokens left in the lexer.
         """
         delta = 1 if self._window is None else (count - len(self._window))
@@ -272,7 +272,7 @@ class Parser(object):
             py_gql.lang.token.Token: next token
 
         Raises:
-            :class:`py_gql.exc.UnexpectedEOF`:
+            :class:`~py_gql.exc.UnexpectedEOF`:
                 if there is not enough tokens left in the lexer.
         """
         self._advance_window()
@@ -281,7 +281,7 @@ class Parser(object):
 
     def expect(self, kind):
         """ Advance the parser and check that the next token is of the
-        given token class otherwise raises :class:`py_gql.exc.UnexpectedToken`.
+        given token class otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
         Args:
             kind: Expected token kind. Must be a subclass of
@@ -302,7 +302,7 @@ class Parser(object):
 
     def expect_keyword(self, keyword):
         """ Advance the parser and check that the next token is a Name with
-        the given value otherwise raises :class:`py_gql.exc.UnexpectedToken`.
+        the given value otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
         Args:
             keyword (str): Expected keyword
@@ -356,7 +356,7 @@ class Parser(object):
             List[py_gql.lang.ast.Node]:
 
         Raises:
-            :class:`py_gql.exc.UnexpectedToken`:
+            :class:`~py_gql.exc.UnexpectedToken`:
                 if opening, entry or closing token do not match.
         """
         self.expect(open_kind)
@@ -386,7 +386,7 @@ class Parser(object):
             List[py_gql.lang.ast.Node]:
 
         Raises:
-            :class:`py_gql.exc.UnexpectedToken`:
+            :class:`~py_gql.exc.UnexpectedToken`:
                 if opening, entry or closing token do not match.
         """
         self.expect(open_kind)
@@ -411,7 +411,7 @@ class Parser(object):
             List[py_gql.lang.ast.Node]:
 
         Raises:
-            :class:`py_gql.exc.UnexpectedToken`:
+            :class:`~py_gql.exc.UnexpectedToken`:
                 if opening, entry or closing token do not match.
         """
         items = []

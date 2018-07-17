@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 # pylint: disable = too-many-ancestors
-""" All exceptions for this library are defined here.
+""" All exceptions for this library are defined in the :mod:`py_gql.exc`
+module.
 
 Exception classes that expose a ``to_dict`` method, such as
 :class:`GraphQLLocatedError` or :class:`ResolverError` should be suitable for
 exposing to consumers of your GraphQL API.
 """
 
-from ._utils import cached_property
 from ._string_utils import highlight_location, index_to_loc, stringify_path
+from ._utils import cached_property
 
 
 class GraphQLError(Exception):

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 The :mod:`py_gql.lang` module is responsible for parsing and operating on
-the GraphQL language and source files.
+the GraphQL language and source files. Unless implementing custom tooling, you
+should not have to interact too much with this module.
 """
 
 # flake8: noqa
@@ -21,4 +22,4 @@ from .parser import Parser, parse, parse_type, parse_value
 from .printer import print_ast
 
 
-__all__ = ("Lexer", "Parser", "parse", "parse_type", "parse_value", "print_ast")
+__all__ = ("parse", "parse_type", "parse_value", "Parser", "Lexer", "print_ast")

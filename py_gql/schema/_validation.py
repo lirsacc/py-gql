@@ -39,7 +39,7 @@ def validate_schema(schema):
         bool: Whether or not the schema is valid
 
     Raises:
-        :class:`py_gql.exc.SchemaError` if the schema is invalid.
+        :class:`~py_gql.exc.SchemaError` if the schema is invalid.
     """
     for type_ in schema.types.values():
         _assert(

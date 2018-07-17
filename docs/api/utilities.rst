@@ -1,5 +1,5 @@
-py_gql.utilities
-================
+Utilities
+=========
 
 .. module: py_gql.utilities
 

@@ -1,22 +1,16 @@
-py_gql.validation
-=================
+Query validation
+================
 
 .. module: py_gql.validation
 
 .. automodule:: py_gql.validation
     :members:
-    :show-inheritance:
 
-.. autoattribute:: py_gql.validation.SPECIFIED_RULES
-    :annotation:
+Default validation rules
+------------------------
 
-    This is the list of :class:`~py_gql.validation.ValidationVisitor`
-    encoding all the validation rules defined in `this section
-    <http://facebook.github.io/graphql/June2018/#sec-Validation>`_ of the Spec.
+.. module: py_gql.validation.rules
 
+.. automodule:: py_gql.validation.rules
+    :members:
 
-**Submodules:**
-
-.. toctree::
-
-    validation.rules

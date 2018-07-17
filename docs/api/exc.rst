@@ -1,4 +1,4 @@
-py_gql.exc
+Exceptions
 ==========
 
 .. module: py_gql.exc

@@ -31,9 +31,9 @@ def value_from_ast(node, type_, variables=None):
     Raises:
         :py:class:`TypeError`:
             when node is not a value node
-        :class:`py_gql.exc.InvalidValue`:
+        :class:`~py_gql.exc.InvalidValue`:
             if the value cannot be converted
-        :class:`py_gql.exc.UnknownVariable`:
+        :class:`~py_gql.exc.UnknownVariable`:
             if a variable is required and doesn't exist
     """
     kind = type(node)

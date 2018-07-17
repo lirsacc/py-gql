@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-All the valid source tokens found in a valid GraphQL document (as
-described in `this document
-<http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_)
-can be encoded as an instance of :class:`Token`.
+All the valid source tokens found in GraphQL documents (as described in `this
+document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_) are
+encoded as instances of :class:`Token`.
 """
 
 

@@ -46,7 +46,7 @@ class ValidationResult(object):
     """
 
     def __init__(self, errors):
-        #: errors: List[:class:`py_gql.exc.ValidationError`]
+        #: errors: List[:class:`~py_gql.exc.ValidationError`]
         self.errors = errors or []
 
     def __bool__(self):
