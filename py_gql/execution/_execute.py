@@ -441,7 +441,6 @@ def resolve_field(
     if cache_key not in ctx.resolvers:
 
         resolver = field_def.resolve or default_resolver
-        complete = ft.partial(complete_value, ctx, field_def.type, nodes, path)
 
         def _unwrap(value):
             value = lazy(value)
@@ -456,13 +455,18 @@ def resolve_field(
                 ctx.executor.submit(resolver, root, args, context, info)
             )
             if _concurrency.is_deferred(resolved):
+                complete = ft.partial(
+                    complete_value, ctx, field_def.type, nodes, info.path
+                )
                 return _concurrency.chain(
                     resolved,
                     lazy,
                     complete,
                     factory=ctx.executor.future_factory,
                 )
-            return complete(resolved)
+            return complete_value(
+                ctx, field_def.type, nodes, info.path, resolved
+            )
 
         if ctx.middlewares:
             resolve = apply_middlewares(resolve, ctx.middlewares)
@@ -529,8 +533,18 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         return None
 
     if kind is ListType:
-        return _complete_list_value(
-            ctx, field_type.type, nodes, resolved_value, path
+        if not is_iterable(resolved_value, False):
+            raise RuntimeError(
+                'Field "%s" is a list type and resolved value '
+                "should be iterable" % stringify_path(path)
+            )
+
+        return _concurrency.all_(
+            [
+                complete_value(ctx, field_type.type, nodes, path + [i], entry)
+                for i, entry in enumerate(resolved_value)
+            ],
+            factory=ctx.executor.future_factory,
         )
 
     if kind is ScalarType:
@@ -556,59 +570,38 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
             return serialized
 
     if kind in (ObjectType, InterfaceType, UnionType):
-        return _complete_object_value(
-            ctx, field_type, nodes, resolved_value, path
-        )
-
-
-def _complete_list_value(ctx, item_type, nodes, list_value, path):
-    if not is_iterable(list_value, False):
-        raise RuntimeError(
-            'Field "%s" is a list type and resolved value '
-            "should be iterable" % stringify_path(path)
-        )
-
-    return _concurrency.all_(
-        [
-            complete_value(ctx, item_type, nodes, path + [i], entry)
-            for i, entry in enumerate(list_value)
-        ],
-        factory=ctx.executor.future_factory,
-    )
-
-
-def _complete_object_value(ctx, field_type, nodes, object_value, path):
-    field_type_type = type(field_type)
-    if field_type_type in (InterfaceType, UnionType):
-        runtime_type = _resolve_type(
-            object_value, ctx.context, ctx.schema, field_type
-        )
-
-        if isinstance(runtime_type, six.string_types):
-            runtime_type = ctx.schema.get_type(runtime_type, None)
-
-        if not isinstance(runtime_type, ObjectType):
-            raise RuntimeError(
-                'Abstract type "%s" must resolve to an ObjectType at runtime '
-                'for field "%s". Received "%s".'
-                % (field_type, path, runtime_type)
+        if kind in (InterfaceType, UnionType):
+            runtime_type = _resolve_type(
+                resolved_value, ctx.context, ctx.schema, field_type
             )
 
-        # Backup check in case of badly implemented `resolve_type`,
-        # `is_type_of`
-        if not ctx.schema.is_possible_type(field_type, runtime_type):
-            raise RuntimeError(
-                'Runtime ObjectType "%s" is not a possible type for '
-                'field "%s" of type "%s".'
-                % (runtime_type, stringify_path(path), field_type)
-            )
+            if isinstance(runtime_type, six.string_types):
+                runtime_type = ctx.schema.get_type(runtime_type, None)
 
-    else:
-        runtime_type = field_type
+            if not isinstance(runtime_type, ObjectType):
+                raise RuntimeError(
+                    'Abstract type "%s" must resolve to an ObjectType at runtime '
+                    'for field "%s". Received "%s".'
+                    % (field_type, path, runtime_type)
+                )
+            # Backup check in case of badly implemented `resolve_type`,
+            # `is_type_of`
+            if not ctx.schema.is_possible_type(field_type, runtime_type):
+                raise RuntimeError(
+                    'Runtime ObjectType "%s" is not a possible type for '
+                    'field "%s" of type "%s".'
+                    % (runtime_type, stringify_path(path), field_type)
+                )
+        else:
+            runtime_type = field_type
 
-    return _execute_selections(
-        ctx, list(_sub_selections(nodes)), runtime_type, object_value, path
-    )
+        return _execute_selections(
+            ctx,
+            list(_sub_selections(nodes)),
+            runtime_type,
+            resolved_value,
+            path,
+        )
 
 
 def _sub_selections(nodes):
