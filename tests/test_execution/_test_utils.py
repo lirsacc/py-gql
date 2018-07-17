@@ -73,6 +73,8 @@ def check_execution(
 
 # Default executors under tests
 TESTED_EXECUTORS = [
-    (SyncExecutor, {}),
-    (ThreadPoolExecutor, {"max_workers": 10}),
+    pytest.param(SyncExecutor, {}, id="SyncExecutor"),
+    pytest.param(
+        ThreadPoolExecutor, {"max_workers": 10}, id="ThreadPoolExecutor"
+    ),
 ]

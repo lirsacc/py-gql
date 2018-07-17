@@ -6,6 +6,8 @@ from py_gql._graphql import graphql
 from py_gql._string_utils import stringify_path
 from py_gql.execution.middleware import GraphQLMiddleware, apply_middlewares
 
+from ._test_utils import TESTED_EXECUTORS
+
 
 def test_apply_middlewares():
     def a(n, *a, **k):
@@ -63,14 +65,21 @@ query HeroNameAndFriendsQuery {
 """
 
 
-def test_function_middleware(starwars_schema):
+@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
+def test_function_middleware(exe_cls, exe_kwargs, starwars_schema):
     log = []
 
     def path_collector_one_way(next_, root, args, context, info):
         log.append("> %s" % stringify_path(info.path))
         return next_(root, args, context, info)
 
-    graphql(starwars_schema, HERO_QUERY, middlewares=[path_collector_one_way])
+    with exe_cls(**exe_kwargs) as executor:
+        graphql(
+            starwars_schema,
+            HERO_QUERY,
+            middlewares=[path_collector_one_way],
+            executor=executor,
+        )
 
     assert log == [
         "> hero",
@@ -83,7 +92,8 @@ def test_function_middleware(starwars_schema):
     ]
 
 
-def test_generator_middleware(starwars_schema):
+@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
+def test_generator_middleware(exe_cls, exe_kwargs, starwars_schema):
     log = []
 
     def path_collector_one_way(next_, root, args, context, info):
@@ -91,7 +101,13 @@ def test_generator_middleware(starwars_schema):
         yield next_(root, args, context, info)
         log.append("< %s" % stringify_path(info.path))
 
-    graphql(starwars_schema, HERO_QUERY, middlewares=[path_collector_one_way])
+    with exe_cls(**exe_kwargs) as executor:
+        graphql(
+            starwars_schema,
+            HERO_QUERY,
+            middlewares=[path_collector_one_way],
+            executor=executor,
+        )
 
     assert log == [
         "> hero",
@@ -121,9 +137,16 @@ class PathCollectorMiddleware(GraphQLMiddleware):
         self.log.append("< %s" % stringify_path(info.path))
 
 
-def test_class_based_middleware(starwars_schema):
+@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
+def test_class_based_middleware(exe_cls, exe_kwargs, starwars_schema):
     path_collector = PathCollectorMiddleware()
-    graphql(starwars_schema, HERO_QUERY, middlewares=[path_collector])
+    with exe_cls(**exe_kwargs) as executor:
+        graphql(
+            starwars_schema,
+            HERO_QUERY,
+            middlewares=[path_collector],
+            executor=executor,
+        )
 
     assert path_collector.log == [
         "> hero",

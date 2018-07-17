@@ -50,7 +50,7 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
 
     def on_field_start(self, info, **_):
         start = dt.datetime.utcnow()
-        self.fields[str(info.path)] = {
+        self.fields[tuple(info.path)] = {
             "path": list(info.path),
             "parentType": info.parent_type.name,
             "fieldName": info.field_def.name,
@@ -61,8 +61,8 @@ class ApolloTracer(GraphQLTracer, GraphQLExtension):
 
     def on_field_end(self, info, **_):
         end = dt.datetime.utcnow()
-        start = self.fields[str(info.path)].pop("start")
-        self.fields[str(info.path)]["duration"] = _nanoseconds(end - start)
+        start = self.fields[tuple(info.path)].pop("start")
+        self.fields[tuple(info.path)]["duration"] = _nanoseconds(end - start)
 
     def name(self):
         return "tracing"
