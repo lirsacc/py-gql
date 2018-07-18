@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 
 import invoke
 
@@ -13,10 +14,26 @@ def _join(cmd):
 
 
 @invoke.task
-def deps(ctx):
+def deps(ctx, upgrade=False):
     """ Install dependencies """
+    requirements = (
+        "dev-requirements.txt"
+        if sys.version >= "3"
+        else "py2-dev-requirements.txt"
+    )
     with ctx.cd(ROOT):
-        ctx.run("pip install -r dev-requirements.txt", echo=True)
+        ctx.run(
+            _join(
+                [
+                    "CYTHON_DISABLE=1",
+                    "pip",
+                    "install",
+                    "--upgrade" if upgrade else None,
+                    "-r %s" % requirements,
+                ]
+            ),
+            echo=True,
+        )
 
 
 @invoke.task

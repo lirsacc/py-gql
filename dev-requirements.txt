@@ -3,17 +3,18 @@
 black == 18.6b2
 flake8 ~= 3.5
 flake8-bugbear ~= 18.2
-flake8-import-order ~= 0.17
-invoke ~= 1.0
+flake8-import-order ~= 0.18
+invoke ~= 1.1
 isort ~= 4.3
-pylint ~= 1.9
+pylint ~= 2.0
+pytest ~= 3.6
+pytest-cov ~= 2.5
+pytest-mock ~= 1.10
 recommonmark ~= 0.4
 sphinx ~= 1.7
 tox ~= 3.0
 
 # Fix conflict with flake8
 pycodestyle < 2.4
-
--r test-requirements.txt
 
 -e .
