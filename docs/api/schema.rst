@@ -10,8 +10,6 @@ The schema object
 
 .. autoclass:: Schema
 
-.. autofunction:: print_schema
-
 Defining Types
 --------------
 

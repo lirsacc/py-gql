@@ -6,46 +6,36 @@ from py_gql._string_utils import dedent
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
-from py_gql.schema import (
-    UUID,
-    Field,
-    ObjectType,
-    String,
-    print_schema,
-    schema_from_ast,
-)
-from py_gql.schema.schema_directive import SchemaDirective
+from py_gql.schema import UUID, Field, ObjectType, String
+from py_gql.schema.builders import SchemaDirective, build_schema_from_ast
 
 
 def test_object_type_extension():
     assert (
-        print_schema(
-            schema_from_ast(
-                """
-                type Query {
-                    foo: Object
-                }
+        build_schema_from_ast(
+            """
+            type Query {
+                foo: Object
+            }
 
-                interface IFace1 {
-                    one: String
-                }
+            interface IFace1 {
+                one: String
+            }
 
-                type Object implements IFace1 {
-                    one: String
-                    two: Int
-                }
+            type Object implements IFace1 {
+                one: String
+                two: Int
+            }
 
-                interface IFace2 {
-                    three: String
-                }
+            interface IFace2 {
+                three: String
+            }
 
-                extend type Object implements IFace2 {
-                    three: String
-                }
-                """
-            ),
-            indent="    ",
-        )
+            extend type Object implements IFace2 {
+                three: String
+            }
+            """
+        ).to_string()
         == dedent(
             """
             interface IFace1 {
@@ -72,7 +62,7 @@ def test_object_type_extension():
 
 def test_injected_object_type_extension():
     Foo = ObjectType("Foo", [Field("one", String)])
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo: Foo
@@ -82,9 +72,9 @@ def test_injected_object_type_extension():
             two: Int
         }
         """,
-        known_types=[Foo],
+        additional_types=[Foo],
     )
-    assert print_schema(schema, indent="    ") == dedent(
+    assert schema.to_string() == dedent(
         """
         type Foo {
             one: String
@@ -102,7 +92,7 @@ def test_injected_object_type_extension():
 
 def test_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -117,7 +107,7 @@ def test_object_type_extension_duplicate_field():
 
 def test_object_type_extension_already_implemented_interface():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo: String }
             interface IFace1 { one: String }
@@ -133,7 +123,7 @@ def test_object_type_extension_already_implemented_interface():
 
 def test_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -151,24 +141,21 @@ def test_object_type_extension_bad_extension():
 
 def test_interface_type_extension():
     assert (
-        print_schema(
-            schema_from_ast(
-                """
-                type Query {
-                    foo: IFace
-                }
+        build_schema_from_ast(
+            """
+            type Query {
+                foo: IFace
+            }
 
-                interface IFace {
-                    one: String
-                }
+            interface IFace {
+                one: String
+            }
 
-                extend interface IFace {
-                    two: String
-                }
-                """
-            ),
-            indent="    ",
-        )
+            extend interface IFace {
+                two: String
+            }
+            """
+        ).to_string()
         == dedent(
             """
             interface IFace {
@@ -186,7 +173,7 @@ def test_interface_type_extension():
 
 def test_interface_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -201,7 +188,7 @@ def test_interface_type_extension_duplicate_field():
 
 def test_interface_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -219,26 +206,23 @@ def test_interface_type_extension_bad_extension():
 
 def test_enum_extension():
     assert (
-        print_schema(
-            schema_from_ast(
-                """
-                type Query {
-                    foo: Foo
-                }
+        build_schema_from_ast(
+            """
+            type Query {
+                foo: Foo
+            }
 
-                enum Foo {
-                    BLUE
-                    GREEN
-                    RED
-                }
+            enum Foo {
+                BLUE
+                GREEN
+                RED
+            }
 
-                extend enum Foo {
-                    YELLOW
-                }
-                """
-            ),
-            indent="    ",
-        )
+            extend enum Foo {
+                YELLOW
+            }
+            """
+        ).to_string()
         == dedent(
             """
             enum Foo {
@@ -258,7 +242,7 @@ def test_enum_extension():
 
 def test_enum_extension_duplicate_value():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: Foo
@@ -284,7 +268,7 @@ def test_enum_extension_duplicate_value():
 
 def test_enum_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: Foo
@@ -311,24 +295,21 @@ def test_enum_extension_bad_extension():
 
 def test_input_object_type_extension():
     assert (
-        print_schema(
-            schema_from_ast(
-                """
-                type Query {
-                    foo(in: Foo): String
-                }
+        build_schema_from_ast(
+            """
+            type Query {
+                foo(in: Foo): String
+            }
 
-                input Foo {
-                    one: Int
-                }
+            input Foo {
+                one: Int
+            }
 
-                extend input Foo {
-                    two: String
-                }
-                """
-            ),
-            indent="    ",
-        )
+            extend input Foo {
+                two: String
+            }
+            """
+        ).to_string()
         == dedent(
             """
             input Foo {
@@ -346,7 +327,7 @@ def test_input_object_type_extension():
 
 def test_input_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -361,7 +342,7 @@ def test_input_object_type_extension_duplicate_field():
 
 def test_input_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -379,28 +360,25 @@ def test_input_object_type_extension_bad_extension():
 
 def test_union_type_extension():
     assert (
-        print_schema(
-            schema_from_ast(
-                """
-                type Query {
-                    foo: Foo
-                }
+        build_schema_from_ast(
+            """
+            type Query {
+                foo: Foo
+            }
 
-                type Bar {
-                    bar: Int
-                }
+            type Bar {
+                bar: Int
+            }
 
-                type Baz {
-                    baz: Int
-                }
+            type Baz {
+                baz: Int
+            }
 
-                union Foo = Bar
+            union Foo = Bar
 
-                extend union Foo = Baz
-                """
-            ),
-            indent="    ",
-        )
+            extend union Foo = Baz
+            """
+        ).to_string()
         == dedent(
             """
             type Bar {
@@ -423,7 +401,7 @@ def test_union_type_extension():
 
 def test_union_type_extension_duplicate_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: Foo
@@ -451,7 +429,7 @@ def test_union_type_extension_duplicate_type():
 
 def test_union_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: Foo
@@ -487,7 +465,7 @@ def test_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @protected on SCALAR
 
@@ -502,7 +480,7 @@ def test_scalar_type_extension():
         schema_directives={"protected": ProtectedDirective},
     )
 
-    assert print_schema(schema, indent="    ") == dedent(
+    assert schema.to_string() == dedent(
         """
         directive @protected on SCALAR
 
@@ -528,7 +506,7 @@ def test_injected_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @protected on SCALAR
 
@@ -538,13 +516,11 @@ def test_injected_scalar_type_extension():
 
         extend scalar UUID @protected
         """,
-        known_types=[UUID],
+        additional_types=[UUID],
         schema_directives={"protected": ProtectedDirective},
     )
 
-    assert print_schema(
-        schema, indent="    ", include_descriptions=False
-    ) == dedent(
+    assert schema.to_string(include_descriptions=False) == dedent(
         """
         directive @protected on SCALAR
 
@@ -569,7 +545,7 @@ def test_injected_scalar_type_extension():
 
 def test_raises_on_extending_specified_scala():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             directive @protected on SCALAR
 
@@ -581,11 +557,11 @@ def test_raises_on_extending_specified_scala():
             """
         )
 
-    assert str(exc_info.value) == "Cannot extend specified type String"
+    assert str(exc_info.value) == 'Cannot extend specified type "String"'
 
 
 def test_schema_extension():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query { a: Boolean }
 
@@ -605,7 +581,7 @@ def test_schema_extension():
 
 
 def test_schema_extension_directive():
-    schema_from_ast(
+    build_schema_from_ast(
         """
         directive @onSchema on SCHEMA
 
@@ -621,28 +597,3 @@ def test_schema_extension_directive():
         }
         """
     )
-
-
-def test_schema_extension_duplicate_directive():
-    with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
-            """
-            directive @onSchema on SCHEMA
-
-            type Foo { foo: String }
-            type Bar { bar: String }
-
-            schema @onSchema {
-                query: Foo
-            }
-
-            extend schema @onSchema {
-                query: Bar
-            }
-            """
-        )
-
-    assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 11}],
-        "message": 'Directive "@onSchema" already applied to the schema',
-    }

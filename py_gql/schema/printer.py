@@ -10,7 +10,6 @@ from ..utilities import ast_node_from_value
 from .directives import DEFAULT_DEPRECATION, SPECIFIED_DIRECTIVES
 from .introspection import is_introspection_type
 from .scalars import SPECIFIED_SCALAR_TYPES, String
-from .schema import Schema
 from .types import (
     EnumType,
     InputObjectType,
@@ -21,82 +20,47 @@ from .types import (
 )
 
 
-def print_schema(
-    schema,
-    include_descriptions=True,
-    description_format="block",
-    indent="  ",
-    include_introspection_types=False,
-):
-    """ Print a GraphQL schema object in a standard SDL formatted string.
-
+class SchemaPrinter(object):
+    """
     Args:
-        schema (py_gql.schema.Schema): Schema to format
+        indent (Union[str, int]): Indent character or number of spaces
 
         include_descriptions (bool):
-            Control how descriptions are printed.
-            Falsy values disable the inclusion of descriptions while truthy
-            values enable including descriptions as comments above the related type.
+            If ``True`` include descriptions in the output
 
         description_format ("comments"|"block"):
-            Control how descriptions are formatted. ``"comments"`` is the old
-            standard and will be compatible with most GraphQL parsers while
-            ``"block"`` is part of the most recent release and includes
-            descriptions as block strings that can be extracted according to
-            the spec.
+            Control how descriptions are formatted. ``"comments"`` is the
+            old standard and will be compatible with most GraphQL parsers
+            while ``"block"`` is part of the most recent specification and
+            includes descriptions as block strings that can be extracted
+            according to the specification.
 
-        include_descriptions (bool):
-            If ``True``, include introspection types in the output.
-
-        indent (str):
-            Indent character, defaults to 4 spaces.
-
-    Returns:
-        str: Formatted GraphQL schema
+        include_introspection (bool):
+            If ``True``, include introspection types in the output
     """
-    assert isinstance(schema, Schema), "Expected Schema object"
-    return SchemaPrinter(
-        include_descriptions=include_descriptions,
-        description_format=description_format,
-        indent=indent,
-        include_introspection_types=include_introspection_types,
-    )(schema)
 
+    __slots__ = (
+        "indent",
+        "include_descriptions",
+        "description_format",
+        "include_introspection",
+    )
 
-class SchemaPrinter(object):
     def __init__(
         self,
+        indent=4,
         include_descriptions=True,
         description_format="block",
-        indent="  ",
-        include_introspection_types=False,
+        include_introspection=False,
     ):
-        """
-        Args:
-            schema (py_gql.schema.Schema): Schema to format
-
-            include_descriptions (bool):
-                Control how descriptions are printed.
-                Falsy values disable the inclusion of descriptions while truthy
-                values enable including descriptions as comments above the related type.
-
-            description_format ("comments"|"block"):
-                Control how descriptions are formatted. ``"comments"`` is the old
-                standard and will be compatible with most GraphQL parsers while
-                ``"block"`` is part of the most recent release and includes
-                descriptions as block strings that can be extracted according to
-                the spec.
-
-            include_descriptions (bool):
-                If ``True``, include introspection types in the output.
-
-            indent (str):
-                Indent character
-        """
         self.include_descriptions = include_descriptions
         self.description_format = description_format
-        self.indent = indent
-        self.include_introspection_types = include_introspection_types
+        if isinstance(indent, int):
+            self.indent = indent * " "
+        else:
+            self.indent = indent
+
+        self.include_introspection = include_introspection
 
     def __call__(self, schema):
         """
@@ -121,7 +85,7 @@ class SchemaPrinter(object):
                 if (
                     t not in SPECIFIED_SCALAR_TYPES
                     and (
-                        self.include_introspection_types
+                        self.include_introspection
                         or not is_introspection_type(t)
                     )
                 )
@@ -134,9 +98,7 @@ class SchemaPrinter(object):
             + [
                 self.print_directive(d)
                 for d in (
-                    SPECIFIED_DIRECTIVES
-                    if self.include_introspection_types
-                    else []
+                    SPECIFIED_DIRECTIVES if self.include_introspection else []
                 )
             ]
             + [self.print_directive(d) for d in directives]
@@ -146,7 +108,7 @@ class SchemaPrinter(object):
         return "\n\n".join((p for p in parts if p)) + "\n"
 
     def print_description(self, definition, depth=0, first_in_block=True):
-        """ Format a dobject description according to current configuration.
+        """ Format an object description according to current configuration.
 
         Args:
             definitions (any): Described object
@@ -184,7 +146,7 @@ class SchemaPrinter(object):
             first = lines[0]
 
             if len(lines) == 1 and len(first) < 70 and not first.endswith('"'):
-                body = _escape_triple_quotes(first)
+                body = first.replace('"""', '\\"""')
             else:
                 has_leading_whitespace = leading_whitespace(first)
                 body = (
@@ -198,7 +160,7 @@ class SchemaPrinter(object):
                                 indent
                                 if (i > 0 or not has_leading_whitespace)
                                 else "",
-                                _escape_triple_quotes(line),
+                                line.replace('"""', '\\"""'),
                             )
                             for i, line in enumerate(lines)
                         ]
@@ -213,10 +175,9 @@ class SchemaPrinter(object):
                 body,
             )
 
-        else:
-            raise RuntimeError(
-                "Invalid description format %s" % self.description_format
-            )
+        raise ValueError(
+            "Invalid description format %s" % self.description_format
+        )
 
     def print_deprecated(self, field_or_enum_value):
         if not field_or_enum_value.deprecated:
@@ -404,7 +365,3 @@ def _schema_definition(schema, indent):
         )
 
     return "schema {\n%s\n}" % ("\n".join(operation_types))
-
-
-def _escape_triple_quotes(value):
-    return value.replace('"""', '\\"""')

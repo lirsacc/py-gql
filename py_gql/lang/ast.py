@@ -807,7 +807,11 @@ class InputObjectTypeDefinition(TypeDefinition):
         self.description = description
 
 
-class SchemaExtension(TypeSystemDefinition):
+class TypeSystemExtension(TypeSystemDefinition):
+    pass
+
+
+class SchemaExtension(TypeSystemExtension):
     __slots__ = ("source", "loc", "directives", "operation_types")
 
     def __init__(
@@ -823,7 +827,7 @@ class SchemaExtension(TypeSystemDefinition):
         self.loc = loc
 
 
-class TypeExtension(TypeSystemDefinition):
+class TypeExtension(TypeSystemExtension):
     pass
 
 

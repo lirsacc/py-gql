@@ -3,6 +3,8 @@
 The :mod:`py_gql.schema` module exposes all the necessary classes and
 functions to programatically creating, validating and inspecting GraphQL
 schemas against which you can execute queries.
+
+isort:skip_file
 """
 
 # flake8: noqa
@@ -34,5 +36,3 @@ from .types import (
 from .scalars import Int, Float, ID, UUID, String, Boolean, RegexType
 from .directives import IncludeDirective, SkipDirective, DeprecatedDirective
 from .schema import Schema
-from .printer import print_schema
-from ._schema_from_ast import schema_from_ast

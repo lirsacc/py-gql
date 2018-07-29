@@ -5,15 +5,13 @@ https://swapi.co using no external dependency.
 """
 
 import os
-from flask import Flask, Response, request, jsonify
 
-from py_gql import graphql, ThreadPoolExecutor
-from py_gql.schema import print_schema
+from flask import Flask, Response, jsonify, request
+from py_gql import ThreadPoolExecutor, graphql
 from py_gql.utilities.tracers import ApolloTracer
-
 from schema import schema
 
-SCHEMA_SDL = print_schema(schema)
+SCHEMA_SDL = schema.to_string()
 EXECUTOR = ThreadPoolExecutor(max_workers=20)
 
 with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:

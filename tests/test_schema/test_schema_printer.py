@@ -21,7 +21,10 @@ from py_gql.schema import (
     String,
     UnionType,
 )
-from py_gql.schema.printer import print_schema
+
+
+def print_schema(schema, *args, **kwargs):
+    return schema.to_string(*args, **kwargs)
 
 
 def _single_field_schema(*args, **opts):
@@ -375,14 +378,14 @@ def test_description_has_leading_space():
 
 def test_introspection_schema(fixture_file):
     assert print_schema(
-        Schema(), indent="  ", include_introspection_types=True
+        Schema(), indent=2, include_introspection=True
     ) == fixture_file("introspection-schema.graphql")
 
 
 def test_introspection_schema_comments(fixture_file):
     assert print_schema(
         Schema(),
-        indent="  ",
-        include_introspection_types=True,
+        indent=2,
+        include_introspection=True,
         description_format="comments",
     ) == fixture_file("intropsection-schema-comments.graphql")

@@ -306,11 +306,7 @@ class SDLError(GraphQLLocatedError):
     pass
 
 
-class ExtensionError(SDLError):
-    pass
-
-
-class TypeExtensionError(ExtensionError):
+class TypeExtensionError(SDLError):
     pass
 
 

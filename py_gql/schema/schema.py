@@ -8,6 +8,7 @@ from ..lang import ast as _ast
 from ._validation import validate_schema
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import __Schema__
+from .printer import SchemaPrinter
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
@@ -318,6 +319,46 @@ py_gql.schema.types.InterfaceType]):
         return (is_abstract_type(rhs) and self.is_possible_type(rhs, lhs)) or (
             is_abstract_type(lhs) and self.is_possible_type(lhs, rhs)
         )
+
+    def to_string(
+        self,
+        indent=4,
+        include_descriptions=True,
+        description_format="block",
+        include_introspection=False,
+        cls=SchemaPrinter,
+    ):
+        """ Format the schema as a string
+
+        Args:
+            indent (Union[str, int]): Indent character or number of spaces
+
+            include_descriptions (bool):
+                If ``True`` include descriptions in the output
+
+            description_format ("comments"|"block"):
+                Control how descriptions are formatted. ``"comments"`` is the
+                old standard and will be compatible with most GraphQL parsers
+                while ``"block"`` is part of the most recent specification and
+                includes descriptions as block strings that can be extracted
+                according to the specification.
+
+            include_introspection (bool):
+                If ``True``, include introspection types in the output
+
+            cls (callable): Custom formatter
+                Use this to customize the behaviour, by default this uses
+                :class:`py_gql.schema.printer.SchemaPrinter`.
+
+        Returns:
+            str: Formatted GraphQL schema
+        """
+        return cls(
+            indent=indent,
+            include_descriptions=include_descriptions,
+            description_format=description_format,
+            include_introspection=include_introspection,
+        )(self)
 
 
 def _build_type_map(types, _type_map=None):

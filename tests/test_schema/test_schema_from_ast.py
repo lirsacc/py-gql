@@ -6,18 +6,19 @@ from py_gql._string_utils import dedent
 from py_gql.exc import SDLError
 from py_gql.execution import execute
 from py_gql.lang import parse
-from py_gql.schema import UUID, print_schema, schema_from_ast
+from py_gql.schema import UUID
+from py_gql.schema.builders import build_schema_from_ast
 from py_gql.schema.directives import SPECIFIED_DIRECTIVES
 
 
 def _check(schema):
-    s = schema_from_ast(schema)
-    assert print_schema(s, indent="    ") == dedent(schema)
+    s = build_schema_from_ast(schema)
+    assert s.to_string() == dedent(schema)
     return s
 
 
 def test_built_schema_is_executable():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         parse(
             """
             type Query {
@@ -33,7 +34,7 @@ def test_built_schema_is_executable():
 
 
 def test_accepts_strings():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             str: String
@@ -97,7 +98,7 @@ def test_descriptions_supports():
 
 
 def test_specified_directives_are_enforced():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @foo(arg: Int) on FIELD
 
@@ -111,7 +112,7 @@ def test_specified_directives_are_enforced():
 
 
 def test_specified_directives_can_be_overriden():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @skip on FIELD
         directive @include on FIELD
@@ -273,7 +274,7 @@ def test_union():
 
 
 def test_executing_union_default_resolve_type():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             fruits: [Fruit]
@@ -319,7 +320,7 @@ def test_executing_union_default_resolve_type():
 
 
 def test_executing_interface_default_resolve_type():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             characters: [Character]
@@ -542,7 +543,7 @@ def test_supports_deprecated():
 
 
 def test_root_operation_types_with_custom_names():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         schema {
             query: SomeQuery
@@ -561,7 +562,7 @@ def test_root_operation_types_with_custom_names():
 
 
 def test_default_root_operation_type_names():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query { str: String }
         type Mutation { str: String }
@@ -576,7 +577,7 @@ def test_default_root_operation_type_names():
 
 def test_allows_only_a_single_schema_definition():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -599,7 +600,7 @@ def test_allows_only_a_single_schema_definition():
 
 def test_allows_only_a_single_query_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -623,7 +624,7 @@ def test_allows_only_a_single_query_type():
 
 def test_allows_only_a_single_mutation_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -648,7 +649,7 @@ def test_allows_only_a_single_mutation_type():
 
 def test_allows_only_a_single_subscription_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -673,7 +674,7 @@ def test_allows_only_a_single_subscription_type():
 
 def test_unknown_type_referenced():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -692,7 +693,7 @@ def test_unknown_type_referenced():
 
 def test_unknown_type_in_interface_list():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast("type Query implements Bar { field: String }")
+        build_schema_from_ast("type Query implements Bar { field: String }")
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 23, "line": 1}],
         "message": "Type Bar not found in document",
@@ -701,7 +702,7 @@ def test_unknown_type_in_interface_list():
 
 def test_unknown_type_in_union_list():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             union TestUnion = Bar
             type Query { testUnion: TestUnion }
@@ -715,7 +716,7 @@ def test_unknown_type_in_union_list():
 
 def test_unknown_query_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Wat
@@ -734,7 +735,7 @@ def test_unknown_query_type():
 
 def test_unknown_mutation_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -754,7 +755,7 @@ def test_unknown_mutation_type():
 
 def test_unknown_subscription_type():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Hello
@@ -774,7 +775,7 @@ def test_unknown_subscription_type():
 
 def test_does_not_consider_operation_names_or_fragment_name():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Foo
@@ -793,7 +794,7 @@ def test_does_not_consider_operation_names_or_fragment_name():
 
 def test_forbids_duplicate_type_definitions():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             schema {
                 query: Repeated
@@ -816,7 +817,7 @@ def test_forbids_duplicate_type_definitions():
 
 def test_forbids_duplicate_directive_definition():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: String
@@ -833,13 +834,13 @@ def test_forbids_duplicate_directive_definition():
 
 
 def test_inject_custom_types():
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo: UUID
         }
         """,
-        known_types=[UUID],
+        additional_types=[UUID],
     )
     assert schema.types["UUID"] is UUID
 
@@ -847,7 +848,7 @@ def test_inject_custom_types():
 def test_inject_resolvers():
     resolvers = {"Query": {"foo": lambda *_: "foo"}}
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo: String
@@ -862,7 +863,7 @@ def test_inject_resolvers():
 def test_inject_resolvers_as_flat_map():
     resolvers = {"Query.foo": lambda *_: "foo"}
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo: String
@@ -877,7 +878,7 @@ def test_inject_resolvers_as_flat_map():
 def test_inject_resolvers_as_callable():
     resolvers = {"Query.foo": lambda *_: "foo"}
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo: String
@@ -890,7 +891,7 @@ def test_inject_resolvers_as_callable():
 
 
 def test_ignores_unused_extensions():
-    schema_from_ast(
+    build_schema_from_ast(
         """
         type Query {
             one: Int
@@ -905,7 +906,7 @@ def test_ignores_unused_extensions():
 
 def test_raise_on_unused_extensions_with_flag():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 one: Int

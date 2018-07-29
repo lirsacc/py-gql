@@ -16,7 +16,7 @@ Note:
 
 # flake8: noqa
 
-from .validate import ValidationResult, validate_ast, SPECIFIED_RULES
+from .validate import SPECIFIED_RULES, ValidationResult, validate_ast
 from .visitors import ValidationVisitor, VariablesCollector
 
 __all__ = (

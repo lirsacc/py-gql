@@ -20,10 +20,12 @@ from py_gql.schema import (
     ObjectType,
     ScalarType,
     String,
-    print_schema,
-    schema_from_ast,
 )
-from py_gql.schema.schema_directive import SchemaDirective, wrap_resolver
+from py_gql.schema.builders import (
+    SchemaDirective,
+    build_schema_from_ast,
+    wrap_resolver,
+)
 
 
 def test_simple_field_modifier():
@@ -33,7 +35,7 @@ def test_simple_field_modifier():
 
     assert (
         graphql(
-            schema_from_ast(
+            build_schema_from_ast(
                 """
                 directive @upper on FIELD_DEFINITION
 
@@ -57,7 +59,7 @@ def test_directive_on_wrong_location():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             directive @upper on FIELD_DEFINITION
 
@@ -75,7 +77,7 @@ def test_directive_on_wrong_location():
 
 
 def test_ignores_unknown_directive_implementation():
-    schema_from_ast(
+    build_schema_from_ast(
         """
         directive @upper on FIELD_DEFINITION
 
@@ -89,7 +91,7 @@ def test_ignores_unknown_directive_implementation():
 
 def test_raises_on_unknown_directive_implementation_if_specified():
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             directive @upper on FIELD_DEFINITION
 
@@ -114,6 +116,7 @@ def test_field_modifier_using_arguments():
             [Argument("exponent", Int, default_value=2)],
         )
 
+        # pylint: disable = super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -122,7 +125,7 @@ def test_field_modifier_using_arguments():
 
     assert (
         graphql(
-            schema_from_ast(
+            build_schema_from_ast(
                 """
                 type Query {
                     foo: Int @power
@@ -172,7 +175,7 @@ def test_object_modifier_and_field_modifier():
                 nodes=object_definition.nodes,
             )
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @uid (name: String! = "uid", source: [String]!) on OBJECT
         directive @upper on FIELD_DEFINITION
@@ -189,7 +192,7 @@ def test_object_modifier_and_field_modifier():
         schema_directives={"upper": UppercaseDirective, "uid": UniqueID},
     )
 
-    assert print_schema(schema, indent="    ") == dedent(
+    assert schema.to_string() == dedent(
         """
         directive @uid(name: String! = "uid", source: [String]!) on OBJECT
 
@@ -231,7 +234,7 @@ def test_location_not_supported():
         pass
 
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             directive @upper on FIELD_DEFINITION
             type Query {
@@ -254,7 +257,7 @@ def test_location_not_supported_2():
         pass
 
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             directive @upper on SCHEMA
 
@@ -281,7 +284,7 @@ def test_missing_definition():
         pass
 
     with pytest.raises(SDLError) as exc_info:
-        schema_from_ast(
+        build_schema_from_ast(
             """
             type Query {
                 foo: String @upper
@@ -319,7 +322,7 @@ def test_multiple_directives_applied_in_order():
 
     assert (
         graphql(
-            schema_from_ast(
+            build_schema_from_ast(
                 """
                 type Query {
                     foo: Int @power @plus_one
@@ -393,7 +396,7 @@ def test_input_values():
             )
             return field
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         type Query {
             foo (
@@ -409,7 +412,7 @@ def test_input_values():
         schema_directives={"len": LimitedLengthDirective},
     )
 
-    assert print_schema(schema, indent="    ") == dedent(
+    assert schema.to_string() == dedent(
         """
         input BarInput {
             baz: LimitedLenthString_3_inf
@@ -489,7 +492,7 @@ def test_enum_value_directive():
                 deprecation_reason=enum_value.deprecation_reason,
             )
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @cssColor on ENUM_VALUE
 
@@ -527,7 +530,7 @@ def test_enum_type_directive():
                 nodes=enum.nodes,
             )
 
-    schema = schema_from_ast(
+    schema = build_schema_from_ast(
         """
         directive @generated on ENUM
 
@@ -540,7 +543,7 @@ def test_enum_type_directive():
         schema_directives={"generated": GeneratedEnum},
     )
 
-    assert print_schema(schema, indent="    ") == dedent(
+    assert schema.to_string() == dedent(
         """
         directive @generated on ENUM
 
@@ -561,3 +564,33 @@ def test_enum_type_directive():
     for k, v in values_dict.items():
         assert enum.get_value(k) == v
         assert enum.get_name(v) == k
+
+
+def test_schema_extension_duplicate_directive():
+    class OnSchema(SchemaDirective):
+        def visit_schema(self, schema):
+            pass
+
+    with pytest.raises(SDLError) as exc_info:
+        build_schema_from_ast(
+            """
+            directive @onSchema on SCHEMA
+
+            type Foo { foo: String }
+            type Bar { bar: String }
+
+            schema @onSchema {
+                query: Foo
+            }
+
+            extend schema @onSchema {
+                query: Bar
+            }
+            """,
+            schema_directives={"onSchema": OnSchema},
+        )
+
+    assert exc_info.value.to_dict() == {
+        "locations": [{"column": 27, "line": 11}],
+        "message": 'Directive "@onSchema" already applied',
+    }

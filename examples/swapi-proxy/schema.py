@@ -11,7 +11,7 @@ import requests
 import swapi
 from py_gql.exc import ResolverError
 from py_gql.execution import _concurrency
-from py_gql.schema import schema_from_ast
+from py_gql.schema.builders import build_schema_from_ast
 
 
 def swapi_caller(func):
@@ -45,8 +45,9 @@ def nested_single_resource_resolver(key, resource):
     def resolve(obj, args, ctx, info):
         if obj is None:
             return None
-        id = int(obj[key].split("/")[-2])
-        return info.executor.submit(swapi.fetch_one, resource, id)
+        return info.executor.submit(
+            swapi.fetch_one, resource, int(obj[key].split("/")[-2])
+        )
 
     return resolve
 
@@ -72,14 +73,14 @@ def nested_list_resolver(key, resource):
     return resolve
 
 
-
 # This on is pretty dumb...
 def string_numeric_resolver(key):
     def resolver(obj, *_, **__):
         value = obj.get(key)
-        if value is None or value.lower() in ('n/a', 'unknown'):
+        if value is None or value.lower() in ("n/a", "unknown"):
             return None
-        return float(re.sub(r'[A-Za-z]', '', value))
+        return float(re.sub(r"[A-Za-z]", "", value))
+
     return resolver
 
 
@@ -132,8 +133,8 @@ RESOLVERS = {
         "people": nested_list_resolver("people", "people"),
         "films": nested_list_resolver("films", "films"),
         "average_lifespan": string_numeric_resolver("average_lifespan"),
-    }
+    },
 }
 
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
-    schema = schema_from_ast(f.read(), resolvers=RESOLVERS)
+    schema = build_schema_from_ast(f.read(), resolvers=RESOLVERS)

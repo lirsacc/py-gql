@@ -4,8 +4,8 @@ import pytest
 
 from py_gql._graphql import graphql
 from py_gql._string_utils import stringify_path
-from py_gql.execution.middleware import GraphQLMiddleware, apply_middlewares
 from py_gql.execution import ThreadPoolExecutor
+from py_gql.execution.middleware import GraphQLMiddleware, apply_middlewares
 
 from ._test_utils import TESTED_EXECUTORS
 
