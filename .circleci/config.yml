@@ -186,9 +186,9 @@ jobs:
                         which coverage >/dev/null 2>&1 || pip install coverage
                         coverage erase
                         coverage combine
-                        coverage report --rcfile test.ini
-                        coverage html --rcfile test.ini
-                        coverage xml --rcfile test.ini
+                        coverage report --rcfile pytest.ini
+                        coverage html --rcfile pytest.ini
+                        coverage xml --rcfile pytest.ini
                         mv .coverage coverage.xml htmlcov/* ${results}/python/
                     fi
             - *store-tests

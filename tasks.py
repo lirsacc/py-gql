@@ -144,6 +144,7 @@ def fmt(ctx, verbose=False, files=None):
                     "--combine-as",
                     "--apply",
                     "--line-width=80",
+                    "-ns __init__.py",
                     files,
                 ]
             ),
