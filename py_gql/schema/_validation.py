@@ -398,7 +398,7 @@ def validate_enum_values(schema, enum_type):
         'EnumType "%s" must at least define one value' % enum_type,
     )
 
-    for enum_value in enum_type.values.values():
+    for enum_value in enum_type.values:
 
         _assert(
             isinstance(enum_value, EnumValue),

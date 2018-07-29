@@ -257,7 +257,7 @@ __Type__ = ObjectType(
             resolve=lambda type_, args, *a, **kw: (
                 [
                     ev
-                    for ev in type_.values.values()
+                    for ev in type_.values
                     if (not ev.deprecated) or args.get("includeDeprecated")
                 ]
                 if isinstance(type_, EnumType)

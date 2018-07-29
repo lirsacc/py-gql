@@ -587,7 +587,7 @@ def _types_and_directives_from_ast_nodes(  # noqa
                 [extension_node],
             )
 
-        values = list(source_type.values.values())
+        values = list(source_type.values)
         known_values = set(ev.name for ev in values)
 
         for value in extension_node.values:

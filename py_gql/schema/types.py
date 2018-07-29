@@ -4,7 +4,7 @@
 
 import six
 
-from .._utils import OrderedDict, cached_property, lazy
+from .._utils import cached_property, lazy
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
 from ..lang.parser import DIRECTIVE_LOCATIONS
 
@@ -324,14 +324,16 @@ class EnumType(NamedType):
         self.name = name
         self.description = description
         self.nodes = [] if nodes is None else nodes
-        self.values = OrderedDict()
-        self.reverse_values = OrderedDict()
+        self.values = []
+        self._values = {}
+        self._reverse_values = {}
         for v in values:
             ev = EnumValue.from_def(v)
-            assert ev.name not in self.values, (
+            assert ev.name not in self._values, (
                 "Duplicate enum value %s" % ev.name
             )
-            self.reverse_values[ev.value] = self.values[ev.name] = ev
+            self.values.append(ev)
+            self._reverse_values[ev.value] = self._values[ev.name] = ev
 
     def get_value(self, name):
         """ Extract the value for a given name.
@@ -346,7 +348,7 @@ class EnumType(NamedType):
             :class:`~py_gql.exc.UnknownEnumValue` when the name is unknown
         """
         try:
-            return self.values[name].value
+            return self._values[name].value
         except KeyError:
             raise UnknownEnumValue(
                 "Invalid name %s for enum %s" % (name, self.name)
@@ -365,7 +367,7 @@ class EnumType(NamedType):
             :class:`~py_gql.exc.UnknownEnumValue` when the value is unknown
         """
         try:
-            return self.reverse_values[value].name
+            return self._reverse_values[value].name
         except KeyError:
             raise UnknownEnumValue(
                 "Invalid value %r for enum %s" % (value, self.name)

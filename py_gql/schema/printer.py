@@ -229,7 +229,7 @@ class SchemaPrinter(object):
                             self.print_deprecated(enum_value),
                         ]
                     )
-                    for i, enum_value in enumerate(type_.values.values())
+                    for i, enum_value in enumerate(type_.values)
                 ]
             ),
         )

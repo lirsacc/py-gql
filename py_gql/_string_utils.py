@@ -2,12 +2,10 @@
 """ Work with strings """
 from __future__ import division
 
+import operator
 import re
 
 import six
-
-from ._utils import OrderedDict
-
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
 LEADING_WS = re.compile(r"^[\t\s]*")
@@ -345,14 +343,14 @@ def infer_suggestions(candidate, options, distance=levenshtein):
         List[str]: Most similar options sorted by similarity (most similar to
         least similar)
     """
-    distances = OrderedDict()
+    distances = []
     half = len(candidate) / 2
     for option in options:
         distance = levenshtein(candidate, option)
         threshold = max(half, len(option) / 2, 1)
         if distance <= threshold:
-            distances[option] = distance
-    return sorted(distances.keys(), key=distances.get)
+            distances.append((option, distance))
+    return [opt for opt, _ in sorted(distances, key=operator.itemgetter(1))]
 
 
 def quoted_options_list(options):

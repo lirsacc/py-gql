@@ -122,7 +122,7 @@ def _visit_enum(visitor, enum):
     return _types.EnumType(
         name=new_type.name,
         description=new_type.description,
-        values=_visit_and_filter(visitor, new_type.values.values()),
+        values=_visit_and_filter(visitor, new_type.values),
     )
 
 
