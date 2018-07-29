@@ -66,12 +66,10 @@ def test(
             _join(
                 [
                     "py.test",
-                    "-c test.ini",
-                    "--color yes",
-                    "--doctest-modules --doctest-continue-on-failure",
+                    "-c pytest.ini",
                     "--exitfirst" if bail else None,
                     (
-                        "--cov %s --cov-config test.ini --no-cov-on-fail "
+                        "--cov %s --cov-config pytest.ini --no-cov-on-fail "
                         "--cov-report term --cov-report html --cov-report xml "
                         % pkg.NAME
                     )
@@ -95,7 +93,7 @@ def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
         ctx.run(
             _join(
                 [
-                    "tox -c test.ini",
+                    "tox -c tox.ini",
                     "--recreate" if rebuild else None,
                     "--hashseed %s" % hashseed
                     if hashseed is not None
