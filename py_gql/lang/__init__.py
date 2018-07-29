@@ -19,7 +19,6 @@ should not have to interact too much with this module.
 
 from .lexer import Lexer
 from .parser import Parser, parse, parse_type, parse_value
-from .printer import print_ast
+from .printer import ASTPrinter, print_ast
 
-
-__all__ = ("parse", "parse_type", "parse_value", "Parser", "Lexer", "print_ast")
+__all__ = ("parse", "parse_type", "parse_value", "Parser", "Lexer")

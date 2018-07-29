@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from py_gql._string_utils import dedent
-from py_gql.lang import ast as _ast, parse, print_ast
+from py_gql.lang import ASTPrinter, ast as _ast, parse, print_ast
 
 
 def test_minimal_ast():
@@ -101,7 +101,6 @@ def test_block_string_string_with_a_first_line_indentation():
         }
     '''
     )
-    print(print_ast(ast))
     assert print_ast(ast) == dedent(
         '''
     {
@@ -215,7 +214,6 @@ fragment frag on Friend {
 
 def test_schema_kitchen_sink(fixture_file):
     ks = fixture_file("schema-kitchen-sink.graphql")
-    print(print_ast(parse(ks)))
     assert print_ast(parse(ks)) == dedent(
         '''
 schema {
@@ -331,4 +329,28 @@ extend schema @onSchema {
   subscription: SubscriptionType
 }
 '''
+    )
+
+
+def test_comment_descriptions(fixture_file):
+    node = _ast.ObjectTypeDefinition(
+        name=_ast.Name(value="Foo"),
+        description=_ast.StringValue(
+            value="This is a description\nof the `Foo` type.", block=True
+        ),
+        fields=[
+            _ast.FieldDefinition(
+                name=_ast.Name(value="bar"),
+                type=_ast.NamedType(name=_ast.Name(value="Bar")),
+            )
+        ],
+    )
+
+    assert ASTPrinter(indent=4, description_format="comments")(node) == dedent(
+        """
+        # This is a description
+        # of the `Foo` type.
+        type Foo {
+            bar: Bar
+        }"""
     )
