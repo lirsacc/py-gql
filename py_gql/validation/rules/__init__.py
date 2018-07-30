@@ -112,11 +112,15 @@ class KnownTypeNamesChecker(ValidationVisitor):
     enter_union_type_definition = _skip
     enter_input_object_type_definition = _skip
 
-    def enter_named_type(self, node):
+    def _enter_type_literal(self, node):
         try:
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
             self.add_error('Unknown type "%s"' % str(err), [node])
+
+    enter_named_type = _enter_type_literal
+    enter_list_type = _enter_type_literal
+    enter_non_null_type = _enter_type_literal
 
 
 class FragmentsOnCompositeTypesChecker(ValidationVisitor):

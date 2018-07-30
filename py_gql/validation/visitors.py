@@ -94,7 +94,7 @@ class VariablesCollector(ValidationVisitor):
     def leave_variable_definition(self, node):
         self._in_var_def = False
 
-    def enter_variable_value(self, node):
+    def enter_variable(self, node):
         var = node.name.value
         input_type = self.type_info.input_type
         input_value_def = self.type_info.input_value_def

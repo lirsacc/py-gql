@@ -269,90 +269,318 @@ def _visit_directive_definition(visitor, definition):
     _many(_visit_input_value_definition, visitor, definition.arguments)
 
 
-_HANDLERS = {
-    _ast.Document: "document",
-    _ast.OperationDefinition: "operation_definition",
-    _ast.FragmentDefinition: "fragment_definition",
-    _ast.VariableDefinition: "variable_definition",
-    _ast.Directive: "directive",
-    _ast.Argument: "argument",
-    _ast.SelectionSet: "selection_set",
-    _ast.Field: "field",
-    _ast.FragmentSpread: "fragment_spread",
-    _ast.InlineFragment: "inline_fragment",
-    _ast.NullValue: "null_value",
-    _ast.IntValue: "int_value",
-    _ast.FloatValue: "float_value",
-    _ast.StringValue: "string_value",
-    _ast.BooleanValue: "boolean_value",
-    _ast.EnumValue: "enum_value",
-    _ast.Variable: "variable_value",
-    _ast.ListValue: "list_value",
-    _ast.ObjectValue: "object_value",
-    _ast.ObjectField: "object_field",
-    _ast.NamedType: "named_type",
-    _ast.ListType: "named_type",
-    _ast.NonNullType: "named_type",
-    _ast.SchemaDefinition: "schema_definition",
-    _ast.OperationTypeDefinition: "operation_type_definition",
-    _ast.ScalarTypeDefinition: "scalar_type_definition",
-    _ast.ObjectTypeDefinition: "object_type_definition",
-    _ast.FieldDefinition: "field_definition",
-    _ast.InputValueDefinition: "input_value_definition",
-    _ast.InterfaceTypeDefinition: "interface_type_definition",
-    _ast.UnionTypeDefinition: "union_type_definition",
-    _ast.EnumTypeDefinition: "enum_type_definition",
-    _ast.EnumValueDefinition: "enum_value_definition",
-    _ast.InputObjectTypeDefinition: "input_object_type_definition",
-    _ast.SchemaExtension: "schema_extension",
-    _ast.ScalarTypeExtension: "scalar_type_extension",
-    _ast.ObjectTypeExtension: "object_type_extension",
-    _ast.InterfaceTypeExtension: "interface_type_extension",
-    _ast.UnionTypeExtension: "union_type_extension",
-    _ast.EnumTypeExtension: "enum_type_extension",
-    _ast.InputObjectTypeExtension: "input_object_type_extension",
-    _ast.DirectiveDefinition: "directive_definition",
-}
-
-
 class DispatchingVisitor(Visitor):
     """ Base class for specialised visitors.
 
-    You should subclass this and you can either:
+    You should subclass this and implement methods named "enter_*". "leave_*"
+    where * represents the node class to be handled. For instance to process
+    :class:`py_gql.lang.ast.FloatValue` nodes, implement ``enter_float_value``.
 
-    - Implement :meth:`handler` for custom method resolution
-    - Implement methods named "enter_*". "leave_*" where * represents the node
-      class to be handled. For instance to process
-      :class:`py_gql.lang.ast.FloatValue` nodes, implement ``enter_float_value``.
-
-    If no function is found (:meth:`handler` returns ``None``) for a node,
-    ``enter`` and / or ``leave`` will noop.
+    Default behaviour is noop for all classes.
     """
 
-    def handler(self, node, stage="enter"):
-        """ Resolve the handler based on the node type and visiting stage.
+    def enter(self, node):  # noqa: C901
+        kind = type(node)
+        if kind is _ast.Document:
+            self.enter_document(node)
+        elif kind is _ast.OperationDefinition:
+            self.enter_operation_definition(node)
+        elif kind is _ast.FragmentDefinition:
+            self.enter_fragment_definition(node)
+        elif kind is _ast.VariableDefinition:
+            self.enter_variable_definition(node)
+        elif kind is _ast.Directive:
+            self.enter_directive(node)
+        elif kind is _ast.Argument:
+            self.enter_argument(node)
+        elif kind is _ast.SelectionSet:
+            self.enter_selection_set(node)
+        elif kind is _ast.Field:
+            self.enter_field(node)
+        elif kind is _ast.FragmentSpread:
+            self.enter_fragment_spread(node)
+        elif kind is _ast.InlineFragment:
+            self.enter_inline_fragment(node)
+        elif kind is _ast.NullValue:
+            self.enter_null_value(node)
+        elif kind is _ast.IntValue:
+            self.enter_int_value(node)
+        elif kind is _ast.FloatValue:
+            self.enter_float_value(node)
+        elif kind is _ast.StringValue:
+            self.enter_string_value(node)
+        elif kind is _ast.BooleanValue:
+            self.enter_boolean_value(node)
+        elif kind is _ast.EnumValue:
+            self.enter_enum_value(node)
+        elif kind is _ast.Variable:
+            self.enter_variable(node)
+        elif kind is _ast.ListValue:
+            self.enter_list_value(node)
+        elif kind is _ast.ObjectValue:
+            self.enter_object_value(node)
+        elif kind is _ast.ObjectField:
+            self.enter_object_field(node)
+        elif kind is _ast.NamedType:
+            self.enter_named_type(node)
+        elif kind is _ast.ListType:
+            self.enter_list_type(node)
+        elif kind is _ast.NonNullType:
+            self.enter_non_null_type(node)
+        elif kind is _ast.SchemaDefinition:
+            self.enter_schema_definition(node)
+        elif kind is _ast.OperationTypeDefinition:
+            self.enter_operation_type_definition(node)
+        elif kind is _ast.ScalarTypeDefinition:
+            self.enter_scalar_type_definition(node)
+        elif kind is _ast.ObjectTypeDefinition:
+            self.enter_object_type_definition(node)
+        elif kind is _ast.FieldDefinition:
+            self.enter_field_definition(node)
+        elif kind is _ast.InputValueDefinition:
+            self.enter_input_value_definition(node)
+        elif kind is _ast.InterfaceTypeDefinition:
+            self.enter_interface_type_definition(node)
+        elif kind is _ast.UnionTypeDefinition:
+            self.enter_union_type_definition(node)
+        elif kind is _ast.EnumTypeDefinition:
+            self.enter_enum_type_definition(node)
+        elif kind is _ast.EnumValueDefinition:
+            self.enter_enum_value_definition(node)
+        elif kind is _ast.InputObjectTypeDefinition:
+            self.enter_input_object_type_definition(node)
+        elif kind is _ast.SchemaExtension:
+            self.enter_schema_extension(node)
+        elif kind is _ast.ScalarTypeExtension:
+            self.enter_scalar_type_extension(node)
+        elif kind is _ast.ObjectTypeExtension:
+            self.enter_object_type_extension(node)
+        elif kind is _ast.InterfaceTypeExtension:
+            self.enter_interface_type_extension(node)
+        elif kind is _ast.UnionTypeExtension:
+            self.enter_union_type_extension(node)
+        elif kind is _ast.EnumTypeExtension:
+            self.enter_enum_type_extension(node)
+        elif kind is _ast.InputObjectTypeExtension:
+            self.enter_input_object_type_extension(node)
+        elif kind is _ast.DirectiveDefinition:
+            self.enter_directive_definition(node)
 
-        Args:
-            node (py_gql.lang.ast.Node): AST node to visit
-            stage (str): One of `enter` or `leave`
+    def leave(self, node):  # noqa: C901
+        kind = type(node)
+        if kind is _ast.Document:
+            self.leave_document(node)
+        elif kind is _ast.OperationDefinition:
+            self.leave_operation_definition(node)
+        elif kind is _ast.FragmentDefinition:
+            self.leave_fragment_definition(node)
+        elif kind is _ast.VariableDefinition:
+            self.leave_variable_definition(node)
+        elif kind is _ast.Directive:
+            self.leave_directive(node)
+        elif kind is _ast.Argument:
+            self.leave_argument(node)
+        elif kind is _ast.SelectionSet:
+            self.leave_selection_set(node)
+        elif kind is _ast.Field:
+            self.leave_field(node)
+        elif kind is _ast.FragmentSpread:
+            self.leave_fragment_spread(node)
+        elif kind is _ast.InlineFragment:
+            self.leave_inline_fragment(node)
+        elif kind is _ast.NullValue:
+            self.leave_null_value(node)
+        elif kind is _ast.IntValue:
+            self.leave_int_value(node)
+        elif kind is _ast.FloatValue:
+            self.leave_float_value(node)
+        elif kind is _ast.StringValue:
+            self.leave_string_value(node)
+        elif kind is _ast.BooleanValue:
+            self.leave_boolean_value(node)
+        elif kind is _ast.EnumValue:
+            self.leave_enum_value(node)
+        elif kind is _ast.Variable:
+            self.leave_variable(node)
+        elif kind is _ast.ListValue:
+            self.leave_list_value(node)
+        elif kind is _ast.ObjectValue:
+            self.leave_object_value(node)
+        elif kind is _ast.ObjectField:
+            self.leave_object_field(node)
+        elif kind is _ast.NamedType:
+            self.leave_named_type(node)
+        elif kind is _ast.ListType:
+            self.leave_list_type(node)
+        elif kind is _ast.NonNullType:
+            self.leave_non_null_type(node)
+        elif kind is _ast.SchemaDefinition:
+            self.leave_schema_definition(node)
+        elif kind is _ast.OperationTypeDefinition:
+            self.leave_operation_type_definition(node)
+        elif kind is _ast.ScalarTypeDefinition:
+            self.leave_scalar_type_definition(node)
+        elif kind is _ast.ObjectTypeDefinition:
+            self.leave_object_type_definition(node)
+        elif kind is _ast.FieldDefinition:
+            self.leave_field_definition(node)
+        elif kind is _ast.InputValueDefinition:
+            self.leave_input_value_definition(node)
+        elif kind is _ast.InterfaceTypeDefinition:
+            self.leave_interface_type_definition(node)
+        elif kind is _ast.UnionTypeDefinition:
+            self.leave_union_type_definition(node)
+        elif kind is _ast.EnumTypeDefinition:
+            self.leave_enum_type_definition(node)
+        elif kind is _ast.EnumValueDefinition:
+            self.leave_enum_value_definition(node)
+        elif kind is _ast.InputObjectTypeDefinition:
+            self.leave_input_object_type_definition(node)
+        elif kind is _ast.SchemaExtension:
+            self.leave_schema_extension(node)
+        elif kind is _ast.ScalarTypeExtension:
+            self.leave_scalar_type_extension(node)
+        elif kind is _ast.ObjectTypeExtension:
+            self.leave_object_type_extension(node)
+        elif kind is _ast.InterfaceTypeExtension:
+            self.leave_interface_type_extension(node)
+        elif kind is _ast.UnionTypeExtension:
+            self.leave_union_type_extension(node)
+        elif kind is _ast.EnumTypeExtension:
+            self.leave_enum_type_extension(node)
+        elif kind is _ast.InputObjectTypeExtension:
+            self.leave_input_object_type_extension(node)
+        elif kind is _ast.DirectiveDefinition:
+            self.leave_directive_definition(node)
 
-        Returns:
-            callable: Visitor function or ``None``
-        """
-        handler_name = _HANDLERS.get(type(node), None)
-        if handler_name is None:
-            raise TypeError("Unknown node type %s", type(node))
-        return getattr(self, "%s_%s" % (stage, handler_name), None)
+    def default_handler(self, node):
+        pass
 
-    def enter(self, node):
-        handler = self.handler(node, "enter")
-        if handler is not None:
-            handler(node)
+    enter_document = default_handler
+    leave_document = default_handler
 
-    def leave(self, node):
-        handler = self.handler(node, "leave")
-        if handler is not None:
-            handler(node)
+    enter_operation_definition = default_handler
+    leave_operation_definition = default_handler
+
+    enter_fragment_definition = default_handler
+    leave_fragment_definition = default_handler
+
+    enter_variable_definition = default_handler
+    leave_variable_definition = default_handler
+
+    enter_directive = default_handler
+    leave_directive = default_handler
+
+    enter_argument = default_handler
+    leave_argument = default_handler
+
+    enter_selection_set = default_handler
+    leave_selection_set = default_handler
+
+    enter_field = default_handler
+    leave_field = default_handler
+
+    enter_fragment_spread = default_handler
+    leave_fragment_spread = default_handler
+
+    enter_inline_fragment = default_handler
+    leave_inline_fragment = default_handler
+
+    enter_null_value = default_handler
+    leave_null_value = default_handler
+
+    enter_int_value = default_handler
+    leave_int_value = default_handler
+
+    enter_float_value = default_handler
+    leave_float_value = default_handler
+
+    enter_string_value = default_handler
+    leave_string_value = default_handler
+
+    enter_boolean_value = default_handler
+    leave_boolean_value = default_handler
+
+    enter_enum_value = default_handler
+    leave_enum_value = default_handler
+
+    enter_variable = default_handler
+    leave_variable = default_handler
+
+    enter_list_value = default_handler
+    leave_list_value = default_handler
+
+    enter_object_value = default_handler
+    leave_object_value = default_handler
+
+    enter_object_field = default_handler
+    leave_object_field = default_handler
+
+    enter_named_type = default_handler
+    leave_named_type = default_handler
+
+    enter_list_type = default_handler
+    leave_list_type = default_handler
+
+    enter_non_null_type = default_handler
+    leave_non_null_type = default_handler
+
+    enter_schema_definition = default_handler
+    leave_schema_definition = default_handler
+
+    enter_operation_type_definition = default_handler
+    leave_operation_type_definition = default_handler
+
+    enter_scalar_type_definition = default_handler
+    leave_scalar_type_definition = default_handler
+
+    enter_object_type_definition = default_handler
+    leave_object_type_definition = default_handler
+
+    enter_field_definition = default_handler
+    leave_field_definition = default_handler
+
+    enter_input_value_definition = default_handler
+    leave_input_value_definition = default_handler
+
+    enter_interface_type_definition = default_handler
+    leave_interface_type_definition = default_handler
+
+    enter_union_type_definition = default_handler
+    leave_union_type_definition = default_handler
+
+    enter_enum_type_definition = default_handler
+    leave_enum_type_definition = default_handler
+
+    enter_enum_value_definition = default_handler
+    leave_enum_value_definition = default_handler
+
+    enter_input_object_type_definition = default_handler
+    leave_input_object_type_definition = default_handler
+
+    enter_schema_extension = default_handler
+    leave_schema_extension = default_handler
+
+    enter_scalar_type_extension = default_handler
+    leave_scalar_type_extension = default_handler
+
+    enter_object_type_extension = default_handler
+    leave_object_type_extension = default_handler
+
+    enter_interface_type_extension = default_handler
+    leave_interface_type_extension = default_handler
+
+    enter_union_type_extension = default_handler
+    leave_union_type_extension = default_handler
+
+    enter_enum_type_extension = default_handler
+    leave_enum_type_extension = default_handler
+
+    enter_input_object_type_extension = default_handler
+    leave_input_object_type_extension = default_handler
+
+    enter_directive_definition = default_handler
+    leave_directive_definition = default_handler
 
 
 class ParrallelVisitor(Visitor):
