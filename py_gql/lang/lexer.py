@@ -58,61 +58,13 @@ QUOTED_CHARS = {
 }
 
 
-def is_source_character(code):
-    """
-    Args:
-        code (int): Character code
-
-    Returns:
-        bool:
-    """
-    return code >= 0x0020 or code == 0x0009
-
-
-def is_number_lead(code):
-    """
-    Args:
-        code (int): Character code
-
-    Returns:
-        bool:
-    """
-    return code == 0x002d or is_digit(code)
-
-
-def is_digit(code):
-    """
-    Args:
-        code (int): Character code
-
-    Returns:
-        bool:
-    """
-    return 0x0030 <= code <= 0x0039
-
-
-def is_name_lead(code):
-    """
-    Args:
-        code (int): Character code
-
-    Returns:
-        bool:
-    """
-    return (
-        code == 0x005f or 0x0041 <= code <= 0x005a or 0x0061 <= code <= 0x007a
-    )
-
-
-def is_name_character(code):
-    """
-    Args:
-        code (int): Character code
-
-    Returns:
-        bool:
-    """
-    return is_name_lead(code) or is_digit(code)
+def _unexpected(expected, char, position, source):
+    if char is None:
+        return UnexpectedEOF(position - 1, source)
+    else:
+        return UnexpectedCharacter(
+            'Expected "%s" but found "%s"' % (expected, char), position, source
+        )
 
 
 class Lexer(object):
@@ -143,78 +95,47 @@ class Lexer(object):
         self._started = False
         self._position = 0
 
-    def _peek(self, count=1, raise_on_eof=False):
-        """ Read character after current position.
-
-        Args:
-            count(int): How many charcaters to read over
-            raise_on_eof (int):
-                Raise :class:`~py_gql.exc.UnexpectedEOF` if EOF is encountered
-
-        Returns:
-            chr: Characters at current position + ``count`` or ``None`` if
-            EOF was encountered.
-        """
-        if self._done or self._position + count - 1 >= self._len:
-            if raise_on_eof:
-                raise UnexpectedEOF(self._position, self._source)
+    def _peek(self):
+        try:
+            return self._source[self._position]
+        except IndexError:
             return None
-        return self._source[self._position + count - 1]
 
-    def _advance(self, expected=None):
-        """ Read next charcater and advance current position.
-
-        Args:
-            expected (char): Expected character
-
-        Returns:
-            chr: next character
-
-        Raises:
-            :class:`~py_gql.exc.UnexpectedCharacter`:
-                if the character is not the expected one
-            :class:`~py_gql.exc.UnexpectedEOF`: if EOF is encountered
-        """
-        char = self._peek(raise_on_eof=expected is not None)
-        self._position += 1
-
-        if expected is not None and char != expected:
-            raise UnexpectedCharacter(
-                'Expected "%s" but found "%s"' % (expected, char),
-                self._position,
-                self._source,
-            )
-
-        return char
-
-    def _read_over_current_line(self):
-        """ Advance lexer until the end of the current line. """
-        while True:
-            char = self._peek()
-            if char is None:
-                break
-            code = ord(char)
-
-            if is_source_character(code) and code not in EOL_CHARS:
-                self._advance()
-            else:
-                break
+    def _range(self, start=0, end=1):
+        return self._source[self._position + start : self._position + end]
 
     def _read_over_whitespace(self):
-        """ Advance lexer over all whitespace / comments / ignored characters. """
+        """ Advance lexer over all ignored characters. """
+        pos = self._position
         while True:
-            char = self._peek()
-            if char is None:
+            try:
+                char = self._source[pos]
+            except IndexError:
                 break
+
             code = ord(char)
 
             if code in IGNORED_CHARS:
-                self._advance()
+                pos += 1
             elif code == 0x0023:  # '#'
-                self._advance()
-                self._read_over_current_line()
+                pos += 1
+                while True:
+                    try:
+                        char = self._source[pos]
+                    except IndexError:
+                        break
+
+                    code = ord(char)
+                    if (
+                        code >= 0x0020 or code == 0x0009
+                    ) and code not in EOL_CHARS:
+                        pos += 1
+                    else:
+                        break
             else:
                 break
+
+        self._position = pos
 
     def _read_ellipsis(self):
         """ Advance lexer over an ellipsis token (...).
@@ -224,7 +145,10 @@ class Lexer(object):
         """
         start = self._position
         for _ in range(3):
-            self._advance(expected=".")
+            char = self._peek()
+            self._position += 1
+            if char != ".":
+                raise _unexpected(".", char, self._position, self._source)
         return token.Ellipsis_(start, self._position)
 
     def _read_string(self):
@@ -234,7 +158,7 @@ class Lexer(object):
             py_gql.lang.token.String: parse token
         """
         start = self._position
-        self._advance(expected='"')
+        self._position += 1
         acc = []
         while True:
             char = self._peek()
@@ -243,7 +167,7 @@ class Lexer(object):
                 raise NonTerminatedString("", self._position, self._source)
 
             code = ord(char)
-            self._advance()
+            self._position += 1
 
             if char == '"':
                 value = "".join(acc)
@@ -252,7 +176,7 @@ class Lexer(object):
                 acc.append(self._read_escape_sequence())
             elif code == 0x000a or code == 0x000d:  # \n or \r
                 raise NonTerminatedString("", self._position - 1, self._source)
-            elif not is_source_character(code):
+            elif not (code >= 0x0020 or code == 0x0009):
                 raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
@@ -266,9 +190,7 @@ class Lexer(object):
             py_gql.lang.token.BlockString: parse token
         """
         start = self._position
-        self._advance(expected='"')
-        self._advance(expected='"')
-        self._advance(expected='"')
+        self._position += 3
         acc = []
 
         while True:
@@ -278,24 +200,22 @@ class Lexer(object):
                 raise NonTerminatedString("", self._position, self._source)
 
             code = ord(char)
-            self._advance()
 
-            if char == '"' and (self._peek(), self._peek(2)) == ('"', '"'):
-                self._advance()
-                self._advance()
+            if self._range(0, 3) == '"""':
+                self._position += 3
                 value = parse_block_string("".join(acc))
                 return token.BlockString(start, self._position, value)
-            elif char == "\\":
-                if (self._peek(), self._peek(2), self._peek(3)) == (
-                    '"',
-                    '"',
-                    '"',
-                ):
+
+            self._position += 1
+
+            if char == "\\":
+                if self._range(0, 3) == '"""':
                     for _ in range(3):
-                        acc.append(self._advance())
+                        acc.append(self._peek())
+                        self._position += 1
                 else:
                     acc.append(char)
-            elif not (is_source_character(code) or code in EOL_CHARS):
+            elif not (code >= 0x0020 or code == 0x0009 or code in EOL_CHARS):
                 raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
@@ -308,7 +228,8 @@ class Lexer(object):
         Returns:
             chr: Escaped character value
         """
-        char = self._advance()
+        char = self._peek()
+        self._position += 1
         if char is None:
             raise NonTerminatedString("", self._position, self._source)
 
@@ -331,7 +252,8 @@ class Lexer(object):
         """
         start = self._position
         for _ in range(4):
-            char = self._advance()
+            char = self._peek()
+            self._position += 1
             if char is None:
                 raise NonTerminatedString("", self._position, self._source)
             if not char.isalnum():
@@ -361,25 +283,27 @@ class Lexer(object):
         start = self._position
         is_float = False
 
-        char = self._peek(raise_on_eof=True)
+        char = self._peek()
         if ord(char) == 0x002d:  # "-"
-            self._advance()
+            self._position += 1
 
         self._read_over_integer()
 
         char = self._peek()
+
         if char is not None and ord(char) == 0x002e:  # "."
-            self._advance()
+            self._position += 1
             is_float = True
             self._read_over_digits()
 
         char = self._peek()
+
         if char is not None and ord(char) in (0x0065, 0x0045):  # "e", "E"
-            self._advance()
+            self._position += 1
             is_float = True
-            char = self._peek(raise_on_eof=True)
-            if ord(char) in (0x002d, 0x002b):  # "-", "+"
-                self._advance()
+            char = self._peek()
+            if char is not None and ord(char) in (0x002d, 0x002b):  # "-", "+"
+                self._position += 1
 
             self._read_over_integer()
 
@@ -397,11 +321,14 @@ class Lexer(object):
         Returns:
             int: parsed value
         """
-        char = self._peek(raise_on_eof=True)
+        char = self._peek()
+        if char is None:
+            raise UnexpectedEOF(self._position, self._source)
+
         code = ord(char)
 
         if code == 0x0030:  # "0"
-            self._advance()
+            self._position += 1
             char = self._peek()
             if char is not None and ord(char) == 0x0030:
                 raise UnexpectedCharacter(
@@ -414,17 +341,20 @@ class Lexer(object):
 
     def _read_over_digits(self):
         """ Advance lexer over a sequence of digits """
-        char = self._peek(raise_on_eof=True)
+        char = self._peek()
+        if char is None:
+            raise UnexpectedEOF(self._position, self._source)
+
         code = ord(char)
-        if not is_digit(code):
+        if not (0x0030 <= code <= 0x0039):
             raise UnexpectedCharacter(
                 'Unexpected character "%s"' % char, self._position, self._source
             )
 
         while True:
             char = self._peek()
-            if char is not None and is_digit(ord(char)):
-                self._advance()
+            if char is not None and 0x0030 <= ord(char) <= 0x0039:
+                self._position += 1
             else:
                 break
 
@@ -435,11 +365,20 @@ class Lexer(object):
             py_gql.lang.token.Name: parse token
         """
         start = self._position
-        char = self._peek(raise_on_eof=True)
+        char = self._peek()
         while True:
             char = self._peek()
-            if char is not None and is_name_character(ord(char)):
-                self._advance()
+            if char is None:
+                break
+
+            code = ord(char)
+            if (
+                code == 0x005f
+                or 0x0041 <= code <= 0x005a
+                or 0x0061 <= code <= 0x007a
+                or 0x0030 <= code <= 0x0039
+            ):
+                self._position += 1
             else:
                 break
 
@@ -478,23 +417,28 @@ class Lexer(object):
             return token.EOF(self._position, self._position)
 
         code = ord(char)
-        if not is_source_character(code):
-            self._advance()
+
+        if not (code >= 0x0020 or code == 0x0009):
+            self._position += 1
             raise InvalidCharacter(char, self._position, self._source)
 
         if char in SYMBOLS:
             start = self._position
-            self._advance()
+            self._position += 1
             return SYMBOLS[char](start, self._position)
         elif char == ".":
             return self._read_ellipsis()
+        elif self._range(0, 3) == '"""':
+            return self._read_block_string()
         elif char == '"':
-            if (self._peek(2), self._peek(3)) == ('"', '"'):
-                return self._read_block_string()
             return self._read_string()
-        elif is_number_lead(code):
+        elif code == 0x002d or 0x0030 <= code <= 0x0039:
             return self._read_number()
-        elif is_name_lead(code):
+        elif (
+            code == 0x005f
+            or 0x0041 <= code <= 0x005a
+            or 0x0061 <= code <= 0x007a
+        ):
             return self._read_name()
         else:
             raise UnexpectedCharacter(

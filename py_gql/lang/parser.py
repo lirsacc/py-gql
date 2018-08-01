@@ -5,6 +5,7 @@
 # This would also require as good error messages which eliminates some parser
 # generators with bad disambiguation.
 
+import collections
 import functools as ft
 
 from . import ast as _ast, token as _token
@@ -36,12 +37,12 @@ DIRECTIVE_LOCATIONS = frozenset(
 )
 
 
-EXECUTABLE_DEFINITIONS = frozenset(
+EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset(
     ["query", "mutation", "subscription", "fragment"]
 )
 
 
-SCHEMA_DEFINITIONS = frozenset(
+SCHEMA_DEFINITIONS_KEYWORDS = frozenset(
     [
         "schema",
         "scalar",
@@ -50,15 +51,14 @@ SCHEMA_DEFINITIONS = frozenset(
         "union",
         "enum",
         "input",
-        "extend",
         "directive",
     ]
 )
 
-OPERATION_TYPES = frozenset(["query", "mutation", "subscription"])
+OPERATION_TYPES_KEYWORDS = frozenset(["query", "mutation", "subscription"])
 
 
-def _unexpected_token(msg_or_token, position, source):
+def _unexpected(msg_or_token, position, source):
     if isinstance(msg_or_token, _token.Token):
         if isinstance(msg_or_token, _token.EOF):
             return UnexpectedEOF(position, source)
@@ -133,15 +133,8 @@ def parse_type(source, **kwargs):
     return value
 
 
-def _is(token, *kinds):
-    """ Check if a token is of certain kind(s). """
-    # [TODO] This does type comparison for token type detection, could it be
-    # faster by checking a string ? I assume so, but then the gain might be
-    # negligible, still worth considering at some point.
-    # Follow-up with a timeit microbenchmark pointed to ``t.__class__ is cls``
-    # being the fastest exact type comparison method in that case.
-    t = type(token)
-    return any((t == kind for kind in kinds))
+def _is(token, kind):
+    return token.__class__ == kind
 
 
 class Parser(object):
@@ -204,6 +197,18 @@ class Parser(object):
 
     """
 
+    __slots__ = (
+        "_lexer",
+        "_source",
+        "_loc",
+        "_allow_type_system",
+        "_allow_legacy_sdl_empty_fields",
+        "_allow_legacy_sdl_implements_interfaces",
+        "_experimental_fragment_variables",
+        "_buffer",
+        "_last",
+    )
+
     def __init__(
         self,
         source,
@@ -216,7 +221,6 @@ class Parser(object):
         self._lexer = Lexer(source)
         self._source = self._lexer._source
 
-        self._no_location = no_location
         self._allow_type_system = allow_type_system
         self._allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
         self._allow_legacy_sdl_implements_interfaces = (
@@ -224,24 +228,25 @@ class Parser(object):
         )
         self._experimental_fragment_variables = experimental_fragment_variables
 
+        if no_location:
+            self._loc = lambda _: None
+        else:
+            self._loc = lambda start: (start.start, self._last.end)
+
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead
         # semantics and can only be consumed once.
-        self._window = None
+        self._buffer = collections.deque()
         self._last = None
 
     def _advance_window(self):
         """ Advance the parsing window by one element.
         Raise ``py_gql.exc.UnexpectedEOF`` error when trying to advance past
-        EOF when parsing window is empty.
-        """
-        if self._window is None:
-            self._window = []
-
+        EOF when parsing window is empty. """
         try:
-            self._window.append(next(self._lexer))
+            self._buffer.appendleft(next(self._lexer))
         except StopIteration:
-            if len(self._window) == 0:
+            if len(self._buffer) == 0:
                 raise UnexpectedEOF(self._lexer._len, self._lexer._source)
 
     def peek(self, count=1):
@@ -258,12 +263,15 @@ class Parser(object):
             :class:`~py_gql.exc.UnexpectedEOF`:
                 if there is not enough tokens left in the lexer.
         """
-        delta = 1 if self._window is None else (count - len(self._window))
-        for _ in range(delta):
-            self._advance_window()
-        if len(self._window) >= count:
-            return self._window[count - 1]
-        return None
+
+        if len(self._buffer) < count:
+            for _ in range(count - len(self._buffer)):
+                self._advance_window()
+
+        try:
+            return self._buffer[-count]
+        except IndexError:
+            return None
 
     def advance(self):
         """ Move parsing window forward and return the next token.
@@ -275,8 +283,10 @@ class Parser(object):
             :class:`~py_gql.exc.UnexpectedEOF`:
                 if there is not enough tokens left in the lexer.
         """
-        self._advance_window()
-        self._last = self._window.pop(0)
+        if not self._buffer:
+            self._advance_window()
+
+        self._last = self._buffer.pop()
         return self._last
 
     def expect(self, kind):
@@ -294,7 +304,7 @@ class Parser(object):
         if _is(next_token, kind):
             return self.advance()
 
-        raise _unexpected_token(
+        raise _unexpected(
             'Expected %s but found "%s"' % (kind.__name__, next_token),
             next_token.start,
             self._lexer._source,
@@ -314,7 +324,7 @@ class Parser(object):
         if _is(next_token, _token.Name) and next_token.value == keyword:
             return self.advance()
 
-        raise _unexpected_token(
+        raise _unexpected(
             'Expected "%s" but found "%s"' % (keyword, next_token),
             next_token.start,
             self._lexer._source,
@@ -422,13 +432,6 @@ class Parser(object):
                 break
         return items
 
-    def _loc(self, start):
-        """ Return the current location tuple or ``None`` if the instance is
-        set to not track locations. """
-        if self._no_location:
-            return None
-        return (start.start, self._last.end)
-
     def parse_document(self):
         """ Document : Definition+
 
@@ -456,18 +459,21 @@ class Parser(object):
         """
         start = self.peek()
         if _is(start, _token.Name):
-            if start.value in EXECUTABLE_DEFINITIONS:
+            if start.value in EXECUTABLE_DEFINITIONS_KEYWORDS:
                 return self.parse_executable_definition()
-            elif self._allow_type_system and start.value in SCHEMA_DEFINITIONS:
-                return self.parse_type_system_definition()
+            elif self._allow_type_system:
+                if start.value in SCHEMA_DEFINITIONS_KEYWORDS:
+                    return self.parse_type_system_definition()
+                elif start.value == "extend":
+                    return self.parse_type_system_extension()
         elif _is(start, _token.CurlyOpen):
             return self.parse_executable_definition()
-        elif self._allow_type_system and _is(
-            start, _token.String, _token.BlockString
+        elif self._allow_type_system and (
+            _is(start, _token.String) or _is(start, _token.BlockString)
         ):
             return self.parse_type_system_definition()
 
-        raise _unexpected_token(start, start.start, self._lexer._source)
+        raise _unexpected(start, start.start, self._lexer._source)
 
     def parse_name(self):
         """ Convert a name lex token into a name parse node.
@@ -488,13 +494,13 @@ class Parser(object):
         """
         start = self.peek()
         if _is(start, _token.Name):
-            if start.value in OPERATION_TYPES:
+            if start.value in OPERATION_TYPES_KEYWORDS:
                 return self.parse_operation_definition()
             elif start.value == "fragment":
                 return self.parse_fragment_definition()
         elif _is(start, _token.CurlyOpen):
             return self.parse_operation_definition()
-        raise _unexpected_token(start, start.start, self._lexer._source)
+        raise _unexpected(start, start.start, self._lexer._source)
 
     def parse_operation_definition(self):
         """ OperationDefinition : SelectionSet
@@ -533,7 +539,7 @@ class Parser(object):
         token = self.expect(_token.Name)
         if token.value in ("query", "mutation", "subscription"):
             return token.value
-        raise _unexpected_token(token, token.start, self._lexer._source)
+        raise _unexpected(token, token.start, self._lexer._source)
 
     def parse_variable_definitions(self):
         """ VariableDefinitions : ( VariableDefinition+ )
@@ -735,7 +741,7 @@ class Parser(object):
         """
         token = self.peek()
         if token.value == "on":
-            raise _unexpected_token(token, token.start, self._lexer._source)
+            raise _unexpected(token, token.start, self._lexer._source)
         return self.parse_name()
 
     def parse_value_literal(self, const=False):
@@ -791,7 +797,7 @@ class Parser(object):
                 )
         elif kind == _token.Dollar and not const:
             return self.parse_variable()
-        raise _unexpected_token(token, token.start, self._lexer._source)
+        raise _unexpected(token, token.start, self._lexer._source)
 
     def parse_string_literal(self):
         """
@@ -936,10 +942,11 @@ class Parser(object):
         Returns:
             py_gql.lang.ast.TypeSystemDefinition:
         """
+        next_ = self.peek()
         keyword = (
             self.peek(2)
-            if _is(self.peek(), _token.String, _token.BlockString)
-            else self.peek()
+            if _is(next_, _token.String) or _is(next_, _token.BlockString)
+            else next_
         )
 
         if type(keyword) == _token.Name:
@@ -957,12 +964,10 @@ class Parser(object):
                 return self.parse_enum_type_definition()
             elif keyword.value == "input":
                 return self.parse_input_object_type_definition()
-            elif keyword.value == "extend":
-                return self.parse_type_system_extension()
             elif keyword.value == "directive":
                 return self.parse_directive_definition()
 
-        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
+        raise _unexpected(keyword, keyword.start, self._lexer._source)
 
     def parse_description(self):
         """ Description : StringValue
@@ -970,9 +975,10 @@ class Parser(object):
         Returns:
             py_gql.lang.ast.StringValue:
         """
+        next_ = self.peek()
         return (
             self.parse_string_literal()
-            if _is(self.peek(), _token.String, _token.BlockString)
+            if _is(next_, _token.String) or _is(next_, _token.BlockString)
             else None
         )
 
@@ -1078,21 +1084,15 @@ class Parser(object):
         Returns:
             List[py_gql.lang.ast.FieldDefinition]:
         """
-        if (
-            self._allow_legacy_sdl_empty_fields
-            and _is(self.peek(), _token.CurlyOpen)
-            and type(self.peek(2)) == _token.CurlyClose
-        ):
-            self.advance()
-            self.advance()
-            return []
-        return (
-            self.many(
+        if _is(self.peek(), _token.CurlyOpen):
+            if self._allow_legacy_sdl_empty_fields:
+                func = self.any_
+            else:
+                func = self.many
+            return func(
                 _token.CurlyOpen, self.parse_field_definition, _token.CurlyClose
             )
-            if _is(self.peek(), _token.CurlyOpen)
-            else []
-        )
+        return []
 
     def parse_field_definition(self):
         """ FieldDefinition : \
@@ -1313,7 +1313,7 @@ class Parser(object):
             elif keyword.value == "input":
                 return self.parse_input_object_type_extension()
 
-        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
+        raise _unexpected(keyword, keyword.start, self._lexer._source)
 
     def parse_schema_extension(self):
         """ SchemaExtension : extend schema Directives[Const] \
@@ -1353,7 +1353,7 @@ class Parser(object):
         name = self.parse_name()
         directives = self.parse_directives(True)
         if not directives:
-            raise _unexpected_token(start, start.start, self._lexer._source)
+            raise _unexpected(start, start.start, self._lexer._source)
         return _ast.ScalarTypeExtension(
             name=name,
             directives=directives,
@@ -1379,7 +1379,7 @@ class Parser(object):
         fields = self.parse_fields_definition()
         if (not interfaces) and (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise _unexpected(tok, tok.start, self._lexer._source)
         return _ast.ObjectTypeExtension(
             name=name,
             interfaces=interfaces,
@@ -1405,7 +1405,7 @@ class Parser(object):
         fields = self.parse_fields_definition()
         if (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise _unexpected(tok, tok.start, self._lexer._source)
 
         return _ast.InterfaceTypeExtension(
             name=name,
@@ -1431,7 +1431,7 @@ class Parser(object):
         types = self.parse_union_member_types()
         if (not directives) and (not types):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise _unexpected(tok, tok.start, self._lexer._source)
 
         return _ast.UnionTypeExtension(
             name=name,
@@ -1457,7 +1457,7 @@ class Parser(object):
         values = self.parse_enum_values_definition()
         if (not directives) and (not values):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise _unexpected(tok, tok.start, self._lexer._source)
 
         return _ast.EnumTypeExtension(
             name=name,
@@ -1482,7 +1482,7 @@ class Parser(object):
         directives = self.parse_directives(True)
         fields = self.parse_input_fields_definition()
         if (not directives) and (not fields):
-            raise _unexpected_token("", start.start, self._lexer._source)
+            raise _unexpected("", start.start, self._lexer._source)
 
         return _ast.InputObjectTypeExtension(
             name=name,
@@ -1542,6 +1542,6 @@ class Parser(object):
         name = self.parse_name()
         if name.value in DIRECTIVE_LOCATIONS:
             return name
-        raise _unexpected_token(
+        raise _unexpected(
             "Unexpected Name %s" % name.value, start.start, self._lexer._source
         )
