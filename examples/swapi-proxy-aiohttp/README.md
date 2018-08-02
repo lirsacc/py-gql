@@ -1,4 +1,4 @@
-# SWAPI + Flask GraphQL proxy
+# SWAPI + Aiohttp GraphQL proxy
 
 ```
 ./run
