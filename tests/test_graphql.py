@@ -7,6 +7,22 @@ from py_gql._graphql import graphql
 from py_gql.schema import String, Schema
 
 
+def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
+    starwars_schema
+):
+    result = graphql(
+        starwars_schema,
+        """
+        query HeroNameQuery {
+            hero {
+            name
+            }
+        }
+        """,
+    )
+    assert result.response() == {"data": {"hero": {"name": "R2-D2"}}}
+
+
 def test_correct_response_on_syntax_error_1(starwars_schema):
     assert graphql(starwars_schema, "", {}).response() == {
         "errors": [

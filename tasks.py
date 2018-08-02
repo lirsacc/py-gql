@@ -46,7 +46,7 @@ def clean(ctx):
             "| xargs rm -rf",
             echo=True,
         )
-        ctx.run("rm -rf py_gql/**/*.c", echo=True)
+        ctx.run("rm -rf py_gql/**/*.c  py_gql/*.c", echo=True)
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
@@ -61,6 +61,11 @@ def test(
     junit=False,
 ):
     """ Run test suite (using: py.test) """
+
+    ignore = []
+    if sys.version < "3.5":
+        ignore.extend(["py_gql/asyncio.py", "tests/test_asyncio.py"])
+
     with ctx.cd(ROOT):
         ctx.run(
             _join(
@@ -78,6 +83,11 @@ def test(
                     "--junit-xml junit.xml" if junit else None,
                     "-vvl --full-trace" if verbose else "--quiet",
                     "-k %s" % grep if grep else None,
+                    (
+                        " ".join("--ignore %s" % i for i in ignore)
+                        if ignore
+                        else None
+                    ),
                     "%s tests" % pkg.NAME if file_ is None else file_,
                 ]
             ),
