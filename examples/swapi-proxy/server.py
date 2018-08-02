@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# fmt: off
-""" Simple example GraphQL server translating and proxying the queries to
-https://swapi.co using no external dependency.
-"""
 
 import os
 
