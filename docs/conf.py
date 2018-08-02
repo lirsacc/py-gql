@@ -16,8 +16,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-from recommonmark.parser import CommonMarkParser
-
 import setup as pkg
 from docs import graphql_pygments  # flake8: noqa
 
@@ -59,7 +57,7 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_parsers = {".md": CommonMarkParser}
+source_parsers = {".md": "recommonmark.parser.CommonMarkParser"}
 
 source_suffix = [".rst", ".md"]
 
@@ -97,15 +95,15 @@ FONTS = '"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Ari
 
 html_theme_options = {
     "logo": "GraphQL_Logo.svg",
-    "pink_1": "#FFCBD2",
-    "pink_2": "#CE062B",
+    "pink_1": "#F6D7DA",
+    "pink_2": "#F3C6CB",
     "github_user": "lirsacc",
     "github_repo": "py-gql",
     "github_button": False,
     "github_banner": False,
     "font_family": FONTS,
-    "note_bg": "#AAEDF1",
-    "note_border": "#006264",
+    "note_bg": "#FFF1D1",
+    "note_border": "#FEECBF",
     "show_related": False,
     "page_width": "960px",
     "fixed_sidebar": True,
@@ -129,10 +127,10 @@ html_static_path = ["_static"]
 html_sidebars = {
     "**": [
         "about.html",
+        "sidebarlinks.html",
         "navigation.html",
-        # 'relations.html',
+        "relations.html",
         "searchbox.html",
-        # 'donate.html',
     ]
 }
 

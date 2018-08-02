@@ -8,6 +8,7 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i');
 @import url('https://fonts.googleapis.com/css?family=Roboto+Mono:300,300i,400,400i,700,700i');
 
+
 .admonition-title {
     font-size: 1em !important;
     font-weight: bold !important;
@@ -16,7 +17,7 @@
 }
 
 div.admonition {
-    padding: 0.5em 0.5em !important;
+    padding: 1em 1em !important;
 }
 
 pre,
@@ -24,4 +25,9 @@ tt,
 code {
     font-family: "Roboto Mono", "Menlo", "Deja Vu Sans Mono",
         "Bitstream Vera Sans Mono", monospace;
+}
+
+pre, .pre {
+    background: #F7F8F9;
+    border: 1px solid #EEEEEE;
 }

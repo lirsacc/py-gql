@@ -17,17 +17,14 @@ It supports:
   files (including support for schema directives)
 - Validating and Executing a GraphQL request against a type schema
 
+The source code is available on `Github <https://github.com/lirsacc/py-gql>`_.
+
 .. note::
 
     If you are not familiar with GraphQL we strongly suggest you head over to
-    https://graphql.org or have a look at `the spec <https://github.com/facebook/graphql>`_
-    before going further.
+    `graphql.org <https://graphql.org>`_ or have a look at `the specification
+    <https://github.com/facebook/graphql>`_ before going further.
 
-
-Quick Links
------------
-
-- The source code is available on `Github <https://github.com/lirsacc/py-gql>`_
 
 Documentation
 -------------
@@ -38,6 +35,7 @@ Documentation
    install
    guides
    api/index
+   changes
 
 
 Indices and tables

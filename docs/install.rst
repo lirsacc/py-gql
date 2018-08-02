@@ -3,7 +3,7 @@ Installation
 
 **Release:** v\ |version|
 
-**Python versions**: Python 2.7, 3.5 (untested), 3.6, 3.7
+**Python versions**: Python 2.7, 3.5, 3.6, 3.7
 
 **Platforms**: Unix/Posix
 
@@ -23,13 +23,12 @@ Installing with Cython
 
     This is experimental and might be removed in the future.
 
-In case `Cython <http://cython.org/>`_ is installed when installing this package
-with setuptools, parts of the code will be compiled as C-extensions to bring
-performance improvements.
+In case `Cython <http://cython.org/>`_ is available when installing this package
+with setuptools, parts of the code will be compiled for increased performance.
 
 Notes:
 
-- There is not specific Cython code or optimization and we use the
+- There is not specific Cython code or optimization, i.e. we use the
   `pure python <http://cython.readthedocs.io/en/latest/src/tutorial/pure.html>`_
   mode.
 - In case you need Cython installed but do not want this package to be

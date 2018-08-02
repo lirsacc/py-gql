@@ -1,40 +1,51 @@
-# PyGQL
-
-> Implementation of GraphQL primitives for Python.
->
-> This library should always track the latest version of the [spec](http://facebook.github.io/graphql/).
-
-**:construction: WIP! Do not use this in production :construction:**
+py-gql
+======
 
 [![CircleCI](https://circleci.com/gh/lirsacc/py-gql/tree/master.svg?style=svg)](https://circleci.com/gh/lirsacc/py-gql/tree/master)
 
-**Roadmap**: See issue #1 for roadmap to version 1.
+py-gql is a [GraphQL](http://facebook.github.io/graphql/) implementation for Python.
 
-This is for now a learning project born out of some frustrations with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work and on personal projects. While they work fairly well and we still run with them in production I figured I could tackle the following goals better by starting this.
+**:construction: WIP! Do not use this in production just yet :construction:**
 
-1.  personnally get a deeper understanding of GraphQL by implementing the spec.
+Installation
+------------
 
-2.  experiment and provide a (albeit subjectively) nicer interface for Python (aiming for something in between graphql-core and Graphene) which tracks the most recent graphql spec (~~graphql-core doesn't, e.g. `null` support which has been in limbo for a while~~, glad to see that doesn't seem to be the case anynmore) and doesn't expose Javascript idioms like returning `undefined` to denote an exception
+> TODO after PyPi release
 
-3.  solve some performance issue we encountered with graphql-core at work (mostly handling of large result sets and making solving the N+1 issue easier + adding some hooks where we were missing them)
+Usage & Examples
+----------------
 
-4.  (later) Some convenience helpers for generating schemas and generally making working with GraphQL easier. One candidate is [sqlalchemy](https://www.sqlalchemy.org/) integration.
+> TODO: Write some simple usage example
 
-For now, this is largely based on the [GraphQL JS](https://github.com/graphql/graphql-js) implementation and extensive test suite as the first goal is to get a working library covering the current spec and working synchronously. As such naming and implementation might be similar and there are some comments documenting the divergences; but it is not supposed to be a 1-1 port and the internals / api are meant to be iterated upon and diverge more over time once the current spec is implemented.
+- You can refer to the [tests](./tests) for some simple usage examples
+- Some more involved examples are available in the [examples](./examples) folder.
 
-## Examples
+Goals & Status
+--------------
 
-Refer to the respective `README.md` in each directory for specific instructions.
+This project was initially born as an experiment / learning project following some frustration with with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) we encountered at work.
 
-To install the dependencies for **all** the examples (should not conflict), run: `pip install -r examples/**/requirements.txt`.
+The main goals were to:
 
-**List of examples:**
+- Get a deeper understanding of the GraphQL specification and available implementations.
+- Provide an alternative to graphql-core that:
+  - tracks the lastest version of the GraphQL specification
+  - does not necessarily attempt to track the reference javascript implementation
+  - (subjective) attempts to be a bit more usable, the ideal result would sit between Graphene and graphql-core
+- Make it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
+- Maintain Python 2.7 compatibility due to work projects still running it.
 
--   [SWAPI Proxy](./examples/swapi-proxy): A graphql server example which proxies all requests to [SWPAPI](https://swapi.co) and generates the runtime schema from an SDL.
+**Note:** The [graphql-core-next](https://github.com/graphql-python/graphql-core-next) project is currently working on providing a more up to date alternative to graphql-core. Importantly for us it tracks the specification and includes SDL based schema creation; however it is Python 3 only for now and still closely tracks the JS implementation.
 
-## Development
+### Current status
 
--   Create a virtualenv: `python3 -m venv $WORKON_HOME/py-gql`.
--   Initially you can install the dependencies with `pip install -r dev-requirements.txt` and then just run `inv deps`.
--   All dev tasks are run with [`invoke`](http://www.pyinvoke.org/), use `inv -l` to list all available tasks.
--   Tests are run with [`pytest`](https://docs.pytest.org/en/latest/) and live in the `tests` directory.
+So far every aspect of the library that is necessary for us to start using it in production has been implemented; the most notable ommission being subscribtions. For a more detailled roadmap of what remains to be done before calling this a v1, see [Issue #1](https://github.com/lirsacc/py-gql/issues/1).
+
+- While some parts of the code / design are still very close to the graphql-js / graphql-core implementations, all the code has been re-implemented from scratch and the implementations will most likely diverge in the future.
+- The test suite is quite extensive and largely based on the [graphql-js](https://github.com/graphql/graphql-js) one
+
+
+Development setup
+-----------------
+
+> TODO
