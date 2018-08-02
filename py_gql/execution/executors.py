@@ -7,14 +7,14 @@ from ._concurrency import DummyFuture
 
 
 class Executor(_f.Executor):
-    future_factory = _f.Future
+    Future = _f.Future
 
 
 class SyncExecutor(Executor):
     """ Placeholder executor to work synchronously without leaving the
     current execution context. """
 
-    future_factory = DummyFuture
+    Future = DummyFuture
 
     def submit(self, func, *args, **kwargs):
         return func(*args, **kwargs)

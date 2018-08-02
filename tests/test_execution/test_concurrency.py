@@ -7,12 +7,6 @@ import pytest
 from py_gql.execution import _concurrency
 
 
-def test_all_wrapper_sync():
-    futures = [x for x in range(10)]
-    wrapper = _concurrency.all_(futures)
-    assert wrapper == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-
 def test_all_wrapper_futures_ok():
     futures = [_f.Future() for _ in range(10)]
 

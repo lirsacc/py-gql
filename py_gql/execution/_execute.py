@@ -2,6 +2,8 @@
 """ Implement the evaluating requests section of the
 GraphQL specification. """
 # REVIEW: The resolver interface is mirrored on graphql-js but that might change
+# REVIEW: The Future based interface can be awkward especially when checking
+# for Future instances in order to gain performance.
 
 import functools as ft
 
@@ -150,10 +152,10 @@ def execute(  # flake8: noqa : C901
 
     if _concurrency.is_deferred(deferred_result):
         return _concurrency.chain(
-            deferred_result, _on_end, factory=ctx.executor.future_factory
+            deferred_result, _on_end, cls=ctx.executor.Future
         )
     return _concurrency.deferred(
-        _on_end(deferred_result), factory=ctx.executor.future_factory
+        _on_end(deferred_result), cls=ctx.executor.Future
     )
 
 
@@ -340,7 +342,7 @@ def _field_def(ctx, parent_type, name):
         else:
             ctx.field_defs[cache_key] = parent_type.field_map.get(name, None)
 
-    return ctx.field_defs.get(cache_key, None)
+    return ctx.field_defs[cache_key]
 
 
 def _resolve_type(value, context, schema, abstract_type):
@@ -382,9 +384,9 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
         )
 
     return _concurrency.chain(
-        _concurrency.all_(deferred_fields, factory=ctx.executor.future_factory),
+        _concurrency.all_(deferred_fields, cls=ctx.executor.Future),
         OrderedDict,
-        factory=ctx.executor.future_factory,
+        cls=ctx.executor.Future,
     )
 
 
@@ -415,7 +417,7 @@ def _execute_selections_serially(
         )
 
     steps.append(lambda: OrderedDict(resolved_fields))
-    return _concurrency.serial(steps, factory=ctx.executor.future_factory)
+    return _concurrency.serial(steps, cls=ctx.executor.Future)
 
 
 def resolve_field(
@@ -437,43 +439,28 @@ def resolve_field(
         ctx.executor,
     )
 
-    cache_key = (parent_type.name, field_def.name, tuple(nodes))
-    if cache_key not in ctx.resolvers:
+    resolver = field_def.resolve or default_resolver
 
-        resolver = field_def.resolve or default_resolver
+    def _unwrap(value):
+        value = lazy(value)
+        if _concurrency.is_deferred(value):
+            return _concurrency.unwrap(value, cls=ctx.executor.Future)
+        return value
 
-        def _unwrap(value):
-            value = lazy(value)
-            if _concurrency.is_deferred(value):
-                return _concurrency.unwrap(
-                    value, factory=ctx.executor.future_factory
-                )
-            return value
-
-        def resolve(root, args, context, info):
-            resolved = _unwrap(
-                ctx.executor.submit(resolver, root, args, context, info)
+    def resolve(root, args, context, info):
+        resolved = _unwrap(
+            ctx.executor.submit(resolver, root, args, context, info)
+        )
+        if _concurrency.is_deferred(resolved):
+            complete = ft.partial(
+                complete_value, ctx, field_def.type, nodes, info.path
             )
-            if _concurrency.is_deferred(resolved):
-                complete = ft.partial(
-                    complete_value, ctx, field_def.type, nodes, info.path
-                )
-                return _concurrency.chain(
-                    resolved,
-                    lazy,
-                    complete,
-                    factory=ctx.executor.future_factory,
-                )
-            return complete_value(
-                ctx, field_def.type, nodes, info.path, resolved
+            return _concurrency.chain(
+                resolved, lazy, complete, cls=ctx.executor.Future
             )
+        return complete_value(ctx, field_def.type, nodes, info.path, resolved)
 
-        if ctx.middlewares:
-            resolve = apply_middlewares(resolve, ctx.middlewares)
-
-        ctx.resolvers[cache_key] = resolve
-    else:
-        resolve = ctx.resolvers[cache_key]
+    resolve = apply_middlewares(resolve, ctx.middlewares)
 
     def _on_success(field_value):
         return on_success((key, field_value))
@@ -495,13 +482,11 @@ def resolve_field(
         if _concurrency.is_deferred(resolved_or_deferred):
             return _concurrency.except_(
                 _concurrency.chain(
-                    resolved_or_deferred,
-                    _on_success,
-                    factory=ctx.executor.future_factory,
+                    resolved_or_deferred, _on_success, cls=ctx.executor.Future
                 ),
                 (CoercionError, ResolverError),
                 _on_error,
-                factory=ctx.executor.future_factory,
+                cls=ctx.executor.Future,
             )
         return _on_success(resolved_or_deferred)
 
@@ -526,7 +511,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         return _concurrency.chain(
             complete_value(ctx, field_type.type, nodes, path, resolved_value),
             _handle_null,
-            factory=ctx.executor.future_factory,
+            cls=ctx.executor.Future,
         )
 
     if resolved_value is None:
@@ -544,7 +529,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
                 complete_value(ctx, field_type.type, nodes, path + [i], entry)
                 for i, entry in enumerate(resolved_value)
             ],
-            factory=ctx.executor.future_factory,
+            cls=ctx.executor.Future,
         )
 
     if kind is ScalarType:
@@ -596,18 +581,14 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
             runtime_type = field_type
 
         return _execute_selections(
-            ctx,
-            list(_sub_selections(nodes)),
-            runtime_type,
-            resolved_value,
-            path,
+            ctx, list(_subselections(nodes)), runtime_type, resolved_value, path
         )
 
 
-def _sub_selections(nodes):
-    for f in nodes:
-        for s in f.selection_set.selections:
-            yield s
+def _subselections(nodes):
+    for field in nodes:
+        for selection in field.selection_set.selections:
+            yield selection
 
 
 def _argument_values(ctx, field_def, nodes):

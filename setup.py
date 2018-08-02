@@ -8,7 +8,6 @@ import os
 
 from setuptools import find_packages, setup
 
-
 NAME = "py_gql"
 AUTHOR = "Charles Lirsac"
 AUTHOR_EMAIL = "c.lirsac@gmail.com"

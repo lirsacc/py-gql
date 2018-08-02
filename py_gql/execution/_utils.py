@@ -29,7 +29,6 @@ class ExecutionContext(object):
         "field_defs",
         "subselections",
         "argument_values",
-        "resolvers",
     )
 
     def __init__(
@@ -80,7 +79,6 @@ class ExecutionContext(object):
         self.field_defs = {}
         self.subselections = {}
         self.argument_values = {}
-        self.resolvers = {}
 
     def add_error(self, err, node=None, path=None):
         """ Register a localized execution error.
