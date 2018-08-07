@@ -35,7 +35,7 @@ def run_setup():
         # package_data={},
         install_requires=_split_requirements("requirements.txt"),
         include_package_data=True,
-        python_requires=">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+        python_requires=">2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
         ext_modules=_cython_ext_modules(
             "py_gql/*.py",
             "py_gql/lang/*.py",
