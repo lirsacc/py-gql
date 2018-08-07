@@ -7,7 +7,6 @@ references:
             - image: circleci/python:3.5.5
               environment:
                 PY: 35
-                REQUIREMENTS: -rpy2-dev-requirements.txt
 
     docker-python36: &docker-python36
         docker:

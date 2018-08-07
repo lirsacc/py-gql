@@ -4,9 +4,8 @@ import sys
 
 import invoke
 
-import setup as pkg
-
 ROOT = os.path.dirname(os.path.abspath(__file__))
+PKG = "py_gql"
 
 
 def _join(cmd):
@@ -76,19 +75,19 @@ def test(
                     (
                         "--cov %s --cov-config pytest.ini --no-cov-on-fail "
                         "--cov-report term --cov-report html --cov-report xml "
-                        % pkg.NAME
+                        % PKG
                     )
                     if coverage
                     else None,
                     "--junit-xml junit.xml" if junit else None,
-                    "-vvl --full-trace" if verbose else "--quiet",
+                    "-vvl --full-trace" if verbose else None,
                     "-k %s" % grep if grep else None,
                     (
                         " ".join("--ignore %s" % i for i in ignore)
                         if ignore
                         else None
                     ),
-                    "%s tests" % pkg.NAME if file_ is None else file_,
+                    "%s tests" % PKG if file_ is None else file_,
                 ]
             ),
             echo=True,
@@ -118,10 +117,14 @@ def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
 
 
 @invoke.task
-def lint(ctx, pylint=True):
+def lint(ctx, pylint=True, files=None):
     """ Run linters """
+
+    if files is None:
+        files = "%s tests" % PKG
+
     with ctx.cd(ROOT):
-        ctx.run("flake8 --config .flake8 %s tests" % pkg.NAME, echo=True)
+        ctx.run("flake8 --config .flake8 %s" % files, echo=True)
         if pylint:
             ctx.run(
                 _join(
@@ -129,7 +132,8 @@ def lint(ctx, pylint=True):
                         "pylint",
                         "--rcfile=.pylintrc",
                         "--output-format=colorized",
-                        "%s tests" % pkg.NAME,
+                        "--jobs=0",
+                        files,
                     ]
                 ),
                 echo=True,
@@ -141,7 +145,7 @@ def fmt(ctx, verbose=False, files=None):
     """ Run formatters """
 
     if files is None:
-        files = "%s/**/*.py tests/**/*.py" % pkg.NAME
+        files = "%s/**/*.py tests/**/*.py examples/**/*.py" % PKG
 
     with ctx.cd(ROOT):
         ctx.run(
@@ -165,19 +169,11 @@ def fmt(ctx, verbose=False, files=None):
 
 
 @invoke.task
-def docs(ctx, clean_=True, regenerate_reference=False, strict=False):
+def docs(ctx, clean_=True, strict=False):
     """ Generate documentation """
     with ctx.cd(os.path.join(ROOT, "docs")):
         if clean_:
             ctx.run("rm -rf _build", echo=True)
-        if regenerate_reference:
-            if clean_:
-                ctx.run("rm -rf ref", echo=True)
-            ctx.run(
-                "sphinx-apidoc -Mef -o ref ../%s" % pkg.NAME,
-                pty=True,
-                echo=True,
-            )
         ctx.run(
             _join(
                 [
@@ -190,3 +186,11 @@ def docs(ctx, clean_=True, regenerate_reference=False, strict=False):
             pty=True,
             echo=True,
         )
+
+
+@invoke.task
+def build(ctx):
+    """ Build source distribution and wheel for upload to PyPi """
+    with ctx.cd(ROOT):
+        ctx.run("rm -rf dist", echo=True)
+        ctx.run("python setup.py sdist bdist_wheel", echo=True)

@@ -1,2 +1,13 @@
 include README.md
 include LICENSE
+include CHANGELOG.md
+include pytest.ini
+include requirements.txt
+include test-requirements.txt py3-test-requirements.txt
+
+recursive-include py_gql *.py
+recursive-include tests *.py
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude py_gql *.c *.so
