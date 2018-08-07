@@ -7,18 +7,18 @@ from py_gql.exc import SDLError
 from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import UUID
-from py_gql.schema.builders import build_schema_from_ast
+from py_gql.schema.build import build_schema_from_ast, make_executable_schema
 from py_gql.schema.directives import SPECIFIED_DIRECTIVES
 
 
 def _check(schema):
-    s = build_schema_from_ast(schema)
+    s = make_executable_schema(schema)
     assert s.to_string() == dedent(schema)
     return s
 
 
 def test_built_schema_is_executable():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         parse(
             """
             type Query {
@@ -34,7 +34,7 @@ def test_built_schema_is_executable():
 
 
 def test_accepts_strings():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             str: String
@@ -98,7 +98,7 @@ def test_descriptions_supports():
 
 
 def test_specified_directives_are_enforced():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @foo(arg: Int) on FIELD
 
@@ -112,7 +112,7 @@ def test_specified_directives_are_enforced():
 
 
 def test_specified_directives_can_be_overriden():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @skip on FIELD
         directive @include on FIELD
@@ -274,7 +274,7 @@ def test_union():
 
 
 def test_executing_union_default_resolve_type():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             fruits: [Fruit]
@@ -320,7 +320,7 @@ def test_executing_union_default_resolve_type():
 
 
 def test_executing_interface_default_resolve_type():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             characters: [Character]
@@ -543,7 +543,7 @@ def test_supports_deprecated():
 
 
 def test_root_operation_types_with_custom_names():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         schema {
             query: SomeQuery
@@ -562,7 +562,7 @@ def test_root_operation_types_with_custom_names():
 
 
 def test_default_root_operation_type_names():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query { str: String }
         type Mutation { str: String }
@@ -577,7 +577,7 @@ def test_default_root_operation_type_names():
 
 def test_allows_only_a_single_schema_definition():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -600,7 +600,7 @@ def test_allows_only_a_single_schema_definition():
 
 def test_allows_only_a_single_query_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -618,13 +618,13 @@ def test_allows_only_a_single_query_type():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
-        "message": "Can only define one query in schema",
+        "message": "Schema must only define a single query operation",
     }
 
 
 def test_allows_only_a_single_mutation_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -643,13 +643,13 @@ def test_allows_only_a_single_mutation_type():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
-        "message": "Can only define one mutation in schema",
+        "message": "Schema must only define a single mutation operation",
     }
 
 
 def test_allows_only_a_single_subscription_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -668,13 +668,13 @@ def test_allows_only_a_single_subscription_type():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
-        "message": "Can only define one subscription in schema",
+        "message": "Schema must only define a single subscription operation",
     }
 
 
 def test_unknown_type_referenced():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -693,7 +693,7 @@ def test_unknown_type_referenced():
 
 def test_unknown_type_in_interface_list():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast("type Query implements Bar { field: String }")
+        make_executable_schema("type Query implements Bar { field: String }")
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 23, "line": 1}],
         "message": "Type Bar not found in document",
@@ -702,7 +702,7 @@ def test_unknown_type_in_interface_list():
 
 def test_unknown_type_in_union_list():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             union TestUnion = Bar
             type Query { testUnion: TestUnion }
@@ -716,7 +716,7 @@ def test_unknown_type_in_union_list():
 
 def test_unknown_query_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Wat
@@ -728,14 +728,14 @@ def test_unknown_query_type():
             """
         )
     assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 3}],
-        "message": "query type Wat not found in document",
+        "locations": [{"column": 24, "line": 3}],
+        "message": "Type Wat not found in document",
     }
 
 
 def test_unknown_mutation_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -748,14 +748,14 @@ def test_unknown_mutation_type():
             """
         )
     assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
-        "message": "mutation type Wat not found in document",
+        "locations": [{"column": 27, "line": 4}],
+        "message": "Type Wat not found in document",
     }
 
 
 def test_unknown_subscription_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Hello
@@ -768,14 +768,14 @@ def test_unknown_subscription_type():
             """
         )
     assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
-        "message": "subscription type Wat not found in document",
+        "locations": [{"column": 31, "line": 4}],
+        "message": "Type Wat not found in document",
     }
 
 
 def test_does_not_consider_operation_names_or_fragment_name():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Foo
@@ -787,14 +787,14 @@ def test_does_not_consider_operation_names_or_fragment_name():
             """
         )
     assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 3}],
-        "message": "query type Foo not found in document",
+        "locations": [{"column": 24, "line": 3}],
+        "message": "Type Foo not found in document",
     }
 
 
 def test_forbids_duplicate_type_definitions():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             schema {
                 query: Repeated
@@ -817,7 +817,7 @@ def test_forbids_duplicate_type_definitions():
 
 def test_forbids_duplicate_directive_definition():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: String
@@ -834,7 +834,7 @@ def test_forbids_duplicate_directive_definition():
 
 
 def test_inject_custom_types():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo: UUID
@@ -848,7 +848,7 @@ def test_inject_custom_types():
 def test_inject_resolvers():
     resolvers = {"Query": {"foo": lambda *_: "foo"}}
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo: String
@@ -863,7 +863,7 @@ def test_inject_resolvers():
 def test_inject_resolvers_as_flat_map():
     resolvers = {"Query.foo": lambda *_: "foo"}
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo: String
@@ -878,7 +878,7 @@ def test_inject_resolvers_as_flat_map():
 def test_inject_resolvers_as_callable():
     resolvers = {"Query.foo": lambda *_: "foo"}
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo: String
@@ -890,22 +890,8 @@ def test_inject_resolvers_as_callable():
     assert schema.query_type.fields[0].resolve() == "foo"
 
 
-def test_ignores_unused_extensions():
-    build_schema_from_ast(
-        """
-        type Query {
-            one: Int
-        }
-
-        extend type Object {
-            one: Int
-        }
-        """
-    )
-
-
-def test_raise_on_unused_extensions_with_flag():
-    with pytest.raises(SDLError) as exc_info:
+def test_build_schema_from_ast_ignores_extensions():
+    assert (
         build_schema_from_ast(
             """
             type Query {
@@ -915,10 +901,17 @@ def test_raise_on_unused_extensions_with_flag():
             extend type Object {
                 one: Int
             }
-            """,
-            _raise_on_unknown_extension=True,
+
+            extend type Query {
+                two: String
+            }
+            """
+        ).to_string()
+        == dedent(
+            """
+            type Query {
+                one: Int
+            }
+            """
         )
-    assert exc_info.value.to_dict() == {
-        "locations": [{"column": 13, "line": 6}],
-        "message": 'Cannot extend unknown type "Object"',
-    }
+    )

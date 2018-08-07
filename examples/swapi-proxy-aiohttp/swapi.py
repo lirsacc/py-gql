@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import aiohttp
 
-
 URL = "https://swapi.co/api"
 LOCAL_CACHE = {}
 

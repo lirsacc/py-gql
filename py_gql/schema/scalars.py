@@ -229,34 +229,18 @@ class RegexType(ScalarType):
         self._parse_literal = _typed_coerce(_parse, _ast.StringValue)
 
 
-class DefaultScalarType(ScalarType):
+def _identity(value):
+    return value
+
+
+def default_scalar(name, description=None, nodes=None):
     """ Default noop scalar types used when generating scalars from schema
-    definitions.
-
-    Args:
-        name (str): Type name
-        description (Optional[str]): Type description
-        nodes (Optional[List[py_gql.lang.ast.Node]]):
-            Source nodes used when building type from the SDL
-
-    Attributes:
-        name (str): Type name
-        description (Optional[str]): Type description
-        nodes (Optional[List[py_gql.lang.ast.Node]]):
-            Source nodes used when building type from the SDL
-    """
-
-    # pylint: disable = super-init-not-called
-    def __init__(self, name, description=None, nodes=None):
-        self.name = name
-        self.description = description
-        self.nodes = [] if nodes is None else nodes
-
-    def serialize(self, value):
-        return value
-
-    def parse(self, value):
-        return value
-
-    def parse_literal(self, node, variables=None):
-        return node.value
+    definitions. """
+    return ScalarType(
+        name,
+        serialize=_identity,
+        parse=_identity,
+        parse_literal=lambda node, _: node.value,
+        description=description,
+        nodes=nodes,
+    )

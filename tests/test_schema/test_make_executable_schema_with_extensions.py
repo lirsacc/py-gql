@@ -7,12 +7,12 @@ from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import UUID, Field, ObjectType, String
-from py_gql.schema.builders import SchemaDirective, build_schema_from_ast
+from py_gql.schema.build import SchemaDirective, make_executable_schema
 
 
 def test_object_type_extension():
     assert (
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Object
@@ -62,7 +62,7 @@ def test_object_type_extension():
 
 def test_injected_object_type_extension():
     Foo = ObjectType("Foo", [Field("one", String)])
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo: Foo
@@ -92,7 +92,7 @@ def test_injected_object_type_extension():
 
 def test_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -101,13 +101,13 @@ def test_object_type_extension_duplicate_field():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 34, "line": 4}],
-        "message": 'Duplicate field "one" when extending type "Object"',
+        "message": 'Found duplicate field "one" when extending type "Object"',
     }
 
 
 def test_object_type_extension_already_implemented_interface():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo: String }
             interface IFace1 { one: String }
@@ -123,7 +123,7 @@ def test_object_type_extension_already_implemented_interface():
 
 def test_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -133,15 +133,15 @@ def test_object_type_extension_bad_extension():
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected ObjectTypeExtension for ObjectType "
-            '"Object" but got InputObjectTypeExtension'
+            "Expected ObjectTypeExtension when extending ObjectType "
+            "but got InputObjectTypeExtension"
         ),
     }
 
 
 def test_interface_type_extension():
     assert (
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: IFace
@@ -173,7 +173,7 @@ def test_interface_type_extension():
 
 def test_interface_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -182,13 +182,13 @@ def test_interface_type_extension_duplicate_field():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 38, "line": 4}],
-        "message": 'Duplicate field "one" when extending interface "IFace"',
+        "message": 'Found duplicate field "one" when extending interface "IFace"',
     }
 
 
 def test_interface_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -198,15 +198,15 @@ def test_interface_type_extension_bad_extension():
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected InterfaceTypeExtension for InterfaceType "
-            '"IFace" but got ObjectTypeExtension'
+            "Expected InterfaceTypeExtension when extending InterfaceType "
+            "but got ObjectTypeExtension"
         ),
     }
 
 
 def test_enum_extension():
     assert (
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -242,7 +242,7 @@ def test_enum_extension():
 
 def test_enum_extension_duplicate_value():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -262,13 +262,13 @@ def test_enum_extension_duplicate_value():
 
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 17, "line": 13}],
-        "message": 'Duplicate enum value "RED" when extending EnumType "Foo"',
+        "message": 'Found duplicate enum value "RED" when extending EnumType "Foo"',
     }
 
 
 def test_enum_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -288,14 +288,14 @@ def test_enum_extension_bad_extension():
 
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 12}],
-        "message": 'Expected EnumTypeExtension for EnumType "Foo" but got '
+        "message": "Expected EnumTypeExtension when extending EnumType but got "
         "ObjectTypeExtension",
     }
 
 
 def test_input_object_type_extension():
     assert (
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo(in: Foo): String
@@ -327,7 +327,7 @@ def test_input_object_type_extension():
 
 def test_input_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -336,13 +336,13 @@ def test_input_object_type_extension_duplicate_field():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 32, "line": 4}],
-        "message": 'Duplicate field "one" when extending input object "Foo"',
+        "message": 'Found duplicate field "one" when extending input object "Foo"',
     }
 
 
 def test_input_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -352,15 +352,15 @@ def test_input_object_type_extension_bad_extension():
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 4}],
         "message": (
-            "Expected InputObjectTypeExtension for InputObjectType "
-            '"Foo" but got ObjectTypeExtension'
+            "Expected InputObjectTypeExtension when extending InputObjectType "
+            "but got ObjectTypeExtension"
         ),
     }
 
 
 def test_union_type_extension():
     assert (
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -401,7 +401,7 @@ def test_union_type_extension():
 
 def test_union_type_extension_duplicate_type():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -423,13 +423,15 @@ def test_union_type_extension_duplicate_type():
 
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 32, "line": 16}],
-        "message": 'Duplicate type "Bar" when extending EnumType "Foo"',
+        "message": (
+            'Found duplicate member type "Bar" when extending UnionType "Foo"'
+        ),
     }
 
 
 def test_union_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: Foo
@@ -454,7 +456,7 @@ def test_union_type_extension_bad_extension():
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 16}],
         "message": (
-            'Expected UnionTypeExtension for UnionType "Foo" '
+            "Expected UnionTypeExtension when extending UnionType "
             "but got ObjectTypeExtension"
         ),
     }
@@ -465,7 +467,7 @@ def test_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @protected on SCALAR
 
@@ -506,7 +508,7 @@ def test_injected_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @protected on SCALAR
 
@@ -543,25 +545,24 @@ def test_injected_scalar_type_extension():
     assert schema.types["UUID"] is not UUID
 
 
-def test_raises_on_extending_specified_scala():
-    with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
-            """
-            directive @protected on SCALAR
+def test_does_not_extend_specified_scalar():
+    schema = make_executable_schema(
+        """
+        directive @protected on SCALAR
 
-            type Query {
-                foo: String
-            }
+        type Query {
+            foo: String
+        }
 
-            extend scalar String @protected
-            """
-        )
+        extend scalar String @protected
+        """
+    )
 
-    assert str(exc_info.value) == 'Cannot extend specified type "String"'
+    assert schema.get_type("String") is String
 
 
 def test_schema_extension():
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query { a: Boolean }
 
@@ -569,19 +570,18 @@ def test_schema_extension():
         type Bar { bar: String }
 
         extend schema {
-            query: Foo
             mutation: Bar
         }
         """
     )
 
-    assert schema.query_type.name == "Foo"
+    assert schema.query_type.name == "Query"
     assert schema.mutation_type.name == "Bar"
     assert schema.subscription_type is None
 
 
 def test_schema_extension_directive():
-    build_schema_from_ast(
+    make_executable_schema(
         """
         directive @onSchema on SCHEMA
 
@@ -592,8 +592,6 @@ def test_schema_extension_directive():
             query: Foo
         }
 
-        extend schema @onSchema {
-            query: Bar
-        }
+        extend schema @onSchema
         """
     )

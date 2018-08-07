@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import copy
+import functools as ft
 import hashlib
 
 import pytest
@@ -21,11 +23,23 @@ from py_gql.schema import (
     ScalarType,
     String,
 )
-from py_gql.schema.builders import (
-    SchemaDirective,
-    build_schema_from_ast,
-    wrap_resolver,
-)
+from py_gql.schema.build import SchemaDirective, make_executable_schema
+from py_gql.utilities import default_resolver
+
+
+def wrap_resolver(field_def, func):
+    source_resolver = field_def.resolve or default_resolver
+
+    @ft.wraps(source_resolver)
+    def wrapped(parent_value, args, context, info):
+        value = source_resolver(parent_value, args, context, info)
+        if value is None:
+            return value
+        return func(value)
+
+    field_def = copy.copy(field_def)
+    field_def.resolve = wrapped
+    return field_def
 
 
 def test_simple_field_modifier():
@@ -35,7 +49,7 @@ def test_simple_field_modifier():
 
     assert (
         graphql(
-            build_schema_from_ast(
+            make_executable_schema(
                 """
                 directive @upper on FIELD_DEFINITION
 
@@ -59,7 +73,7 @@ def test_directive_on_wrong_location():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             directive @upper on FIELD_DEFINITION
 
@@ -77,34 +91,15 @@ def test_directive_on_wrong_location():
 
 
 def test_ignores_unknown_directive_implementation():
-    build_schema_from_ast(
+    make_executable_schema(
         """
         directive @upper on FIELD_DEFINITION
 
         type Query @upper {
             foo: String
         }
-        """,
-        _raise_on_missing_directive=False,
+        """
     )
-
-
-def test_raises_on_unknown_directive_implementation_if_specified():
-    with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
-            """
-            directive @upper on FIELD_DEFINITION
-
-            type Query @upper {
-                foo: String
-            }
-            """,
-            _raise_on_missing_directive=True,
-        )
-
-    assert exc_info.value.to_dict() == {
-        "message": 'Missing directive implementation for "@upper"'
-    }
 
 
 def test_field_modifier_using_arguments():
@@ -125,7 +120,7 @@ def test_field_modifier_using_arguments():
 
     assert (
         graphql(
-            build_schema_from_ast(
+            make_executable_schema(
                 """
                 type Query {
                     foo: Int @power
@@ -148,6 +143,7 @@ def test_object_modifier_and_field_modifier():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     class UniqueID(SchemaDirective):
+        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.name = args["name"]
             self.source = args["source"]
@@ -175,7 +171,7 @@ def test_object_modifier_and_field_modifier():
                 nodes=object_definition.nodes,
             )
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @uid (name: String! = "uid", source: [String]!) on OBJECT
         directive @upper on FIELD_DEFINITION
@@ -229,62 +225,12 @@ def test_object_modifier_and_field_modifier():
     }
 
 
-def test_location_not_supported():
-    class NoopDirective(SchemaDirective):
-        pass
-
-    with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
-            """
-            directive @upper on FIELD_DEFINITION
-            type Query {
-                foo: String @upper
-            }
-            """,
-            schema_directives={"upper": NoopDirective},
-        )
-
-    assert exc_info.value.to_dict() == {
-        "message": (
-            "SchemaDirective implementation for @upper must "
-            "support FIELD_DEFINITION"
-        )
-    }
-
-
-def test_location_not_supported_2():
-    class NoopDirective(SchemaDirective):
-        pass
-
-    with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
-            """
-            directive @upper on SCHEMA
-
-            schema @upper {
-                query: Query
-            }
-
-            type Query {
-                foo: String
-            }
-            """,
-            schema_directives={"upper": NoopDirective},
-        )
-
-    assert exc_info.value.to_dict() == {
-        "message": (
-            "SchemaDirective implementation for @upper must support SCHEMA"
-        )
-    }
-
-
 def test_missing_definition():
     class NoopDirective(SchemaDirective):
         pass
 
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             type Query {
                 foo: String @upper
@@ -308,6 +254,7 @@ def test_multiple_directives_applied_in_order():
             [Argument("exponent", Int, default_value=2)],
         )
 
+        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -322,7 +269,7 @@ def test_multiple_directives_applied_in_order():
 
     assert (
         graphql(
-            build_schema_from_ast(
+            make_executable_schema(
                 """
                 type Query {
                     foo: Int @power @plus_one
@@ -350,6 +297,7 @@ def test_input_values():
                 return type(type_)(cls.wrap(type_.type, *args, **kwargs))
             return cls(type_, *args, **kwargs)
 
+        # pylint:disable=super-init-not-called,redefined-builtin
         def __init__(self, type, min, max):
             assert isinstance(type, ScalarType)
             self.type = type
@@ -374,6 +322,8 @@ def test_input_values():
             return parsed
 
     class LimitedLengthDirective(SchemaDirective):
+
+        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.min = args["min"]
             self.max = args.get("max")
@@ -396,7 +346,7 @@ def test_input_values():
             )
             return field
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         type Query {
             foo (
@@ -492,7 +442,7 @@ def test_enum_value_directive():
                 deprecation_reason=enum_value.deprecation_reason,
             )
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @cssColor on ENUM_VALUE
 
@@ -530,7 +480,7 @@ def test_enum_type_directive():
                 nodes=enum.nodes,
             )
 
-    schema = build_schema_from_ast(
+    schema = make_executable_schema(
         """
         directive @generated on ENUM
 
@@ -572,7 +522,7 @@ def test_schema_extension_duplicate_directive():
             pass
 
     with pytest.raises(SDLError) as exc_info:
-        build_schema_from_ast(
+        make_executable_schema(
             """
             directive @onSchema on SCHEMA
 
@@ -583,9 +533,7 @@ def test_schema_extension_duplicate_directive():
                 query: Foo
             }
 
-            extend schema @onSchema {
-                query: Bar
-            }
+            extend schema @onSchema
             """,
             schema_directives={"onSchema": OnSchema},
         )

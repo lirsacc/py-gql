@@ -23,7 +23,12 @@ class GraphQLError(Exception):
         return self.message
 
 
-class GraphQLSyntaxError(GraphQLError):
+class GraphQLResponseError(GraphQLError):
+    def to_dict(self):
+        raise NotImplementedError()
+
+
+class GraphQLSyntaxError(GraphQLResponseError):
     """ The GraphQL document is invalid.
 
     Args:
@@ -104,7 +109,7 @@ class UnexpectedToken(GraphQLSyntaxError):
     pass
 
 
-class GraphQLLocatedError(GraphQLError):
+class GraphQLLocatedError(GraphQLResponseError):
     """ Error that can be traced back to specific position(s) in the source
     document.
 
@@ -185,7 +190,7 @@ class ValidationError(GraphQLLocatedError):
     pass
 
 
-class ExecutionError(GraphQLError):
+class ExecutionError(GraphQLResponseError):
     """ Error that prevented execution.
 
     Args:
@@ -306,7 +311,7 @@ class SDLError(GraphQLLocatedError):
     pass
 
 
-class TypeExtensionError(SDLError):
+class ExtensionError(SDLError):
     pass
 
 

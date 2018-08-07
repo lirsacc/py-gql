@@ -17,12 +17,12 @@ with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
 app = Flask(__name__)
 
 
-@app.route('/sdl')
+@app.route("/sdl")
 def sdl_route():
-    return Response(SCHEMA_SDL, mimetype='text')
+    return Response(SCHEMA_SDL, mimetype="text")
 
 
-@app.route('/graphql', methods=('POST',))
+@app.route("/graphql", methods=("POST",))
 def graphql_route():
     data = request.json
 
@@ -30,9 +30,9 @@ def graphql_route():
 
     result = graphql(
         schema,
-        data['query'],
-        data.get('variables', {}),
-        data.get('operation_name'),
+        data["query"],
+        data.get("variables", {}),
+        data.get("operation_name"),
         executor=EXECUTOR,
         tracer=tracer,
     )
@@ -42,6 +42,6 @@ def graphql_route():
     return jsonify(result.response())
 
 
-@app.route('/graphiql')
+@app.route("/graphiql")
 def grahiql_route():
     return GRAPHIQL_HTML

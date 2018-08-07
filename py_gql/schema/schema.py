@@ -102,7 +102,7 @@ class Schema(object):
 
         self._types = [query_type, mutation_type, subscription_type]
         self._types.append(__Schema__)
-        self.nodes = nodes
+        self.nodes = nodes or []
 
         # NOTE: This is the notion of the specified types being always
         # available. As a result of this line, intropection queries will always

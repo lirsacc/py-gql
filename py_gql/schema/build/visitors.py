@@ -9,10 +9,10 @@ from ..._utils import flatten
 from ...exc import SDLError
 from ...utilities import coerce_argument_values
 from ..directives import SPECIFIED_DIRECTIVES
-from ..scalars import DefaultScalarType
+from ..scalars import SPECIFIED_SCALAR_TYPES
 from ..schema import Schema
 
-_SPECIFIED_NAMES = frozenset((d.name for d in SPECIFIED_DIRECTIVES))
+_SPECIFIED_DIRECTIVE_NAMES = frozenset(d.name for d in SPECIFIED_DIRECTIVES)
 
 
 def visit_schema(visitor, schema):
@@ -49,36 +49,38 @@ def _visit_and_filter(visitor, iterator):
     return [value for value in visited if value is not None]
 
 
-def _visit(visitor, entity):
+def _visit(visitor, definition):
     # type: (Visitor, T) -> Optional[T]
-    if isinstance(entity, Schema):
-        return visit_schema(visitor, entity)
-    elif isinstance(entity, _types.ObjectType):
-        return _visit_object(visitor, entity)
-    elif isinstance(entity, _types.InterfaceType):
-        return _visit_interface(visitor, entity)
-    elif isinstance(entity, _types.InputObjectType):
-        return _visit_input_object(visitor, entity)
-    elif isinstance(entity, _types.ScalarType):
-        return visitor.visit_scalar(entity)
-    elif isinstance(entity, _types.UnionType):
-        return visitor.visit_union(entity)
-    elif isinstance(entity, _types.EnumType):
-        return _visit_enum(visitor, entity)
-    elif isinstance(entity, _types.Field):
-        return _visit_field(visitor, entity)
-    elif isinstance(entity, _types.Argument):
-        return visitor.visit_argument(entity)
-    elif isinstance(entity, _types.InputField):
-        return visitor.visit_input_field(entity)
-    elif isinstance(entity, _types.EnumValue):
-        return visitor.visit_enum_value(entity)
+    if isinstance(definition, Schema):
+        return visit_schema(visitor, definition)
+    elif isinstance(definition, _types.ObjectType):
+        return _visit_object(visitor, definition)
+    elif isinstance(definition, _types.InterfaceType):
+        return _visit_interface(visitor, definition)
+    elif isinstance(definition, _types.InputObjectType):
+        return _visit_input_object(visitor, definition)
+    elif isinstance(definition, _types.ScalarType):
+        if definition not in SPECIFIED_SCALAR_TYPES:
+            return visitor.visit_scalar(definition)
+        return definition
+    elif isinstance(definition, _types.UnionType):
+        return visitor.visit_union(definition)
+    elif isinstance(definition, _types.EnumType):
+        return _visit_enum(visitor, definition)
+    elif isinstance(definition, _types.Field):
+        return _visit_field(visitor, definition)
+    elif isinstance(definition, _types.Argument):
+        return visitor.visit_argument(definition)
+    elif isinstance(definition, _types.InputField):
+        return visitor.visit_input_field(definition)
+    elif isinstance(definition, _types.EnumValue):
+        return visitor.visit_enum_value(definition)
 
-    raise TypeError(type(entity))
+    raise TypeError(type(definition))
 
 
 def _visit_object(visitor, object_type):
-    # type: (Visitor, py_gql.schema.ObjectType) -> Optional[py_gql.schema.ObjectType]
+    # type: (Visitor, _types.ObjectType) -> Optional[_types.ObjectType]
     new_type = visitor.visit_object(object_type)
     if new_type is not None:
         new_type.fields = _visit_and_filter(visitor, new_type.fields)
@@ -86,10 +88,7 @@ def _visit_object(visitor, object_type):
 
 
 def _visit_interface(visitor, iface):
-    # type: (
-    #   Visitor,
-    #   py_gql.schema.InterfaceType
-    # ) -> Optional[py_gql.schema.InterfaceType]
+    # type: (Visitor, _types.InterfaceType) -> Optional[_types.InterfaceType]
     new_type = visitor.visit_interface(iface)
     if new_type is not None:
         new_type.fields = _visit_and_filter(visitor, new_type.fields)
@@ -97,7 +96,7 @@ def _visit_interface(visitor, iface):
 
 
 def _visit_field(visitor, field):
-    # type: (Visitor, py_gql.schema.Field) -> Optional[py_gql.schema.Field]
+    # type: (Visitor, _types.Field) -> Optional[_types.Field]
     new_field = visitor.visit_field(field)
     if new_field is not None:
         if new_field.args:
@@ -106,10 +105,7 @@ def _visit_field(visitor, field):
 
 
 def _visit_input_object(visitor, input_object):
-    # type: (
-    #   Visitor,
-    #   py_gql.schema.InputObjectType
-    # ) -> Optional[py_gql.schema.InputObjectType]
+    # type: (Visitor, _types.InputObjectType) -> Optional[_types.InputObjectType]
     new_type = visitor.visit_input_object(input_object)
     if new_type is not None:
         new_type.fields = _visit_and_filter(visitor, new_type.fields)
@@ -117,7 +113,7 @@ def _visit_input_object(visitor, input_object):
 
 
 def _visit_enum(visitor, enum):
-    # type: (Visitor, py_gql.schema.EnumType) -> Optional[py_gql.schema.EnumType]
+    # type: (Visitor, _types.EnumType) -> Optional[_types.EnumType]
     new_type = visitor.visit_enum(enum)
     return _types.EnumType(
         name=new_type.name,
@@ -132,30 +128,29 @@ class SchemaVisitor(object):
     Subclass and override the ``visit_*`` methods to implement custom behaviour.
     """
 
-    def visit(self, entity):
-        return _visit(self, entity)
+    def visit(self, definition):
+        return _visit(self, definition)
 
-    def default(self, x):
-        return x
+    def default(self, definition):
+        return definition
 
     # Override these methods to actually do anything to the schema
-    visit_schema = default
-    visit_scalar = default
-    visit_object = default
-    visit_field = default
-    visit_argument = default
-    visit_interface = default
-    visit_union = default
-    visit_enum = default
-    visit_enum_value = default
-    visit_input_object = default
-    visit_input_field = default
+    visit_schema = lambda self, definition: self.default(definition)
+    visit_scalar = lambda self, definition: self.default(definition)
+    visit_object = lambda self, definition: self.default(definition)
+    visit_field = lambda self, definition: self.default(definition)
+    visit_argument = lambda self, definition: self.default(definition)
+    visit_interface = lambda self, definition: self.default(definition)
+    visit_union = lambda self, definition: self.default(definition)
+    visit_enum = lambda self, definition: self.default(definition)
+    visit_enum_value = lambda self, definition: self.default(definition)
+    visit_input_object = lambda self, definition: self.default(definition)
+    visit_input_field = lambda self, definition: self.default(definition)
 
 
 _CLS_TO_LOC = {
     Schema: "SCHEMA",
     _types.ScalarType: "SCALAR",
-    DefaultScalarType: "SCALAR",
     _types.ObjectType: "OBJECT",
     _types.Field: "FIELD_DEFINITION",
     _types.Argument: "ARGUMENT_DEFINITION",
@@ -168,32 +163,21 @@ _CLS_TO_LOC = {
 }
 
 
-_LOCATION_TO_METHOD = {
-    "SCHEMA": "visit_schema",
-    "SCALAR": "visit_scalar",
-    "OBJECT": "visit_object",
-    "FIELD_DEFINITION": "visit_field",
-    "ARGUMENT_DEFINITION": "visit_argument",
-    "INTERFACE": "visit_interface",
-    "UNION": "visit_union",
-    "ENUM": "visit_enum",
-    "ENUM_VALUE": "visit_enum_value",
-    "INPUT_OBJECT": "visit_input_object",
-    "INPUT_FIELD_DEFINITION": "visit_input_field",
-}
-
-
-def _find_directives(entity):
-    node = getattr(entity, "node", None)
+def _find_directives(definition):
+    node = getattr(definition, "node", None)
     if node:
-        return entity.node.directives or []
-    nodes = getattr(entity, "nodes", [])
+        return definition.node.directives or []
+    nodes = getattr(definition, "nodes", [])
     return list(flatten(node.directives or [] for node in nodes if node))
 
 
 class HealSchemaVisitor(SchemaVisitor):
-    """ Make sure internal representation of types match the ones in the
-    schema's type map. """
+    """ Ensure internal representation of types match the ones in the
+    schema's top level type map.
+
+    This useful after modifying a schema inline or using a
+    :class:`SchemaVisitor` instance where a type may have swapped out but not
+    all references (e.g. arguments, fields, union, etc.) were. """
 
     def __init__(self, schema):
         self.schema = schema
@@ -242,7 +226,7 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
 
         assert isinstance(schema, Schema)
 
-        directive_definitions = dict(schema.directives)  # Shallow copy
+        directive_definitions = dict(schema.directives)
         for directive_name, schema_directive in schema_directives.items():
             assert issubclass(schema_directive, SchemaDirective)
             if schema_directive.definition:
@@ -250,23 +234,16 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
                     directive_name
                 ] = schema_directive.definition
 
-        for directive_name, definition in directive_definitions.items():
+        for directive_name in directive_definitions:
             visitor_cls = schema_directives.get(directive_name)
             if visitor_cls is None:
                 continue
 
-            for loc in definition.locations:
-                if not visitor_cls.support_location(loc):
-                    raise SDLError(
-                        "SchemaDirective implementation for @%s must support %s"
-                        % (directive_name, loc)
-                    )
-
         self._directive_definitions = directive_definitions
 
-    def default(self, entity):
+    def default(self, definition):
         applied = set()
-        for directive_node in _find_directives(entity):
+        for directive_node in _find_directives(definition):
             name = directive_node.name.value
             directive_def = self._directive_definitions.get(name)
             if directive_def is None:
@@ -276,13 +253,13 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
 
             schema_directive = self._schema_directives.get(name)
             if schema_directive is None:
-                if name not in _SPECIFIED_NAMES and self._strict:
+                if name not in _SPECIFIED_DIRECTIVE_NAMES and self._strict:
                     raise SDLError(
                         'Missing directive implementation for "@%s"' % name
                     )
                 continue
 
-            loc = _CLS_TO_LOC.get(type(entity))
+            loc = _CLS_TO_LOC.get(type(definition))
             if loc not in directive_def.locations:
                 raise SDLError(
                     'Directive "@%s" not applicable to "%s"' % (name, loc),
@@ -295,22 +272,10 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
                 )
 
             args = coerce_argument_values(directive_def, directive_node)
-            entity = _visit(schema_directive(args), entity)
+            definition = _visit(schema_directive(args), definition)
             applied.add(directive_def.name)
 
-        return entity
-
-    visit_schema = default
-    visit_scalar = default
-    visit_object = default
-    visit_field = default
-    visit_argument = default
-    visit_interface = default
-    visit_union = default
-    visit_enum = default
-    visit_enum_value = default
-    visit_input_object = default
-    visit_input_field = default
+        return definition
 
 
 class SchemaDirective(SchemaVisitor):
@@ -318,14 +283,19 @@ class SchemaDirective(SchemaVisitor):
     :func:`py_gql.schema.schema_from_ast`.
 
     You need to subclass this in order to define your own custom directives.
+
+    Warning:
+        While this is aimed to be used after
+        :func:`~py_gql.schema.build.build_schema_from_ast` and its derivatives,
+        SchemaDirectives can modify types inline. In case you use globally
+        defined type definitions this can have some nasty side effects and so
+        it is encouraged to return new type definitions instead.
+
+    Warning:
+        Specified types (scalars, introspection) cannot be modified.
     """
 
     definition = None
 
     def __init__(self, args=None):
         self.args = args
-
-    @classmethod
-    def support_location(cls, location):
-        mtd = getattr(cls, _LOCATION_TO_METHOD[location], None)
-        return callable(mtd) and mtd != cls.default

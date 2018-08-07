@@ -4,14 +4,11 @@ import json
 import os
 
 from aiohttp import web
-
-from py_gql.schema import print_schema
-from py_gql.asyncio import graphql, AsyncIOExecutor
+from py_gql.asyncio import AsyncIOExecutor, graphql
 from py_gql.utilities.tracers import ApolloTracer
-
 from schema import schema
 
-SCHEMA_SDL = print_schema(schema)
+SCHEMA_SDL = schema.to_string()
 
 with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
     GRAPHIQL_HTML = f.read()

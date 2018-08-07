@@ -8,10 +8,9 @@ import os
 import re
 
 import aiohttp
-
 import swapi
 from py_gql.exc import ResolverError
-from py_gql.schema import schema_from_ast
+from py_gql.schema.build import make_executable_schema
 
 
 def swapi_caller(func):
@@ -135,4 +134,4 @@ RESOLVERS = {
 }
 
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
-    schema = schema_from_ast(f.read(), resolvers=RESOLVERS)
+    schema = make_executable_schema(f.read(), resolvers=RESOLVERS)

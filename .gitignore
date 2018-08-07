@@ -17,6 +17,7 @@ py_gql/**/*.c
 .Python
 env/
 build/
+!py_gql/*/build/
 develop-eggs/
 dist/
 downloads/
