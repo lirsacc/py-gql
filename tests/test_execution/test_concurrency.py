@@ -216,3 +216,87 @@ def test_except_wrapper_incorrect_exc_cls():
 
     with pytest.raises(ValueError):
         e.result()
+
+
+def test_DummyFuture_not_cancellable():
+    f = _concurrency.DummyFuture()
+    assert not f.cancel()
+
+
+def test_DummyFuture_never_cancelled():
+    f = _concurrency.DummyFuture()
+    f.cancel()
+    assert not f.cancelled()
+
+
+def test_DummyFuture_defaults_to_running():
+    f = _concurrency.DummyFuture()
+    assert f.running()
+
+
+def test_DummyFuture_not_running_after_result():
+    f = _concurrency.DummyFuture()
+    f.set_result("foo")
+    assert not f.running()
+
+
+def test_DummyFuture_not_running_after_exception():
+    f = _concurrency.DummyFuture()
+    f.set_exception(ValueError("1"))
+    assert not f.running()
+
+
+def test_DummyFuture_raises_on_blocking_call_1():
+    f = _concurrency.DummyFuture()
+    with pytest.raises(RuntimeError):
+        f.result()
+
+
+def test_DummyFuture_raises_on_blocking_call_2():
+    f = _concurrency.DummyFuture()
+    with pytest.raises(RuntimeError):
+        f.exception()
+
+
+def test_DummyFuture_calls_callbacks_correctly(mocker):
+    cb1, cb2, cb3 = mocker.Mock(), mocker.Mock(), mocker.Mock()
+    f = _concurrency.DummyFuture()
+
+    f.add_done_callback(cb1)
+    f.add_done_callback(cb2)
+
+    f.set_result("foo")
+
+    cb1.assert_called_with(f)
+    cb2.assert_called_with(f)
+    cb3.assert_not_called()
+
+    f.add_done_callback(cb3)
+
+    cb3.assert_called_with(f)
+
+
+def test_DummyFuture_result_returns_when_done_with_result():
+    f = _concurrency.DummyFuture()
+    f.set_result("foo")
+    assert f.result() == "foo"
+
+
+def test_DummyFuture_result_raises_when_done_with_exception():
+    f = _concurrency.DummyFuture()
+    f.set_exception(ValueError("foo"))
+    with pytest.raises(ValueError):
+        f.result()
+
+
+def test_DummyFuture_exception_returns_when_done_with_exception():
+    f = _concurrency.DummyFuture()
+    err = ValueError("foo")
+    f.set_exception(err)
+    assert f.exception() == err
+
+
+def test_DummyFuture_exception_returns_when_done_with_result():
+    f = _concurrency.DummyFuture()
+    f.set_result("foo")
+    assert f.exception() is None
