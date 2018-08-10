@@ -228,6 +228,14 @@ jobs:
                         coverage xml --rcfile pytest.ini
                         mv .coverage coverage.xml htmlcov/* ${results}/python/
                     fi
+            - run:
+                name: Upload coverage to Codecov
+                command: |
+                    results="$(pwd)/workspace/test-results"
+                    . "venv${PY}/bin/activate" && cd workspace/src
+                    cd ${results}/python/
+                    pip install codecov
+                    codecov
             - *store-tests
             - store_artifacts: {path: workspace/test-results, destination: .}
 
