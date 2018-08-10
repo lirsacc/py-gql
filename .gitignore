@@ -7,11 +7,10 @@ flake8
 __pycache__/
 *.py[cod]
 *$py.class
-py_gql/**/*.so
-py_gql/**/*.c
 
 # C extensions
 *.so
+*.c
 
 # Distribution / packaging
 .Python
@@ -102,3 +101,4 @@ ENV
 
 
 .vscode
+.idea
