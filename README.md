@@ -1,12 +1,12 @@
 py-gql
 ======
 
-![CircleCI](https://img.shields.io/circleci/project/github/lirsacc/py-gql.svg?logo=circleci)
-![Codecov](https://img.shields.io/codecov/c/github/lirsacc/py-gql.svg?)
-![PyPI](https://img.shields.io/pypi/v/py-gql.svg)
+[![CircleCI](https://img.shields.io/circleci/project/github/lirsacc/py-gql.svg?logo=circleci)](https://circleci.com/gh/lirsacc/workflows/py-gql)
+[![Codecov](https://img.shields.io/codecov/c/github/lirsacc/py-gql.svg?)](https://codecov.io/gh/lirsacc/py-gql)
+[![PyPI](https://img.shields.io/pypi/v/py-gql.svg)](https://pypi.org/project/py-gql/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-gql.svg?logo=python&logoColor=white)
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/Django.svg)
-![Read the Docs (version)](https://img.shields.io/readthedocs/pip/latest.svg)
+[![Read the Docs (version)](https://img.shields.io/readthedocs/pip/latest.svg)](https://py-gql.readthedocs.io/)
 
 
 py-gql is a [GraphQL](http://facebook.github.io/graphql/) implementation of for Python aimed at creating GraphQL servers.
