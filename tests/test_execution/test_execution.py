@@ -461,57 +461,53 @@ def test_nulls_tree_of_nullable_fields(exe_cls, exe_kwargs):
         )
 
 
-@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
-    exe_cls, exe_kwargs
-):
+# Depending on scheduling the errors can be in a different order
+def test_nulls_and_report_errors_on_tree_of_non_nullable_fields():
 
-    with exe_cls(**exe_kwargs) as executor:
-        check_execution(
-            NullAndNonNullSchema,
-            """
-            query Q {
-                nested {
-                    scalarNonNull
+    check_execution(
+        NullAndNonNullSchema,
+        """
+        query Q {
+            nested {
+                scalarNonNull
+                nestedNonNull {
+                    scalar
                     nestedNonNull {
-                        scalar
-                        nestedNonNull {
-                            scalarNonNull
-                        }
+                        scalarNonNull
                     }
                 }
-                nestedNonNull {
-                    scalarNonNull
-                }
             }
-            """,
-            executor=executor,
-            initial_value={
-                "nestedNonNull": None,
-                "nested": {"scalarNonNull": None, "nestedNonNull": None},
-            },
-            expected_data={
-                "nested": {"nestedNonNull": None, "scalarNonNull": None},
-                "nestedNonNull": None,
-            },
-            expected_errors=[
-                (
-                    'Field "nested.scalarNonNull" is not nullable',
-                    (68, 81),
-                    "nested.scalarNonNull",
-                ),
-                (
-                    'Field "nested.nestedNonNull" is not nullable',
-                    (102, 278),
-                    "nested.nestedNonNull",
-                ),
-                (
-                    'Field "nestedNonNull" is not nullable',
-                    (313, 380),
-                    "nestedNonNull",
-                ),
-            ],
-        )
+            nestedNonNull {
+                scalarNonNull
+            }
+        }
+        """,
+        initial_value={
+            "nestedNonNull": None,
+            "nested": {"scalarNonNull": None, "nestedNonNull": None},
+        },
+        expected_data={
+            "nested": {"nestedNonNull": None, "scalarNonNull": None},
+            "nestedNonNull": None,
+        },
+        expected_errors=[
+            (
+                'Field "nested.scalarNonNull" is not nullable',
+                (56, 69),
+                "nested.scalarNonNull",
+            ),
+            (
+                'Field "nested.nestedNonNull" is not nullable',
+                (86, 242),
+                "nested.nestedNonNull",
+            ),
+            (
+                'Field "nestedNonNull" is not nullable',
+                (269, 328),
+                "nestedNonNull",
+            ),
+        ],
+    )
 
 
 @pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
