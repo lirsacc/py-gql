@@ -136,7 +136,7 @@ def test_misspelled_directive_args_are_reported(schema):
         dog @skip(iff: true)
     }
     """,
-        ['Unknown argument "iff" on directive "@skip", did you mean "if"'],
+        ['Unknown argument "iff" on directive "@skip", did you mean "if"?'],
         [(25, 34)],
     )
 
@@ -166,7 +166,7 @@ def test_misspelled_arg_name_is_reported(schema):
         """,
         [
             'Unknown argument "dogcommand" on field "doesKnowCommand" of type '
-            '"Dog", did you mean "dogCommand"'
+            '"Dog", did you mean "dogCommand"?'
         ],
     )
 

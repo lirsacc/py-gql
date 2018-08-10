@@ -2,9 +2,9 @@
 """
 """
 
+from ..._string_utils import infer_suggestions, quoted_options_list
 from ...exc import ScalarParsingError, UnknownEnumValue
 from ...lang.visitor import SkipNode
-from ..._string_utils import infer_suggestions, quoted_options_list
 from ...schema import (
     EnumType,
     InputObjectType,
@@ -93,7 +93,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
             )
             if suggestions:
                 self.add_error(
-                    "Field %s is not defined by type %s, did you mean %s"
+                    "Field %s is not defined by type %s, did you mean %s?"
                     % (
                         node.name.value,
                         parent_type,

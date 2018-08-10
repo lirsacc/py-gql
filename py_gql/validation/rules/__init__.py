@@ -207,7 +207,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
                 if suggestions:
                     self.add_error(
                         'Cannot query field "%s" on type "%r", '
-                        "did you mean %s"
+                        "did you mean %s?"
                         % (
                             node.name.value,
                             self.type_info.parent_type,
@@ -225,7 +225,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
             elif isinstance(self.type_info.parent_type, UnionType):
                 self.add_error(
                     'Cannot query field "%s" on type "%r", '
-                    "did you mean to use an inline fragment on %s"
+                    "did you mean to use an inline fragment on %s?"
                     % (
                         node.name.value,
                         self.type_info.parent_type,
@@ -666,7 +666,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                     else:
                         self.add_error(
                             'Unknown argument "%s" on field "%s" of type "%s", '
-                            "did you mean %s"
+                            "did you mean %s?"
                             % (
                                 name,
                                 field_def.name,
@@ -692,7 +692,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                         )
                     else:
                         self.add_error(
-                            'Unknown argument "%s" on directive "@%s", did you mean %s'
+                            'Unknown argument "%s" on directive "@%s", did you mean %s?'
                             % (
                                 name,
                                 directive_def.name,

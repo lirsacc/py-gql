@@ -111,7 +111,7 @@ def test_field_not_defined_on_fragment(schema):
         """,
         [
             'Cannot query field "meowVolume" on type "Dog", '
-            'did you mean "barkVolume"'
+            'did you mean "barkVolume"?'
         ],
     )
 
@@ -159,7 +159,7 @@ def test_field_not_defined_on_inline_fragment(schema):
         """,
         [
             'Cannot query field "meowVolume" on type "Dog", '
-            'did you mean "barkVolume"'
+            'did you mean "barkVolume"?'
         ],
     )
 
@@ -175,7 +175,7 @@ def test_aliased_field_target_not_defined(schema):
         """,
         [
             'Cannot query field "mooVolume" on type "Dog", '
-            'did you mean "barkVolume"'
+            'did you mean "barkVolume"?'
         ],
     )
 
@@ -191,7 +191,7 @@ def test_aliased_lying_field_target_not_defined(schema):
         """,
         [
             'Cannot query field "kawVolume" on type "Dog", '
-            'did you mean "barkVolume"'
+            'did you mean "barkVolume"?'
         ],
     )
 
@@ -218,7 +218,7 @@ def test_defined_on_implementors_but_not_on_interface(schema):
             nickname
         }
         """,
-        ['Cannot query field "nickname" on type "Pet", did you mean "name"'],
+        ['Cannot query field "nickname" on type "Pet", did you mean "name"?'],
     )
 
 
@@ -245,7 +245,7 @@ def test_direct_field_selection_on_union(schema):
         """,
         [
             'Cannot query field "directField" on type "CatOrDog", '
-            'did you mean to use an inline fragment on "Dog" or "Cat"'
+            'did you mean to use an inline fragment on "Dog" or "Cat"?'
         ],
     )
 
@@ -261,7 +261,7 @@ def test_defined_on_implementors_queried_on_union(schema):
         """,
         [
             'Cannot query field "name" on type "CatOrDog", '
-            'did you mean to use an inline fragment on "Dog" or "Cat"'
+            'did you mean to use an inline fragment on "Dog" or "Cat"?'
         ],
     )
 
