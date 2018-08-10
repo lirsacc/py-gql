@@ -190,7 +190,7 @@ def docs(ctx, clean_=True, strict=False):
 
 @invoke.task
 def build(ctx):
-    """ Build source distribution and wheel for upload to PyPi """
+    """ Build source distribution and wheel for upload to PyPI """
     with ctx.cd(ROOT):
         ctx.run("rm -rf dist", echo=True)
         ctx.run("python setup.py sdist bdist_wheel", echo=True)

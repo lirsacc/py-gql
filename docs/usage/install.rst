@@ -12,10 +12,10 @@ Installation
     - `futures <https://github.com/agronholm/pythonfutures>`_
 
 
-Installing from PyPi
+Installing from PyPI
 --------------------
 
-A source distribution and universal wheel are available on PyPi. Installing
+A source distribution and universal wheel are available on PyPI. Installing
 should be as simple as
 
 .. code::

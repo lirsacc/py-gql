@@ -61,7 +61,7 @@ def run_setup():
             "Programming Language :: Python :: 3.7",
             "Operating System :: POSIX",
             "Operating System :: MacOS :: MacOS X",
-            "Development Status :: 3 - Alpha",
+            "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
             "Topic :: Software Development :: Libraries",
         ],
