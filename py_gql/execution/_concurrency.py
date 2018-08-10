@@ -228,12 +228,13 @@ def except_(
     return result
 
 
-class DummyFuture(object):
+class DummyFuture(Future):
     """ Dummy Future to match the interface in a synchronous & single
     threaded environment without the synchronisation overhead. """
 
     __slots__ = "_result", "_exception", "_callbacks", "_done"
 
+    # pylint: disable = super-init-not-called
     def __init__(self):
         self._done = False
         self._result = None
