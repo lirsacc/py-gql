@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """ Implement the evaluating requests section of the
 GraphQL specification. """
+
 # REVIEW: The resolver interface is mirrored on graphql-js but that might change
+
 # REVIEW: The Future based interface can be awkward especially when checking
 # for Future instances in order to gain performance.
 
@@ -40,9 +42,9 @@ from ..utilities import (
     default_resolver,
     directive_arguments,
 )
-from ._utils import ExecutionContext, GraphQLResult, ResolveInfo
 from .executors import DefaultExecutor, Executor
 from .middleware import apply_middlewares
+from .wrappers import ExecutionContext, GraphQLResult, ResolveInfo
 
 
 def execute(  # flake8: noqa : C901
@@ -57,39 +59,32 @@ def execute(  # flake8: noqa : C901
 ):
     """ Execute a graphql query against a schema.
 
-    :type schema: py_gql.schema.Schema
-    :param schema: Schema to execute the query against
+    Args:
+        schema (py_gql.schema.Schema): Schema to execute the query against
 
-    :type ast: py_gql.lang.ast.Document
-    :param ast: The parsed query AST containing all operations, fragments, etc
+        ast (py_gql.lang.ast.Document): The parsed query
 
-    :type executor: py_gql.execution.executors.Executor
-    :param executor: Custom executor to process resolver functions
+        executor (Optional[py_gql.execution.Executor]): Executor instance
 
-    :type variables: Optional[dict]
-    :param variables: Raw, JSON decoded variables parsed from the request
+        variables (Optional[dict]):
+            Raw, JSON decoded variables parsed from the request
 
-    :type operation_name: Optional[str]
-    :param operation_name: Operation to execute
-        If specified, the operation with the given name will be executed. If
-        not; this executes the single operation without disambiguation.
+        operation_name (Optional[str]): Operation to execute
+            If specified, the operation with the given name will be executed.
+            If not, this executes the single operation without disambiguation.
 
-    :type initial_value: any
-    :param initial_value: Root resolution value
-        Will be passed to all top-level resolvers.
+        initial_value (Any): Root resolution value passed to all top-level
+            resolvers
 
-    :type context_value: any
-    :param context_value:
-        Custom application-specific execution context. Use this to pass in
-        anything your resolvers require like database connection, user
-        information, etc.
-        Limits on the type(s) used here will depend on your own resolver
-        implementations and the executor you use. Most thread safe
-        data-structures should work.
+        context_value (Any): Custom application-specific execution context
+            Use this to pass in anything your resolvers require like database
+            connection, user information, etc.
+            Limits on the type(s) used here will depend on your own resolver
+            implementations and the executor class you use. Most thread safe
+            data-structures should work.
 
-    :type middlewares: Optional[List[callable]]
-    :param middlewares:
-        List of middleware callable to consume when resolving fields.
+        middlewares (Optional[List[Callable]]):
+            List of middleware callable to use when resolving fields
     """
     # Programmer errors
     assert isinstance(schema, Schema), "Expected Schema object"
@@ -151,12 +146,8 @@ def execute(  # flake8: noqa : C901
         )
 
     if _concurrency.is_deferred(deferred_result):
-        return _concurrency.chain(
-            deferred_result, _on_end, cls=ctx.executor.Future
-        )
-    return _concurrency.deferred(
-        _on_end(deferred_result), cls=ctx.executor.Future
-    )
+        return _concurrency.chain(deferred_result, _on_end, cls=ctx.future_cls)
+    return _concurrency.deferred(_on_end(deferred_result), cls=ctx.future_cls)
 
 
 def get_operation(document, operation_name):
@@ -384,9 +375,9 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
         )
 
     return _concurrency.chain(
-        _concurrency.all_(deferred_fields, cls=ctx.executor.Future),
+        _concurrency.all_(deferred_fields, cls=ctx.future_cls),
         OrderedDict,
-        cls=ctx.executor.Future,
+        cls=ctx.future_cls,
     )
 
 
@@ -417,7 +408,7 @@ def _execute_selections_serially(
         )
 
     steps.append(lambda: OrderedDict(resolved_fields))
-    return _concurrency.serial(steps, cls=ctx.executor.Future)
+    return _concurrency.serial(steps, cls=ctx.future_cls)
 
 
 def resolve_field(
@@ -444,7 +435,7 @@ def resolve_field(
     def _unwrap(value):
         value = lazy(value)
         if _concurrency.is_deferred(value):
-            return _concurrency.unwrap(value, cls=ctx.executor.Future)
+            return _concurrency.unwrap(value, cls=ctx.future_cls)
         return value
 
     def resolve(root, args, context, info):
@@ -456,7 +447,7 @@ def resolve_field(
                 complete_value, ctx, field_def.type, nodes, info.path
             )
             return _concurrency.chain(
-                resolved, lazy, complete, cls=ctx.executor.Future
+                resolved, lazy, complete, cls=ctx.future_cls
             )
         return complete_value(ctx, field_def.type, nodes, info.path, resolved)
 
@@ -482,11 +473,11 @@ def resolve_field(
         if _concurrency.is_deferred(resolved_or_deferred):
             return _concurrency.except_(
                 _concurrency.chain(
-                    resolved_or_deferred, _on_success, cls=ctx.executor.Future
+                    resolved_or_deferred, _on_success, cls=ctx.future_cls
                 ),
                 (CoercionError, ResolverError),
                 _on_error,
-                cls=ctx.executor.Future,
+                cls=ctx.future_cls,
             )
         return _on_success(resolved_or_deferred)
 
@@ -511,7 +502,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         return _concurrency.chain(
             complete_value(ctx, field_type.type, nodes, path, resolved_value),
             _handle_null,
-            cls=ctx.executor.Future,
+            cls=ctx.future_cls,
         )
 
     if resolved_value is None:
@@ -529,7 +520,7 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
                 complete_value(ctx, field_type.type, nodes, path + [i], entry)
                 for i, entry in enumerate(resolved_value)
             ],
-            cls=ctx.executor.Future,
+            cls=ctx.future_cls,
         )
 
     if kind is ScalarType:

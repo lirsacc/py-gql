@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+from concurrent.futures import Future
 
 import six
 
@@ -21,6 +22,7 @@ class ExecutionContext(object):
         "variables",
         "fragments",
         "executor",
+        "future_cls",
         "operation",
         "middlewares",
         "context",
@@ -42,33 +44,12 @@ class ExecutionContext(object):
         middlewares,
         context,
     ):
-        """
-        :type schema: py_gql.schema.Schema
-        :param schema:
-
-        :type document: py_gql.lang.ast.Document
-        :param document:
-
-        :type variables: dict
-        :param variables: Coerced variables
-
-        :type fragments: dict[str, py_gql.lang.ast.FragmentDefinition]
-        :param fragments:
-
-        :type operation: py_gql.lang.ast.OperationDefinition
-        :param operation:
-
-        :type middlewares:
-        :param middlewares:
-
-        :type context: any
-        :param context:
-        """
         self.schema = schema
         self.document = document
         self.variables = variables
         self.fragments = fragments
         self.executor = executor
+        self.future_cls = getattr(executor, "Future", Future)
         self.operation = operation
         self.middlewares = middlewares
         self.context = context
@@ -120,9 +101,47 @@ class ExecutionContext(object):
 class ResolveInfo(object):
     """ ResolveInfo will be passed to resolver functions to expose
     some of the data used in the execution process as well as some common helper
-    functions.
+    functions. You shouldn't instantiate thos yourself.
 
-    WARN: Interface will surely change as the resolver definitions get fined-tuned.
+    Warning:
+
+        Interface will surely change as the resolver definitions gets
+        fined-tuned.
+
+    Args:
+        field_def (py_gql.schema.Field):
+        parent_type (py_gql.schema.ObjectType):
+        path (List[Union[str, int]]):
+        schema (py_gql.schema.Schema):
+        variables (dict):
+        fragments (dict[str, py_gql.lang.ast.FragmentDefinition]):
+        operation (py_gql.lang.ast.OperationDefinition):
+        node (list[py_gql.lang.ast.Node]):
+        executor (py_gql.execution.executors.Executor):
+
+    Attributes:
+        field_def (py_gql.schema.Field): Field being resolved
+
+        parent_type (py_gql.schema.ObjectType):
+            ObjectType definition where the field originated from
+
+        path (List[Union[str, int]]): Current traversal path
+
+        schema (py_gql.schema.Schema): Schema
+
+        variables (dict): Coerced variables
+
+        fragments (dict[str, py_gql.lang.ast.FragmentDefinition]):
+            Fragments present in the document
+
+        operation (py_gql.lang.ast.OperationDefinition): Current operation
+
+        node (list[py_gql.lang.ast.Node]): AST nodes corresponding to the field
+
+        executor (py_gql.execution.executors.Executor): Current executor
+            Use this if you need to submit call other resover / fetcher
+            functions inside a resolver.
+
     """
 
     __slots__ = (
@@ -150,36 +169,6 @@ class ResolveInfo(object):
         nodes,
         executor,
     ):
-        """
-        :type field_def: py_gql.schema.Field
-        :param field_def: Type definition for the field being resolved
-
-        :type parent_type: py_gql.schema.ObjectType
-        :param parent_type: ObjectType definition where the field originated from
-
-        :type path: list
-        :param path: Current traversal path
-
-        :type schema: py_gql.schema.Schema
-        :param schema:
-
-        :type variables: dict
-        :param variables: Coerced variables
-
-        :type fragments: dict[str, py_gql.lang.ast.FragmentDefinition]
-        :param fragments:
-
-        :type operation: py_gql.lang.ast.OperationDefinition
-        :param operation:
-
-        :type node: list[py_gql.lang.ast.Node]
-        :param node: The nodes corresponding to the field
-
-        :type executor: py_gql.execution.executors.Executor
-        :param executor: The current executor
-            Use this if you need to submit call other resover / fetcher functions
-            inside an exsiting resolver.
-        """
         self.field_def = field_def
         self.parent_type = parent_type
         self.path = path
@@ -220,8 +209,16 @@ _unset = object()
 
 
 class GraphQLResult(object):
-    """ Wrapper encoding the behaviour described in the Response part of the
-    spec. """
+    """ Wrapper encoding the behaviour described in the `Response
+    <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
+    specification.
+
+    Args:
+        data (Optional[Any]):
+            The data part of the response
+        errors (Optional[List[py_gql.exc.GraphQLResponseError]]):
+            The errors part of the response
+    """
 
     __slots__ = "data", "errors", "extensions"
 
@@ -239,13 +236,25 @@ class GraphQLResult(object):
         return iter((self.data, self.errors))
 
     def add_extension(self, ext):
+        """ Add an extensions to the result.
+
+        Args:
+            ext (GraphQLExtension): Extension instance
+
+        Raises:
+            ValueError: Extension with the same name has already been added
+        """
         name = ext.name()
         if name in self.extensions:
             raise ValueError('Duplicate extension "%s"' % name)
         self.extensions[name] = ext.payload()
 
     def response(self):
-        """ Generate an ordered response dict """
+        """ Generate an ordered response dict.
+
+        Returns:
+            dict:
+        """
         d = OrderedDict()
         if self.errors is not _unset and self.errors:
             d["errors"] = [error.to_dict() for error in self.errors]
@@ -256,7 +265,14 @@ class GraphQLResult(object):
         return d
 
     def json(self, **kw):
-        """ Encode result as JSON """
+        """ Encode response as JSON using the standard lib ``json`` module.
+
+        Args:
+            **kw (dict): Keyword args passed to to ``json.dumps``
+
+        Returns:
+            str:
+        """
         return json.dumps(self.response(), **kw)
 
 
@@ -268,7 +284,15 @@ class GraphQLExtension(object):
     """
 
     def payload(self):
+        """
+        Returns:
+            Any: Extension payload; **must** be JSON serialisable.
+        """
         raise NotImplementedError()
 
     def name(self):
+        """
+        Returns:
+            str: Name of the extension used as the key in the response.
+        """
         raise NotImplementedError()

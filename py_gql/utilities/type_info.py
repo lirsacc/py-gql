@@ -64,11 +64,6 @@ class TypeInfoVisitor(DispatchingVisitor):
         :class:`py_gql.lang.visitor.ParrallelVisitor`), this visitor **needs**
         to be the first one to visit the nodes in order for the information
         provided donwstream to be accurate.
-
-    Attributes:
-        directive (Optional[py_gql.schema.Directive]): Current directive if applicable
-        argument (Optional[py_gql.schema.Argument]): Current argument if applicable
-        enum_value (Optional[py_gql.schema.EnumValue]): Current enum value if applicable
     """
 
     __slots__ = (
@@ -93,44 +88,48 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._field_stack = []
         self._input_value_def_stack = []
 
+        #: Optional[:class:`py_gql.schema.Directive`]: Current directive if applicable
         self.directive = None
+        #: Optional[:class:`py_gql.schema.Argument`]: Current argument if applicable
         self.argument = None
+        #: Optional[:class:`py_gql.schema.EnumValue`]: Current enum value if applicable
         self.enum_value = None
 
     @property
     def type(self):
-        """ Optional[py_gql.schema.Type]: Current type if applicable """
+        """ Optional[:class:`py_gql.schema.Type`]: Current type if applicable
+        """
         return _peek(self._type_stack)
 
     @property
     def parent_type(self):
-        """ Optional[py_gql.schema.Type]: Current type if applicable """
+        """ Optional[:class:`py_gql.schema.Type`]: Current type if applicable
+        """
         return _peek(self._parent_type_stack, 1)
 
     @property
     def input_type(self):
-        """ Optional[py_gql.schema.Type]: Current input type if applicable
-        (when visiting arguments) """
+        """ Optional[:class:`py_gql.schema.Type`]: Current input type if
+        applicable (when visiting arguments) """
         return _peek(self._input_type_stack, 1)
 
     @property
     def parent_input_type(self):
-        """ Optional[py_gql.schema.Type]: Current parent input type if applicable
-        (when visiting input objects) """
+        """ Optional[:class:`py_gql.schema.Type`]: Current parent input type if
+        applicable (when visiting input objects) """
         return _peek(self._input_type_stack, 2)
 
     @property
     def field(self):
-        """ Optional[py_gql.schema.Field]: Current field definition if applicable
-        (when visiting object)
-        """
+        """ Optional[:class:`py_gql.schema.Field`]: Current field definition if
+        applicable (when visiting object) """
         return _peek(self._field_stack)
 
     @property
     def input_value_def(self):
-        """ Optional[Union[py_gql.schema.Argument, py_gql.schema.InputField]]:
-        Current input value definition (e.g. arg def, input field) if applicable
-        """
+        """ Optional[Union[:class:`py_gql.schema.Argument`,
+        :class:`py_gql.schema.InputField`]]: Current input value definition
+        (e.g. arg def, input field) if applicable """
         return _peek(self._input_value_def_stack)
 
     def _get_field_def(self, node):

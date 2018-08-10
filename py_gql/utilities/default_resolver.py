@@ -8,14 +8,18 @@ def default_resolver(parent_value, args, context, info):
     following lookup order:
 
     1. If ``parent_value`` is a dict subcass:
+
         1. If the field name is present and non callable, return it
         2. If the field name is present and callable, return the result of
-            calling it like a normal resolver (i.e. with the same arguments
-            that were passed to this function)
+           calling it like a normal resolver (i.e. with the same arguments
+           that were passed to this function)
+
     2. If ``parent_value`` has an attribute corresponding to the field name:
+
         1.  If the attribute is non callable, return it
         2. If the attribute is callable, treat it like a method of
            ``parent_value`` and call it passing in ``(args, context, info)``
+
     3. Return ``None``
 
     Args:

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Main GraphQL entrypoint encapsulating query processing from start to finish.
-"""
+""" """
 
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import GraphQLResult, GraphQLTracer, _concurrency, execute
@@ -22,51 +21,45 @@ def _graphql(
     tracer=None,
     executor=None,
 ):
-    """ Full execution chain.
+    """ Main GraphQL entrypoint encapsulating query processing from start to
+    finish.
 
-    :type schema: py_gql.schema.Schema
-    :param schema: Schema to execute the query against
+    Args:
+        schema (py_gql.schema.Schema): Schema to execute the query against
 
-    :type document: str
-    :param document: The query document.
+        document (str): The query document
 
-    :type variables: dict
-    :param variables: Raw, JSON decoded variables parsed from the request
+        variables (Optional[dict]):
+            Raw, JSON decoded variables parsed from the request
 
-    :type operation_name: Optional[str]
-    :param operation_name: Operation to execute
-        If specified, the operation with the given name will be executed. If
-        not, this executes the single operation without disambiguation.
+        operation_name (Optional[str]): Operation to execute
+            If specified, the operation with the given name will be executed.
+            If not, this executes the single operation without disambiguation.
 
-    :type initial_value: any
-    :param initial_value: Root resolution value
-        Will be passed to all top-level resolvers.
+        initial_value (Any): Root resolution value passed to all top-level
+            resolvers
 
-    :type validators: Optional[List[py_gql.validation.ValidationVisitor]]
-    :param validators: Custom validators. Will replace the defaults.
+        validators (Optional[List[py_gql.validation.ValidationVisitor]]):
+            Custom validators.
+            Setting this will replace the defaults so if you just want to add
+            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
 
-    :type context: any
-    :param context:
-        Custom application-specific execution context. Use this to pass in
-        anything your resolvers require like database connection, user
-        information, etc.
-        Limits on the type(s) used here will depend on your own resolver
-        implementations and the executor you use. Most thread safe
-        data-structures should work.
+        context (Any): Custom application-specific execution context
+            Use this to pass in anything your resolvers require like database
+            connection, user information, etc.
+            Limits on the type(s) used here will depend on your own resolver
+            implementations and the executor class you use. Most thread safe
+            data-structures should work.
 
-    :type middlewares: Optional[List[callable]]
-    :param middlewares:
-        List of middleware callable to consume when resolving fields.
+        middlewares (Optional[List[Callable]]):
+            List of middleware callable to use when resolving fields
 
-    :type tracer: Optional[py_gql.execution.GraphQLTracer]
-    :param tracer:
-        Tracer instance.
+        tracer (Optional[py_gql.GraphQLTracer]): Tracer instance
 
-    :type executor: py_gql.execution.executors.Executor
-    :param executor: Custom executor to process resolver functions
+        executor (Optional[py_gql.execution.Executor]): Executor instance
 
-    :rtype: Future[GraphQLResult]
-    :returns: Deferred execution result
+    Returns:
+        Future: Deferred execution result
     """
 
     assert isinstance(schema, Schema)
@@ -76,7 +69,7 @@ def _graphql(
     assert isinstance(tracer, GraphQLTracer)
 
     if not isinstance(tracer, NullTracer):
-        middlewares = [tracer.middleware] + (middlewares or [])
+        middlewares = [tracer._middleware] + (middlewares or [])
 
     try:
         tracer.trace(
@@ -87,12 +80,12 @@ def _graphql(
             operation_name=operation_name,
         )
 
-        with tracer.trace_context("parse", document=document):
+        with tracer._trace_context("parse", document=document):
             ast = parse(document, allow_type_system=False)
 
         validators = SPECIFIED_RULES if validators is None else validators
 
-        with tracer.trace_context("validate", ast=ast):
+        with tracer._trace_context("validate", ast=ast):
             validation_result = validate_ast(schema, ast, validators=validators)
 
         if not validation_result:
@@ -103,7 +96,10 @@ def _graphql(
                 variables=variables,
                 operation_name=operation_name,
             )
-            return GraphQLResult(errors=validation_result.errors)
+            return _concurrency.deferred(
+                GraphQLResult(errors=validation_result.errors),
+                cls=_concurrency.DummyFuture,
+            )
         else:
             tracer.trace("execute", "start", ast=ast, variables=variables)
             result = execute(
@@ -138,7 +134,9 @@ def _graphql(
             variables=variables,
             operation_name=operation_name,
         )
-        return GraphQLResult(errors=[err])
+        return _concurrency.deferred(
+            GraphQLResult(errors=[err]), cls=_concurrency.DummyFuture
+        )
     except VariablesCoercionError as err:
         tracer.trace(
             "query",
@@ -147,7 +145,10 @@ def _graphql(
             variables=variables,
             operation_name=operation_name,
         )
-        return GraphQLResult(data=None, errors=err.errors)
+        return _concurrency.deferred(
+            GraphQLResult(data=None, errors=err.errors),
+            cls=_concurrency.DummyFuture,
+        )
     except ExecutionError as err:
         tracer.trace(
             "query",
@@ -156,61 +157,80 @@ def _graphql(
             variables=variables,
             operation_name=operation_name,
         )
-        return GraphQLResult(data=None, errors=[err])
+        return _concurrency.deferred(
+            GraphQLResult(data=None, errors=[err]), cls=_concurrency.DummyFuture
+        )
 
 
-def graphql(*args, **kwargs):
-    """ Synchronous GraphQL entrypoint.
+def graphql(
+    schema,
+    document,
+    variables=None,
+    operation_name=None,
+    initial_value=None,
+    validators=None,
+    context=None,
+    middlewares=None,
+    tracer=None,
+    executor=None,
+    timeout=None,
+):
+    """ This is the main entrypoint for execution of GraphQL queries.
 
-    :type schema: py_gql.schema.Schema
-    :param schema: Schema to execute the query against
+    Args:
+        schema (py_gql.schema.Schema): Schema to execute the query against
 
-    :type document: str
-    :param document: The query document.
+        document (str): The query document
 
-    :type variables: dict
-    :param variables: Raw, JSON decoded variables parsed from the request
+        variables (Optional[dict]):
+            Raw, JSON decoded variables parsed from the request
 
-    :type operation_name: Optional[str]
-    :param operation_name: Operation to execute
-        If specified, the operation with the given name will be executed. If
-        not, this executes the single operation without disambiguation.
+        operation_name (Optional[str]): Operation to execute
+            If specified, the operation with the given name will be executed.
+            If not, this executes the single operation without disambiguation.
 
-    :type initial_value: any
-    :param initial_value: Root resolution value
-        Will be passed to all top-level resolvers.
+        initial_value (Any): Root resolution value passed to all top-level
+            resolvers
 
-    :type validators: Optional[List[py_gql.validation.ValidationVisitor]]
-    :param validators: Custom validators. Will replace the defaults.
+        validators (Optional[List[py_gql.validation.ValidationVisitor]]):
+            Custom validators.
+            Setting this will replace the defaults so if you just want to add
+            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
 
-    :type context: any
-    :param context:
-        Custom application-specific execution context. Use this to pass in
-        anything your resolvers require like database connection, user
-        information, etc.
-        Limits on the type(s) used here will depend on your own resolver
-        implementations and the executor you use. Most thread safe
-        data-structures should work.
+        context (Any): Custom application-specific execution context
+            Use this to pass in anything your resolvers require like database
+            connection, user information, etc.
+            Limits on the type(s) used here will depend on your own resolver
+            implementations and the executor class you use. Most thread safe
+            data-structures should work.
 
-    :type middlewares: Optional[List[callable]]
-    :param middlewares:
-        List of middleware callable to consume when resolving fields.
+        middlewares (Optional[List[Callable]]):
+            List of middleware callable to use when resolving fields
 
-    :type tracer: Optional[py_gql.execution.GraphQLTracer]
-    :param tracer:
-        Tracer instance.
+        tracer (Optional[py_gql.GraphQLTracer]): Tracer instance
 
-    :type executor: py_gql.execution.executors.Executor
-    :param executor: Custom executor to process resolver functions
+        executor (Optional[py_gql.execution.Executor]): Executor instance
 
-    :type timeout: float
-    :param timeout: Execution timeout in seconds.
+        timeout (Union[float,int]): blocking timeout in seconds
+            When using custom executors which support non-blocking / parallel
+            execution, the call will block until the execution result is
+            available or ``timeout`` is exceeded, however by default timeout
+            has no effect as the resolution is blocking.
 
-    :rtype: GraphQLResult
-    :returns: Execution result
+    Returns:
+        py_gql.GraphQLResult: Execution result
     """
-    timeout = kwargs.pop("timeout", None)
-    result = _graphql(*args, **kwargs)
-    if _concurrency.is_deferred(result):
-        return result.result(timeout=timeout)
-    return result
+    result = _graphql(
+        schema,
+        document,
+        variables=variables,
+        operation_name=operation_name,
+        initial_value=initial_value,
+        validators=validators,
+        context=context,
+        middlewares=middlewares,
+        tracer=tracer,
+        executor=executor,
+    )
+
+    return result.result(timeout=timeout)

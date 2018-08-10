@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-""" Some useful middlewares """
+""" Useful tracer implementations. """
 
 import datetime as dt
 import json
 import logging
 
 from .._utils import OrderedDict
-from ..execution import GraphQLExtension, GraphQLTracer
+from ..execution.tracing import GraphQLTracer
+from ..execution.wrappers import GraphQLExtension
 
 
 def _nanoseconds(delta):
@@ -19,7 +20,8 @@ def _rfc3339(ts):
 
 class ApolloTracer(GraphQLTracer, GraphQLExtension):
     """ `Apollo Tracing <https://github.com/apollographql/apollo-tracing>`_
-    implementation """
+    implementation. This tracers also implements :class:`GraphQLExtension`
+    so you can add the result to the response. """
 
     def __init__(self):
         self.start = None
@@ -106,37 +108,37 @@ threshold = %fms, operation = %s, document = '''
 %s
 ''', variables = %s)"""
 
+_DEFAULT_LOGGER = logging.getLogger("py_gql.utilities.tracers.SlowQueryLog")
+
 
 class SlowQueryLog(GraphQLTracer):
-    """ Log slow queries.
+    """ Log slow queries through Python's logging utilities.
 
-    By default this logs the entire query and variables, if this is not
-    suitable (e.g. you need to redact the query) you can subclass this class
-    and override :meth:`format_document` and :meth:`format_variables`
+    Note:
+        By default this logs the entire query and variables, if this is not
+        suitable (e.g. you need to redact the query and or variables) you can
+        subclass  and override :meth:`format_document` and
+        :meth:`format_variables`.
+
+    Args:
+        threshold (int): Slow query threshold in ms
+
+        logger (Optional[logging.Logger]): Custome logger instance to use.
+            Defaults to ``py_gql.utilities.tracers.SlowQueryLog``.
+
+        level (Optional[int]): Log level. Defaults to ``WARNING``.
+
+        format_str (Optional[str]): Log format string.
+            The log call will pass the following variables: (duration of the
+            query in ms, threshold in ms, operation name if any, formatted
+            document, formatted variables)
     """
 
     def __init__(
         self, threshold, logger=None, level=logging.WARNING, format_str=None
     ):
-        """
-        :type threshold: int
-        :param threshold: Slow threshold in ms
-
-        :type logger: Optional[logging.Logger]
-        :param logger: Custom logger instance top use
-
-        :type level: Optional[int]
-        :param level: Log level to use
-
-        :type format_str: Optional[str]
-        :param format_str: Log format to use
-        """
         self._threshold = threshold
-        self._logger = (
-            logger
-            if logger is not None
-            else logging.getLogger("py_gql.slow_query_log")
-        )
+        self._logger = logger if logger is not None else _DEFAULT_LOGGER
         self._level = level
         self._format_str = format_str or _SLOW_LOG_FORMAT_STR
 

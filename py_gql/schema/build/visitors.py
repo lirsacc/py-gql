@@ -278,21 +278,56 @@ class _SchemaDirectivesApplicator(SchemaVisitor):
         return definition
 
 
+# REVIEW: With the definition and the usage as a keyed map we end up repeating
+# the name of the directive.
 class SchemaDirective(SchemaVisitor):
     """ @directive implementation for use alongside
-    :func:`py_gql.schema.schema_from_ast`.
+    :func:`py_gql.schema.build.make_executable_schema`.
 
     You need to subclass this in order to define your own custom directives.
+    For example a directive that modifies the field resolver to always
+    uppercase the result would look like this:
+
+    .. code-block:: python
+
+        class UppercaseDirective(SchemaDirective):
+
+        def visit_field(self, field_definition):
+            assert field_definition.type is String
+            return Field(
+                field_definition.name,
+                field_definition.type,
+                args=field_definition.args,
+                description=field_definition.description,
+                deprecation_reason=field_definition.deprecation_reason,
+                resolve=lambda *a, **kw: field_definition.resolve(*a, **kw).upper(),
+                node=field_definition.node,
+            )
+
+        # Use it as follows
+        schema = make_executable_schema(
+            '''
+            directive @upper on FIELD_DEFINITION
+
+            type Query {
+                foo: String @upper
+            }
+            ''',
+            schema_directives={
+                'upper': UppercaseDirective
+            }
+        )
 
     Warning:
         While this is aimed to be used after
         :func:`~py_gql.schema.build.build_schema_from_ast` and its derivatives,
-        SchemaDirectives can modify types inline. In case you use globally
+        schema directives can modify types inline. In case you use globally
         defined type definitions this can have some nasty side effects and so
         it is encouraged to return new type definitions instead.
 
     Warning:
-        Specified types (scalars, introspection) cannot be modified.
+        Specified types (scalars, introspection) cannot be modified through
+        schema directives.
     """
 
     definition = None

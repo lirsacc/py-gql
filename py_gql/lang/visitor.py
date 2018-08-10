@@ -13,6 +13,14 @@ import functools as ft
 from . import ast as _ast
 from ..exc import GraphQLError
 
+__all__ = (
+    "SkipNode",
+    "Visitor",
+    "visit",
+    "DispatchingVisitor",
+    "ParrallelVisitor",
+)
+
 
 class SkipNode(GraphQLError):
     def __init__(self):
@@ -272,9 +280,10 @@ def _visit_directive_definition(visitor, definition):
 class DispatchingVisitor(Visitor):
     """ Base class for specialised visitors.
 
-    You should subclass this and implement methods named "enter_*". "leave_*"
-    where * represents the node class to be handled. For instance to process
-    :class:`py_gql.lang.ast.FloatValue` nodes, implement ``enter_float_value``.
+    You should subclass this and implement methods named ``enter_*`` and
+    ``leave_*`` where ``*`` represents the node class to be handled.
+    For instance to process :class:`py_gql.lang.ast.FloatValue` nodes,
+    implement ``enter_float_value``.
 
     Default behaviour is noop for all classes.
     """
@@ -453,134 +462,134 @@ class DispatchingVisitor(Visitor):
         elif kind is _ast.DirectiveDefinition:
             self.leave_directive_definition(node)
 
-    def default_handler(self, node):
+    def _default_handler(self, node):
         pass
 
-    enter_document = default_handler
-    leave_document = default_handler
+    enter_document = _default_handler
+    leave_document = _default_handler
 
-    enter_operation_definition = default_handler
-    leave_operation_definition = default_handler
+    enter_operation_definition = _default_handler
+    leave_operation_definition = _default_handler
 
-    enter_fragment_definition = default_handler
-    leave_fragment_definition = default_handler
+    enter_fragment_definition = _default_handler
+    leave_fragment_definition = _default_handler
 
-    enter_variable_definition = default_handler
-    leave_variable_definition = default_handler
+    enter_variable_definition = _default_handler
+    leave_variable_definition = _default_handler
 
-    enter_directive = default_handler
-    leave_directive = default_handler
+    enter_directive = _default_handler
+    leave_directive = _default_handler
 
-    enter_argument = default_handler
-    leave_argument = default_handler
+    enter_argument = _default_handler
+    leave_argument = _default_handler
 
-    enter_selection_set = default_handler
-    leave_selection_set = default_handler
+    enter_selection_set = _default_handler
+    leave_selection_set = _default_handler
 
-    enter_field = default_handler
-    leave_field = default_handler
+    enter_field = _default_handler
+    leave_field = _default_handler
 
-    enter_fragment_spread = default_handler
-    leave_fragment_spread = default_handler
+    enter_fragment_spread = _default_handler
+    leave_fragment_spread = _default_handler
 
-    enter_inline_fragment = default_handler
-    leave_inline_fragment = default_handler
+    enter_inline_fragment = _default_handler
+    leave_inline_fragment = _default_handler
 
-    enter_null_value = default_handler
-    leave_null_value = default_handler
+    enter_null_value = _default_handler
+    leave_null_value = _default_handler
 
-    enter_int_value = default_handler
-    leave_int_value = default_handler
+    enter_int_value = _default_handler
+    leave_int_value = _default_handler
 
-    enter_float_value = default_handler
-    leave_float_value = default_handler
+    enter_float_value = _default_handler
+    leave_float_value = _default_handler
 
-    enter_string_value = default_handler
-    leave_string_value = default_handler
+    enter_string_value = _default_handler
+    leave_string_value = _default_handler
 
-    enter_boolean_value = default_handler
-    leave_boolean_value = default_handler
+    enter_boolean_value = _default_handler
+    leave_boolean_value = _default_handler
 
-    enter_enum_value = default_handler
-    leave_enum_value = default_handler
+    enter_enum_value = _default_handler
+    leave_enum_value = _default_handler
 
-    enter_variable = default_handler
-    leave_variable = default_handler
+    enter_variable = _default_handler
+    leave_variable = _default_handler
 
-    enter_list_value = default_handler
-    leave_list_value = default_handler
+    enter_list_value = _default_handler
+    leave_list_value = _default_handler
 
-    enter_object_value = default_handler
-    leave_object_value = default_handler
+    enter_object_value = _default_handler
+    leave_object_value = _default_handler
 
-    enter_object_field = default_handler
-    leave_object_field = default_handler
+    enter_object_field = _default_handler
+    leave_object_field = _default_handler
 
-    enter_named_type = default_handler
-    leave_named_type = default_handler
+    enter_named_type = _default_handler
+    leave_named_type = _default_handler
 
-    enter_list_type = default_handler
-    leave_list_type = default_handler
+    enter_list_type = _default_handler
+    leave_list_type = _default_handler
 
-    enter_non_null_type = default_handler
-    leave_non_null_type = default_handler
+    enter_non_null_type = _default_handler
+    leave_non_null_type = _default_handler
 
-    enter_schema_definition = default_handler
-    leave_schema_definition = default_handler
+    enter_schema_definition = _default_handler
+    leave_schema_definition = _default_handler
 
-    enter_operation_type_definition = default_handler
-    leave_operation_type_definition = default_handler
+    enter_operation_type_definition = _default_handler
+    leave_operation_type_definition = _default_handler
 
-    enter_scalar_type_definition = default_handler
-    leave_scalar_type_definition = default_handler
+    enter_scalar_type_definition = _default_handler
+    leave_scalar_type_definition = _default_handler
 
-    enter_object_type_definition = default_handler
-    leave_object_type_definition = default_handler
+    enter_object_type_definition = _default_handler
+    leave_object_type_definition = _default_handler
 
-    enter_field_definition = default_handler
-    leave_field_definition = default_handler
+    enter_field_definition = _default_handler
+    leave_field_definition = _default_handler
 
-    enter_input_value_definition = default_handler
-    leave_input_value_definition = default_handler
+    enter_input_value_definition = _default_handler
+    leave_input_value_definition = _default_handler
 
-    enter_interface_type_definition = default_handler
-    leave_interface_type_definition = default_handler
+    enter_interface_type_definition = _default_handler
+    leave_interface_type_definition = _default_handler
 
-    enter_union_type_definition = default_handler
-    leave_union_type_definition = default_handler
+    enter_union_type_definition = _default_handler
+    leave_union_type_definition = _default_handler
 
-    enter_enum_type_definition = default_handler
-    leave_enum_type_definition = default_handler
+    enter_enum_type_definition = _default_handler
+    leave_enum_type_definition = _default_handler
 
-    enter_enum_value_definition = default_handler
-    leave_enum_value_definition = default_handler
+    enter_enum_value_definition = _default_handler
+    leave_enum_value_definition = _default_handler
 
-    enter_input_object_type_definition = default_handler
-    leave_input_object_type_definition = default_handler
+    enter_input_object_type_definition = _default_handler
+    leave_input_object_type_definition = _default_handler
 
-    enter_schema_extension = default_handler
-    leave_schema_extension = default_handler
+    enter_schema_extension = _default_handler
+    leave_schema_extension = _default_handler
 
-    enter_scalar_type_extension = default_handler
-    leave_scalar_type_extension = default_handler
+    enter_scalar_type_extension = _default_handler
+    leave_scalar_type_extension = _default_handler
 
-    enter_object_type_extension = default_handler
-    leave_object_type_extension = default_handler
+    enter_object_type_extension = _default_handler
+    leave_object_type_extension = _default_handler
 
-    enter_interface_type_extension = default_handler
-    leave_interface_type_extension = default_handler
+    enter_interface_type_extension = _default_handler
+    leave_interface_type_extension = _default_handler
 
-    enter_union_type_extension = default_handler
-    leave_union_type_extension = default_handler
+    enter_union_type_extension = _default_handler
+    leave_union_type_extension = _default_handler
 
-    enter_enum_type_extension = default_handler
-    leave_enum_type_extension = default_handler
+    enter_enum_type_extension = _default_handler
+    leave_enum_type_extension = _default_handler
 
-    enter_input_object_type_extension = default_handler
-    leave_input_object_type_extension = default_handler
+    enter_input_object_type_extension = _default_handler
+    leave_input_object_type_extension = _default_handler
 
-    enter_directive_definition = default_handler
-    leave_directive_definition = default_handler
+    enter_directive_definition = _default_handler
+    leave_directive_definition = _default_handler
 
 
 class ParrallelVisitor(Visitor):

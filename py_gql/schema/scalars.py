@@ -21,12 +21,15 @@ def _typed_coerce(coerce_, *types):
     return _coerce
 
 
+_coerce_bool_node = _typed_coerce(bool, _ast.BooleanValue)
+
+
 Boolean = ScalarType(
     "Boolean",
     description="The `Boolean` scalar type represents `true` or `false`.",
     serialize=bool,
     parse=bool,
-    parse_literal=_typed_coerce(bool, _ast.BooleanValue),
+    parse_literal=_coerce_bool_node,
 )
 
 
@@ -87,6 +90,10 @@ def coerce_float(maybe_float):
         )
 
 
+_coerce_int_node = _typed_coerce(coerce_int, _ast.IntValue)
+_coerce_float_node = _typed_coerce(coerce_float, _ast.FloatValue, _ast.IntValue)
+
+
 Int = ScalarType(
     "Int",
     description=(
@@ -95,7 +102,7 @@ Int = ScalarType(
     ),
     serialize=coerce_int,
     parse=coerce_int,
-    parse_literal=_typed_coerce(coerce_int, _ast.IntValue),
+    parse_literal=_coerce_int_node,
 )
 
 
@@ -108,7 +115,7 @@ Float = ScalarType(
     ),
     serialize=coerce_float,
     parse=coerce_float,
-    parse_literal=_typed_coerce(coerce_float, _ast.FloatValue, _ast.IntValue),
+    parse_literal=_coerce_float_node,
 )
 
 
@@ -124,6 +131,9 @@ def _serialize_string(value):
     return _parse_string(value)
 
 
+_coerce_string_node = _typed_coerce(_parse_string, _ast.StringValue)
+
+
 String = ScalarType(
     "String",
     description=(
@@ -133,8 +143,10 @@ String = ScalarType(
     ),
     serialize=_serialize_string,
     parse=_parse_string,
-    parse_literal=_typed_coerce(_parse_string, _ast.StringValue),
+    parse_literal=_coerce_string_node,
 )
+
+_coerce_id_node = _typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue)
 
 
 ID = ScalarType(
@@ -149,7 +161,7 @@ ID = ScalarType(
     ),
     serialize=six.text_type,
     parse=six.text_type,
-    parse_literal=_typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue),
+    parse_literal=_coerce_id_node,
 )
 
 
@@ -174,6 +186,9 @@ def _parse_uuid(maybe_uuid):
     return uuid.UUID(maybe_uuid)
 
 
+_coerce_uuid_node = _typed_coerce(_parse_uuid, _ast.StringValue)
+
+
 UUID = ScalarType(
     "UUID",
     description=(
@@ -182,7 +197,7 @@ UUID = ScalarType(
     ),
     serialize=_serialize_uuid,
     parse=_parse_uuid,
-    parse_literal=_typed_coerce(_parse_uuid, _ast.StringValue),
+    parse_literal=_coerce_uuid_node,
 )
 
 
@@ -224,9 +239,11 @@ class RegexType(ScalarType):
                 )
             return string_value
 
+        _parse_node = _typed_coerce(_parse, _ast.StringValue)
+
         self._parse = _parse
         self._serialize = _parse
-        self._parse_literal = _typed_coerce(_parse, _ast.StringValue)
+        self._parse_literal = _parse_node
 
 
 def _identity(value):

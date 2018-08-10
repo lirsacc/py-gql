@@ -35,4 +35,10 @@ from .types import (
 )
 from .scalars import Int, Float, ID, UUID, String, Boolean, RegexType
 from .directives import IncludeDirective, SkipDirective, DeprecatedDirective
+from .build import (
+    make_executable_schema,
+    build_schema_from_ast,
+    extend_schema,
+    SchemaDirective,
+)
 from .schema import Schema

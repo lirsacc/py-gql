@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-If you have an SDL-based schema definition, then you can create an executable
-schema out of it.
+Since the June 2018 version of the specification, SDL documents are officially
+supported and provide with a language agnostic way of defining schemas. The
+:mod:`py_gql.schema.build` module exposes the related utilities.
 """
 
 import collections
@@ -21,17 +22,28 @@ from .visitors import (
     visit_schema,
 )
 
+__all__ = (
+    "build_schema_from_ast",
+    "extend_schema",
+    "make_executable_schema",
+    "SchemaDirective",
+)
+
 
 def make_executable_schema(
-    document, resolvers=None, additional_types=None, schema_directives=None
+    document,
+    resolvers=None,
+    additional_types=None,
+    schema_directives=None,
+    assume_valid=False,
 ):
-    """ Build an executable from a GraphQL document, including:
+    """ Build an executable schema from a GraphQL document.
+
+    This includes:
 
     - Generating types from their definitions
     - Applying schema and type extensions
     - Applying schema directives
-
-    The schema is validated at each step
 
     Args:
         document (Union[str, py_gql.lang.ast.Document]): SDL document
@@ -46,22 +58,32 @@ def make_executable_schema(
             Use this to specify some custom implementation for scalar, enums,
             etc.
             - In case of object types, interfaces, etc. the supplied type will
-              override the extracted type without checking for compatibility.
+            override the extracted type without checking for compatibility.
             - Extension will be applied to these types. As a result, the
-              resulting types may not be the same objects that were provided,
-              so users should not rely on type identity.
+            resulting types may not be the same objects that were provided,
+            so users should not rely on type identity.
 
-        schema_directives (Mapping[str, Type]): Schema directive classes
+        schema_directives (dict): Schema directive classes
             - Members must be subclasses of :class:`SchemaDirective`
             - Members must define a non-null ``definition`` attribute or the
-              corresponding definition must be present in the document
+            corresponding definition must be present in the document
+
+        assume_valid (bool): Do not validate intermediate schemas
+
+    Returns:
+        py_gql.schema.Schema: Executable schema
+
+    Raises:
+        py_gql.exc.SDLError:
     """
     ast = _document_ast(document)
 
     schema = build_schema_from_ast(
         ast, resolvers=resolvers, additional_types=additional_types
     )
-    schema.validate()
+
+    if not assume_valid:
+        schema.validate()
 
     schema = extend_schema(
         schema,
@@ -70,13 +92,17 @@ def make_executable_schema(
         additional_types=additional_types,
         strict=False,
     )
-    schema.validate()
+
+    if not assume_valid:
+        schema.validate()
 
     if schema_directives:
         schema = heal_schema(
             apply_schema_directives(schema, schema_directives, strict=True)
         )
-        schema.validate()
+
+        if not assume_valid:
+            schema.validate()
 
     return schema
 
@@ -98,10 +124,10 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
             Use this to specify some custom implementation for scalar, enums,
             etc.
             - In case of object types, interfaces, etc. the supplied type will
-              override the extracted type without checking for compatibility.
+            override the extracted type without checking for compatibility.
             - Extension will be applied to these types. As a result, the
-              resulting types may not be the same objects that were provided,
-              so users should not rely on type identity.
+            resulting types may not be the same objects that were provided,
+            so users should not rely on type identity.
 
     Returns:
         py_gql.schema.Schema: Executable schema
@@ -157,7 +183,12 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
 def extend_schema(
     schema, document, resolvers=None, additional_types=None, strict=True
 ):
-    """ Extend an existing Schema according to an SDL document.
+    """ Extend an existing Schema according to a GraphQL document (adding new
+    types and directives + extending known types).
+
+    Warning:
+
+        Specified types cannot be replace or extended.
 
     Args:
         schema (py_gql.schema.Schema): Executable schema
@@ -174,10 +205,16 @@ def extend_schema(
             Use this to specify some custom implementation for scalar, enums,
             etc.
             - In case of object types, interfaces, etc. the supplied type will
-              override the extracted type without checking for compatibility.
+            override the extracted type without checking for compatibility.
             - Extension will be applied to these types. As a result, the
-              resulting types may not be the same objects that were provided,
-              so users should not rely on type identity.
+            resulting types may not be the same objects that were provided,
+            so users should not rely on type identity.
+
+        strict (bool): Enable strict mode.
+            In strict mode, unknown extension targets, overriding type and
+            overriding the schema definition will raise an
+            :class:`ExtensionError`. Disable strict mode will silently ignore
+            such errors.
 
     Returns:
         py_gql.schema.Schema: Executable schema
@@ -422,11 +459,3 @@ def apply_schema_directives(schema, schema_directives, strict=False):
         _SchemaDirectivesApplicator(schema, schema_directives, strict=strict),
         schema,
     )
-
-
-__all__ = (
-    "build_schema_from_ast",
-    "extend_schema",
-    "make_executable_schema",
-    "SchemaDirective",
-)

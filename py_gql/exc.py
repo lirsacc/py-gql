@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable = too-many-ancestors
 """ All exceptions for this library are defined in the :mod:`py_gql.exc`
-module.
-
-Exception classes that expose a ``to_dict`` method, such as
-:class:`GraphQLLocatedError` or :class:`ResolverError` should be suitable for
-exposing to consumers of your GraphQL API.
-"""
+module. """
 
 from ._string_utils import highlight_location, index_to_loc, stringify_path
 from ._utils import cached_property
@@ -24,6 +19,9 @@ class GraphQLError(Exception):
 
 
 class GraphQLResponseError(GraphQLError):
+    """ Implementors of this are suitable for usage in GraphQL responses and
+    exposing to end users. """
+
     def to_dict(self):
         raise NotImplementedError()
 
@@ -306,12 +304,16 @@ class ResolverError(GraphQLLocatedError):
 
 
 class SDLError(GraphQLLocatedError):
-    """ Error when parsing a schema definition document. """
+    """ Error that occured when parsing and / or applying a schema definition
+    document (SDL). """
 
     pass
 
 
 class ExtensionError(SDLError):
+    """ Error that occured when applying a schema or type extension node
+    to an existing schema. """
+
     pass
 
 

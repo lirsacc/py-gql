@@ -23,7 +23,7 @@ def test_slow_query_log(caplog):
     assert len(caplog.records) == 1
     record = caplog.records[0]
     assert record.levelno == logging.WARNING
-    assert record.name == "py_gql.slow_query_log"
+    assert record.name == "py_gql.utilities.tracers.SlowQueryLog"
     _, _, op, doc, variables = record.args
     assert op is None
     assert doc == "{ foo }"

@@ -4,8 +4,8 @@ import pytest
 
 from py_gql._graphql import graphql
 from py_gql._string_utils import stringify_path
-from py_gql.execution import ThreadPoolExecutor
-from py_gql.execution.middleware import GraphQLMiddleware, apply_middlewares
+from py_gql.execution.executors import ThreadPoolExecutor
+from py_gql.execution.middleware import apply_middlewares
 
 from ._test_utils import TESTED_EXECUTORS
 
@@ -157,7 +157,7 @@ def test_generator_middleware_with_threads(starwars_schema):
     )
 
 
-class PathCollectorMiddleware(GraphQLMiddleware):
+class PathCollectorMiddleware(object):
     def __init__(self):
         self.log = []
 

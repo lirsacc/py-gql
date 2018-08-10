@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-""" AsyncIO support for python 3.5+.
+""" Asynchronous execution support for use with Python 3.5+ and async/await
+syntax.
 
-.. warning::
-
+Warning:
     Importing this module outside of python 3.5+ will break.
-
 """
 
 import asyncio

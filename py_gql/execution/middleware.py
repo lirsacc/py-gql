@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Middlewares provide support for modifying / short-circuiting the field
-resolution part of the execution.
-
-A middleware can be either a function that returns / yields to the next step
-or a callable subclassing :class:`GraphQLMiddleware`:
+resolution part of the execution. A middleware is a callable that returns /
+yields to the next step.
 
 .. highlight:: python
 
@@ -20,7 +18,7 @@ or a callable subclassing :class:`GraphQLMiddleware`:
         logger.debug('end', info.path)
 
     # Class based middleware
-    class CollectFieldsMiddleware(GraphQLMiddleware):
+    class CollectFieldsMiddleware(object):
         def __init__(self):
             self.fields = []
 
@@ -33,20 +31,13 @@ or a callable subclassing :class:`GraphQLMiddleware`:
 """
 
 import functools as ft
-import inspect
+from inspect import isgeneratorfunction
 
 from . import _concurrency
 
 
-class GraphQLMiddleware(object):
-    def __call__(self, next_, root, args, context, info):
-        return next_(root, args, context, info)
-
-
-def _is_generator(callable_):
-    if isinstance(callable_, GraphQLMiddleware):
-        return inspect.isgeneratorfunction(callable_.__call__)
-    return inspect.isgeneratorfunction(callable_)
+def _is_generator(mw):
+    return isgeneratorfunction(mw) or isgeneratorfunction(mw.__call__)
 
 
 def apply_middlewares(func, middlewares):
@@ -57,15 +48,6 @@ def apply_middlewares(func, middlewares):
     - They can either ``return`` or ``yield`` in order to have clean up logic
     - Generator based middlewares **must** yield at least once
     - Middlewares are evaluated inside-out
-
-    >>> apply_middlewares(
-    ...     lambda x: x * x,
-    ...     [
-    ...         lambda n, x: n(x + 1),
-    ...         lambda n, x: n(x * 3)
-    ...     ]
-    ... )(1)
-    36
     """
     if not middlewares:
         return func
