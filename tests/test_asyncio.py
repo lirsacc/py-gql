@@ -15,38 +15,6 @@ from py_gql.schema import Argument, Field, ObjectType, Schema, String
 
 
 @pytest.mark.asyncio
-async def test_it_runs_coroutines_concurrently():
-
-    log = []
-
-    async def resolve_and_log(root, args, *_):
-        log.append(("in", args.get("id", None)))
-        await asyncio.sleep(.1)
-        log.append(("out", args.get("id", None)))
-        return args.get("id")
-
-    schema = Schema(
-        ObjectType(
-            "Query",
-            [
-                Field(
-                    "foo",
-                    String,
-                    [Argument("id", String)],
-                    resolve=resolve_and_log,
-                )
-            ],
-        )
-    )
-
-    res = await graphql(schema, '{ one: foo(id: "1"), two: foo(id: "2") }')
-
-    assert res.response() == {"data": {"one": "1", "two": "2"}}
-
-    assert log == [("in", "1"), ("in", "2"), ("out", "1"), ("out", "2")]
-
-
-@pytest.mark.asyncio
 async def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
     starwars_schema
 ):
@@ -392,6 +360,40 @@ class TestAsyncIOExecutor(object):
 
 
 @pytest.mark.asyncio
+async def test_it_runs_coroutines_concurrently():
+
+    log = []
+
+    async def resolve_and_log(root, args, *_):
+        log.append(("in", args.get("id", None)))
+        await asyncio.sleep(.1)
+        log.append(("out", args.get("id", None)))
+        return args.get("id")
+
+    schema = Schema(
+        ObjectType(
+            "Query",
+            [
+                Field(
+                    "foo",
+                    String,
+                    [Argument("id", String)],
+                    resolve=resolve_and_log,
+                )
+            ],
+        )
+    )
+
+    res = await graphql(schema, '{ one: foo(id: "1"), two: foo(id: "2") }')
+
+    assert res.response() == {"data": {"one": "1", "two": "2"}}
+    assert log[:2] == [("in", "1"), ("in", "2")]  # This part must be in order
+    # The last 2 can be misordered depending on scheduling
+    assert ("out", "1") in log
+    assert ("out", "2") in log
+
+
+@pytest.mark.asyncio
 async def test_with_ThreadPoolExecutor():
     log = []
 
@@ -423,7 +425,10 @@ async def test_with_ThreadPoolExecutor():
         )
 
     assert res.response() == {"data": {"one": "1", "two": "2"}}
-    assert log == [("in", "1"), ("in", "2"), ("out", "1"), ("out", "2")]
+    assert log[:2] == [("in", "1"), ("in", "2")]  # This part must be in order
+    # The last 2 can be misordered depending on scheduling
+    assert ("out", "1") in log
+    assert ("out", "2") in log
 
 
 # WARN: This is just testing that it works, you shouldn't do that in real life.
@@ -459,4 +464,5 @@ async def test_with_SyncExecutor():
         )
 
     assert res.response() == {"data": {"one": "1", "two": "2"}}
+    # These are always in order due to blocking behaviour
     assert log == [("in", "1"), ("out", "1"), ("in", "2"), ("out", "2")]
