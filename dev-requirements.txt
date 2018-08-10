@@ -11,6 +11,7 @@ pylint ~= 2.1.0
 
 recommonmark ~= 0.4.0
 sphinx ~= 1.7.6
+sphinx_rtd_theme ~= 0.4.1
 
 pycodestyle < 2.4  # Fix conflict with flake8
 

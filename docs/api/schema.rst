@@ -36,29 +36,15 @@ Types are defined as instances of :class:`~py_gql.schema.Type` and its subclasse
             self: MyCyclicObject
         }
 
-    you could interchangeably write:
+    you could interchangeably write any of:
 
     .. code-block:: python
 
-        MyCyclicObject = ObjectType('MyCyclicObject', [
-            Field('self', lambda: MyCyclicObject)
-        ])
+        MyCyclicObject = ObjectType('MyCyclicObject', [Field('self', lambda: MyCyclicObject)])
 
-    or:
+        MyCyclicObject = ObjectType('MyCyclicObject', [lambda: Field('self', MyCyclicObject)])
 
-    .. code-block:: python
-
-        MyCyclicObject = ObjectType('MyCyclicObject', [
-            lambda: Field('self', MyCyclicObject)
-        ])
-
-    or:
-
-    .. code-block:: python
-
-        MyCyclicObject = ObjectType('MyCyclicObject', lambda: [
-            Field('self', MyCyclicObject)
-        ])
+        MyCyclicObject = ObjectType('MyCyclicObject', lambda: [Field('self', MyCyclicObject)])
 
 
 .. autoclass:: WrappingType
@@ -89,7 +75,6 @@ Types are defined as instances of :class:`~py_gql.schema.Type` and its subclasse
 
 .. autoclass:: Directive
 
-
 .. autofunction:: unwrap_type
 
 .. autofunction:: nullable_type
@@ -106,7 +91,7 @@ Types are defined as instances of :class:`~py_gql.schema.Type` and its subclasse
 
 
 Scalar Types
-------------
+~~~~~~~~~~~~
 
 Scalar types are instances of :class:`~py_gql.schema.ScalarType`, refer to the
 class documentation to learn how to define them.
@@ -160,7 +145,7 @@ quite common. They will not always be present in GraphQL servers.
 .. autoclass:: py_gql.schema.RegexType
 
 Directives
-----------
+~~~~~~~~~~
 
 The following :class:`py_gql.schema.Directive` instances are part of
 the specification and should always be available in any compliant GraphQL
@@ -185,3 +170,10 @@ server.
     including a suggestion for how to access supported
     similar data.
     Formatted in `Markdown <https://daringfireball.net/projects/markdown/>`_.
+
+
+Building a schema from a GraphQL document
+-----------------------------------------
+
+.. automodule:: py_gql.schema.build
+    :members:

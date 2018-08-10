@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
+# pylint: disable=all
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -16,20 +18,23 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import setup as pkg
-from docs import graphql_pygments  # flake8: noqa
+import imp
+import os
+
+from docs import graphql_pygments
 
 # -- Project information -----------------------------------------------------
 
+about = imp.load_source("about", os.path.join("..", "py_gql", "__version__.py"))
 
-project = pkg.NAME
-copyright = "2018, Charles Lirsac"
-author = pkg.AUTHOR
+project = about.__title__
+copyright = about.__copyright__
+author = about.__author__
 
 # The short X.Y version
-version = pkg.VERSION
+version = about.__version__
 # The full version, including alpha/beta/rc tags
-release = pkg.VERSION
+release = about.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -85,36 +90,33 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-FONTS = '"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "Roboto", sans-serif;'
 
 html_theme_options = {
-    "logo": "GraphQL_Logo.svg",
-    "pink_1": "#F6D7DA",
-    "pink_2": "#F3C6CB",
-    "github_user": "lirsacc",
-    "github_repo": "py-gql",
-    "github_button": False,
-    "github_banner": False,
-    "font_family": FONTS,
-    "note_bg": "#FFF1D1",
-    "note_border": "#FEECBF",
-    "show_related": False,
-    "page_width": "960px",
-    "fixed_sidebar": True,
-    "font_size": "16px",
-    "head_font_family": FONTS,
+    "canonical_url": "",
+    "analytics_id": "",
+    "logo_only": False,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": True,
+    # Toc options
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -124,15 +126,15 @@ html_static_path = ["_static"]
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-html_sidebars = {
-    "**": [
-        "about.html",
-        "sidebarlinks.html",
-        "navigation.html",
-        "relations.html",
-        "searchbox.html",
-    ]
-}
+# html_sidebars = {
+#     "**": [
+#         "about.html",
+#         "sidebarlinks.html",
+#         "navigation.html",
+#         "relations.html",
+#         "searchbox.html",
+#     ]
+# }
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

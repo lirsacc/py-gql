@@ -6,34 +6,44 @@
 Welcome to py-gql's documentation!
 ==================================
 
-**Release:** v\ |version|
+**Release:** v\ |version| (:ref:`installation`)
 
-`py-gql </>`_ is an implementation of GraphQL for Python aimed at creating GraphQL servers.
 
-It supports:
+`py-gql </>`_ is an implementation of GraphQL for Python aimed at creating
+GraphQL servers. It supports:
 
-- Parsing the GraphQL language (Query language and SDL)
+- Parsing the GraphQL query language and schema definition language
 - Building a GraphQL type schema programatically and from Schema Definition
   files (including support for schema directives)
 - Validating and Executing a GraphQL request against a type schema
 
-The source code is available on `Github <https://github.com/lirsacc/py-gql>`_.
+The source code, issue tracker and development guidelines are available on
+`Github <https://github.com/lirsacc/py-gql>`_.
 
-.. note::
+GraphQL
+-------
 
-    If you are not familiar with GraphQL we strongly suggest you head over to
-    `graphql.org <https://graphql.org>`_ or have a look at `the specification
-    <https://github.com/facebook/graphql>`_ before going further.
+GraphQL is a data query language and runtime specification for fulfilling these
+queries against your data. It provides semantics for describing your data as
+a type schema and exposing them to clients. It backend agnostic architecture,
+which means you can freely choose the transport and serialization protocols,
+data storage layer, etc. that fit your project / organisation and use GraphQL as
+a thin layer on top.
 
+If you are not familiar with GraphQL, already, we strongly suggest you head over
+to `graphql.org <https://graphql.org>`_ and have a look at the `official
+introduction <https://graphql.org/learn/>`_ and `the specification
+<https://github.com/facebook/graphql>`_ before going any further.
+
+GraphQL was originally developped at Facebook and released publicly in 2015.
 
 Documentation
 -------------
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   install
-   guides
+   usage/index
    api/index
    changes
 

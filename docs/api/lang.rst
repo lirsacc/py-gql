@@ -33,4 +33,4 @@ Visitors
 
 .. automodule:: py_gql.lang.visitor
     :members:
-    :show-inheritance:
+    :undoc-members:

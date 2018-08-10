@@ -1,0 +1,19 @@
+schema {
+    query: Query
+}
+
+type Query {
+    post(id: ID!): Post
+}
+
+type Post implements Object {
+    id: ID!
+    title: String!
+    comments(count: Int!, offset: Int! = 0): [Comment]
+}
+
+type Comment implements Object {
+    id: ID!
+    post: Post!
+    body: String
+}
