@@ -1,59 +1,66 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint:disable=all
+# pylint: disable=all
 """
 """
 
+import imp
 import itertools
 import os
 import sys
 
 from setuptools import find_packages, setup
 
+ABBOUT = imp.load_source("about", os.path.join(".", "py_gql", "__version__.py"))
+
 
 def run_setup():
-
-    about = {}
-    with open(os.path.join("py_gql", "__version__.py")) as f:
-        exec(f.read(), about)
 
     with open("README.md") as f:
         readme = "\n" + f.read()
 
     setup(
-        name=about["__title__"],
-        version=about["__version__"],
-        description=about["__description__"],
+        name=ABBOUT.__title__,
+        version=ABBOUT.__version__,
+        description=ABBOUT.__description__,
         long_description=readme,
         long_description_content_type="text/markdown",
-        author=about["__author__"],
-        author_email=about["__author_email__"],
-        url=about["__url__"],
-        license=about["__license__"],
+        author=ABBOUT.__author__,
+        author_email=ABBOUT.__author_email__,
+        url=ABBOUT.__url__,
+        license=ABBOUT.__license__,
+        keywords="graphql",
         zip_safe=False,
-        packages=find_packages(exclude=("tests", "docs", "examples")),
+        packages=find_packages(
+            exclude=("tests", "tests.*", "docs", "examples")
+        ),
         # package_data={},
         install_requires=_split_requirements("requirements.txt"),
         include_package_data=True,
         python_requires=">2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
         ext_modules=_cython_ext_modules(
-            "py_gql/*.py",
-            "py_gql/lang/*.py",
-            "py_gql/validation/*.py",
-            "py_gql/utilities/*.py",
-            "py_gql/schema/*.py",
-            "py_gql/execution/*.py",
+            "py_gql",
+            "py_gql.lang",
+            "py_gql.validation",
+            "py_gql.validation.rules",
+            "py_gql.utilities",
+            "py_gql.schema",
+            "py_gql.schema.build",
+            "py_gql.execution",
         ),
         classifiers=[
             "License :: OSI Approved :: MIT License",
+            "Natural Language :: English",
             "Programming Language :: Python",
+            "Programming Language :: Python :: Implementation :: CPython",
+            "Programming Language :: Python :: 2",
+            "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 2",
-            "Programming Language :: Python :: 2.7",
-            "Programming Language :: Python :: Implementation :: CPython",
+            "Operating System :: POSIX",
+            "Operating System :: MacOS :: MacOS X",
             "Development Status :: 3 - Alpha",
             "Intended Audience :: Developers",
             "Topic :: Software Development :: Libraries",
@@ -68,25 +75,22 @@ def run_setup():
     )
 
 
-def _cython_ext_modules(*globs):
-    if bool(os.environ.get("CYTHON_DISABLE")):
-        return []
-
+def _cython_ext_modules(*packages):
     try:
         from Cython.Build import cythonize
     except ImportError:
         return []
     else:
-        linetrace = bool(os.environ.get("CYTHON_TRACE"))
+        enable_linetrace = "CYTHON_TRACE" in os.environ
         ext_modules = [
             cythonize(
-                glob,
+                "%s/*.py" % package.replace(".", "/"),
                 compiler_directives={
                     "embedsignature": True,
-                    "linetrace": linetrace,
+                    "linetrace": enable_linetrace,
                 },
             )
-            for glob in globs
+            for package in packages
         ]
         return list(itertools.chain.from_iterable(ext_modules))
 
