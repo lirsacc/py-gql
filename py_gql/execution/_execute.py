@@ -523,7 +523,8 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
             cls=ctx.future_cls,
         )
 
-    if kind is ScalarType:
+    # Need to handle custom scalar types
+    if issubclass(kind, ScalarType):
         try:
             serialized = field_type.serialize(resolved_value)
         except ScalarSerializationError as err:

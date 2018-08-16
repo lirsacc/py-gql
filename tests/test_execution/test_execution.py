@@ -20,6 +20,8 @@ from py_gql.schema import (
     Schema,
     String,
     Type,
+    UUID,
+    RegexType,
 )
 
 from ._test_utils import TESTED_EXECUTORS, check_execution
@@ -1004,3 +1006,32 @@ class TestNonNullArguments(object):
                 "must not be null."
             ),
         )
+
+
+def test_custom_scalar():
+
+    Email = RegexType(
+        "Email", r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+    )
+
+    schema = Schema(
+        ObjectType("Query", [Field("foo", UUID), Field("bar", Email)])
+    )
+
+    check_execution(
+        schema,
+        """
+        {
+            foo
+            bar
+        }
+        """,
+        initial_value={
+            "foo": "aff929fe-25a1-5e3d-8634-4c122f38d596",
+            "bar": "gujwar@gagiv.kg",
+        },
+        expected_data={
+            "foo": "aff929fe-25a1-5e3d-8634-4c122f38d596",
+            "bar": "gujwar@gagiv.kg",
+        },
+    )
