@@ -214,9 +214,7 @@ class RegexType(ScalarType):
         description (str): Type description
     """
 
-    # pylint: disable = super-init-not-called
     def __init__(self, name, regex, description=None):
-        self.name = name
 
         if isinstance(regex, six.string_types):
             self.regex = re.compile(regex)
@@ -224,11 +222,7 @@ class RegexType(ScalarType):
             self.regex = regex
 
         if description is None:
-            self.description = (
-                "String matching pattern /%s/" % self.regex.pattern
-            )
-        else:
-            self.description = description
+            description = "String matching pattern /%s/" % self.regex.pattern
 
         def _parse(value):
             string_value = _serialize_string(value)
@@ -241,9 +235,13 @@ class RegexType(ScalarType):
 
         _parse_node = _typed_coerce(_parse, _ast.StringValue)
 
-        self._parse = _parse
-        self._serialize = _parse
-        self._parse_literal = _parse_node
+        super(RegexType, self).__init__(
+            name,
+            serialize=_parse,
+            parse=_parse,
+            parse_literal=_parse_node,
+            description=description,
+        )
 
 
 def _identity(value):
