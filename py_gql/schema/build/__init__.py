@@ -77,7 +77,6 @@ def make_executable_schema(
         py_gql.exc.SDLError:
     """
     ast = _document_ast(document)
-
     schema = build_schema_from_ast(
         ast, resolvers=resolvers, additional_types=additional_types
     )

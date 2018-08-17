@@ -595,3 +595,49 @@ def test_schema_extension_directive():
         extend schema @onSchema
         """
     )
+
+
+def test_mixed_definition_and_extension():
+    assert (
+        make_executable_schema(
+            """
+            type Query { _noop: Int }
+
+            interface Object {
+                id: Int!
+            }
+
+            scalar Email
+
+            extend type Query {
+                employee(email: Email!): Employee
+            }
+
+            type Employee implements Object {
+                id: Int!
+                email: Email!
+                active: Boolean!
+            }
+            """
+        ).to_string()
+        == dedent(
+            """
+            scalar Email
+
+            type Employee implements Object {
+                id: Int!
+                email: Email!
+                active: Boolean!
+            }
+
+            interface Object {
+                id: Int!
+            }
+
+            type Query {
+                _noop: Int
+                employee(email: Email!): Employee
+            }
+            """
+        )
+    )

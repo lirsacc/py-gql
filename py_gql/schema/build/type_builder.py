@@ -95,10 +95,12 @@ class TypesBuilder(object):
         self._type_defs = type_defs
         self._directive_defs = directive_defs
         self._extensions = type_extensions or {}
+
         self._cache = dict(_DEFAULT_TYPES_MAP)
+        self._extended_cache = {}
+
         if additional_types:
             self._cache.update(additional_types)
-        self._extended_cache = {}
 
     def build_type(self, type_node):
         # type: (Union[_ast.Type, _ast.TypeSystemDefinition]) -> _types.Type
@@ -170,7 +172,7 @@ class TypesBuilder(object):
             name=type_def.name.value,
             description=_desc(type_def),
             fields=[
-                self._build_fields(field_node) for field_node in type_def.fields
+                self._build_field(field_node) for field_node in type_def.fields
             ],
             interfaces=(
                 [self.build_type(iface) for iface in type_def.interfaces]
@@ -186,15 +188,16 @@ class TypesBuilder(object):
             name=type_def.name.value,
             description=_desc(type_def),
             fields=[
-                self._build_fields(field_node) for field_node in type_def.fields
+                self._build_field(field_node) for field_node in type_def.fields
             ],
             nodes=[type_def],
         )
 
-    def _build_fields(self, field_def):
+    def _build_field(self, field_def):
         # type: (_ast.FieldDefinition) -> _types.Field
         return _types.Field(
             field_def.name.value,
+            # has to be lazy to support cyclic definition
             ft.partial(self.build_type, field_def.type),
             description=_desc(field_def),
             args=(
@@ -336,7 +339,7 @@ class TypesBuilder(object):
         )
 
     def _extend_object_interfaces(self, object_type):
-        # type: (_types.ObjectType) -> List[_types.NamedType
+        # type: (_types.ObjectType) -> List[_types.NamedType]
         iface_names = set(i.name for i in object_type.interfaces)
         ifaces = [self.extend_type(iface) for iface in object_type.interfaces]
 
@@ -353,21 +356,23 @@ class TypesBuilder(object):
 
         return ifaces
 
+    def _extend_field(self, field_def):
+        # type: (_types.Field) -> _types.Field
+        return _types.Field(
+            field_def.name,
+            self.extend_type(field_def.type),
+            description=field_def.description,
+            deprecation_reason=field_def.deprecation_reason,
+            args=[self._extend_argument(a) for a in field_def.args],
+            resolve=field_def.resolve,
+            node=field_def.node,
+        )
+
     def _extend_object_fields(self, composite_type):
         # type: (Union[_types.ObjectType, _types.InterfaceType]) -> List[_types.Field]
         field_names = set(f.name for f in composite_type.fields)
-        fields = [
-            _types.Field(
-                f.name,
-                self.extend_type(f.type),
-                description=f.description,
-                deprecation_reason=f.deprecation_reason,
-                args=[self._extend_argument(a) for a in f.args],
-                resolve=f.resolve,
-                node=f.node,
-            )
-            for f in composite_type.fields
-        ]
+
+        fields = [self._extend_field(f) for f in composite_type.fields]
 
         for extension in self._extensions.get(composite_type.name, []):
             for ext_field in extension.fields:
@@ -384,7 +389,7 @@ class TypesBuilder(object):
                         [ext_field],
                     )
                 field_names.add(ext_field.name.value)
-                fields.append(self._build_fields(ext_field))
+                fields.append(self._extend_field(self._build_field(ext_field)))
 
         return fields
 
