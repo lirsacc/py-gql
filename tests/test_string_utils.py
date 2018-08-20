@@ -2,7 +2,65 @@
 """ ported from graphql-js """
 
 import pytest
-from py_gql._string_utils import parse_block_string, wrapped_lines, levenshtein
+
+from py_gql._string_utils import (
+    highlight_location,
+    levenshtein,
+    parse_block_string,
+    wrapped_lines,
+)
+
+
+def test_highlight_location_1():
+    assert (
+        highlight_location(
+            """{
+    query {
+        Node (search: "foo") {
+            id
+            name
+        }
+    }
+}
+""",
+            40,
+        )
+        == """(3:27):
+  1:{
+  2:    query {
+  3:        Node (search: "foo") {
+                              ^
+  4:            id
+  5:            name
+"""
+    )
+
+
+def test_highlight_location_2():
+    assert (
+        highlight_location(
+            """{
+  me {
+    email
+    id
+    date_created
+    roles {
+      id
+    }
+    }
+  }
+}
+""",
+            80,
+        )
+        == """(11:1):
+  09:    }
+  10:  }
+  11:}
+     ^
+  12:
+"""
+    )
 
 
 def test_parse_block_string_removes_uniform_indentation_from_a_string():

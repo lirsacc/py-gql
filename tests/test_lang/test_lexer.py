@@ -86,7 +86,7 @@ def test_errors_respect_whitespace():
         "  3:                ?\n"
         "                    ^\n"
         "  4:\n"
-        "  5:            "
+        "  5:            \n"
     )
 
 

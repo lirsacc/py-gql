@@ -198,22 +198,6 @@ def highlight_location(body, position, delta=2):
 
     Returns:
         str: Formatted view
-
-    >>> print(highlight_location('''{
-    ...     query {
-    ...         Node (search: "foo") {
-    ...             id
-    ...             name
-    ...         }
-    ...     }
-    ... }''', 40))
-    (3:27):
-      1:{
-      2:    query {
-      3:        Node (search: "foo") {
-                                  ^
-      4:            id
-      5:            name
     """
     # REVIEW: There must be a more readable way to write this
     line, col = index_to_loc(body, position)
@@ -227,7 +211,8 @@ def highlight_location(body, position, delta=2):
         return "".join((" " for _ in range(len_)))
 
     def lineno(l):
-        return " ".join(range(pad_len - len(str(l + 1)))) + str(l + 1)
+        m = l + 1
+        return " ".join(str(x) for x in range(pad_len - len(str(m)))) + str(m)
 
     output = ["(%d:%d):" % (line, col)]
     output.extend(
@@ -244,7 +229,7 @@ def highlight_location(body, position, delta=2):
             for l in range(line_index + 1, max_line + 1)
         ]
     )
-    return "\n".join(output)
+    return "\n".join(output) + "\n"
 
 
 def _split_words_with_boundaries(string, word_boundaries):
