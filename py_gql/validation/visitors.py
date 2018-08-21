@@ -69,13 +69,13 @@ class VariablesCollector(ValidationVisitor):
     def enter_operation_definition(self, node):
         self._op = node.name.value if node.name else ""
 
-    def leave_operation_definition(self, node):
+    def leave_operation_definition(self, _node):
         self._op = None
 
     def enter_fragment_definition(self, node):
         self._fragment = node.name.value
 
-    def leave_fragment_definition(self, node):
+    def leave_fragment_definition(self, _node):
         self._fragment = None
 
     def enter_fragment_spread(self, node):
@@ -91,7 +91,7 @@ class VariablesCollector(ValidationVisitor):
         if self._op is not None:
             self._op_defined_variables[self._op][name] = node
 
-    def leave_variable_definition(self, node):
+    def leave_variable_definition(self, _node):
         self._in_var_def = False
 
     def enter_variable(self, node):

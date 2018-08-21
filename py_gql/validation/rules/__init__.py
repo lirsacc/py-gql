@@ -299,7 +299,7 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
     def enter_fragment_spread(self, node):
         self._used_fragments.add(node.name.value)
 
-    def leave_document(self, node):
+    def leave_document(self, _node):
         unused = self._fragments - self._used_fragments
         if unused:
             self.add_error(
@@ -376,7 +376,7 @@ class NoFragmentCyclesChecker(ValidationVisitor):
         self._current = name
         self._spreads[name] = []
 
-    def leave_fragment_definition(self, node):
+    def leave_fragment_definition(self, _node):
         self._current = None
 
     def enter_fragment_spread(self, node):
@@ -435,10 +435,10 @@ class UniqueVariableNamesChecker(ValidationVisitor):
     """ A GraphQL operation is only valid if all its variables are uniquely
     named. """
 
-    def enter_operation_definition(self, node):
+    def enter_operation_definition(self, _node):
         self._variables = set()
 
-    def leave_operation_definition(self, node):
+    def leave_operation_definition(self, _node):
         self._variables = None
 
     def enter_variable_definition(self, node):
@@ -519,7 +519,7 @@ class KnownDirectivesChecker(ValidationVisitor):
     def _enter_ancestor(self, node):
         self._ancestors.append(node)
 
-    def _leave_ancestor(self, node):
+    def _leave_ancestor(self, _node):
         self._ancestors.pop()
 
     enter_operation_definition = _enter_ancestor
@@ -825,7 +825,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
     def enter_object_value(self, node):
         self._stack.append((node, set()))
 
-    def leave_object_value(self, node):
+    def leave_object_value(self, _node):
         self._stack.pop()
 
     def enter_object_field(self, node):

@@ -71,8 +71,8 @@ enable=
     bad-except-order,
     bad-exception-context,
     bad-format-character,
-    bad-format-string-key,
     bad-format-string,
+    bad-format-string-key,
     bad-indentation,
     bad-open-mode,
     bad-reversed-sequence,
@@ -126,8 +126,8 @@ enable=
     invalid-format-index,
     invalid-sequence-index,
     invalid-slice-index,
-    invalid-slots-object,
     invalid-slots,
+    invalid-slots-object,
     invalid-star-assignment-target,
     invalid-unary-operand-type,
     logging-format-interpolation,
@@ -216,6 +216,7 @@ enable=
     unsubscriptable-object,
     unsupported-binary-operation,
     unsupported-membership-test,
+    unused-argument,
     unused-format-string-argument
     unused-format-string-key,
     unused-import,
@@ -385,7 +386,7 @@ dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
-ignored-argument-names=_.*|^ignored_|^unused_
+ignored-argument-names=_.*|^ignored_|^unused_|args|kwargs
 
 # Tells whether we should check for unused import in __init__ files.
 init-import=no

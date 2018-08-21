@@ -4,6 +4,7 @@ import json
 import os
 
 from aiohttp import web
+
 from py_gql.asyncio import AsyncIOExecutor, graphql
 from py_gql.utilities.tracers import ApolloTracer
 from schema import schema

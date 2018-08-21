@@ -751,11 +751,6 @@ class UnionType(NamedType):
     def __init__(
         self, name, types, resolve_type=None, description=None, nodes=None
     ):
-        """
-        :type name: str
-        :type types: callable|[Type]|dict(str, Type)
-        :type description: str
-        """
         self.name = name
         self.description = description
         self._types = types

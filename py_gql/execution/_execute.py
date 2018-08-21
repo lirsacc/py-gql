@@ -150,16 +150,21 @@ def execute(  # flake8: noqa : C901
     return _concurrency.deferred(_on_end(deferred_result), cls=ctx.future_cls)
 
 
-def get_operation(document, operation_name):
-    """ Extract relevant operation from a parsed document
+def get_operation(document, operation_name=None):
+    """ Extract relevant operation from a parsed document.
 
-    :type document: py_gql.lang.ast.Document
-    :param document: Parsed document
+    In case the ``operation_name`` argument is null, the document is
+    expected to contain only one operation which will be extracted.
 
-    :type operation_name: Optional[str]
-    :param operation_name: Operation name to extract
+    Args:
+        document (py_gql.lang.ast.Document): Parsed document
+        opeation_name (Optional[str]): Operation to extract
 
-    :rtype: py_gql.lang.ast.OperationDefinition
+    Returns:
+        py_gql.lang.ast.OperationDefinition: Relevant operation
+
+    Raises:
+        ExecutionError: No relevant operation can be found.
     """
     operations = [
         definition
@@ -189,28 +194,24 @@ def get_operation(document, operation_name):
 
 
 def collect_fields(
-    ctx, object_type, selections, visited_fragments=None
-):  # noqa : C901
+    ctx,  # type: ExecutionContext
+    object_type,  # type: py_gql.schema.ObjectType
+    selections,  # type: List[py_gql.lang.ast.Selection]
+    visited_fragments=None,  # type: Optional[Set[str]]
+):
+    # noqa: C901
+    # type: (...) -> OrderedDict
     """ Collect all fields in a selection set, recursively traversing fragments
     in one single map and conserving definitino order.
 
-    :type ctx: ExecutionContext
-    :param ctx:
-        Current execution context
+    Args:
+        ctx: Current execution context
+        object_type: Current object type
+        selections: Selections from the SelectionSet(s) to gather fields from
+        visited_fragments: List of already visited fragment spreads
 
-    :type object_type: py_gql.schema.Type
-    :param object_type:
-        Current object type
-
-    :type selections: List[py_gql.lang.ast.Selection]
-    :param selections:
-        Selections from the SelectionSet node(s) to gather fields from
-
-    :type visited_fragments: Optional[Set[str]]
-    :param visited_fragments:
-        List of already visited fragment spreads
-
-    :rtype: OrderedDict
+    Returns:
+        Ordered map of fieldnames to relevant nodes
     """
 
     cache_key = object_type.name, tuple(selections)
@@ -274,23 +275,21 @@ def collect_fields(
     return grouped_fields
 
 
-def fragment_type_applies(schema, fragment, object_type):
+def fragment_type_applies(
+    schema,  # type: py_gql.schema.Schema
+    fragment,  # type: Union[py_gql.lang.ast.InlineFragment, py_gql.lang.ast.FragmentDefinition]
+    object_type,  # type: py_gql.schema.ObjectType
+):
+    # type: (...) -> bool
     """ Determines if a fragment is applicable to the given type.
 
-    :type schema: py_gql.schema.Schema
-    :param schema:
-        Current schema
+    Args:
+        schema: Current schema
+        fragment: Fragment node
+        object_type: Current object type
 
-    :type fragment: py_gql.lang.ast.InlineFragment|\
-        py_gql.lang.ast.FragmentDefinition
-    :param fragment:
-        Fragment node
-
-    :type object_type: py_gql.schema.Type
-    :param object_type:
-        Current object type
-
-    :rtype: bool
+    Returns:
+        ``True`` if the fragment node is applicable to the object type
     """
     type_condition = fragment.type_condition
     if not type_condition:

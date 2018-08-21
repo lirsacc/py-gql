@@ -396,7 +396,7 @@ CatType = ObjectType(
 )
 
 
-def _resolve_pet_type(value, *a, **kw):
+def _resolve_pet_type(value, *_a, **_kw):
     if isinstance(value, Dog):
         return DogType
     elif isinstance(value, Cat):

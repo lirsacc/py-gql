@@ -145,7 +145,7 @@ def _visit_variable_definition(visitor, variable_definition):
 
 
 @_visiting
-def _visit_named_type(visitor, named_type):
+def _visit_named_type(_visitor, _named_type):
     pass
 
 

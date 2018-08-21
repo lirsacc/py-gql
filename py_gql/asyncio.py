@@ -41,7 +41,7 @@ class AsyncIOExecutor(Executor):
         self._futures = {}
 
     def submit(self, func, *args, **kwargs):
-        # REVIEW: Wersion of the executor that starts the event loop itself ?
+        # REVIEW: Version of the executor that starts the event loop itself ?
         if self._stopped:
             raise RuntimeError("Cannot schedule new futures after shutdown")
 

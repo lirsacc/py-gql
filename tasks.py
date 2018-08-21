@@ -56,7 +56,7 @@ def test(
     bail=True,
     verbose=False,
     grep=None,
-    file_=None,
+    files=None,
     junit=False,
 ):
     """ Run test suite (using: py.test) """
@@ -87,7 +87,7 @@ def test(
                         if ignore
                         else None
                     ),
-                    "%s tests" % PKG if file_ is None else file_,
+                    "%s tests" % PKG if files is None else files,
                 ]
             ),
             echo=True,
@@ -117,14 +117,16 @@ def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
 
 
 @invoke.task
-def lint(ctx, pylint=True, files=None):
+def lint(ctx, pylint=True, flake8=True, files=None):
     """ Run linters """
 
     if files is None:
         files = "%s tests" % PKG
 
     with ctx.cd(ROOT):
-        ctx.run("flake8 --config .flake8 %s" % files, echo=True)
+        if flake8:
+            ctx.run("flake8 --config .flake8 %s" % files, echo=True)
+
         if pylint:
             ctx.run(
                 _join(
@@ -141,7 +143,7 @@ def lint(ctx, pylint=True, files=None):
 
 
 @invoke.task
-def fmt(ctx, verbose=False, files=None):
+def fmt(ctx, files=None):
     """ Run formatters """
 
     if files is None:

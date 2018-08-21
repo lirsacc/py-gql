@@ -150,11 +150,11 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._input_type_stack.pop()
         self._input_value_def_stack.pop()
 
-    def enter_selection_set(self, node):
+    def enter_selection_set(self, _node):
         named_type = unwrap_type(self.type)
         self._parent_type_stack.append(_or_none(named_type, is_composite_type))
 
-    def leave_selection_set(self, node):
+    def leave_selection_set(self, _node):
         self._parent_type_stack.pop()
 
     def enter_field(self, node):
@@ -165,14 +165,14 @@ class TypeInfoVisitor(DispatchingVisitor):
         else:
             self._type_stack.append(None)
 
-    def leave_field(self, node):
+    def leave_field(self, _node):
         self._type_stack.pop()
         self._field_stack.pop()
 
     def enter_directive(self, node):
         self.directive = self._schema.directives.get(node.name.value)
 
-    def leave_directive(self, node):
+    def leave_directive(self, _node):
         self.directive = None
 
     def enter_operation_definition(self, node):
@@ -185,7 +185,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             type_ if isinstance(type_, ObjectType) else None
         )
 
-    def leave_operation_definition(self, node):
+    def leave_operation_definition(self, _node):
         self._type_stack.pop()
 
     def enter_fragment_definition(self, node):
@@ -193,7 +193,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             _or_none(self._type_from_ast(node.type_condition), is_output_type)
         )
 
-    def leave_fragment_definition(self, node):
+    def leave_fragment_definition(self, _node):
         self._type_stack.pop()
 
     def enter_inline_fragment(self, node):
@@ -206,7 +206,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         else:
             self._type_stack.append(_or_none(self.type, is_output_type))
 
-    def leave_inline_fragment(self, node):
+    def leave_inline_fragment(self, _node):
         self._type_stack.pop()
 
     def enter_variable_definition(self, node):
@@ -214,7 +214,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             _or_none(self._type_from_ast(node.type), is_input_type)
         )
 
-    def leave_variable_definition(self, node):
+    def leave_variable_definition(self, _node):
         self._input_type_stack.pop()
 
     def enter_argument(self, node):
@@ -233,11 +233,11 @@ class TypeInfoVisitor(DispatchingVisitor):
             self._input_type_stack.append(None)
             self._input_value_def_stack.append(None)
 
-    def leave_argument(self, node):
+    def leave_argument(self, _node):
         self.argument = None
         self._leave_input_value()
 
-    def enter_list_value(self, node):
+    def enter_list_value(self, _node):
         list_type = nullable_type(self.input_type)
         item_type = (
             unwrap_type(list_type) if isinstance(list_type, ListType) else None
@@ -246,7 +246,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         # List positions never have a default value.
         self._input_value_def_stack.append(None)
 
-    def leave_list_value(self, node):
+    def leave_list_value(self, _node):
         self._leave_input_value()
 
     def enter_object_field(self, node):
@@ -264,7 +264,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             self._input_type_stack.append(None)
             self._input_value_def_stack.append(None)
 
-    def leave_object_field(self, node):
+    def leave_object_field(self, _node):
         self._leave_input_value()
 
     def enter_enum_value(self, node):
@@ -275,5 +275,5 @@ class TypeInfoVisitor(DispatchingVisitor):
             except UnknownEnumValue:
                 self.enum_value = None
 
-    def leave_enum_value(self, node):
+    def leave_enum_value(self, _node):
         self.enum_value = None

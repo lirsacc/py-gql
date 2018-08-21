@@ -179,7 +179,7 @@ __DirectiveLocation__ = EnumType(
 )
 
 
-def _resolve_type_kind(type_, *args, **kw):
+def _resolve_type_kind(type_, *args, **kwargs):
     if isinstance(type_, ScalarType):
         return "SCALAR"
     elif isinstance(type_, ObjectType):

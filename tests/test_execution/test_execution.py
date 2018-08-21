@@ -10,6 +10,7 @@ from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
     ID,
+    UUID,
     Argument,
     Boolean,
     Field,
@@ -17,11 +18,10 @@ from py_gql.schema import (
     ListType,
     NonNullType,
     ObjectType,
+    RegexType,
     Schema,
     String,
     Type,
-    UUID,
-    RegexType,
 )
 
 from ._test_utils import TESTED_EXECUTORS, check_execution
@@ -194,7 +194,7 @@ def test_default_resolution_evaluates_methods(exe_cls, exe_kwargs):
         def __init__(self, value):
             self._num = value
 
-        def test(self, args, ctx, info):
+        def test(self, args, ctx, _info):
             return self._num + args["addend1"] + ctx["addend2"]
 
     schema = _test_schema(Field("test", Int, [Argument("addend1", Int)]))

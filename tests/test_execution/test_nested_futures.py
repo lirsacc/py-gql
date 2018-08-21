@@ -9,7 +9,7 @@ from py_gql.schema import Field, Int, ObjectType, Schema
 
 
 def test_execute_awaits_nested_future():
-    def resolver(root, args, context, info):
+    def resolver(_root, _args, _context, info):
         return info.executor.submit(lambda *a, **kw: 42)
 
     schema = Schema(ObjectType("Query", [Field("foo", Int, resolve=resolver)]))
@@ -24,7 +24,7 @@ def test_execute_awaits_nested_future():
 
 
 def test_execute_awaits_deeply_nested_future():
-    def deep_resolver(root, args, context, info):
+    def deep_resolver(_root, _args, _context, info):
         return info.executor.submit(lambda *a, **kw: 42)
 
     def resolver(root, args, context, info):

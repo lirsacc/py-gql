@@ -643,8 +643,8 @@ class Parser(object):
     def parse_arguments(self, const=False):
         """ Arguments[Const] : ( Argument[?Const]+ )
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             List[py_gql.lang.ast.Argument]:
@@ -657,8 +657,8 @@ class Parser(object):
     def parse_argument(self, const=False):
         """ Argument[Const] : Name : Value[?Const]
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.Argument:
@@ -667,7 +667,7 @@ class Parser(object):
         return _ast.Argument(
             name=self.parse_name(),
             value=(
-                self.expect(_token.Colon) and self.parse_value_literal(False)
+                self.expect(_token.Colon) and self.parse_value_literal(const)
             ),
             loc=self._loc(start),
             source=self._source,
@@ -753,8 +753,8 @@ class Parser(object):
         - NullValue : "null"
         - EnumValue : Name but not "true", "false" or "null"
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.Value:
@@ -816,8 +816,8 @@ class Parser(object):
     def parse_list(self, const=False):
         """ ListValue[Const] : [ ] | [ Value[?Const]+ ]
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.ListValue:
@@ -833,8 +833,8 @@ class Parser(object):
     def parse_object(self, const=False):
         """ ObjectValue[Const] { } | { ObjectField[?Const]+ }
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.ObjectValue:
@@ -850,8 +850,8 @@ class Parser(object):
     def parse_object_field(self, const=False):
         """ ObjectField[Const] : Name : Value[?Const]
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.ObjectField:
@@ -869,8 +869,8 @@ class Parser(object):
     def parse_directives(self, const=False):
         """ Directives[Const] : Directive[?Const]+
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             List[py_gql.lang.ast.Directive]:
@@ -883,8 +883,8 @@ class Parser(object):
     def parse_directive(self, const=False):
         """ Directive[Const] : @ Name Arguments[?Const]?
 
-        :type const: bool
-        :param const: Whether or not to parse the Const variant
+        Args:
+            const (bool): Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.:

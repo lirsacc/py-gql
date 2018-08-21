@@ -30,7 +30,7 @@ def raiser():
     def factory(cls, *args, **kwargs):
         assert issubclass(cls, Exception)
 
-        def _raiser(*a, **kw):
+        def _raiser(*_a, **_kw):
             raise cls(*args, **kwargs)
 
         return _raiser

@@ -130,7 +130,7 @@ Episode = EnumType(
 )
 
 
-def resolve_character_type(character, *r, **kw):
+def resolve_character_type(character, **kwargs):
     return {"Human": Human, "Droid": Droid}[character["type"]]
 
 
@@ -165,7 +165,7 @@ Character = InterfaceType(
 )
 
 
-def resolve_secret_backstory(*a, **kw):
+def resolve_secret_backstory(*args, **kwargs):
     raise ResolverError("secretBackstory is secret.", extensions=[("code", 42)])
 
 

@@ -64,14 +64,10 @@ class ExecutionContext(object):
     def add_error(self, err, node=None, path=None):
         """ Register a localized execution error.
 
-        :type err: str|Exception
-        :param err: The error
-
-        :type node: py_gql.lang.ast.Node
-        :param node: The node corresponding to this error
-
-        :type path: list
-        :param path: The traversal path where this error was occuring
+        Args:
+            err (Union[str, py_gql.exc.GraphqlException]): Error to register
+            node (Optional[py_gql.lang.ast.Node]): Corresponding node
+            path (List[Union[str, int]]): Traversal path
         """
         if isinstance(err, six.string_types):
             err = ResolverError(err, [node], path)
@@ -92,7 +88,10 @@ class ExecutionContext(object):
         """ Get a copy of the errors without the risk of modifying the internal
         structure.
 
-        :rtype: list[tuple[str|Exception, py_gql.lang.ast.Node, list]]
+        Returns:
+            List[Tuple[py_gql.exc.GraphqlException, \
+                       Optional[py_gql.lang.ast.Node],\
+                       List[Union[str, int]]]]:
         """
         return self._errors[:]
 
@@ -184,13 +183,11 @@ class ResolveInfo(object):
     def directive_values(self, directive_name):
         """ Extract directive argument values for given directive name.
 
-        :type directive_name: str
-        :param directive_name: Directive name.
-            This assumes validation has run and the directive exists in the schema
-            as well as in a valid position.
+        Args:
+            directive_name (str):
 
-        :rtype: dict
-        :returns: The arguments to the directive
+        Returns:
+            dict: Arguments to the directives
         """
         if directive_name in self._directive_values:
             return self._directive_values[directive_name]

@@ -35,10 +35,10 @@ class Root(object):
 
         return _mutate
 
-    def failToChangeTheNumber(self, newNumber):
+    def failToChangeTheNumber(self, _new_number):
         raise ResolverError("Cannot change the number")
 
-    def lazilyFailToChangeTheNumber(self, newNumber):
+    def lazilyFailToChangeTheNumber(self, _new_number):
         def _mutate():
             raise ResolverError("Cannot change the number")
 

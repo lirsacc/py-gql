@@ -51,7 +51,7 @@ TestNestedInputObject = InputObjectType(
 
 
 def _inspect(name):
-    def _inspect_resolver(root, args, ctx, info):
+    def _inspect_resolver(_root, args, _ctx, _info):
         return json.dumps(args.get(name, None), sort_keys=True)
 
     return _inspect_resolver

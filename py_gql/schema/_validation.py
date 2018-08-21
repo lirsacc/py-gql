@@ -59,16 +59,16 @@ def validate_schema(schema):
 
     for type_ in schema.types.values():
         if isinstance(type_, ObjectType):
-            validate_fields(schema, type_)
+            validate_fields(type_)
             validate_interfaces(schema, type_)
         elif isinstance(type_, InterfaceType):
-            validate_fields(schema, type_)
+            validate_fields(type_)
         elif isinstance(type_, UnionType):
-            validate_union_members(schema, type_)
+            validate_union_members(type_)
         elif isinstance(type_, EnumType):
-            validate_enum_values(schema, type_)
+            validate_enum_values(type_)
         elif isinstance(type_, InputObjectType):
-            validate_input_fields(schema, type_)
+            validate_input_fields(type_)
 
     return True
 
@@ -192,32 +192,34 @@ def validate_directives(schema):
             argnames.add(arg.name)
 
 
-def validate_fields(schema, type_):
+def validate_fields(composite_type):
     """
     Args:
-        schema (py_gql.schema.Schema):
-        type_ (Union[py_gql.schema.ObjectType,py_gql.schema.InterfaceType]):
+        composite_type (Union[py_gql.schema.ObjectType,py_gql.schema.InterfaceType]):
     """
-    _assert(type_.fields, 'Type "%s" must define at least one field' % type_)
+    _assert(
+        composite_type.fields,
+        'Type "%s" must define at least one field' % composite_type,
+    )
     fieldnames = set()
-    for field in type_.fields:
+    for field in composite_type.fields:
 
         _assert(
             isinstance(field, Field),
-            'Expected Field in "%s" but got "%s"' % (type_, field),
+            'Expected Field in "%s" but got "%s"' % (composite_type, field),
         )
 
         _assert_valid_name(field.name)
 
         _assert(
             field.name not in fieldnames,
-            'Duplicate field "%s" on "%s"' % (field.name, type_),
+            'Duplicate field "%s" on "%s"' % (field.name, composite_type),
         )
 
         _assert(
             is_output_type(field.type),
             'Expected output type for field "%s" on "%s" but got "%s"'
-            % (field.name, type_, field.type),
+            % (field.name, composite_type, field.type),
         )
 
         argnames = set()
@@ -227,7 +229,7 @@ def validate_fields(schema, type_):
             _assert(
                 isinstance(arg, Argument),
                 'Expected Argument in "%s.%s" but got "%s"'
-                % (type_, field.name, arg),
+                % (composite_type, field.name, arg),
             )
 
             _assert_valid_name(arg.name)
@@ -235,13 +237,14 @@ def validate_fields(schema, type_):
             _assert(
                 arg.name not in argnames,
                 'Duplicate argument "%s" on "%s.%s"'
-                % (arg.name, type_, field.name),
+                % (arg.name, composite_type, field.name),
             )
 
             _assert(
                 is_input_type(arg.type),
                 'Expected input type for argument "%s" on "%s.%s" '
-                'but got "%s"' % (arg.name, type_, field.name, arg.type),
+                'but got "%s"'
+                % (arg.name, composite_type, field.name, arg.type),
             )
 
             argnames.add(arg.name)
@@ -358,10 +361,9 @@ def validate_implementation(schema, type_, interface):
                 )
 
 
-def validate_union_members(schema, union_type):
+def validate_union_members(union_type):
     """
     Args:
-        schema (py_gql.schema.Schema):
         union_type (py_gql.schema.UnionType):
     """
     _assert(
@@ -387,10 +389,9 @@ def validate_union_members(schema, union_type):
         member_types.add(member_type.name)
 
 
-def validate_enum_values(schema, enum_type):
+def validate_enum_values(enum_type):
     """
     Args:
-        schema (py_gql.schema.Schema):
         enum_type (py_gql.schema.EnumType)
     """
     _assert(
@@ -409,10 +410,9 @@ def validate_enum_values(schema, enum_type):
         _assert_valid_name(enum_value.name)
 
 
-def validate_input_fields(schema, input_object):
+def validate_input_fields(input_object):
     """
     Args:
-        schema (py_gql.schema.Schema):
         union_type (py_gql.schema.InputObjectType)
     """
     _assert(

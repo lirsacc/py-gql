@@ -299,7 +299,7 @@ async def test_raises_if_invalid_schema_is_provided():
 
 @pytest.mark.asyncio
 async def test_async_resolvers():
-    async def resolve_x(root, args, ctx, info):
+    async def resolve_x(root, _args, _ctx, _info):
         await asyncio.sleep(0.25)
         return root.get("x", None)
 
@@ -365,7 +365,7 @@ async def test_it_runs_coroutines_concurrently():
 
     log = []
 
-    async def resolve_and_log(root, args, *_):
+    async def resolve_and_log(_root, args, _ctx, _info):
         log.append(("in", args.get("id", None)))
         await asyncio.sleep(.1)
         log.append(("out", args.get("id", None)))
@@ -398,7 +398,7 @@ async def test_it_runs_coroutines_concurrently():
 async def test_with_ThreadPoolExecutor():
     log = []
 
-    def resolve_and_log(root, args, *_):
+    def resolve_and_log(_root, args, _ctx, _info):
         log.append(("in", args.get("id", None)))
         time.sleep(0.1)
         log.append(("out", args.get("id", None)))
@@ -437,7 +437,7 @@ async def test_with_ThreadPoolExecutor():
 async def test_with_SyncExecutor():
     log = []
 
-    def resolve_and_log(root, args, *_):
+    def resolve_and_log(_root, args, _ctx, _info):
         log.append(("in", args.get("id", None)))
         time.sleep(0.1)
         log.append(("out", args.get("id", None)))

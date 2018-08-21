@@ -223,7 +223,7 @@ class ASTPrinter(object):
         # type: (_ast.BooleanValue) -> str
         return str(node.value).lower()
 
-    def print_null_value(self, node):
+    def print_null_value(self, _node):
         # type: (_ast.NullValue) -> str
         return "null"
 

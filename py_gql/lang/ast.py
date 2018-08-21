@@ -958,7 +958,6 @@ class DirectiveDefinition(TypeSystemDefinition):
         name=None,
         arguments=None,
         locations=None,
-        directives=None,
         source=None,
         loc=None,
         description=None,

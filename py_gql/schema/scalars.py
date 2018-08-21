@@ -13,7 +13,7 @@ from .types import ScalarType
 # Shortcut to generate ``parse_literal`` from a simple
 # parsing function by adding node type validation.
 def _typed_coerce(coerce_, *types):
-    def _coerce(node, variables):
+    def _coerce(node, _variables):
         if type(node) not in types:
             raise TypeError("Invalid literal %s" % node.__class__.__name__)
         return coerce_(node.value)

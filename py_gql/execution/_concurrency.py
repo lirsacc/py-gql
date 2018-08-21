@@ -17,12 +17,6 @@ def is_deferred(value, cache={}):  # pylint: disable = dangerous-default-value
 def deferred(value, cls=Future):
     """ Transform a value into a ``Future`` awaitable object.
 
-    :type value: any
-    :param value: Original value
-
-    :rtype: concurrent.futures.Future
-    :returns: Value wrapped in a ``Future``
-
     >>> v = deferred(1, cls=DummyFuture)
     >>> v.result(), v.done()
     (1, True)
@@ -43,11 +37,12 @@ def all_(futures, cls=Future):
       futures is cancelled the ``concurrent.futures.CancelledError`` will be
       considered as an exception and propagated to the resulting future.
 
-    :type futures: List[concurrent.futures.Future]
-    :param futures: List of futures.
+    Args:
+        futures (List[any]): List of potential futures to wrap
+        cls: Future class to use for the result
 
-    :rtype: concurrent.futures.Future
-    :returns: Single future
+    Returns:
+        concurrent.futures.Future: Wrapped future
     """
 
     if not futures:
@@ -116,18 +111,18 @@ def chain(leader, *funcs, **kwargs):
       futures is cancelled the ``concurrent.futures.CancelledError`` will be
       considered as an exception and propagated to the resulting future.
 
-    :type leader: concurrrent.futures.Future
-    :param leader: First future in the chain.
-        Can be ommitted, in which case the first step will be called with
-        ``None`` as input.
+    Args:
+        leader (concurrrent.futures.Future) First future in the chain.
+            Can be ommitted, in which case the first step will be called with
+            ``None`` as input.
+        funcs (Iterable[(any) -> any]): Steps in the chain
+            Each step receives the result of the previous step as input.
+            Return value of a step can be either a future or a value which will
+            be wrapped as a future if there is more steps to compute.
+        cls: Future class to use for the result
 
-    :type funcs: Iterable[(any) -> any]
-    :param funcs: Steps in the chain
-        Each step receives the result of the previous step as input.
-        Return value of a step can be either a future or a value which will be
-        wrapped as a future if there is more steps to compute.
-
-    :rtype: concurrent.futures.Future
+    Returns:
+        concurrent.futures.Future: Wrapped future
     """
     stack = iter(funcs)
     cls = kwargs.get("cls", Future)
@@ -149,11 +144,12 @@ def unwrap(source_future, cls=Future):
     """ Resolve nested futures until a non future is resolved or an
     exception is raised.
 
-    :type source_future: concurrent.futures.Future
-    :param source_future: Future to unwrap
+    Args:
+        source_future (concurrent.futures.Future): Future to wrap
+        cls: Future class to use for the result
 
-    :rtype: any
-    :returns: Unwrapped value
+    Returns:
+        concurrent.futures.Future: Wrapped future
     """
     if not is_deferred(source_future):
         return deferred(source_future, cls=Future)
@@ -181,11 +177,12 @@ def serial(steps, cls=Future):
     Each step is called only after the result of the previous step has
     resolved. The resulting future rejects on the first step that rejects.
 
-    :type steps: Iterable[() -> concurrent.futures.Future]
-    :param steps:
+    Args:
+        steps (Iterable[() -> concurrent.futures.Future]):
+        cls: Future class to use for the result
 
-    :rtype: concurrent.futures.Future
-    :returns: Wrapped promise
+    Returns:
+        concurrent.futures.Future: Wrapped future
     """
 
     def _step(original):
@@ -199,18 +196,15 @@ def except_(
 ):
     """ Except for futures.
 
-    :type source_future: concurrent.futures.Future
-    :param source_future: Future to wrap
+    Args:
+        source_future (concurrent.futures.Future): Future to wrap
+        exc_cls: Exception to catch, same type as when using ``except``
+        map_ (Callable): Called on the caught exception to generate the final
+            result. Default behaviour is to set the result to ``None``.
+        cls: Future class to use for the result
 
-    :type exc_cls: Union[type, Tuple[*type]]
-    :param exc_cls: Exception classes to expect.
-        Can be any value compatible with a standard ``except`` clause.
-
-    :type map_: Optional[callable]
-    :param map_:
-        Will be passed the expected exception to generate the wrapped future's
-        result.
-        Default behaviour is to set the result to ``None``.
+    Returns:
+        concurrent.futures.Future: Wrapped future
     """
     result = cls()
 
