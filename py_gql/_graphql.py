@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """ """
 
+import functools as ft
+
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import GraphQLResult, GraphQLTracer, _concurrency, execute
 from .execution.tracing import NullTracer
@@ -80,6 +82,15 @@ def _graphql(
             operation_name=operation_name,
         )
 
+        _close_trace = ft.partial(
+            tracer.trace,
+            "query",
+            "end",
+            document=document,
+            variables=variables,
+            operation_name=operation_name,
+        )
+
         with tracer._trace_context("parse", document=document):
             ast = parse(document, allow_type_system=False)
 
@@ -89,77 +100,41 @@ def _graphql(
             validation_result = validate_ast(schema, ast, validators=validators)
 
         if not validation_result:
-            tracer.trace(
-                "query",
-                "end",
-                document=document,
-                variables=variables,
-                operation_name=operation_name,
-            )
-            return _concurrency.deferred(
-                GraphQLResult(errors=validation_result.errors),
-                cls=_concurrency.DummyFuture,
+            _close_trace()
+            return _concurrency.defer(
+                GraphQLResult(errors=validation_result.errors)
             )
         else:
             tracer.trace("execute", "start", ast=ast, variables=variables)
-            result = execute(
-                schema,
-                ast,
-                executor=executor,
-                initial_value=initial_value,
-                context_value=context,
-                variables=variables,
-                operation_name=operation_name,
-                middlewares=middlewares,
-            )
 
-            def close_trace(_):
+            def _close(res):
                 tracer.trace("execute", "end", ast=ast, variables=variables)
-                tracer.trace(
-                    "query",
-                    "end",
-                    document=document,
+                _close_trace()
+                return res
+
+            return _concurrency.chain(
+                execute(
+                    schema,
+                    ast,
+                    executor=executor,
+                    initial_value=initial_value,
+                    context_value=context,
                     variables=variables,
                     operation_name=operation_name,
-                )
-
-            result.add_done_callback(close_trace)
-            return result
+                    middlewares=middlewares,
+                ),
+                _close,
+            )
 
     except GraphQLSyntaxError as err:
-        tracer.trace(
-            "query",
-            "end",
-            document=document,
-            variables=variables,
-            operation_name=operation_name,
-        )
-        return _concurrency.deferred(
-            GraphQLResult(errors=[err]), cls=_concurrency.DummyFuture
-        )
+        _close_trace()
+        return _concurrency.defer(GraphQLResult(errors=[err]))
     except VariablesCoercionError as err:
-        tracer.trace(
-            "query",
-            "end",
-            document=document,
-            variables=variables,
-            operation_name=operation_name,
-        )
-        return _concurrency.deferred(
-            GraphQLResult(data=None, errors=err.errors),
-            cls=_concurrency.DummyFuture,
-        )
+        _close_trace()
+        return _concurrency.defer(GraphQLResult(data=None, errors=err.errors))
     except ExecutionError as err:
-        tracer.trace(
-            "query",
-            "end",
-            document=document,
-            variables=variables,
-            operation_name=operation_name,
-        )
-        return _concurrency.deferred(
-            GraphQLResult(data=None, errors=[err]), cls=_concurrency.DummyFuture
-        )
+        _close_trace()
+        return _concurrency.defer(GraphQLResult(data=None, errors=[err]))
 
 
 def graphql(
@@ -220,7 +195,7 @@ def graphql(
     Returns:
         py_gql.GraphQLResult: Execution result
     """
-    result = _graphql(
+    return _graphql(
         schema,
         document,
         variables=variables,
@@ -231,6 +206,4 @@ def graphql(
         middlewares=middlewares,
         tracer=tracer,
         executor=executor,
-    )
-
-    return result.result(timeout=timeout)
+    ).result(timeout=timeout)

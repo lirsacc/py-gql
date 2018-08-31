@@ -767,7 +767,9 @@ def test_executes_correctly_without_validation(
     schema, doc = _complex_schema
 
     with exe_cls(**exe_kwargs) as executor:
-        data, errors = execute(schema, doc, executor=executor).result()
+        res = execute(schema, doc, executor=executor)
+        print(res._exception)
+        data, errors = res.result()
 
     assert data == {
         "article": {

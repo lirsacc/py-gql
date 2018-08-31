@@ -66,7 +66,7 @@ def nested_list_resolver(key, resource):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
-        return _concurrency.all_(
+        return _concurrency.gather(
             [info.executor.submit(swapi.fetch_one, resource, id) for id in ids]
         )
 

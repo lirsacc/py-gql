@@ -28,21 +28,8 @@ class Root(object):
         self.numberHolder.theNumber = newNumber
         return self.numberHolder
 
-    def lazilyChangeTheNumber(self, newNumber):
-        def _mutate():
-            self.numberHolder.theNumber = newNumber
-            return self.numberHolder
-
-        return _mutate
-
     def failToChangeTheNumber(self, _new_number):
         raise ResolverError("Cannot change the number")
-
-    def lazilyFailToChangeTheNumber(self, _new_number):
-        def _mutate():
-            raise ResolverError("Cannot change the number")
-
-        return _mutate
 
 
 number_holder = ObjectType("NumberHolder", [Field("theNumber", Int)])
@@ -69,27 +56,11 @@ schema = Schema(
                 ),
             ),
             Field(
-                "lazilyChangeTheNumber",
-                number_holder,
-                args=[Argument("newNumber", Int)],
-                resolve=lambda obj, args, *_: (
-                    obj.lazilyChangeTheNumber(args["newNumber"])
-                ),
-            ),
-            Field(
                 "failToChangeTheNumber",
                 number_holder,
                 args=[Argument("newNumber", Int)],
                 resolve=lambda obj, args, *_: (
                     obj.failToChangeTheNumber(args["newNumber"])
-                ),
-            ),
-            Field(
-                "lazilyFailToChangeTheNumber",
-                number_holder,
-                args=[Argument("newNumber", Int)],
-                resolve=lambda obj, args, *_: (
-                    obj.lazilyFailToChangeTheNumber(args["newNumber"])
                 ),
             ),
         ],
@@ -107,15 +78,15 @@ def test_it_evaluates_mutations_serially(exe_cls, exe_kwargs):
                 first: immediatelyChangeTheNumber(newNumber: 1) {
                     theNumber
                 },
-                second: lazilyChangeTheNumber(newNumber: 2) {
+                second: incrementTheNumber(steps: 1) {
                     theNumber
                 },
                 third: immediatelyChangeTheNumber(newNumber: 3) {
                     theNumber
                 }
-                fourth: lazilyChangeTheNumber(newNumber: 4) {
+                fourth: incrementTheNumber(steps: -3) {
                     theNumber
-                },
+                }
                 fifth: immediatelyChangeTheNumber(newNumber: 5) {
                     theNumber
                 }
@@ -126,33 +97,8 @@ def test_it_evaluates_mutations_serially(exe_cls, exe_kwargs):
                 "first": {"theNumber": 1},
                 "second": {"theNumber": 2},
                 "third": {"theNumber": 3},
-                "fourth": {"theNumber": 4},
+                "fourth": {"theNumber": 0},
                 "fifth": {"theNumber": 5},
-            },
-            expected_errors=[],
-            executor=executor,
-        )
-
-
-@pytest.mark.parametrize("exe_cls, exe_kwargs", TESTED_EXECUTORS)
-def test_it_evaluates_mutations_serially_2(exe_cls, exe_kwargs):
-    with exe_cls(**exe_kwargs) as executor:
-        check_execution(
-            schema,
-            """
-            mutation M {
-                first: incrementTheNumber(steps: 1) {
-                    theNumber
-                },
-                second: incrementTheNumber(steps: -3) {
-                    theNumber
-                }
-            }
-            """,
-            initial_value=Root(6),
-            expected_data={
-                "first": {"theNumber": 7},
-                "second": {"theNumber": 4},
             },
             expected_errors=[],
             executor=executor,
@@ -169,19 +115,13 @@ def test_it_evaluates_mutations_correctly_even_when_some_mutation_fails(
             first: immediatelyChangeTheNumber(newNumber: 1) {
                 theNumber
             },
-            second: lazilyChangeTheNumber(newNumber: 2) {
-                theNumber
-            },
-            third: failToChangeTheNumber(newNumber: 3) {
+            second: failToChangeTheNumber(newNumber: 3) {
                 theNumber
             }
-            fourth: lazilyChangeTheNumber(newNumber: 4) {
-                theNumber
-            },
-            fifth: immediatelyChangeTheNumber(newNumber: 5) {
+            third: incrementTheNumber(newNumber: 1, steps: 1) {
                 theNumber
             }
-            sixth: lazilyFailToChangeTheNumber(newNumber: 6) {
+            fourth: failToChangeTheNumber(newNumber: 6) {
                 theNumber
             }
         }
@@ -194,14 +134,12 @@ def test_it_evaluates_mutations_correctly_even_when_some_mutation_fails(
             executor=executor,
             expected_data={
                 "first": {"theNumber": 1},
-                "second": {"theNumber": 2},
-                "third": None,
-                "fourth": {"theNumber": 4},
-                "fifth": {"theNumber": 5},
-                "sixth": None,
+                "second": None,
+                "third": {"theNumber": 2},
+                "fourth": None,
             },
             expected_errors=[
-                ("Cannot change the number", (236, 320), "third"),
-                ("Cannot change the number", (534, 624), "sixth"),
+                ("Cannot change the number", (137, 222), "second"),
+                ("Cannot change the number", (339, 424), "fourth"),
             ],
         )

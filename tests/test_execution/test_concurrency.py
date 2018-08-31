@@ -7,17 +7,17 @@ import pytest
 from py_gql.execution import _concurrency
 
 
-def test_all_wrapper_futures_ok():
+def test_gather_wrapper_futures_ok():
     futures = [_f.Future() for _ in range(10)]
 
-    wrapper = _concurrency.all_(futures)
+    wrapper = _concurrency.gather(futures)
     for i, f in enumerate(futures):
         f.set_result(i)
 
     assert wrapper.result() == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
-def test_all_wrapper_futures_mixed():
+def test_gather_wrapper_futures_mixed():
     futures = []
 
     for x in range(10):
@@ -27,7 +27,7 @@ def test_all_wrapper_futures_mixed():
         else:
             futures.append(x)
 
-    wrapper = _concurrency.all_(futures)
+    wrapper = _concurrency.gather(futures)
     for i, f in enumerate(futures):
         if i % 2:
             f.set_result(i)
@@ -35,14 +35,14 @@ def test_all_wrapper_futures_mixed():
     assert wrapper.result() == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
-def test_all_wrapper_partially_completed():
+def test_gather_wrapper_partially_completed():
     futures = [_f.Future() for _ in range(10)]
 
     for i, f in enumerate(futures):
         if i % 2:
             f.set_result(i)
 
-    wrapper = _concurrency.all_(futures)
+    wrapper = _concurrency.gather(futures)
 
     for i, f in enumerate(futures):
         if not i % 2:
@@ -51,7 +51,7 @@ def test_all_wrapper_partially_completed():
     assert wrapper.result() == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 
-def test_all_wrapper_one_future_fails():
+def test_gather_wrapper_one_future_fails():
     futures = [_f.Future() for _ in range(10)]
     for i, f in enumerate(futures):
         if i == 9:
@@ -59,7 +59,7 @@ def test_all_wrapper_one_future_fails():
         else:
             f.set_result(i)
 
-    wrapper = _concurrency.all_(futures)
+    wrapper = _concurrency.gather(futures)
 
     with pytest.raises(ValueError) as exc_info:
         wrapper.result()
@@ -129,7 +129,9 @@ def test_serial_ok_sync():
 
         return _step
 
-    assert _concurrency.serial([make_step(x) for x in range(10)]) is None
+    assert (
+        _concurrency.serial([make_step(x) for x in range(10)]).result() is None
+    )
     assert called == list(range(10))
 
 
@@ -188,115 +190,31 @@ def test_unwrap_intermediate_cancel():
         _concurrency.unwrap(futures[0]).result()
 
 
-def test_except_wrapper():
+def test_catch_exception():
     f = _f.Future()
-    e = _concurrency.except_(f)
+    e = _concurrency.catch_exception(f)
     f.set_exception(ValueError("foo"))
     assert e.result() is None
 
 
-def test_except_wrapper_with_mapper():
+def test_catch_exception_with_mapper():
     f = _f.Future()
-    e = _concurrency.except_(f, map_=str)
+    e = _concurrency.catch_exception(f, map_exception=str)
     f.set_exception(ValueError("foo"))
     assert e.result() == "foo"
 
 
-def test_except_wrapper_correct_exc_cls():
+def test_catch_exception_correct_exc_cls():
     f = _f.Future()
-    e = _concurrency.except_(f, (ValueError,))
+    e = _concurrency.catch_exception(f, (ValueError,))
     f.set_exception(ValueError("foo"))
     assert e.result() is None
 
 
-def test_except_wrapper_incorrect_exc_cls():
+def test_catch_exception_incorrect_exc_cls():
     f = _f.Future()
-    e = _concurrency.except_(f, (TypeError,))
+    e = _concurrency.catch_exception(f, (TypeError,))
     f.set_exception(ValueError("foo"))
 
     with pytest.raises(ValueError):
         e.result()
-
-
-def test_DummyFuture_not_cancellable():
-    f = _concurrency.DummyFuture()
-    assert not f.cancel()
-
-
-def test_DummyFuture_never_cancelled():
-    f = _concurrency.DummyFuture()
-    f.cancel()
-    assert not f.cancelled()
-
-
-def test_DummyFuture_defaults_to_running():
-    f = _concurrency.DummyFuture()
-    assert f.running()
-
-
-def test_DummyFuture_not_running_after_result():
-    f = _concurrency.DummyFuture()
-    f.set_result("foo")
-    assert not f.running()
-
-
-def test_DummyFuture_not_running_after_exception():
-    f = _concurrency.DummyFuture()
-    f.set_exception(ValueError("1"))
-    assert not f.running()
-
-
-def test_DummyFuture_raises_on_blocking_call_1():
-    f = _concurrency.DummyFuture()
-    with pytest.raises(RuntimeError):
-        f.result()
-
-
-def test_DummyFuture_raises_on_blocking_call_2():
-    f = _concurrency.DummyFuture()
-    with pytest.raises(RuntimeError):
-        f.exception()
-
-
-def test_DummyFuture_calls_callbacks_correctly(mocker):
-    cb1, cb2, cb3 = mocker.Mock(), mocker.Mock(), mocker.Mock()
-    f = _concurrency.DummyFuture()
-
-    f.add_done_callback(cb1)
-    f.add_done_callback(cb2)
-
-    f.set_result("foo")
-
-    cb1.assert_called_with(f)
-    cb2.assert_called_with(f)
-    cb3.assert_not_called()
-
-    f.add_done_callback(cb3)
-
-    cb3.assert_called_with(f)
-
-
-def test_DummyFuture_result_returns_when_done_with_result():
-    f = _concurrency.DummyFuture()
-    f.set_result("foo")
-    assert f.result() == "foo"
-
-
-def test_DummyFuture_result_raises_when_done_with_exception():
-    f = _concurrency.DummyFuture()
-    f.set_exception(ValueError("foo"))
-    with pytest.raises(ValueError):
-        f.result()
-
-
-def test_DummyFuture_exception_returns_when_done_with_exception():
-    f = _concurrency.DummyFuture()
-    err = ValueError("foo")
-    f.set_exception(err)
-    assert f.exception() == err
-
-
-def test_DummyFuture_exception_returns_when_done_with_result():
-    f = _concurrency.DummyFuture()
-    f.set_result("foo")
-    assert f.exception() is None

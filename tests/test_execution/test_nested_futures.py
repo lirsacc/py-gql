@@ -28,9 +28,7 @@ def test_execute_awaits_deeply_nested_future():
         return info.executor.submit(lambda *a, **kw: 42)
 
     def resolver(root, args, context, info):
-        return lambda: info.executor.submit(
-            deep_resolver, root, args, context, info
-        )
+        return info.executor.submit(deep_resolver, root, args, context, info)
 
     schema = Schema(ObjectType("Query", [Field("foo", Int, resolve=resolver)]))
 

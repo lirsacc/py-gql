@@ -84,7 +84,7 @@ def generator_middleware(func):
         except StopIteration:
             raise RuntimeError("Generator middleware did not yield")
 
-        if _concurrency.is_deferred(res):
+        if _concurrency.is_future(res):
             res.add_done_callback(_finish)
         else:
             _finish(None)

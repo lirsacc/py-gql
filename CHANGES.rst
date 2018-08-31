@@ -5,6 +5,7 @@ Unreleased
 - Bugfix: Fix inheritance for :class:`py_gql.schema.RegexType`.
 - Bugfix: Fix incorrect extension behaviour when adding fields to a already defined object types.
 - Bugfix: Fix bug in location highlight code.
+- **[Breaking]** Resolvers cannot return callable anymore.
 
 0.1.0
 -----

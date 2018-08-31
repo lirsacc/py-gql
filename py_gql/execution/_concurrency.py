@@ -7,26 +7,14 @@ from concurrent.futures import Future
 _UNDEF = object()
 
 
-def is_deferred(value, cache={}):  # pylint: disable = dangerous-default-value
+def is_future(value, cache={}):  # pylint: disable = dangerous-default-value
     t = value.__class__
     if t not in cache:
         cache[t] = callable(getattr(t, "add_done_callback", None))
     return cache[t]
 
 
-def deferred(value, cls=Future):
-    """ Transform a value into a ``Future`` awaitable object.
-
-    >>> v = deferred(1, cls=DummyFuture)
-    >>> v.result(), v.done()
-    (1, True)
-    """
-    future = cls()
-    future.set_result(value)
-    return future
-
-
-def all_(futures, cls=Future):
+def gather(futures):
     """ Create a ``concurrent.futures.Future`` wrapping a list of futures.
 
     - The resulting future resolves only when all futures have resolved.
@@ -39,17 +27,17 @@ def all_(futures, cls=Future):
 
     Args:
         futures (List[any]): List of potential futures to wrap
-        cls: Future class to use for the result
 
     Returns:
         concurrent.futures.Future: Wrapped future
     """
 
     if not futures:
-        return []
+        return defer([])
 
-    result = cls()
+    result = Future()
     results_list = [_UNDEF] * len(futures)
+    # Using a list bypasses the global / nonlocal issue.
     done_count = [0]
     len_ = len(futures)
 
@@ -72,19 +60,18 @@ def all_(futures, cls=Future):
         return callback
 
     for index, future in enumerate(futures):
-        if is_deferred(future):
+        if is_future(future):
             future.add_done_callback(callback_for(index))
         else:
             results_list[index] = future
             done_count[0] += 1
 
-    if done_count[0] == len_:
-        return results_list
+    notify()
     return result
 
 
-def _chain_one(source_future, map_=lambda x: x, cls=Future):
-    result = cls()
+def _chain_one(source_future, map_=lambda x: x):
+    result = Future()
 
     def _callback(future):
         try:
@@ -119,42 +106,38 @@ def chain(leader, *funcs, **kwargs):
             Each step receives the result of the previous step as input.
             Return value of a step can be either a future or a value which will
             be wrapped as a future if there is more steps to compute.
-        cls: Future class to use for the result
 
     Returns:
         concurrent.futures.Future: Wrapped future
     """
     stack = iter(funcs)
-    cls = kwargs.get("cls", Future)
 
     def _next(value):
-        if is_deferred(value):
-            return unwrap(_chain_one(value, _next, cls=cls), cls=cls)
+        if is_future(value):
+            return unwrap(_chain_one(value, _next))
         try:
             func = next(stack)
         except StopIteration:
-            return value
+            if is_future(value):
+                return value
+            return defer(value)
         else:
             return _next(func(value))
 
     return _next(leader)
 
 
-def unwrap(source_future, cls=Future):
+def unwrap(source_future):
     """ Resolve nested futures until a non future is resolved or an
     exception is raised.
 
     Args:
         source_future (concurrent.futures.Future): Future to wrap
-        cls: Future class to use for the result
 
     Returns:
         concurrent.futures.Future: Wrapped future
     """
-    if not is_deferred(source_future):
-        return deferred(source_future, cls=Future)
-
-    result = cls()
+    result = Future()
 
     def callback(future):
         try:
@@ -162,7 +145,7 @@ def unwrap(source_future, cls=Future):
         except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
-            if is_deferred(res):
+            if is_future(res):
                 res.add_done_callback(callback)
             else:
                 result.set_result(res)
@@ -171,7 +154,7 @@ def unwrap(source_future, cls=Future):
     return result
 
 
-def serial(steps, cls=Future):
+def serial(steps):
     """ Similar to :func:`chain` but ignoring the intermediate results.
 
     Each step is called only after the result of the previous step has
@@ -179,7 +162,6 @@ def serial(steps, cls=Future):
 
     Args:
         steps (Iterable[() -> concurrent.futures.Future]):
-        cls: Future class to use for the result
 
     Returns:
         concurrent.futures.Future: Wrapped future
@@ -188,11 +170,11 @@ def serial(steps, cls=Future):
     def _step(original):
         return lambda _: original()
 
-    return chain(None, *[_step(step) for step in steps], cls=cls)
+    return chain(None, *[_step(step) for step in steps])
 
 
-def except_(
-    source_future, exc_cls=(Exception,), map_=lambda x: None, cls=Future
+def catch_exception(
+    source_future, exc_cls=(Exception,), map_exception=lambda x: None
 ):
     """ Except for futures.
 
@@ -201,18 +183,17 @@ def except_(
         exc_cls: Exception to catch, same type as when using ``except``
         map_ (Callable): Called on the caught exception to generate the final
             result. Default behaviour is to set the result to ``None``.
-        cls: Future class to use for the result
 
     Returns:
         concurrent.futures.Future: Wrapped future
     """
-    result = cls()
+    result = Future()
 
     def callback(future):
         try:
             res = future.result()
         except exc_cls as err:
-            result.set_result(map_(err))
+            result.set_result(map_exception(err))
         except Exception as err:  # pylint: disable = broad-except
             result.set_exception(err)
         else:
@@ -222,88 +203,10 @@ def except_(
     return result
 
 
-class DummyFuture(Future):
-    """ Dummy Future to match the interface in a synchronous & single
-    threaded environment without the synchronisation overhead. """
-
-    __slots__ = "_result", "_exception", "_callbacks", "_done"
-
-    # pylint: disable = super-init-not-called
-    def __init__(self):
-        self._done = False
-        self._result = None
-        self._exception = None
-        self._callbacks = []
-
-    def _invoke_callbacks(self):
-        for callback in self._callbacks:
-            callback(self)
-
-    def __repr__(self):
-        if self._done:
-            if self._exception:
-                return "<%s at %#x state=FINISHED raised %s>" % (
-                    self.__class__.__name__,
-                    id(self),
-                    self._exception.__class__.__name__,
-                )
-            else:
-                return "<%s at %#x state=FINISHED returned %s>" % (
-                    self.__class__.__name__,
-                    id(self),
-                    self._result.__class__.__name__,
-                )
-        return "<%s at %#x state=RUNNING>" % (self.__class__.__name__, id(self))
-
-    def cancel(self):
-        return False
-
-    def cancelled(self):
-        return False
-
-    def running(self):
-        return not self._done
-
-    def done(self):
-        return self._done
-
-    def add_done_callback(self, fn):
-        if not self._done:
-            self._callbacks.append(fn)
-        else:
-            fn(self)
-
-    def result(self, timeout=None):
-        if not self._done:
-            raise RuntimeError(
-                "DummyFuture does not support blocking for results"
-            )
-
-        if self._exception:
-            raise self._exception  # pylint:disable=raising-bad-type
-        else:
-            return self._result
-
-    def exception(self, timeout=None):
-        if not self._done:
-            raise RuntimeError(
-                "DummyFuture does not support blocking for results"
-            )
-
-        if self._exception:
-            return self._exception
-        else:
-            return None
-
-    def set_running_or_notify_cancel(self):
-        pass
-
-    def set_result(self, result):
-        self._result = result
-        self._done = True
-        self._invoke_callbacks()
-
-    def set_exception(self, exception):
-        self._exception = exception
-        self._done = True
-        self._invoke_callbacks()
+def defer(result=None, exc=None):
+    """ Create a future instance with a known result. """
+    f = Future()
+    if exc:
+        f.set_exception(exc)
+    f.set_result(result)
+    return f

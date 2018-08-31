@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-from concurrent.futures import Future
 
 import six
 
@@ -22,7 +21,6 @@ class ExecutionContext(object):
         "variables",
         "fragments",
         "executor",
-        "future_cls",
         "operation",
         "middlewares",
         "context",
@@ -49,7 +47,6 @@ class ExecutionContext(object):
         self.variables = variables
         self.fragments = fragments
         self.executor = executor
-        self.future_cls = getattr(executor, "Future", Future)
         self.operation = operation
         self.middlewares = middlewares
         self.context = context

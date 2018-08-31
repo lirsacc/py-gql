@@ -10,7 +10,7 @@ import pytest
 from py_gql.asyncio import AsyncIOExecutor, graphql
 from py_gql.exc import SchemaError
 from py_gql.execution import _concurrency
-from py_gql.execution.executors import ThreadPoolExecutor, SyncExecutor
+from py_gql.execution.executors import SyncExecutor, ThreadPoolExecutor
 from py_gql.schema import Argument, Field, ObjectType, Schema, String
 
 
@@ -324,14 +324,14 @@ class TestAsyncIOExecutor(object):
     @pytest.mark.asyncio
     async def test_submit_returns_a_future(self):
         f = AsyncIOExecutor().submit(_async_func, 1)
-        assert _concurrency.is_deferred(f)
+        assert _concurrency.is_future(f)
         r = await f
         assert r == 1
 
     @pytest.mark.asyncio
     async def test_submit_accepts_non_async_functions(self):
         f = AsyncIOExecutor().submit(_non_async_func, 1)
-        assert _concurrency.is_deferred(f)
+        assert _concurrency.is_future(f)
         r = await f
         assert r == 1
 

@@ -4,16 +4,13 @@ GraphQL specification. """
 
 # REVIEW: The resolver interface is mirrored on graphql-js but that might change
 
-# REVIEW: The Future based interface can be awkward especially when checking
-# for Future instances in order to gain performance.
-
 import functools as ft
 
 import six
 
 from . import _concurrency
 from .._string_utils import stringify_path
-from .._utils import OrderedDict, find_one, is_iterable, lazy
+from .._utils import OrderedDict, find_one, is_iterable
 from ..exc import (
     CoercionError,
     ExecutionError,
@@ -145,9 +142,7 @@ def execute(  # flake8: noqa : C901
             data=data, errors=[err for err, _, _ in ctx.errors]
         )
 
-    if _concurrency.is_deferred(deferred_result):
-        return _concurrency.chain(deferred_result, _on_end, cls=ctx.future_cls)
-    return _concurrency.deferred(_on_end(deferred_result), cls=ctx.future_cls)
+    return _concurrency.chain(deferred_result, _on_end)
 
 
 def get_operation(document, operation_name=None):
@@ -373,11 +368,7 @@ def _execute_selections(ctx, selections, object_type, object_value, path=None):
             )
         )
 
-    return _concurrency.chain(
-        _concurrency.all_(deferred_fields, cls=ctx.future_cls),
-        OrderedDict,
-        cls=ctx.future_cls,
-    )
+    return _concurrency.chain(_concurrency.gather(deferred_fields), OrderedDict)
 
 
 def _execute_selections_serially(
@@ -407,7 +398,7 @@ def _execute_selections_serially(
         )
 
     steps.append(lambda: OrderedDict(resolved_fields))
-    return _concurrency.serial(steps, cls=ctx.future_cls)
+    return _concurrency.serial(steps)
 
 
 def resolve_field(
@@ -432,23 +423,20 @@ def resolve_field(
     resolver = field_def.resolve or default_resolver
 
     def _unwrap(value):
-        value = lazy(value)
-        if _concurrency.is_deferred(value):
-            return _concurrency.unwrap(value, cls=ctx.future_cls)
+        if _concurrency.is_future(value):
+            return _concurrency.unwrap(value)
         return value
 
     def resolve(root, args, context, info):
         resolved = _unwrap(
             ctx.executor.submit(resolver, root, args, context, info)
         )
-        if _concurrency.is_deferred(resolved):
-            complete = ft.partial(
-                complete_value, ctx, field_def.type, nodes, info.path
-            )
+        if _concurrency.is_future(resolved):
             return _concurrency.chain(
-                resolved, lazy, complete, cls=ctx.future_cls
+                resolved,
+                ft.partial(complete_value, ctx, field_def.type, nodes, path),
             )
-        return complete_value(ctx, field_def.type, nodes, info.path, resolved)
+        return complete_value(ctx, field_def.type, nodes, path, resolved)
 
     resolve = apply_middlewares(resolve, ctx.middlewares)
 
@@ -469,14 +457,11 @@ def resolve_field(
     except (CoercionError, ResolverError) as err:
         return _on_error(err)
     else:
-        if _concurrency.is_deferred(resolved_or_deferred):
-            return _concurrency.except_(
-                _concurrency.chain(
-                    resolved_or_deferred, _on_success, cls=ctx.future_cls
-                ),
+        if _concurrency.is_future(resolved_or_deferred):
+            return _concurrency.catch_exception(
+                _concurrency.chain(resolved_or_deferred, _on_success),
                 (CoercionError, ResolverError),
                 _on_error,
-                cls=ctx.future_cls,
             )
         return _on_success(resolved_or_deferred)
 
@@ -484,11 +469,9 @@ def resolve_field(
 def complete_value(ctx, field_type, nodes, path, resolved_value):
     kind = field_type.__class__
     if kind is NonNullType:
-        # REVIEW:
-        # - Error is different than ref implementation
-        # - Shouldn't this be a RuntimeError ? As in the developer should
-        # never return a null non nullable field and instead reais
-        # explicitely if the query lead to this behaviour ?
+        # REVIEW: Shouldn't this be a RuntimeError ? As in the developer should
+        # never return a null non nullable field, raising explicitely if the
+        # query lead to this behaviour could be valid outcome.
         def _handle_null(value):
             if value is None:
                 ctx.add_error(
@@ -501,7 +484,6 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
         return _concurrency.chain(
             complete_value(ctx, field_type.type, nodes, path, resolved_value),
             _handle_null,
-            cls=ctx.future_cls,
         )
 
     if resolved_value is None:
@@ -514,12 +496,11 @@ def complete_value(ctx, field_type, nodes, path, resolved_value):
                 "should be iterable" % stringify_path(path)
             )
 
-        return _concurrency.all_(
+        return _concurrency.gather(
             [
                 complete_value(ctx, field_type.type, nodes, path + [i], entry)
                 for i, entry in enumerate(resolved_value)
-            ],
-            cls=ctx.future_cls,
+            ]
         )
 
     # Need to handle custom scalar types
