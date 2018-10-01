@@ -7,7 +7,6 @@
 import imp
 import itertools
 import os
-import sys
 
 from setuptools import find_packages, setup
 
@@ -65,13 +64,7 @@ def run_setup():
             "Intended Audience :: Developers",
             "Topic :: Software Development :: Libraries",
         ],
-        tests_require=(
-            _split_requirements(
-                "test-requirements.txt", "py3-test-requirements.txt"
-            )
-            if sys.version >= "3"
-            else _split_requirements("test-requirements.txt")
-        ),
+        tests_require=_split_requirements("test-requirements.txt"),
     )
 
 

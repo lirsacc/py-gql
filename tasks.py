@@ -14,21 +14,15 @@ def _join(cmd):
 
 @invoke.task
 def deps(ctx, upgrade=False):
-    """ Install dependencies """
-    requirements = (
-        "dev-requirements.txt"
-        if sys.version >= "3"
-        else "py2-dev-requirements.txt"
-    )
+    """ Install development dependencies """
     with ctx.cd(ROOT):
         ctx.run(
             _join(
                 [
-                    "CYTHON_DISABLE=1",
                     "pip",
                     "install",
                     "--upgrade" if upgrade else None,
-                    "-r %s" % requirements,
+                    "-r %s" % "dev-requirements.txt",
                 ]
             ),
             echo=True,

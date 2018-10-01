@@ -1,5 +1,5 @@
 include README.md LICENSE CHANGES.rst
 include pytest.ini
-include requirements.txt test-requirements.txt py3-test-requirements.txt
+include requirements.txt *-requirements.txt
 
 recursive-include tests *.py

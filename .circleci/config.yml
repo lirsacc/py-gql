@@ -7,28 +7,24 @@ references:
             - image: circleci/python:3.5.5
               environment:
                 PY: 35
-                REQUIREMENTS: invoke -rtest-requirements.txt -rpy3-test-requirements.txt
 
     docker-python36: &docker-python36
         docker:
             - image: circleci/python:3.6.5
               environment:
                 PY: 36
-                REQUIREMENTS: -rdev-requirements.txt
 
     docker-python37: &docker-python37
         docker:
             - image: circleci/python:3.7
               environment:
                 PY: 37
-                REQUIREMENTS: invoke -rtest-requirements.txt -rpy3-test-requirements.txt
 
     docker-python27: &docker-python27
         docker:
             - image: circleci/python:2.7.14
               environment:
                 PY: 27
-                REQUIREMENTS: invoke -rtest-requirements.txt
 
     workspace: &workspace
         attach_workspace:
@@ -54,7 +50,7 @@ references:
                 virtualenv --clear --python $(which python) "venv${PY}"
                 tar -C workspace -cpf - src | tar -C "venv${PY}" -xpf -
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                pip install ${REQUIREMENTS}
+                pip install -U -r dev-requirements.txt
                 pip install -e .
 
     run-tests: &run-tests
@@ -98,6 +94,8 @@ jobs:
                     cd workspace
                     echo 1 >.py-cache
                     cat src/dev-requirements*.txt >> .py-cache
+                    cat src/test-requirements*.txt >> .py-cache
+                    cat src/requirements*.txt >> .py-cache
                     cat src/setup.py >> .py-cache
             - persist_to_workspace:
                 paths: workspace

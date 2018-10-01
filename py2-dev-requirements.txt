@@ -1,9 +1,0 @@
-# Dev dependencies for Python2
-# `inv fmt`, `inv lint` and `inv docs` will not work as some Python3 only
-# modules are used and excluded from these requirements.
-
-invoke ~= 1.1
-
--r test-requirements.txt
-
--e .
