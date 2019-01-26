@@ -2,9 +2,19 @@
 """
 """
 
-from .._utils import DefaultOrderedDict, OrderedDict, deduplicate
+from collections import defaultdict
+from typing import List, Mapping, Optional, Sequence, TypeVar
+
+from .._utils import deduplicate
 from ..exc import ValidationError
+from ..lang import ast as _ast
 from ..lang.visitor import DispatchingVisitor
+from ..schema import Schema
+from ..utilities import TypeInfoVisitor
+
+T = TypeVar("T")
+MMap = Mapping[str, Mapping[str, T]]
+LMap = Mapping[str, List[T]]
 
 
 class ValidationVisitor(DispatchingVisitor):
@@ -15,24 +25,24 @@ class ValidationVisitor(DispatchingVisitor):
     validating child nodes when parent node is invalid.
 
     Args:
-        schema (py_gql.schema.Schema):
-            Schema to validate against (for known types, directives, etc.).
-        type_info (py_gql.utilities.TypeInfoVisitor):
+        schema: Schema to validate against (for known types, directives, etc.).
+        type_info:
 
     Attributes:
-        schema (py_gql.schema.Schema):
-            Schema to validate against (for known types, directives, etc.).
-        type_info (py_gql.utilities.TypeInfoVisitor):
-        errors (List[py_gql.exc.ValidationError]):
+        schema: Schema to validate against (for known types, directives, etc.).
+        type_info:
+        errors:
     """
 
-    def __init__(self, schema, type_info):
+    def __init__(self, schema: Schema, type_info: TypeInfoVisitor):
         super(ValidationVisitor, self).__init__()
         self.schema = schema
         self.type_info = type_info
-        self.errors = []
+        self.errors: List[ValidationError] = []
 
-    def add_error(self, message, nodes=None):
+    def add_error(
+        self, message: str, nodes: Optional[Sequence[_ast.Node]] = None
+    ) -> None:
         """ Register an error
 
         Args:
@@ -58,12 +68,14 @@ class VariablesCollector(ValidationVisitor):
         super(VariablesCollector, self).__init__(schema, type_info)
 
         self._op = None
-        self._op_variables = DefaultOrderedDict(OrderedDict)
-        self._op_defined_variables = DefaultOrderedDict(OrderedDict)
-        self._op_fragments = DefaultOrderedDict(list)
+        self._op_variables: MMap[_ast.Variable] = defaultdict(dict)
+        self._op_defined_variables: MMap[_ast.VariableDefinition] = defaultdict(
+            dict
+        )
+        self._op_fragments: LMap[_ast.FragmentSpread] = defaultdict(list)
         self._fragment = None
-        self._fragment_variables = DefaultOrderedDict(OrderedDict)
-        self._fragment_fragments = DefaultOrderedDict(list)
+        self._fragment_variables: MMap[_ast.Variable] = defaultdict(dict)
+        self._fragment_fragments: LMap[_ast.FragmentSpread] = defaultdict(list)
         self._in_var_def = False
 
     def enter_operation_definition(self, node):

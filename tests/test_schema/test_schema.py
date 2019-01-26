@@ -24,9 +24,11 @@ Implementing = ObjectType(
     "Object", [Field("fieldName", String)], interfaces=[Interface]
 )
 
-DirInput = InputObjectType("DirInput", [Field("field", String)])
+DirInput = InputObjectType("DirInput", [InputField("field", String)])
 
-WrappedDirInput = InputObjectType("WrappedDirInput", [Field("field", String)])
+WrappedDirInput = InputObjectType(
+    "WrappedDirInput", [InputField("field", String)]
+)
 
 Dir = Directive(
     "dir",
@@ -50,7 +52,7 @@ BlogAuthor = ObjectType(
     ],
 )
 
-BlogArticle = ObjectType(
+BlogArticle: ObjectType = ObjectType(
     "Article",
     [
         Field("id", String),
@@ -77,7 +79,7 @@ BlogSubscription = ObjectType(
 )
 
 
-def _null_resolver(*a, **kw):
+def _null_resolver(*_a, **_kw):
     return {}
 
 
@@ -120,7 +122,7 @@ def test_Schema_get_type_does_not_raise_on_unknown_type_with_default():
         ),
         directives=[Dir],
     )
-    assert schema.get_type("UnknownType", None) is None
+    assert schema.get_type("UnknownType", None) is None  # type: ignore
 
 
 def test_Schema_includes_nested_input_objects_in_the_map():

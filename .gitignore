@@ -99,6 +99,9 @@ ENV
 # Rope project settings
 .ropeproject
 
+# Mypy
+.mypy_cache
 
 .vscode
 .idea
+*_bak

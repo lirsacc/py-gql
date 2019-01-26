@@ -130,11 +130,11 @@ Episode = EnumType(
 )
 
 
-def resolve_character_type(character, **kwargs):
+def resolve_character_type(character, _, __):
     return {"Human": Human, "Droid": Droid}[character["type"]]
 
 
-Character = InterfaceType(
+Character: InterfaceType = InterfaceType(
     "Character",
     [
         Field(
@@ -166,7 +166,7 @@ Character = InterfaceType(
 
 
 def resolve_secret_backstory(*args, **kwargs):
-    raise ResolverError("secretBackstory is secret.", extensions=[("code", 42)])
+    raise ResolverError("secretBackstory is secret.", extensions={"code": 42})
 
 
 Human = ObjectType(
@@ -260,7 +260,7 @@ Query = ObjectType(
                     ),
                 )
             ],
-            resolve=lambda _, args, *r: get_hero(args.get("episode")),
+            resolve=lambda *_, **args: get_hero(args.get("episode")),
         ),
         Field(
             "human",
@@ -270,7 +270,7 @@ Query = ObjectType(
                     "id", NonNullType(String), description="Id of the human"
                 )
             ],
-            resolve=lambda _, args, *r: get_human(args.get("id")),
+            resolve=lambda *_, **args: get_human(args.get("id")),
         ),
         Field(
             "droid",
@@ -280,7 +280,7 @@ Query = ObjectType(
                     "id", NonNullType(String), description="Id of the droid"
                 )
             ],
-            resolve=lambda _, args, *r: get_droid(args.get("id")),
+            resolve=lambda *_, **args: get_droid(args.get("id")),
         ),
     ],
 )

@@ -4,18 +4,8 @@
 
 # flake8: noqa
 
-from ._graphql import graphql
-from .execution import (
-    GraphQLExtension,
-    GraphQLResult,
-    GraphQLTracer,
-    ResolveInfo,
-)
+from . import lang, schema, utilities
+from ._graphql import graphql, graphql_sync
+from .execution import GraphQLExtension, GraphQLResult, ResolveInfo
 
-__all__ = (
-    "graphql",
-    "GraphQLResult",
-    "GraphQLExtension",
-    "GraphQLTracer",
-    "ResolveInfo",
-)
+__all__ = ("graphql", "GraphQLResult", "GraphQLExtension", "ResolveInfo")

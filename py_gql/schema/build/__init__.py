@@ -6,20 +6,29 @@ supported and provide with a language agnostic way of defining schemas. The
 """
 
 import collections
-
-import six
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from .. import types as _types
-from ..._utils import OrderedDict, nested_key
+from ..._utils import nested_key
 from ...exc import ExtensionError, SDLError
 from ...lang import ast as _ast, parse
-from ..schema import Schema
+from ..schema import GraphQLType, NamedType, ObjectType, Schema
 from .type_builder import TypesBuilder
 from .visitors import (
     HealSchemaVisitor,
     SchemaDirective,
-    _SchemaDirectivesApplicator,
-    visit_schema,
+    SchemaDirectivesApplicationVisitor,
 )
 
 __all__ = (
@@ -29,32 +38,38 @@ __all__ = (
     "SchemaDirective",
 )
 
+ResolverMap = Union[
+    Mapping[str, Callable[..., Any]],
+    Mapping[str, Mapping[str, Callable[..., Any]]],
+    Callable[[str, str], Callable[..., Any]],
+]
+
 
 def make_executable_schema(
-    document,
-    resolvers=None,
-    additional_types=None,
-    schema_directives=None,
-    assume_valid=False,
-):
+    document: Union[_ast.Document, str],
+    resolvers: Optional[ResolverMap] = None,
+    additional_types: Optional[List[NamedType]] = None,
+    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None,
+    assume_valid: bool = False,
+) -> Schema:
     """ Build an executable schema from a GraphQL document.
 
     This includes:
 
-    - Generating types from their definitions
-    - Applying schema and type extensions
-    - Applying schema directives
+        - Generating types from their definitions
+        - Applying schema and type extensions
+        - Applying schema directives
 
     Args:
         document (Union[str, py_gql.lang.ast.Document]): SDL document
 
-        resolvers (Union[dict, callable]): Field resolvers
+        resolvers: Field resolvers
             If a `dict` is provided, this looks for the resolver at key
             `{type_name}.{field_name}`. If a callable is provided, this calls
             it with the `{type_name}.{field_name}` argument and use the return
             value if it is itself a callable.
 
-        additional_types (List[py_gql.schema.Type]): User supplied list of types
+        additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
             etc.
             - In case of object types, interfaces, etc. the supplied type will
@@ -63,15 +78,15 @@ def make_executable_schema(
             resulting types may not be the same objects that were provided,
             so users should not rely on type identity.
 
-        schema_directives (dict): Schema directive classes
+        schema_directives: Schema directive classes
             - Members must be subclasses of :class:`SchemaDirective`
             - Members must define a non-null ``definition`` attribute or the
             corresponding definition must be present in the document
 
-        assume_valid (bool): Do not validate intermediate schemas
+        assume_valid: Do not validate intermediate schemas
 
     Returns:
-        py_gql.schema.Schema: Executable schema
+        Executable schema
 
     Raises:
         py_gql.exc.SDLError:
@@ -96,9 +111,12 @@ def make_executable_schema(
         schema.validate()
 
     if schema_directives:
-        schema = heal_schema(
-            apply_schema_directives(schema, schema_directives, strict=True)
-        )
+
+        schema = HealSchemaVisitor(
+            SchemaDirectivesApplicationVisitor(
+                dict(schema.directives), schema_directives, strict=True
+            ).visit_schema(schema)
+        )()
 
         if not assume_valid:
             schema.validate()
@@ -106,20 +124,24 @@ def make_executable_schema(
     return schema
 
 
-def build_schema_from_ast(document, resolvers=None, additional_types=None):
+def build_schema_from_ast(
+    document: Union[_ast.Document, str],
+    resolvers: Optional[ResolverMap] = None,
+    additional_types: Optional[List[NamedType]] = None,
+) -> Schema:
     """ Build an executable schema from an SDL-based schema definition ignoring
     extensions.
 
     Args:
-        document (Union[str, _ast.Document]): SDL document
+        document: SDL document
 
-        resolvers (Union[dict, callable]): Field resolvers
+        resolvers: Field resolvers
             If a `dict` is provided, this looks for the resolver at key
             `{type_name}.{field_name}`. If a callable is provided, this calls
             it with the `{type_name}.{field_name}` argument and use the return
             value if it is itself a callable.
 
-        additional_types (List[py_gql.schema.Type]): User supplied list of types
+        additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
             etc.
             - In case of object types, interfaces, etc. the supplied type will
@@ -129,7 +151,7 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
             so users should not rely on type identity.
 
     Returns:
-        py_gql.schema.Schema: Executable schema
+        Executable schema
 
     Raises:
         py_gql.exc.SDLError:
@@ -140,7 +162,10 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
     builder = TypesBuilder(
         type_defs,
         directive_defs,
-        additional_types=_merge_type_maps(additional_types),
+        {},
+        additional_types=(
+            _merge_type_maps(additional_types) if additional_types else None
+        ),
     )
 
     directives = [
@@ -150,13 +175,17 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
 
     types = [builder.build_type(type_def) for type_def in type_defs.values()]
 
-    _assign_resolvers(types, resolvers)
+    if resolvers is not None:
+        _assign_resolvers(types, resolvers)
 
     if schema_def is None:
         operations = {
             t.name.lower(): t
             for t in types
-            if t.name in ("Query", "Mutation", "Subscription")
+            if (
+                isinstance(t, ObjectType)
+                and t.name in ("Query", "Mutation", "Subscription")
+            )
         }
     else:
         operations = {}
@@ -167,7 +196,7 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
                     "Schema must only define a single %s operation" % op,
                     [schema_def, op_def],
                 )
-            operations[op] = builder.build_type(op_def.type)
+            operations[op] = cast(ObjectType, builder.build_type(op_def.type))
 
     return Schema(
         query_type=operations.get("query"),
@@ -180,8 +209,12 @@ def build_schema_from_ast(document, resolvers=None, additional_types=None):
 
 
 def extend_schema(
-    schema, document, resolvers=None, additional_types=None, strict=True
-):
+    schema: Schema,
+    document: Union[_ast.Document, str],
+    resolvers: Optional[ResolverMap] = None,
+    additional_types: Optional[List[NamedType]] = None,
+    strict: bool = True,
+) -> Schema:
     """ Extend an existing Schema according to a GraphQL document (adding new
     types and directives + extending known types).
 
@@ -223,39 +256,45 @@ def extend_schema(
 
     """
     ast = _document_ast(document)
-    assert isinstance(schema, Schema)
 
     schema_exts, type_defs, directive_defs, type_exts = _collect_extensions(
         schema, ast, strict=strict
     )
 
-    if not (schema_exts or type_defs or directive_defs or type_exts):
+    if not (
+        schema_exts
+        or (set(type_defs.keys()) - set(schema.types.keys()))
+        or type_exts
+        or (set(directive_defs.keys()) - set(schema.directives.keys()))
+    ):
         return schema
-
-    if additional_types is None:
-        additional_types = {}
 
     builder = TypesBuilder(
         type_defs,
         directive_defs,
         type_exts,
-        additional_types=_merge_type_maps(schema.types, additional_types),
+        additional_types=_merge_type_maps(schema.types, additional_types or []),
     )
 
     directives = [
         builder.extend_directive(d) for d in schema.directives.values()
-    ]
-    directives += [
+    ] + [
         builder.extend_directive(builder.build_directive(d))
         for d in directive_defs.values()
     ]
 
-    types = [builder.extend_type(t) for t in schema.types.values()]
-    types += [
-        builder.extend_type(builder.build_type(t)) for t in type_defs.values()
+    types = [
+        builder.extend_type(t)
+        for t in schema.types.values()
+        if t.name in type_exts
+    ] + [
+        builder.extend_type(builder.build_type(t))
+        for t in type_defs.values()
+        if t.name.value not in schema.types
     ]
 
-    _assign_resolvers(types, resolvers)
+    if resolvers:
+        _assign_resolvers(types, resolvers)
 
     def _extend_or(maybe_type):
         return builder.extend_type(maybe_type) if maybe_type else None
@@ -279,57 +318,65 @@ def extend_schema(
             )
 
     return Schema(
-        query_type=operation_types.get("query", None),
-        mutation_type=operation_types.get("mutation", None),
-        subscription_type=operation_types.get("subscription", None),
+        query_type=operation_types["query"],
+        mutation_type=operation_types["mutation"],
+        subscription_type=operation_types["subscription"],
         types=types,
         directives=directives,
-        nodes=(schema.nodes or []) + (schema_exts or []),
+        nodes=(schema.nodes or []) + (schema_exts or []),  # type: ignore
     )
 
 
-def _collect_definitions(document):
+def _collect_definitions(
+    document: _ast.Document
+) -> Tuple[
+    Optional[_ast.SchemaDefinition],
+    Dict[str, _ast.TypeDefinition],
+    Dict[str, _ast.DirectiveDefinition],
+]:
     schema_definition = None
-    types = OrderedDict()
-    directives = OrderedDict()
+    types: Dict[str, _ast.TypeDefinition] = {}
+    directives: Dict[str, _ast.DirectiveDefinition] = {}
 
-    for definition in document.definitions:
-        if isinstance(definition, _ast.SchemaDefinition):
+    for node in document.definitions:
+        if isinstance(node, _ast.SchemaDefinition):
             if schema_definition is not None:
                 raise SDLError(
-                    "Must provide only one schema definition", [definition]
+                    "More than one schema definition in document", [node]
                 )
-            schema_definition = definition
+            schema_definition = node
 
-        elif isinstance(definition, _ast.TypeDefinition):
-            if definition.name.value in types:
-                raise SDLError(
-                    "Duplicate type %s" % definition.name.value, [definition]
-                )
-            types[definition.name.value] = definition
+        elif isinstance(node, _ast.TypeDefinition):
+            name = node.name.value
+            if name in types:
+                raise SDLError("Duplicate type %s" % name, [node])
+            types[name] = node
 
-        elif isinstance(definition, _ast.DirectiveDefinition):
-            if definition.name.value in directives:
-                raise SDLError(
-                    "Duplicate directive @%s" % definition.name.value,
-                    [definition],
-                )
-            directives[definition.name.value] = definition
+        elif isinstance(node, _ast.DirectiveDefinition):
+            name = node.name.value
+            if name in directives:
+                raise SDLError("Duplicate directive @%s" % name, [node])
+            directives[name] = node
 
     return schema_definition, types, directives
 
 
-def _assign_resolvers(types, resolvers):
+def _assign_resolvers(types: List[GraphQLType], resolvers: ResolverMap) -> None:
 
     if callable(resolvers):
         infer = lambda parent, field: resolvers(parent.name, field.name)
     elif isinstance(resolvers, dict):
         infer = lambda parent, field: (
-            resolvers.get("%s.%s" % (parent.name, field.name), None)
-            or nested_key(resolvers, parent.name, field.name, default=None)
+            cast(Dict[str, Any], resolvers).get(
+                "%s.%s" % (parent.name, field.name), None
+            )
+            or nested_key(
+                cast(Dict[str, Any], resolvers),
+                parent.name,
+                field.name,
+                default=None,
+            )
         )
-    elif not resolvers:
-        return
 
     for type_ in types:
         if isinstance(type_, _types.ObjectType):
@@ -337,9 +384,8 @@ def _assign_resolvers(types, resolvers):
                 field.resolve = infer(type_, field) or field.resolve
 
 
-def _document_ast(document):
-    # type: (Union[_ast.Document, str]) -> _ast.Document
-    if isinstance(document, six.string_types):
+def _document_ast(document: Union[str, _ast.Document]) -> _ast.Document:
+    if isinstance(document, str):
         return parse(document, allow_type_system=True)
     elif isinstance(document, _ast.Document):
         return document
@@ -347,12 +393,21 @@ def _document_ast(document):
         TypeError("Expected Document but got %s" % type(document))
 
 
-def _collect_extensions(schema, document, strict=True):
-    schema_exts = []
-    type_defs = OrderedDict()
-    _type_exts = []
-    type_exts = collections.defaultdict(list)
-    directive_defs = OrderedDict()
+def _collect_extensions(  # noqa: C901
+    schema: Schema, document: _ast.Document, strict: bool = True
+) -> Tuple[
+    List[_ast.SchemaExtension],
+    Dict[str, _ast.TypeDefinition],
+    Dict[str, _ast.DirectiveDefinition],
+    Dict[str, List[_ast.TypeExtension]],
+]:
+    schema_exts: List[_ast.SchemaExtension] = []
+    type_defs: Dict[str, _ast.TypeDefinition] = {}
+    _type_exts: List[_ast.TypeExtension] = []
+    type_exts: Dict[str, List[_ast.TypeExtension]] = collections.defaultdict(
+        list
+    )
+    directive_defs: Dict[str, _ast.DirectiveDefinition] = {}
 
     for definition in document.definitions:
         if strict and isinstance(definition, _ast.SchemaDefinition):
@@ -366,8 +421,7 @@ def _collect_extensions(schema, document, strict=True):
 
         elif isinstance(definition, _ast.TypeDefinition):
             name = definition.name.value
-            existing = schema.get_type(name, None)
-            if existing is not None:
+            if name in schema.types:
                 if strict:
                     raise ExtensionError(
                         'Type "%s" is already defined in the schema.' % name,
@@ -375,12 +429,12 @@ def _collect_extensions(schema, document, strict=True):
                     )
                 else:
                     continue
-            type_defs[name] = definition
+            else:
+                type_defs[name] = definition
 
         elif isinstance(definition, _ast.DirectiveDefinition):
             name = definition.name.value
-            existing = schema.directives.get(name, None)
-            if existing is not None:
+            if name in schema.directives:
                 if strict:
                     raise ExtensionError(
                         'Directive "@%s" is already defined in the schema.'
@@ -389,72 +443,34 @@ def _collect_extensions(schema, document, strict=True):
                     )
                 else:
                     continue
-            directive_defs[name] = definition
+            else:
+                directive_defs[name] = definition
 
         elif isinstance(definition, _ast.TypeExtension):
             _type_exts.append(definition)
 
     for ext in _type_exts:
         target = ext.name.value
-        target_exists = schema.get_type(target, None) or (target in type_defs)
-        if not target_exists:
+        if not ((target in type_defs) or schema.has_type(target)):
             if strict:
                 raise ExtensionError(
                     'Cannot extend undefined type "%s".' % target, [ext]
                 )
             else:
                 continue
+        else:
+            type_exts[target].append(ext)
 
-        type_exts[target].append(ext)
-
-    return schema_exts, type_defs, directive_defs, type_exts
+    return schema_exts, type_defs, directive_defs, dict(type_exts)
 
 
-def _merge_type_maps(*type_maps):
-    type_map = {}
+def _merge_type_maps(
+    *type_maps: Union[Mapping[str, NamedType], List[NamedType]]
+) -> Dict[str, NamedType]:
+    type_map: Dict[str, NamedType] = {}
     for tm in type_maps:
         if isinstance(tm, list):
             type_map.update({type_.name: type_ for type_ in tm})
         elif isinstance(tm, dict):
             type_map.update(tm)
     return type_map
-
-
-def heal_schema(schema):
-    """ Fix type reference in a schema after modifying them inline.
-
-    This ensures that all nested references to a certain type match the top
-    level reference the schema has.
-
-    Args:
-        schema (py_gql.schema.Schema): Schema to fix
-
-    Returns:
-        py_gql.schema.Schema: Fixed schema
-
-    Warning:
-        This can modify the types inline and is expected to be used after
-        buiding a schema, do not use this if your types are globally defined.
-    """
-    return visit_schema(HealSchemaVisitor(schema), schema)
-
-
-def apply_schema_directives(schema, schema_directives, strict=False):
-    """ Apply schema directives to a schema.
-
-    Args:
-        schema (py_gql.schema.Schema): Schema to modify
-        schema_directives (Mapping[str, type]): ``{ name -> SchemaDirective subclass }``
-            Schema directives are instantiated and provided the arguments
-            for each occurence so user need to provide classes.
-        strict (bool):
-            If ``True`` will raise on missing implementation, otherwise silently
-            ignores such directivess
-
-    Returns:
-        py_gql.schema.Schema: Updated schema
-    """
-    return visit_schema(
-        _SchemaDirectivesApplicator(schema, schema_directives, strict=strict),
-        schema,
-    )

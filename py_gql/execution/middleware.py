@@ -30,21 +30,43 @@ yields to the next step.
 
 """
 
+# REVIEW: As middleware are run on each field, the generator versions can be
+# expensive due to the number of check they make. We might be able to make
+# stronger assumptions in order to optimise this.
+
 import functools as ft
-from inspect import isgeneratorfunction
+from inspect import (
+    isasyncgenfunction,
+    isawaitable,
+    iscoroutinefunction,
+    isgeneratorfunction,
+)
+from typing import Any, Callable, Sequence
 
-from . import _concurrency
+
+def _check_func_or_callable(
+    func: Callable[[Any], bool]
+) -> Callable[[Any], bool]:
+    @ft.wraps(func)
+    def wrapped(value):
+        return func(value) or func(value.__call__)
+
+    return wrapped
 
 
-def _is_generator(mw):
-    return isgeneratorfunction(mw) or isgeneratorfunction(mw.__call__)
+_isgeneratorfunc = _check_func_or_callable(isgeneratorfunction)
+_isasyncfunc = _check_func_or_callable(iscoroutinefunction)
+_isasyncgenfunc = _check_func_or_callable(isasyncgenfunction)
 
 
-def apply_middlewares(func, middlewares):
+def apply_middlewares(
+    func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
+) -> Callable[..., Any]:
     """ Apply middleware functions to a base function.
 
-    - Middlewares must the signature: ``(next, *args, **kwargs) -> any`` where
-      ``(*args, **kwargs) -> any`` is the signature of the wrapped function.
+    - Middlewares must have the signature: ``(next, *args, **kwargs) -> any``
+        where ``(*args, **kwargs) -> any`` is the signature of the wrapped
+        function.
     - They can either ``return`` or ``yield`` in order to have clean up logic
     - Generator based middlewares **must** yield at least once
     - Middlewares are evaluated inside-out
@@ -55,25 +77,31 @@ def apply_middlewares(func, middlewares):
     tail = func
     for mw in reversed(middlewares):
         assert callable(mw)
-        if _is_generator(mw):
-            mw = generator_middleware(mw)
-        tail = ft.partial(mw, tail)
+
+        if _isgeneratorfunc(mw):
+            tail = wrap_with_generator_middleware(mw, tail)
+        elif _isasyncgenfunc(mw):
+            tail = wrap_with_async_generator_middleware(mw, tail)
+        elif _isasyncfunc(tail) and not _isasyncfunc(mw):
+            tail = wrap_async_with_sync(mw, tail)
+        else:
+            tail = ft.partial(mw, tail)
 
     return tail
 
 
-def generator_middleware(func):
-    """ Transform a middleware defined using the ``yield`` keyword into
-    a usable middleware function.
+def wrap_async_with_sync(mw, func):
+    async def wrapped(*args, **kwargs):
+        return await mw(func, *args, **kwargs)
 
-    Middlewares defined as such are expected to ``yield`` only once and any
-    non-yielding code present after the ``yield`` keyword is guaranteed to be
-    run. """
+    return wrapped
 
-    def wrapped(step, *args, **kwargs):
-        gen = func(step, *args, **kwargs)
 
-        def _finish(_):
+def wrap_with_generator_middleware(mw, func):
+    def wrapped(*args, **kwargs):
+        gen = mw(func, *args, **kwargs)
+
+        def _run_cleanup():
             try:
                 next(gen)
             except StopIteration:
@@ -84,10 +112,53 @@ def generator_middleware(func):
         except StopIteration:
             raise RuntimeError("Generator middleware did not yield")
 
-        if _concurrency.is_future(res):
-            res.add_done_callback(_finish)
+        if isawaitable(res):
+
+            async def _deferred():
+                final = await res
+                _run_cleanup()
+                return final
+
+            return _deferred()
         else:
-            _finish(None)
+            _run_cleanup()
         return res
+
+    if _isasyncfunc(func):
+
+        async def _wrapped(*args, **kwargs):
+            return await wrapped(*args, **kwargs)
+
+        return _wrapped
+
+    return wrapped
+
+
+def wrap_with_async_generator_middleware(mw, func):
+    async def wrapped(*args, **kwargs):
+        gen = mw(func, *args, **kwargs)
+
+        async def _run_cleanup():
+            try:
+                await gen.__anext__()
+            except StopAsyncIteration:
+                pass
+
+        try:
+            res = await gen.__anext__()
+        except StopAsyncIteration:
+            raise RuntimeError("Generator middleware did not yield")
+
+        if isawaitable(res):
+
+            async def _deferred():
+                final = await res
+                await _run_cleanup()
+                return final
+
+            return await _deferred()
+        else:
+            await _run_cleanup()
+            return res
 
     return wrapped

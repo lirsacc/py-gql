@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import List
+
 import pytest
 
 from py_gql.exc import CoercionError
@@ -10,7 +12,7 @@ from py_gql.utilities import coerce_argument_values
 
 def _test_node(argument_value=None):
     if argument_value is None:
-        arguments = []
+        arguments: List[_ast.Argument] = []
     else:
         arguments = [
             _ast.Argument(name=_ast.Name(value="foo"), value=argument_value)

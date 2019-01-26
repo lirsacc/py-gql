@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import Any
+
 import pytest
 
 from py_gql.schema import (
@@ -203,8 +205,11 @@ def schema():
     def _invalid(*args, **kwargs):
         raise ValueError("Invalid scalar is always invalid")
 
-    InvalidScalar = ScalarType("Invalid", lambda x: x, _invalid, _invalid)
-    AnyScalar = ScalarType("Any", lambda x: x, lambda x: x, lambda x: x)
+    def _stringify(value):
+        return str(value)
+
+    InvalidScalar = ScalarType("Invalid", _stringify, _invalid, _invalid)
+    AnyScalar: ScalarType[Any] = ScalarType("Any", _stringify, lambda x: x)
 
     return Schema(
         ObjectType(
@@ -250,12 +255,14 @@ def schema():
 
 @pytest.fixture
 def schema_2():
-    SomeBox = InterfaceType(
+    SomeBox: InterfaceType = InterfaceType(
         "SomeBox",
         [Field("deepBox", lambda: SomeBox), Field("unrelatedField", String)],
     )
 
-    StringBox = ObjectType(
+    IntBox: ObjectType  # yuck! Not sure how to make mypy type inference happy otherwise
+
+    StringBox: ObjectType = ObjectType(
         "StringBox",
         [
             Field("scalar", String),

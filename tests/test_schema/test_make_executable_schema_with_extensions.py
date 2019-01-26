@@ -494,7 +494,9 @@ def test_scalar_type_extension():
         """
     )
 
-    assert list(flatten(n.directives for n in schema.types["Foo"].nodes)) == [
+    assert list(
+        flatten(n.directives for n in schema.types["Foo"].nodes)  # type: ignore
+    ) == [
         _ast.Directive(
             loc=(140, 150),
             name=_ast.Name(loc=(141, 150), value="protected"),
@@ -534,7 +536,11 @@ def test_injected_scalar_type_extension():
         """
     )
 
-    assert list(flatten(n.directives for n in schema.types["UUID"].nodes)) == [
+    assert list(
+        flatten(
+            n.directives for n in schema.types["UUID"].nodes  # type: ignore
+        )
+    ) == [
         _ast.Directive(
             loc=(122, 132),
             name=_ast.Name(loc=(123, 132), value="protected"),
@@ -575,8 +581,8 @@ def test_schema_extension():
         """
     )
 
-    assert schema.query_type.name == "Query"
-    assert schema.mutation_type.name == "Bar"
+    assert schema.query_type.name == "Query"  # type: ignore
+    assert schema.mutation_type.name == "Bar"  # type: ignore
     assert schema.subscription_type is None
 
 

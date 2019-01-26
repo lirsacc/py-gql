@@ -84,5 +84,5 @@ def test_fails_with_more_than_one_root_field_in_anonymous_subscriptions(schema):
         notImportantEmails
     }
     """,
-        ['Subscription "" must select only one ' "top level field."],
+        ["Subscription must select only one " "top level field."],
     )

@@ -51,13 +51,13 @@ def test_EnumType_get_name_fail():
 
 
 @pytest.mark.parametrize(
-    "type, input, output",
+    "type_, input_, output",
     [
         (Int, 1, 1),
         (Int, "123", 123),
         (Int, 0, 0),
         (Int, -1, -1),
-        (Int, 1e5, 100000),
+        (Int, 1e5, 100_000),
         (Int, False, 0),
         (Int, True, 1),
         (Float, 1, 1.0),
@@ -83,12 +83,12 @@ def test_EnumType_get_name_fail():
         (Boolean, False, False),
     ],
 )
-def test_scalar_serialization_ok(type, input, output):
-    assert type.serialize(input) == output
+def test_scalar_serialization_ok(type_, input_, output):
+    assert type_.serialize(input_) == output
 
 
 @pytest.mark.parametrize(
-    "type, input, err",
+    "type_, input_, err",
     [
         (Int, 0.1, "Int cannot represent non-integer value: 0.1"),
         (Int, 1.1, "Int cannot represent non-integer value: 1.1"),
@@ -96,7 +96,7 @@ def test_scalar_serialization_ok(type, input, output):
         (Int, "-1.1", "Int cannot represent non-integer value: -1.1"),
         (
             Int,
-            9876504321,
+            9_876_504_321,
             "Int cannot represent non 32-bit signed integer: 9876504321",
         ),
         (
@@ -118,9 +118,9 @@ def test_scalar_serialization_ok(type, input, output):
         (Float, "", "Float cannot represent non numeric value: (empty string)"),
     ],
 )
-def test_scalar_serialization_fail(type, input, err):
+def test_scalar_serialization_fail(type_, input_, err):
     with pytest.raises(ScalarSerializationError) as exc_info:
-        type.serialize(input)
+        type_.serialize(input_)
     assert str(exc_info.value) == err
 
 
@@ -171,18 +171,18 @@ class TestRegexType(object):
     def test_parse_literal_ok(self):
         p = re.compile(r"^[a-d]+$", re.IGNORECASE)
         t = RegexType("RE", p)
-        assert t.parse_literal(parse_value('"aBcD"')) == "aBcD"
+        assert t.parse_literal(parse_value('"aBcD"')) == "aBcD"  # type: ignore
 
     def test_parse_literal_fail(self):
         p = re.compile(r"^[a-d]+$", re.IGNORECASE)
         t = RegexType("RE", p)
         with pytest.raises(ScalarParsingError) as exc_info:
-            t.parse_literal(parse_value('"aF"'))
+            t.parse_literal(parse_value('"aF"'))  # type: ignore
         assert str(exc_info.value) == '"aF" does not match pattern "^[a-d]+$"'
 
     def test_parse_literal_non_string(self):
         p = re.compile(r"^[a-d]+$", re.IGNORECASE)
         t = RegexType("RE", p)
         with pytest.raises(ScalarParsingError) as exc_info:
-            t.parse_literal(parse_value("1"))
+            t.parse_literal(parse_value("1"))  # type: ignore
         assert str(exc_info.value) == "Invalid literal IntValue"

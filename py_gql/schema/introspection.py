@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """ GaphQL types related to introspection queries that
 should be present in all spec compliant servers. """
-from __future__ import unicode_literals
-
 import json
-
-import six
+from typing import Optional, Union
 
 from .scalars import Boolean, String
 from .types import (
@@ -13,6 +10,8 @@ from .types import (
     EnumType,
     EnumValue,
     Field,
+    GraphQLType,
+    InputField,
     InputObjectType,
     InterfaceType,
     ListType,
@@ -20,7 +19,6 @@ from .types import (
     ObjectType,
     ScalarType,
     UnionType,
-    WrappingType,
     is_abstract_type,
 )
 
@@ -39,7 +37,7 @@ __Schema__ = ObjectType(
             description="A list of all types supported by this server.",
             # Sort as the output should not be determined by the way the schema
             # is built and this is the most logical order.
-            resolve=lambda schema, *a, **kw: list(
+            resolve=lambda schema, *_: list(
                 sorted(schema.types.values(), key=lambda t: t.name)
             ),
         ),
@@ -47,7 +45,7 @@ __Schema__ = ObjectType(
             "queryType",
             NonNullType(__Type__),
             description="The type that query operations will be rooted at.",
-            resolve=lambda schema, *a, **kw: schema.query_type,
+            resolve=lambda schema, *_: schema.query_type,
         ),
         Field(
             "mutationType",
@@ -56,7 +54,7 @@ __Schema__ = ObjectType(
                 "If this server supports mutation, the type that mutation "
                 "operations will be rooted at."
             ),
-            resolve=lambda schema, *a, **kw: schema.mutation_type,
+            resolve=lambda schema, *_: schema.mutation_type,
         ),
         Field(
             "subscriptionType",
@@ -65,13 +63,13 @@ __Schema__ = ObjectType(
                 "If this server supports subscription, the type that "
                 "subscription operations will be rooted at."
             ),
-            resolve=lambda schema, *a, **kw: schema.subscription_type,
+            resolve=lambda schema, *_: schema.subscription_type,
         ),
         Field(
             "directives",
             NonNullType(ListType(NonNullType(__Directive__))),
             description="A list of all directives supported by this server.",
-            resolve=lambda schema, *a, **kw: list(
+            resolve=lambda schema, *_: list(
                 sorted(schema.directives.values(), key=lambda d: d.name)
             ),
         ),
@@ -79,7 +77,7 @@ __Schema__ = ObjectType(
 )
 
 
-__Directive__ = ObjectType(
+__Directive__: ObjectType = ObjectType(
     "__Directive",
     description=(
         "A Directive provides a way to describe alternate runtime execution "
@@ -96,12 +94,16 @@ __Directive__ = ObjectType(
             "locations",
             NonNullType(ListType(NonNullType(__DirectiveLocation__))),
         ),
-        Field("args", NonNullType(ListType(NonNullType(__InputValue__)))),
+        Field(
+            "args",
+            NonNullType(ListType(NonNullType(__InputValue__))),
+            resolve=lambda r, *_, **__: r.arguments,
+        ),
     ],
 )
 
 
-__DirectiveLocation__ = EnumType(
+__DirectiveLocation__: EnumType = EnumType(
     "__DirectiveLocation",
     [
         EnumValue(
@@ -179,7 +181,7 @@ __DirectiveLocation__ = EnumType(
 )
 
 
-def _resolve_type_kind(type_, *args, **kwargs):
+def _resolve_type_kind(type_, *_):
     if isinstance(type_, ScalarType):
         return "SCALAR"
     elif isinstance(type_, ObjectType):
@@ -199,7 +201,7 @@ def _resolve_type_kind(type_, *args, **kwargs):
     raise TypeError("Unknown kind of type: %s" % type_)
 
 
-__Type__ = ObjectType(
+__Type__: ObjectType = ObjectType(
     "__Type",
     description=(
         "The fundamental unit of any GraphQL Schema is the type. There are "
@@ -219,7 +221,7 @@ __Type__ = ObjectType(
             "fields",
             ListType(NonNullType(__Field__)),
             args=[Argument("includeDeprecated", Boolean, default_value=False)],
-            resolve=lambda type_, args, *a, **kw: (
+            resolve=lambda type_, *_, **args: (
                 [
                     f
                     for f in type_.fields
@@ -232,14 +234,14 @@ __Type__ = ObjectType(
         Field(
             "interfaces",
             ListType(NonNullType(__Type__)),
-            resolve=lambda type_, *a, **kw: (
+            resolve=lambda type_, *_: (
                 type_.interfaces if isinstance(type_, ObjectType) else None
             ),
         ),
         Field(
             "possibleTypes",
             ListType(NonNullType(__Type__)),
-            resolve=lambda type_, a, c, info: (
+            resolve=lambda type_, _, info, **__: (
                 list(
                     sorted(
                         info.schema.get_possible_types(type_),
@@ -254,7 +256,7 @@ __Type__ = ObjectType(
             "enumValues",
             ListType(NonNullType(__EnumValue__)),
             args=[Argument("includeDeprecated", Boolean, default_value=False)],
-            resolve=lambda type_, args, *a, **kw: (
+            resolve=lambda type_, *_, **args: (
                 [
                     ev
                     for ev in type_.values
@@ -267,7 +269,7 @@ __Type__ = ObjectType(
         Field(
             "inputFields",
             ListType(NonNullType(__InputValue__)),
-            resolve=lambda type_, *a, **kw: (
+            resolve=lambda type_, *_: (
                 [f for f in type_.fields]
                 if isinstance(type_, InputObjectType)
                 else None
@@ -276,15 +278,17 @@ __Type__ = ObjectType(
         Field(
             "ofType",
             __Type__,
-            resolve=lambda type_, *a, **kw: (
-                type_.type if isinstance(type_, WrappingType) else None
+            resolve=lambda type_, *_: (
+                type_.type
+                if isinstance(type_, (ListType, NonNullType))
+                else None
             ),
         ),
     ],
 )
 
 
-__EnumValue__ = ObjectType(
+__EnumValue__: ObjectType = ObjectType(
     "__EnumValue",
     description=(
         "One possible value for a given Enum. Enum values are unique values, "
@@ -308,7 +312,9 @@ __EnumValue__ = ObjectType(
 )
 
 
-def _format_default_value(input_value):
+def _format_default_value(
+    input_value: Union[InputField, Argument]
+) -> Optional[str]:
     if not input_value.has_default_value:
         return None
     dv = input_value.default_value
@@ -316,12 +322,12 @@ def _format_default_value(input_value):
         return str(dv).lower()
     elif dv is None:
         return "null"
-    elif isinstance(dv, six.string_types):
+    elif isinstance(dv, str):
         return '"%s"' % dv
     return json.dumps(dv)
 
 
-__InputValue__ = ObjectType(
+__InputValue__: ObjectType = ObjectType(
     "__InputValue",
     description=(
         "Arguments provided to Fields or Directives and the input fields "
@@ -339,13 +345,13 @@ __InputValue__ = ObjectType(
                 "A GraphQL-formatted string representing the "
                 "default value for this input value."
             ),
-            resolve=lambda iv, *a, **kw: _format_default_value(iv),
+            resolve=lambda iv, *_: _format_default_value(iv),
         ),
     ],
 )
 
 
-__Field__ = ObjectType(
+__Field__: ObjectType = ObjectType(
     "__Field",
     description=(
         "Object and Interface types are described by a list of Fields, "
@@ -358,7 +364,7 @@ __Field__ = ObjectType(
         Field(
             "args",
             NonNullType(ListType(NonNullType(__InputValue__))),
-            resolve=lambda field, *args, **kwargs: (field.args or []),
+            resolve=lambda field, *_: (field.arguments or []),
         ),
         Field("type", NonNullType(__Type__)),
         Field(
@@ -375,7 +381,7 @@ __Field__ = ObjectType(
 )
 
 
-__TypeKind__ = EnumType(
+__TypeKind__: EnumType = EnumType(
     "__TypeKind",
     [
         EnumValue("SCALAR", description="Indicates this type is a scalar."),
@@ -447,8 +453,7 @@ schema_field = Field(
     "__schema",
     NonNullType(__Schema__),
     description="Access the current type schema of this server.",
-    args=[],
-    resolve=lambda p, a, c, info: info.schema,
+    resolve=lambda p, c, info: info.schema,
 )
 
 type_field = Field(
@@ -456,7 +461,7 @@ type_field = Field(
     __Type__,
     description="Request the type information of a single type.",
     args=[Argument("name", NonNullType(String))],
-    resolve=lambda p, args, c, info: info.schema.get_type(args["name"], None),
+    resolve=lambda p, c, info, **args: info.schema.get_type(args["name"], None),
 )
 
 
@@ -464,10 +469,9 @@ type_name_field = Field(
     "__typename",
     NonNullType(String),
     description="The name of the current Object type at runtime.",
-    args=[],
-    resolve=lambda p, a, c, info: info.parent_type.name,
+    resolve=lambda p, c, info: info.parent_type.name,
 )
 
 
-def is_introspection_type(type_):
+def is_introspection_type(type_: GraphQLType) -> bool:
     return type_ in INTROPSPECTION_TYPES

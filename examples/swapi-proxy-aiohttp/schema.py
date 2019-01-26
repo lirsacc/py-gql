@@ -8,7 +8,6 @@ import os
 import re
 
 import aiohttp
-
 import swapi
 from py_gql.exc import ResolverError
 from py_gql.schema.build import make_executable_schema

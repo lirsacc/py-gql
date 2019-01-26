@@ -1,16 +1,52 @@
 # -*- coding: utf-8 -*-
 
-from collections import namedtuple
+from typing import (
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+)
 
-from ..._utils import OrderedDict, deduplicate, flatten as _flatten
+from ..._utils import deduplicate, flatten
 from ...exc import UnknownType
 from ...lang import ast as _ast
-from ...schema import InterfaceType, ObjectType, is_leaf_type, unwrap_type
-from ...schema.types import WrappingType
+from ...schema import (
+    Field,
+    GraphQLType,
+    InterfaceType,
+    ObjectType,
+    Schema,
+    is_leaf_type,
+    unwrap_type,
+)
+from ...schema.types import ListType, NonNullType
 from ..visitors import ValidationVisitor
 
+T = TypeVar("T")
+G = TypeVar("G")
 
-def _permutations(lst):
+WrappingType = (ListType, NonNullType)
+
+FieldDef = Tuple[Optional[GraphQLType], _ast.Field, Optional[Field]]
+FieldMap = Dict[str, List[FieldDef]]
+FieldsAndFragments = Tuple[FieldMap, List[str]]
+
+Conflict = Tuple[str, str, Sequence[_ast.Node]]
+
+
+class Context(NamedTuple):
+    schema: Schema
+    fields_and_fragments: Dict[_ast.SelectionSet, FieldsAndFragments]
+    compared_fragment_pairs: Set[Tuple[Tuple[str, str], bool]]
+    fragments: Dict[str, _ast.FragmentDefinition]
+
+
+def _permutations(lst: Sequence[T]) -> Iterator[Tuple[T, T]]:
     """ Symmetric permutations of a list
 
     >>> list(_permutations([1, 2, 3]))
@@ -21,8 +57,8 @@ def _permutations(lst):
             yield item_1, item_2
 
 
-def _cross(iter_1, iter_2):
-    """ Cross product of 2 iterables
+def _cross(iter_1: Sequence[T], iter_2: Sequence[G]) -> Iterator[Tuple[T, G]]:
+    """ Cross product of 2 sequences
 
     >>> list(_cross([1, 2, 3], [4, 5, 6]))
     [(1, 4), (1, 5), (1, 6), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6)]
@@ -32,17 +68,9 @@ def _cross(iter_1, iter_2):
             yield a, b
 
 
-def _collect(iterable, target=None):
-    if target is None:
-        target = []
-
-    for entry in iterable:
-        target.append(entry)
-
-    return target
-
-
-def _at(lst, index, default=None):
+def _at(
+    lst: Sequence[T], index: int, default: Optional[T] = None
+) -> Optional[T]:
     """
     >>> _at([], 0) is None
     True
@@ -62,12 +90,6 @@ def _type_from_ast(schema, node):
         return None
 
 
-Context = namedtuple(
-    "Context",
-    ["schema", "fields_and_fragments", "compared_fragment_pairs", "fragments"],
-)
-
-
 class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
     """ A selection set is only valid if all fields (including spreading any
     fragments) either correspond to distinct response names or can be merged
@@ -85,12 +107,12 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
             {
                 d.name.value: d
                 for d in node.definitions
-                if type(d) is _ast.FragmentDefinition
+                if isinstance(d, _ast.FragmentDefinition)
             }
         )
 
     def enter_selection_set(self, node):
-        conflicts = find_conflicts_within_selection_set(
+        conflicts: List[Conflict] = find_conflicts_within_selection_set(
             self.ctx, node, self.type_info.parent_type
         )
 
@@ -99,11 +121,13 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
                 'Field(s) "%s" conflict because %s. Use different aliases on '
                 "the fields to fetch both if this was intentional."
                 % (response_name, reason),
-                list(_flatten(locs)),
+                locs,
             )
 
 
-def find_conflicts_within_selection_set(ctx, selection_set, parent_type):
+def find_conflicts_within_selection_set(
+    ctx: Context, selection_set: _ast.SelectionSet, parent_type: GraphQLType
+) -> List[Conflict]:
     """ Find all conflicts found "within" a selection set, including those found
     via spreading in fragments. Called when visiting each SelectionSet in the
     GraphQL Document.
@@ -166,39 +190,43 @@ def find_conflicts_within_selection_set(ctx, selection_set, parent_type):
     # Implementation note: all functions detecting conflicts are generators
     # to keep the code simple and only this one collects the generators into a
     # list.
-    conflicts = []
+    conflicts: List[Conflict] = []
 
     field_map, fragment_names = _fields_and_fragments(
         ctx, parent_type, selection_set
     )
 
     # (A) Find find all conflicts "within" the fields of this selection set.
-    _collect(_conflicts_within(ctx, field_map), conflicts)
+    for conflict in _conflicts_within(ctx, field_map):
+        conflicts.append(conflict)
 
-    compared_fragments = set()
+    compared_fragments: Set[str] = set()
     for fragment_name in fragment_names:
         # (B) Then collect conflicts between these fields and those represented
         # by each spread fragment name found.
-        _collect(
-            _conflicts_between_fields_and_fragment(
-                ctx, False, field_map, fragment_name, compared_fragments
-            ),
-            conflicts,
-        )
+        for conflict in _conflicts_between_fields_and_fragment(
+            ctx, False, field_map, fragment_name, compared_fragments
+        ):
+            conflicts.append(conflict)
 
     # (C) Then compare this fragment with all other fragments found in this
     # selection set to collect conflicts between fragments spread together.
     # This compares each item in the list of fragment names to every other
     # item in that same list (except for itself).
     for frag_1, frag_2 in _permutations(fragment_names):
-        _collect(
-            _conflicts_between_fragments(ctx, False, frag_1, frag_2), conflicts
-        )
+        for conflict in _conflicts_between_fragments(
+            ctx, False, frag_1, frag_2
+        ):
+            conflicts.append(conflict)
 
     return conflicts
 
 
-def _fields_and_fragments(ctx, parent_type, selection_set):
+def _fields_and_fragments(
+    ctx: Context,
+    parent_type: Optional[GraphQLType],
+    selection_set: _ast.SelectionSet,
+) -> FieldsAndFragments:
     """ Given a selection set, return the collection of fields (a mapping
     of response name to field nodes and definitions) as well as a list of
     fragment names referenced via fragment spreads. """
@@ -218,7 +246,9 @@ def _fields_and_fragments(ctx, parent_type, selection_set):
     return field_map, list(deduplicate(fragment_names))
 
 
-def _referenced_fields_and_fragments(ctx, fragment):
+def _referenced_fields_and_fragments(
+    ctx: Context, fragment: _ast.FragmentDefinition
+) -> FieldsAndFragments:
     """ Given a fragment definition, return the represented collection of
     fields as well as a list of nested fragment names referenced via
     fragment spreads. """
@@ -231,16 +261,20 @@ def _referenced_fields_and_fragments(ctx, fragment):
 
 
 def _collect_fields_and_fragments(
-    ctx, parent_type, selection_set, node_and_defs=None, fragment_names=None
-):
+    ctx: Context,
+    parent_type: Optional[GraphQLType],
+    selection_set: _ast.SelectionSet,
+    node_and_defs: Optional[FieldMap] = None,
+    fragment_names: Optional[List[str]] = None,
+) -> FieldsAndFragments:
+
     if node_and_defs is None:
-        node_and_defs = OrderedDict()
+        node_and_defs = dict()
     if fragment_names is None:
         fragment_names = []
 
     for selection in selection_set.selections:
-        kind = type(selection)
-        if kind is _ast.Field:
+        if isinstance(selection, _ast.Field):
             fieldname = selection.name.value
 
             fielddef = (
@@ -262,10 +296,10 @@ def _collect_fields_and_fragments(
                 (parent_type, selection, fielddef)
             )
 
-        elif kind is _ast.FragmentSpread:
+        elif isinstance(selection, _ast.FragmentSpread):
             fragment_names.append(selection.name.value)
 
-        elif kind is _ast.InlineFragment:
+        elif isinstance(selection, _ast.InlineFragment):
             type_condition = selection.type_condition
 
             inline_fragment_type = (
@@ -285,7 +319,7 @@ def _collect_fields_and_fragments(
     return node_and_defs, fragment_names
 
 
-def _conflicts_within(ctx, field_map):
+def _conflicts_within(ctx: Context, field_map: FieldMap) -> Iterator[Conflict]:
     """ Collect all Conflicts "within" one collection of fields. """
     for response_name, fields in field_map.items():
         # This compares every field in the list to every other field in this
@@ -304,8 +338,11 @@ def _conflicts_within(ctx, field_map):
 
 
 def _conflicts_between(
-    ctx, parents_mutually_exclusive, field_map_1, field_map_2
-):
+    ctx: Context,
+    parents_mutually_exclusive: bool,
+    field_map_1: FieldMap,
+    field_map_2: FieldMap,
+) -> Iterator[Conflict]:
     """ Collect all Conflicts between two collections of fields. This is
     similar to, but different from the `collectConflictsWithin` function above.
     This check assumes that `collectConflictsWithin` has already been called
@@ -330,8 +367,12 @@ def _conflicts_between(
 
 
 def _conflicts_between_fields_and_fragment(
-    ctx, mutually_exclusive, field_map, fragment_name, compared_fragments
-):
+    ctx: Context,
+    mutually_exclusive: bool,
+    field_map: FieldMap,
+    fragment_name: str,
+    compared_fragments: Set[str],
+) -> Iterator[Conflict]:
     """ Collect all conflicts found between a set of fields and a fragment
     reference including via spreading in any nested fragments. """
     # Memoize so a fragment is not compared for conflicts more than once.
@@ -368,8 +409,11 @@ def _conflicts_between_fields_and_fragment(
 
 
 def _conflicts_between_fragments(
-    ctx, mutually_exclusive, fragment_1, fragment_2
-):
+    ctx: Context,
+    mutually_exclusive: bool,
+    fragment_1: Optional[str],
+    fragment_2: Optional[str],
+) -> Iterator[Conflict]:
     """ Collect all conflicts found between two fragments, including via
     spreading in any nested fragments. """
     if (not fragment_1) or (not fragment_2) or fragment_1 == fragment_2:
@@ -381,7 +425,7 @@ def _conflicts_between_fragments(
     if cache_key in ctx.compared_fragment_pairs:
         return
 
-    ctx.compared_fragment_pairs.add(cache_key)
+    ctx.compared_fragment_pairs.add(cache_key)  # type: ignore
 
     def_1 = ctx.fragments.get(fragment_1)
     def_2 = ctx.fragments.get(fragment_2)
@@ -415,8 +459,12 @@ def _conflicts_between_fragments(
 
 
 def _find_conflict(
-    ctx, parents_mutually_exclusive, response_name, field_1, field_2
-):
+    ctx: Context,
+    parents_mutually_exclusive: bool,
+    response_name: str,
+    field_1: FieldDef,
+    field_2: FieldDef,
+) -> Optional[Conflict]:
     """ Determines if there is a conflict between two particular fields,
     including comparing their sub-fields.
     """
@@ -462,13 +510,13 @@ def _find_conflict(
     # for both collections so fields in a fragment reference are never
     # compared to themselves.
     if node_1.selection_set and node_2.selection_set:
-        subconflicts = _collect(
+        subconflicts = list(
             _conflicts_between_subselections(
                 ctx,
                 mutually_exclusive,
-                unwrap_type(type_1),
+                unwrap_type(type_1) if type_1 else None,
                 node_1.selection_set,
-                unwrap_type(type_2),
+                unwrap_type(type_2) if type_2 else None,
                 node_2.selection_set,
             )
         )
@@ -479,14 +527,26 @@ def _find_conflict(
                     for name, reason_, _ in subconflicts
                 ]
             )
-            nodes_1 = [node_1] + [nodes for _, _, (nodes, _) in subconflicts]
-            nodes_2 = [node_2] + [nodes for _, _, (_, nodes) in subconflicts]
-            return response_name, reason, (nodes_1, nodes_2)
+            nodes = list(
+                sorted(
+                    [node_1, node_2]
+                    + list(flatten(nodes for _, _, nodes in subconflicts)),
+                    key=lambda n: n.loc,
+                )
+            )
+            return response_name, reason, nodes
+
+    return None
 
 
 def _conflicts_between_subselections(
-    ctx, mutually_exclusive, parent_type_1, node_1, parent_type_2, node_2
-):
+    ctx: Context,
+    mutually_exclusive: bool,
+    parent_type_1: Optional[GraphQLType],
+    node_1: _ast.SelectionSet,
+    parent_type_2: Optional[GraphQLType],
+    node_2: _ast.SelectionSet,
+) -> Iterator[Conflict]:
     """ Find all conflicts found between two selection sets, including those
     found via spreading in fragments. Called when determining if conflicts
     exist between the sub-fields of two overlapping fields. """
@@ -526,16 +586,11 @@ def _conflicts_between_subselections(
             yield c
 
 
-def _same_arguments(args_1, args_2):
+def _same_arguments(
+    args_1: List[_ast.Argument], args_2: List[_ast.Argument]
+) -> bool:
     """ Given two lists of arguments, check all arguments have the same name
     and values with no extra / missing argument.
-
-    Args:
-        args_1 (List[py_gql.lang.ast.Argument]):
-        args_2 (List[py_gql.lang.ast.Argument]):
-
-    Returns:
-        bool: Whether ``args_1`` and ``args_2`` are equivalent.
     """
     if len(args_1) != len(args_2):
         return False
@@ -547,32 +602,22 @@ def _same_arguments(args_1, args_2):
         (
             (
                 a1.name.value == a2.name.value
-                and
-                # noqa: E721
-                type(a1.value) == type(a2.value)
-                and a1.value.value == a2.value.value
+                and type(a1.value) == type(a2.value)  # noqa: E721
+                and a1.value.value == a2.value.value  # type: ignore
             )
             for a1, a2 in zip(s1, s2)
         )
     )
 
 
-def _types_conflict(type_1, type_2):
+def _types_conflict(type_1: GraphQLType, type_2: GraphQLType) -> bool:
     """ Two types conflict if both types could not apply to a value
     simultaneously. Composite types are ignored as their individual field
     types will be compared later recursively. However List and Non-Null types
-    must match.
-
-     Args:
-        type_1 (py_gql.schema.Type):
-        type_2 (py_gql.schema.Type):
-
-    Returns:
-        bool: Whether ``type_1`` and ``type_2`` conflict.
-    """
+    must match. """
     if isinstance(type_1, WrappingType) or isinstance(type_2, WrappingType):
         return type(type_1) != type(type_2) or _types_conflict(
-            type_1.type, type_2.type
+            type_1.type, type_2.type  # type: ignore
         )
 
     if is_leaf_type(type_1) or is_leaf_type(type_2):

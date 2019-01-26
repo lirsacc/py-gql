@@ -2,15 +2,29 @@
 """ Test the main entry point """
 
 import pytest
+
+from py_gql._graphql import graphql, graphql_sync
 from py_gql.exc import SchemaError
-from py_gql._graphql import graphql
-from py_gql.schema import String, Schema
+from py_gql.schema import Schema, String
 
 
-def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
-    starwars_schema
-):
-    result = graphql(
+def test_it_correctly_identifies_r2_d2_as_the_hero_sync(starwars_schema):
+    result = graphql_sync(
+        starwars_schema,
+        """
+        query HeroNameQuery {
+            hero {
+            name
+            }
+        }
+        """,
+    )
+    assert result.response() == {"data": {"hero": {"name": "R2-D2"}}}
+
+
+@pytest.mark.asyncio
+async def test_it_correctly_identifies_r2_d2_as_the_hero_async(starwars_schema):
+    result = await graphql(
         starwars_schema,
         """
         query HeroNameQuery {
@@ -24,7 +38,7 @@ def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
 
 
 def test_correct_response_on_syntax_error_1(starwars_schema):
-    assert graphql(starwars_schema, "", {}).response() == {
+    assert graphql_sync(starwars_schema, "", {}).response() == {
         "errors": [
             {
                 "message": "Unexpected <EOF> (1:1):\n  1:\n    ^\n",
@@ -43,7 +57,7 @@ def test_correct_response_on_syntax_error_2(starwars_schema):
     }
     """
 
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [
             {
                 "message": """Expected Name but found "{" (2:26):
@@ -76,7 +90,7 @@ def test_correct_response_on_validation_errors(starwars_schema):
         friends { name }
     }
     """
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [
             {
                 "locations": [{"column": 35, "line": 2}],
@@ -103,7 +117,7 @@ def test_correct_response_on_argument_validation_error(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [
             {
                 "message": (
@@ -133,7 +147,7 @@ def test_correct_response_on_execution_error(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [
             {
                 "message": "Operation name is required when document contains "
@@ -161,10 +175,10 @@ def test_correct_response_on_execution_error_2(starwars_schema):
         }
     }
     """
-    assert graphql(
+    assert graphql_sync(
         starwars_schema, query, {}, operation_name="Foo"
     ).response() == {
-        "errors": [{"message": 'No operation "Foo" found in document'}],
+        "errors": [{"message": 'No operation "Foo" in document'}],
         "data": None,
     }
 
@@ -180,7 +194,7 @@ def test_correct_response_on_execution_error_3(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [{"message": "Schema doesn't support mutation operation"}],
         "data": None,
     }
@@ -197,7 +211,7 @@ def test_correct_response_on_variables_error(starwars_schema):
         }
     }
     """
-    assert graphql(
+    assert graphql_sync(
         starwars_schema, query, {"episode": 42, "id": 42}
     ).response() == {
         "errors": [
@@ -229,7 +243,7 @@ def test_correct_response_on_resolver_error(starwars_schema):
         }
     }
     """
-    assert graphql(starwars_schema, query, {}).response() == {
+    assert graphql_sync(starwars_schema, query, {}).response() == {
         "errors": [
             {
                 "message": "secretBackstory is secret.",
@@ -244,5 +258,5 @@ def test_correct_response_on_resolver_error(starwars_schema):
 
 def test_raises_if_invalid_schema_is_provided():
     with pytest.raises(SchemaError) as exc_info:
-        graphql(Schema(String), "{ field }", {})
+        graphql_sync(Schema(String), "{ field }", {})  # type: ignore
     assert str(exc_info.value) == 'Query must be ObjectType but got "String"'

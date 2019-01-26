@@ -3,6 +3,8 @@
 # This file only test some cases that are not exercised when testing
 # make_executable_schema as well as adds some lower level assertions.
 
+from typing import cast
+
 import pytest
 
 from py_gql._string_utils import dedent
@@ -193,15 +195,18 @@ def test_it_correctly_updates_references():
         """
     )
 
-    field_type = update_schema.get_type("Query").field_map["foo"].type
+    query_type = cast(ObjectType, update_schema.get_type("Query"))
+    field_type = query_type.field_map["foo"].type
     root_field_type = update_schema.get_type("Foo")
 
     assert root_field_type is field_type
 
-    field_arg_type = (
-        update_schema.get_type("Query").field_map["foo"].arg_map["bar"].type
+    field_arg_type = query_type.field_map["foo"].argument_map["bar"].type
+    directive_arg_type = (
+        cast(Directive, update_schema.directives.get("baz"))
+        .argument_map["bar"]
+        .type
     )
-    directive_arg_type = update_schema.directives.get("baz").arg_map["bar"].type
     root_arg_type = update_schema.get_type("Bar")
 
     assert field_arg_type is root_arg_type

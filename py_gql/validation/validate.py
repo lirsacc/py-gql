@@ -2,11 +2,15 @@
 """ """
 
 from itertools import chain
+from typing import List, Optional, Sequence, Type
 
 from . import rules as _rules
+from ..exc import ValidationError
+from ..lang import ast as _ast
 from ..lang.visitor import ParrallelVisitor, visit
+from ..schema import Schema
 from ..utilities import TypeInfoVisitor
-from .visitors import ValidationVisitor  # noqa: F401
+from .visitors import ValidationVisitor
 
 SPECIFIED_RULES = (
     _rules.ExecutableDefinitionsChecker,
@@ -45,17 +49,18 @@ class ValidationResult(object):
     Instances are falsy when they contain at least one error.
     """
 
-    def __init__(self, errors):
-        #: errors: List[:class:`~py_gql.exc.ValidationError`]
-        self.errors = errors or []
+    def __init__(self, errors: Optional[List[ValidationError]]):
+        self.errors = errors if errors is not None else []
 
     def __bool__(self):
         return not self.errors
 
-    __nonzero__ = __bool__
 
-
-def validate_ast(schema, ast_root, validators=None):
+def validate_ast(
+    schema: Schema,
+    ast_root: _ast.Document,
+    validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
+) -> ValidationResult:
     """ Check that an ast is a valid GraphQL query document.
 
     Runs a parse tree through a list of
@@ -68,12 +73,12 @@ def validate_ast(schema, ast_root, validators=None):
         unexpectedly if that's not the case.
 
     Args:
-        schema (py_gql.schema.Schema):
+        schema:
             Schema to validate against (for known types, directives, etc.).
 
-        ast_root (py_gql.lang.ast.Document): The parse tree root.
+        ast_root: The parse tree root.
 
-        validators (list):
+        validators:
             List of validator classes (subclasses of
             :class:`py_gql.validation.ValidationVisitor`) to use. Can also
             contain tuples of the shape ``(cls, kw)`` where ``kw`` will be
@@ -81,8 +86,7 @@ def validate_ast(schema, ast_root, validators=None):
             Defaults to :obj:`~py_gql.validation.SPECIFIED_RULES`.
 
     Returns:
-        py_gql.validation.ValidationResult: Validation result wrapping any
-        validatione error that occured.
+        Validation result wrapping any validatione error that occured.
     """
     type_info = TypeInfoVisitor(schema)
     if validators is None:
@@ -96,17 +100,16 @@ def validate_ast(schema, ast_root, validators=None):
         assert issubclass(cls, ValidationVisitor)
         return cls(schema, type_info, **kw)
 
+    validator_instances = [
+        instantiate_validator(validator_, schema, type_info)
+        for validator_ in validators
+    ]
+
     # Type info NEEDS to be first to be accurately used inside other validators
     # so when a validator enters node the type stack has already been updated.
-    validator = ParrallelVisitor(
-        type_info,
-        *[
-            instantiate_validator(validator_, schema, type_info)
-            for validator_ in validators
-        ]
-    )
+    validator = ParrallelVisitor(type_info, *validator_instances)
 
     visit(validator, ast_root)
     return ValidationResult(
-        list(chain(*[v.errors for v in validator.visitors[1:]]))
+        list(chain(*[v.errors for v in validator_instances]))
     )

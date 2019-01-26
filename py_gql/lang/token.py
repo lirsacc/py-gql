@@ -5,6 +5,8 @@ document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_) are
 encoded as instances of :class:`Token`.
 """
 
+from typing import Any
+
 
 class Token(object):
     """ Base token class.
@@ -24,23 +26,23 @@ class Token(object):
 
     __slots__ = "start", "end", "value"
 
-    def __init__(self, start, end, value=None):
+    def __init__(self, start: int, end: int, value: str):
         self.start = start
         self.end = end
         self.value = value
 
-    def __repr__(self):
-        return "<Token.%s: value=`%s` at (%d, %d)>" % (
+    def __repr__(self) -> str:
+        return "<Token.%s: value='%s' at (%d, %d)>" % (
             self.__class__.__name__,
             self,
             self.start,
             self.end,
         )
 
-    def __str__(self):
-        return "%s" % self.value
+    def __str__(self) -> str:
+        return str(self.value)
 
-    def __eq__(self, rhs):
+    def __eq__(self, rhs: Any) -> bool:
         return (
             self.__class__ is rhs.__class__
             and self.value == rhs.value
@@ -49,78 +51,75 @@ class Token(object):
         )
 
 
-class SOF(Token):
-    def __str__(self):
-        return "<SOF>"
+class ConstToken(Token):
+    __const__ = ""
+
+    def __init__(self, start: int, end: int):
+        super().__init__(start, end, self.__const__)
 
 
-class EOF(Token):
-    def __str__(self):
-        return "<EOF>"
+class SOF(ConstToken):
+    __const__ = "<SOF>"
 
 
-class CharToken(Token):
-    __char__ = None
-
-    def __str__(self):
-        return self.__char__
+class EOF(ConstToken):
+    __const__ = "<EOF>"
 
 
-class ExclamationMark(CharToken):
-    __char__ = "!"
+class ExclamationMark(ConstToken):
+    __const__ = "!"
 
 
-class Dollar(CharToken):
-    __char__ = "$"
+class Dollar(ConstToken):
+    __const__ = "$"
 
 
-class ParenOpen(CharToken):
-    __char__ = "("
+class ParenOpen(ConstToken):
+    __const__ = "("
 
 
-class ParenClose(CharToken):
-    __char__ = ")"
+class ParenClose(ConstToken):
+    __const__ = ")"
 
 
-class BracketOpen(CharToken):
-    __char__ = "["
+class BracketOpen(ConstToken):
+    __const__ = "["
 
 
-class BracketClose(CharToken):
-    __char__ = "]"
+class BracketClose(ConstToken):
+    __const__ = "]"
 
 
-class CurlyOpen(CharToken):
-    __char__ = "{"
+class CurlyOpen(ConstToken):
+    __const__ = "{"
 
 
-class CurlyClose(CharToken):
-    __char__ = "}"
+class CurlyClose(ConstToken):
+    __const__ = "}"
 
 
-class Colon(CharToken):
-    __char__ = ":"
+class Colon(ConstToken):
+    __const__ = ":"
 
 
-class Equals(CharToken):
-    __char__ = "="
+class Equals(ConstToken):
+    __const__ = "="
 
 
-class At(CharToken):
-    __char__ = "@"
+class At(ConstToken):
+    __const__ = "@"
 
 
-class Pipe(CharToken):
-    __char__ = "|"
+class Pipe(ConstToken):
+    __const__ = "|"
 
 
-class Ampersand(CharToken):
-    __char__ = "&"
+class Ampersand(ConstToken):
+    __const__ = "&"
 
 
-class Ellipsis_(Token):
-    def __str__(self):
-        return "..."
+class Ellip(ConstToken):
+    __const__ = "..."
 
 
 class Integer(Token):
@@ -141,3 +140,29 @@ class String(Token):
 
 class BlockString(Token):
     pass
+
+
+__all__ = (
+    "Token",
+    "SOF",
+    "EOF",
+    "ExclamationMark",
+    "Dollar",
+    "ParenOpen",
+    "ParenClose",
+    "BracketOpen",
+    "BracketClose",
+    "CurlyOpen",
+    "CurlyClose",
+    "Colon",
+    "Equals",
+    "At",
+    "Pipe",
+    "Ampersand",
+    "Ellip",
+    "Integer",
+    "Float",
+    "Name",
+    "String",
+    "BlockString",
+)

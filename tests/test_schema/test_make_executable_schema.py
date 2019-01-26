@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
+from typing import Any, Callable, Dict
+
 import pytest
 
+from py_gql import graphql_sync
 from py_gql._string_utils import dedent
 from py_gql.exc import SDLError
-from py_gql.execution import execute
 from py_gql.lang import parse
-from py_gql.schema import UUID
-from py_gql.schema.build import build_schema_from_ast, make_executable_schema
-from py_gql.schema.directives import SPECIFIED_DIRECTIVES
+from py_gql.schema import (
+    SPECIFIED_DIRECTIVES,
+    UUID,
+    build_schema_from_ast,
+    make_executable_schema,
+)
 
 
 def _check(schema):
@@ -27,9 +32,7 @@ def test_built_schema_is_executable():
             """
         )
     )
-    data, _ = execute(
-        schema, parse("{ str }"), initial_value={"str": 123}
-    ).result()
+    data, _ = graphql_sync(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
 
 
@@ -41,9 +44,7 @@ def test_accepts_strings():
         }
         """
     )
-    data, _ = execute(
-        schema, parse("{ str }"), initial_value={"str": 123}
-    ).result()
+    data, _ = graphql_sync(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
 
 
@@ -292,29 +293,27 @@ def test_executing_union_default_resolve_type():
         """
     )
 
-    data, _ = execute(
+    data, _ = graphql_sync(
         schema,
-        parse(
-            """
-            {
-                fruits {
-                    ... on Apple {
-                        color
-                    }
-                    ... on Banana {
-                        length
-                    }
+        """
+        {
+            fruits {
+                ... on Apple {
+                    color
+                }
+                ... on Banana {
+                    length
                 }
             }
-            """
-        ),
-        initial_value={
+        }
+        """,
+        root={
             "fruits": [
                 {"color": "green", "__typename__": "Apple"},
                 {"length": 5, "__typename__": "Banana"},
             ]
         },
-    ).result()
+    )
 
     assert data == {"fruits": [{"color": "green"}, {"length": 5}]}
 
@@ -342,24 +341,22 @@ def test_executing_interface_default_resolve_type():
         """
     )
 
-    data, _ = execute(
+    data, _ = graphql_sync(
         schema,
-        parse(
-            """
-            {
-                characters {
-                    name
-                    ... on Human {
-                        totalCredits
-                    }
-                    ... on Droid {
-                        primaryFunction
-                    }
+        """
+        {
+            characters {
+                name
+                ... on Human {
+                    totalCredits
+                }
+                ... on Droid {
+                    primaryFunction
                 }
             }
-            """
-        ),
-        initial_value={
+        }
+        """,
+        root={
             "characters": [
                 {
                     "name": "Han Solo",
@@ -373,7 +370,7 @@ def test_executing_interface_default_resolve_type():
                 },
             ]
         },
-    ).result()
+    )
 
     assert data == {
         "characters": [
@@ -556,9 +553,9 @@ def test_root_operation_types_with_custom_names():
         """
     )
 
-    assert schema.query_type.name == "SomeQuery"
-    assert schema.mutation_type.name == "SomeMutation"
-    assert schema.subscription_type.name == "SomeSubscription"
+    assert schema.query_type.name == "SomeQuery"  # type: ignore
+    assert schema.mutation_type.name == "SomeMutation"  # type: ignore
+    assert schema.subscription_type.name == "SomeSubscription"  # type: ignore
 
 
 def test_default_root_operation_type_names():
@@ -570,9 +567,9 @@ def test_default_root_operation_type_names():
         """
     )
 
-    assert schema.query_type.name == "Query"
-    assert schema.mutation_type.name == "Mutation"
-    assert schema.subscription_type.name == "Subscription"
+    assert schema.query_type.name == "Query"  # type: ignore
+    assert schema.mutation_type.name == "Mutation"  # type: ignore
+    assert schema.subscription_type.name == "Subscription"  # type: ignore
 
 
 def test_allows_only_a_single_schema_definition():
@@ -594,7 +591,7 @@ def test_allows_only_a_single_schema_definition():
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 6}],
-        "message": "Must provide only one schema definition",
+        "message": "More than one schema definition in document",
     }
 
 
@@ -846,7 +843,9 @@ def test_inject_custom_types():
 
 
 def test_inject_resolvers():
-    resolvers = {"Query": {"foo": lambda *_: "foo"}}
+    resolvers: Dict[str, Dict[str, Callable[..., Any]]] = {
+        "Query": {"foo": lambda *_: "foo"}
+    }
 
     schema = make_executable_schema(
         """
@@ -857,11 +856,15 @@ def test_inject_resolvers():
         resolvers=resolvers,
     )
 
-    assert schema.query_type.fields[0].resolve() == "foo"
+    assert (
+        schema.query_type
+        and schema.query_type.fields[0].resolve
+        and schema.query_type.fields[0].resolve() == "foo"
+    )
 
 
 def test_inject_resolvers_as_flat_map():
-    resolvers = {"Query.foo": lambda *_: "foo"}
+    resolvers: Dict[str, Callable[..., Any]] = {"Query.foo": lambda *_: "foo"}
 
     schema = make_executable_schema(
         """
@@ -872,22 +875,28 @@ def test_inject_resolvers_as_flat_map():
         resolvers=resolvers,
     )
 
-    assert schema.query_type.fields[0].resolve() == "foo"
+    assert (
+        schema.query_type
+        and schema.query_type.fields[0].resolve
+        and schema.query_type.fields[0].resolve() == "foo"
+    )
 
 
 def test_inject_resolvers_as_callable():
-    resolvers = {"Query.foo": lambda *_: "foo"}
-
     schema = make_executable_schema(
         """
         type Query {
             foo: String
         }
         """,
-        resolvers=lambda t, f: resolvers.get(t + "." + f),
+        resolvers=lambda t, f: (lambda *_: "foo"),
     )
 
-    assert schema.query_type.fields[0].resolve() == "foo"
+    assert (
+        schema.query_type
+        and schema.query_type.fields[0].resolve
+        and schema.query_type.fields[0].resolve() == "foo"
+    )
 
 
 def test_build_schema_from_ast_ignores_extensions():

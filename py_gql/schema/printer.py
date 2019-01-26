@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """ Export schema as SDL. """
-from __future__ import unicode_literals
 
 import operator as op
+from typing import Any, Union
 
 from .._string_utils import leading_whitespace, wrapped_lines
 from ..lang import print_ast
@@ -12,6 +12,9 @@ from .introspection import is_introspection_type
 from .scalars import SPECIFIED_SCALAR_TYPES, String
 from .types import (
     EnumType,
+    EnumValue,
+    Field,
+    GraphQLType,
     InputObjectType,
     InterfaceType,
     ObjectType,
@@ -19,67 +22,62 @@ from .types import (
     UnionType,
 )
 
+# pylint: disable=using-constant-test,unused-import
+if False:  # Fix import cycles of types needed for Mypy checking
+    from .schema import Schema
+
 
 class SchemaPrinter(object):
     """
     Args:
-        indent (Union[str, int]): Indent character or number of spaces
+        indent: Indent character or number of spaces
 
-        include_descriptions (bool):
-            If ``True`` include descriptions in the output
+        include_descriptions: If ``True`` include descriptions in the output
 
-        description_format ("comments"|"block"):
-            Control how descriptions are formatted. ``"comments"`` is the
-            old standard and will be compatible with most GraphQL parsers
-            while ``"block"`` is part of the most recent specification and
-            includes descriptions as block strings that can be extracted
-            according to the specification.
+        use_legacy_comment_descriptions: Control how descriptions are formatted.
+            Set to ``True`` for the old standard (use comments) which will be
+            compatible with most GraphQL parsers while the default settings is
+            to use block strings and is part of the most recent specification.
 
-        include_introspection (bool):
-            If ``True``, include introspection types in the output
+        include_introspection: If ``True``, include introspection types in the output
     """
 
     __slots__ = (
         "indent",
         "include_descriptions",
-        "description_format",
+        "use_legacy_comment_descriptions",
         "include_introspection",
     )
 
     def __init__(
         self,
-        indent=4,
-        include_descriptions=True,
-        description_format="block",
-        include_introspection=False,
+        indent: Union[str, int] = 4,
+        include_descriptions: bool = True,
+        include_introspection: bool = False,
+        use_legacy_comment_descriptions: bool = False,
     ):
         self.include_descriptions = include_descriptions
-        self.description_format = description_format
+        self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
+
         if isinstance(indent, int):
-            self.indent = indent * " "
+            self.indent: str = indent * " "
         else:
             self.indent = indent
 
         self.include_introspection = include_introspection
 
-    def __call__(self, schema):
-        """
-        schema (py_gql.schema.Schema): Schema to format
-
-        Returns:
-            str: Formatted GraphQL schema
-        """
+    def __call__(self, schema: "Schema") -> str:
         directives = sorted(
-            [
+            (
                 d
                 for d in schema.directives.values()
                 if d not in SPECIFIED_DIRECTIVES
-            ],
+            ),
             key=op.attrgetter("name"),
         )
 
         types = sorted(
-            [
+            (
                 t
                 for t in schema.types.values()
                 if (
@@ -89,34 +87,34 @@ class SchemaPrinter(object):
                         or not is_introspection_type(t)
                     )
                 )
-            ],
+            ),
             key=op.attrgetter("name"),
         )
 
         parts = (
             [_schema_definition(schema, self.indent)]
-            + [
-                self.print_directive(d)
-                for d in (
-                    SPECIFIED_DIRECTIVES if self.include_introspection else []
-                )
-            ]
+            + (
+                [self.print_directive(d) for d in SPECIFIED_DIRECTIVES]
+                if self.include_introspection
+                else []
+            )
             + [self.print_directive(d) for d in directives]
             + [self.print_type(t) for t in types]
         )
 
-        return "\n\n".join((p for p in parts if p)) + "\n"
+        if not any(p for p in parts):
+            return ""
+        return "\n\n".join(part for part in parts if part) + "\n"
 
-    def print_description(self, definition, depth=0, first_in_block=True):
+    def print_description(
+        self, definition: Any, depth: int = 0, first_in_block: bool = True
+    ) -> str:
         """ Format an object description according to current configuration.
 
         Args:
-            definitions (any): Described object
-            depth (int): Level of indentation
-            first_in_block (bool):
-
-        Returns:
-            str:
+            definitions: Described object
+            depth: Level of indentation
+            first_in_block:
         """
         if not self.include_descriptions or not getattr(
             definition, "description"
@@ -125,7 +123,7 @@ class SchemaPrinter(object):
 
         indent = self.indent * depth
 
-        if self.description_format == "comments":
+        if self.use_legacy_comment_descriptions:
             prefix = indent + "# "
             max_len = 120 - len(prefix)
             lines = [
@@ -138,7 +136,7 @@ class SchemaPrinter(object):
                 ("\n" if not first_in_block else "") + "\n".join(lines) + "\n"
             )
 
-        elif self.description_format == "block":
+        else:
             max_len = 120 - len(indent)
             lines = list(
                 wrapped_lines(definition.description.split("\n"), max_len)
@@ -175,11 +173,9 @@ class SchemaPrinter(object):
                 body,
             )
 
-        raise ValueError(
-            "Invalid description format %s" % self.description_format
-        )
-
-    def print_deprecated(self, field_or_enum_value):
+    def print_deprecated(
+        self, field_or_enum_value: Union[Field, EnumValue]
+    ) -> str:
         if not field_or_enum_value.deprecated:
             return ""
         elif (
@@ -191,7 +187,7 @@ class SchemaPrinter(object):
             ast_node_from_value(field_or_enum_value.deprecation_reason, String)
         )
 
-    def print_type(self, type_):
+    def print_type(self, type_: GraphQLType) -> str:
         if isinstance(type_, ScalarType):
             return self.print_scalar_type(type_)
         elif isinstance(type_, ObjectType):
@@ -207,15 +203,13 @@ class SchemaPrinter(object):
 
         raise TypeError(type_)
 
-    def print_scalar_type(self, type_):
-        """
-        """
+    def print_scalar_type(self, type_: ScalarType[Any]) -> str:
         return "%sscalar %s" % (
             self.print_description(type_, 0, True),
             type_.name,
         )
 
-    def print_enum_type(self, type_):
+    def print_enum_type(self, type_: EnumType) -> str:
         return "%senum %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -234,32 +228,31 @@ class SchemaPrinter(object):
             ),
         )
 
-    def print_union_type(self, type_):
+    def print_union_type(self, type_: UnionType) -> str:
         return "%sunion %s = %s" % (
             self.print_description(type_),
             type_.name,
             " | ".join((t.name for t in type_.types)),
         )
 
-    def print_object_type(self, type_):
+    def print_object_type(self, type_: ObjectType) -> str:
         return "%stype %s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
-            " implements %s"
-            % " & ".join([iface.name for iface in type_.interfaces])
+            " implements %s" % " & ".join([i.name for i in type_.interfaces])
             if type_.interfaces
             else "",
             self.print_fields(type_),
         )
 
-    def print_interface_type(self, type_):
+    def print_interface_type(self, type_: InterfaceType) -> str:
         return "%sinterface %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
             self.print_fields(type_),
         )
 
-    def print_fields(self, type_):
+    def print_fields(self, type_: Union[ObjectType, InterfaceType]) -> str:
         return "\n".join(
             [
                 "".join(
@@ -267,7 +260,7 @@ class SchemaPrinter(object):
                         self.print_description(field, 1, not i),
                         self.indent,
                         field.name,
-                        self.print_arguments(field.args, 1),
+                        self.print_arguments(field.arguments, 1),
                         ": %s" % field.type,
                         self.print_deprecated(field),
                     ]
@@ -276,7 +269,7 @@ class SchemaPrinter(object):
             ]
         )
 
-    def print_input_object_type(self, type_):
+    def print_input_object_type(self, type_: InputObjectType) -> str:
         return "%sinput %s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
@@ -339,7 +332,7 @@ class SchemaPrinter(object):
         return s
 
 
-def _schema_definition(schema, indent):
+def _schema_definition(schema: "Schema", indent: str) -> str:
     if (
         (not schema.query_type or schema.query_type.name == "Query")
         and (
@@ -364,4 +357,4 @@ def _schema_definition(schema, indent):
             "%ssubscription: %s" % (indent, schema.subscription_type.name)
         )
 
-    return "schema {\n%s\n}" % ("\n".join(operation_types))
+    return "schema {\n%s\n}" % "\n".join(operation_types)

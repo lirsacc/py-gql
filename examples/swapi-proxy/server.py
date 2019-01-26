@@ -3,7 +3,6 @@
 import os
 
 from flask import Flask, Response, jsonify, request
-
 from py_gql import graphql
 from py_gql.execution.executors import ThreadPoolExecutor
 from py_gql.utilities.tracers import ApolloTracer

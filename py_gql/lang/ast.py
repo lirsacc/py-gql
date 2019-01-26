@@ -4,8 +4,10 @@
  .. _GraphQL language elements:
    http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
 """
+# pylint: disable=redefined-builtin
 
 import copy
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 
 class Node(object):
@@ -16,29 +18,30 @@ class Node(object):
     - The ``source`` attribute is ignored for comparisons and serialization.
     """
 
-    __slots__ = ()
+    __slots__ = ("source", "loc")
 
-    def __eq__(self, rhs):
+    source: Optional[str]
+    loc: Optional[Tuple[int, int]]
+
+    def _props(self) -> Iterator[str]:
+        attr: str
+        for attr in self.__slots__:
+            if attr != "source":
+                yield attr
+
+    def __eq__(self, rhs: Any) -> bool:
         return type(rhs) == type(self) and all(
-            (
-                self.__getattribute__(attr) == rhs.__getattribute__(attr)
-                for attr in self.__slots__
-                if attr != "source"
-            )
+            getattr(self, attr) == getattr(rhs, attr) for attr in self._props()
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s %s>" % (
             self.__class__.__name__,
             ", ".join(
-                (
-                    "%s=%s" % (attr, self.__getattribute__(attr))
-                    for attr in self.__slots__
-                    if attr != "source"
-                )
+                "%s=%s" % (attr, getattr(self, attr)) for attr in self._props()
             ),
         )
 
@@ -68,24 +71,14 @@ class Node(object):
 class Name(Node):
     __slots__ = ("source", "loc", "value")
 
-    def __init__(self, value=None, source=None, loc=None):
-        #: str: value
+    def __init__(
+        self,
+        value: str,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.value = value
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class Document(Node):
-    __slots__ = ("source", "loc", "definitions")
-
-    def __init__(self, definitions=None, source=None, loc=None):
-        #: List[py_gql.lang.ast.Definition]: Definitions
-        self.definitions = definitions or []
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -97,7 +90,75 @@ class ExecutableDefinition(Definition):
     pass
 
 
-class OperationDefinition(ExecutableDefinition):
+class Value(Node):
+    pass
+
+
+class Type(Node):
+    pass
+
+
+class SupportDirectives(object):
+    directives: List["Directive"]
+
+
+class NamedType(Type):
+    __slots__ = ("source", "loc", "name")
+
+    def __init__(
+        self,
+        name: Name,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.name = name
+        self.source = source
+        self.loc = loc
+
+
+class ListType(Type):
+    __slots__ = ("source", "loc", "type")
+
+    def __init__(
+        self,
+        type: Type,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.type = type
+        self.source = source
+        self.loc = loc
+
+
+class NonNullType(Type):
+    __slots__ = ("source", "loc", "type")
+
+    def __init__(
+        self,
+        type: Type,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.type = type
+        self.source = source
+        self.loc = loc
+
+
+class Document(Node):
+    __slots__ = ("source", "loc", "definitions")
+
+    def __init__(
+        self,
+        definitions: Optional[List[Definition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.definitions: List[Definition] = definitions or []
+        self.source = source
+        self.loc = loc
+
+
+class OperationDefinition(SupportDirectives, ExecutableDefinition):
     __slots__ = (
         "source",
         "loc",
@@ -110,27 +171,36 @@ class OperationDefinition(ExecutableDefinition):
 
     def __init__(
         self,
-        operation=None,
-        name=None,
-        variable_definitions=None,
-        directives=None,
-        selection_set=None,
-        source=None,
-        loc=None,
+        operation: str,
+        selection_set,  # type: SelectionSet
+        name: Optional[Name] = None,
+        variable_definitions=None,  # type: Optional[List[VariableDefinition]]
+        directives=None,  # type: Optional[List[Directive]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: str:
-        self.operation = operation or "query"
-        #: py_gql.lang.ast.Name:
+        self.operation = operation
         self.name = name
-        #: List[py_gql.lang.ast.VariableDefinition]:
-        self.variable_definitions = variable_definitions or []
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: py_gql.lang.ast.SelectionSet:
         self.selection_set = selection_set
-        #: str: source document
+        self.variable_definitions: List[
+            VariableDefinition
+        ] = variable_definitions or []
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
+        self.loc = loc
+
+
+class Variable(Node):
+    __slots__ = ("source", "loc", "name")
+
+    def __init__(
+        self,
+        name: Name,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.name = name
+        self.source = source
         self.loc = loc
 
 
@@ -139,45 +209,16 @@ class VariableDefinition(Node):
 
     def __init__(
         self,
-        variable=None,
-        type=None,  # pylint: disable = redefined-builtin
-        default_value=None,
-        source=None,
-        loc=None,
+        variable: Variable,
+        type: Type,
+        default_value=None,  # type: Optional[Value]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Variable:
         self.variable = variable
-        #: py_gql.lang.ast.Type:
         self.type = type
-        #: py_gql.lang.ast.Value:
         self.default_value = default_value
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class Variable(Node):
-    __slots__ = ("source", "loc", "name")
-
-    def __init__(self, name=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
-        self.name = name
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class SelectionSet(Node):
-    __slots__ = ("source", "loc", "selections")
-
-    def __init__(self, selections=None, source=None, loc=None):
-        #: List[py_gql.lang.ast.Selection]:
-        self.selections = selections or []
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -185,72 +226,85 @@ class Selection(Node):
     pass
 
 
-class Field(Selection):
+class SelectionSet(Node):
+    __slots__ = ("source", "loc", "selections")
+
+    def __init__(
+        self,
+        selections: Optional[List[Selection]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.selections: List[Selection] = selections or []
+        self.source = source
+        self.loc = loc
+
+
+class Field(SupportDirectives, Selection):
     __slots__ = (
         "source",
         "loc",
-        "alias",
         "name",
+        "alias",
         "arguments",
         "directives",
         "selection_set",
+        "response_name",
     )
 
     def __init__(
         self,
-        alias=None,
-        name=None,
-        arguments=None,
-        directives=None,
-        selection_set=None,
-        source=None,
-        loc=None,
+        name: Name,
+        alias: Optional[Name] = None,
+        arguments=None,  # type: Optional[List[Argument]]
+        directives=None,  # type: Optional[List[Directive]]
+        selection_set: Optional[SelectionSet] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.alias = alias
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Argument]:
-        self.arguments = arguments or []
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: py_gql.lang.ast.SelectionSet:
+        self.arguments: List[Argument] = arguments or []
+        self.directives: List[Directive] = directives or []
         self.selection_set = selection_set
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
+        self.response_name = alias.value if alias else name.value
 
 
 class Argument(Node):
     __slots__ = ("source", "loc", "name", "value")
 
-    def __init__(self, name=None, value=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        name: Name,
+        value: Union[Value, Variable],
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.name = name
-        #: py_gql.lang.ast.Value:
         self.value = value
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class FragmentSpread(Selection):
+class FragmentSpread(SupportDirectives, Selection):
     __slots__ = ("source", "loc", "name", "directives")
 
-    def __init__(self, name=None, directives=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        name: Name,
+        directives=None,  # type: Optional[List[Directive]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class InlineFragment(Selection):
+class InlineFragment(SupportDirectives, Selection):
     __slots__ = (
         "source",
         "loc",
@@ -261,25 +315,20 @@ class InlineFragment(Selection):
 
     def __init__(
         self,
-        type_condition=None,
-        directives=None,
-        selection_set=None,
-        source=None,
-        loc=None,
+        selection_set: SelectionSet,
+        type_condition: Optional[Type] = None,
+        directives=None,  # type: Optional[List[Directive]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Type:
         self.type_condition = type_condition
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: py_gql.lang.ast.SelectionSet:
+        self.directives: List[Directive] = directives or []
         self.selection_set = selection_set
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class FragmentDefinition(ExecutableDefinition):
+class FragmentDefinition(SupportDirectives, ExecutableDefinition):
     __slots__ = (
         "loc",
         "name",
@@ -291,75 +340,63 @@ class FragmentDefinition(ExecutableDefinition):
 
     def __init__(
         self,
-        name=None,
-        variable_definitions=None,
-        type_condition=None,
-        directives=None,
-        selection_set=None,
-        source=None,
-        loc=None,
+        name: Name,
+        type_condition: NamedType,
+        selection_set: SelectionSet,
+        variable_definitions: Optional[List[VariableDefinition]] = None,
+        directives=None,  # type: Optional[List[Directive]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.VariableDefinition]:
-        self.variable_definitions = variable_definitions or []
-        #: py_gql.lang.ast.Type:
+        self.variable_definitions: List[
+            VariableDefinition
+        ] = variable_definitions or []
         self.type_condition = type_condition
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: py_gql.lang.ast.SelectionSet:
+        self.directives: List[Directive] = directives or []
         self.selection_set = selection_set
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class Value(Node):
+class _StringValue(Value):
+    __slots__ = ("source", "loc", "value")
+
+    def __init__(
+        self,
+        value: str,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.value = value
+        self.source = source
+        self.loc = loc
+
+    def __str__(self):
+        return str(self.value)
+
+
+class IntValue(_StringValue):
     pass
 
 
-class IntValue(Value):
-    __slots__ = ("source", "loc", "value")
-
-    def __init__(self, value=None, source=None, loc=None):
-        #: str: value
-        self.value = value
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-    def __str__(self):
-        return str(self.value)
-
-
-class FloatValue(Value):
-    __slots__ = ("source", "loc", "value")
-
-    def __init__(self, value=None, source=None, loc=None):
-        #: str: value
-        self.value = value
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-    def __str__(self):
-        return str(self.value)
+class FloatValue(_StringValue):
+    pass
 
 
 class StringValue(Value):
     __slots__ = ("source", "loc", "value", "block")
 
-    def __init__(self, value=None, block=False, source=None, loc=None):
-        #: str: value
+    def __init__(
+        self,
+        value: str,
+        block: bool = False,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.value = value
-        #: bool:
         self.block = block
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
     def __str__(self):
@@ -372,12 +409,14 @@ class StringValue(Value):
 class BooleanValue(Value):
     __slots__ = ("source", "loc", "value")
 
-    def __init__(self, value=None, source=None, loc=None):
-        #: str: value
+    def __init__(
+        self,
+        value: bool,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.value = value
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
     def __str__(self):
@@ -387,126 +426,87 @@ class BooleanValue(Value):
 class NullValue(Value):
     __slots__ = ("source", "loc")
 
-    def __init__(self, source=None, loc=None):
-        #: str: source document
+    def __init__(
+        self,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
     def __str__(self):
         return "null"
 
 
-class EnumValue(Value):
-    __slots__ = ("source", "loc", "value")
-
-    def __init__(self, value=None, source=None, loc=None):
-        #: str: value
-        self.value = value
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-    def __str__(self):
-        return str(self.value)
+class EnumValue(_StringValue):
+    pass
 
 
 class ListValue(Value):
     __slots__ = ("source", "loc", "values")
 
-    def __init__(self, values=None, source=None, loc=None):
-        #: List[py_gql.lang.ast.Value]: values
-        self.values = values or []
-        #: str: source document
+    def __init__(
+        self,
+        values: List[Union[Value, Variable]],
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
+        self.values = values
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
 class ObjectValue(Value):
     __slots__ = ("source", "loc", "fields")
 
-    def __init__(self, fields=None, source=None, loc=None):
-        #: List[py_gql.lang.ast.ObjectField]: fields
+    def __init__(
+        self,
+        fields,  # type: List[ObjectField]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.fields = fields or []
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
 class ObjectField(Node):
     __slots__ = ("source", "loc", "name", "value")
 
-    def __init__(self, name=None, value=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        name: Name,
+        value: Value,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.name = name
-        #: py_gql.lang.ast.Value: value
         self.value = value
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
 class Directive(Node):
     __slots__ = ("source", "loc", "name", "arguments")
 
-    def __init__(self, name=None, arguments=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        name: Name,
+        arguments: Optional[List[Argument]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.name = name
-        #: py_gql.lang.ast.Argument:
-        self.arguments = arguments or []
-        #: str: source document
+        self.arguments: List[Argument] = arguments or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class Type(Node):
-    pass
+class SupportDescription(object):
+    description: Optional[StringValue]
 
 
-class NamedType(Type):
-    __slots__ = ("source", "loc", "name")
-
-    def __init__(self, name=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
-        self.name = name
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class ListType(Type):
-    __slots__ = ("source", "loc", "type")
-
-    # pylint: disable = redefined-builtin
-    def __init__(self, type=None, source=None, loc=None):
-        #: py_gql.lang.ast.Type:
-        self.type = type
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class NonNullType(Type):
-    __slots__ = ("source", "loc", "type")
-
-    # pylint: disable = redefined-builtin
-    def __init__(self, type=None, source=None, loc=None):
-        #: py_gql.lang.ast.Type:
-        self.type = type
-        #: str: source document
-        self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
-        self.loc = loc
-
-
-class TypeSystemDefinition(Definition):
+class TypeSystemDefinition(SupportDirectives, Definition):
     pass
 
 
@@ -514,35 +514,38 @@ class SchemaDefinition(TypeSystemDefinition):
     __slots__ = ("source", "loc", "directives", "operation_types")
 
     def __init__(
-        self, directives=None, operation_types=None, source=None, loc=None
+        self,
+        directives: Optional[List[Directive]] = None,
+        operation_types=None,  # type: Optional[List[OperationTypeDefinition]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.OperationTypeDefinition]:
-        self.operation_types = operation_types or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.operation_types: List[
+            OperationTypeDefinition
+        ] = operation_types or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
 class OperationTypeDefinition(Node):
     __slots__ = ("source", "loc", "operation", "type")
 
-    # pylint: disable = redefined-builtin
-    def __init__(self, operation=None, type=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        operation: str,
+        type: NamedType,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.operation = operation
-        #: py_gql.lang.ast.NamedType:
         self.type = type
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class TypeDefinition(TypeSystemDefinition):
-    pass
+class TypeDefinition(SupportDescription, TypeSystemDefinition):
+    name: Name
 
 
 class ScalarTypeDefinition(TypeDefinition):
@@ -550,21 +553,16 @@ class ScalarTypeDefinition(TypeDefinition):
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
@@ -581,31 +579,24 @@ class ObjectTypeDefinition(TypeDefinition):
 
     def __init__(
         self,
-        name=None,
-        interfaces=None,
-        directives=None,
-        fields=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        interfaces: Optional[List[NamedType]] = None,
+        directives: Optional[List[Directive]] = None,
+        fields=None,  # type: Optional[List[FieldDefinition]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.NamedType]:
-        self.interfaces = interfaces or []
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.FieldDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.interfaces: List[NamedType] = interfaces or []
+        self.directives: List[Directive] = directives or []
+        self.fields: List[FieldDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
-class FieldDefinition(Node):
+class FieldDefinition(SupportDirectives, SupportDescription, Node):
     __slots__ = (
         "source",
         "loc",
@@ -618,31 +609,24 @@ class FieldDefinition(Node):
 
     def __init__(
         self,
-        name=None,
-        arguments=None,
-        type=None,  # pylint: disable = redefined-builtin
-        directives=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        type: Type,
+        arguments: Optional[List["InputValueDefinition"]] = None,
+        directives: Optional[List[Directive]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.InputValueDefinition]:
-        self.arguments = arguments or []
-        #: py_gql.lang.ast.Type:
+        self.arguments: List[InputValueDefinition] = arguments or []
         self.type = type
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
-class InputValueDefinition(Node):
+class InputValueDefinition(SupportDirectives, SupportDescription, Node):
     __slots__ = (
         "source",
         "loc",
@@ -655,27 +639,20 @@ class InputValueDefinition(Node):
 
     def __init__(
         self,
-        name=None,
-        type=None,  # pylint: disable = redefined-builtin
-        default_value=None,
-        directives=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        type: Type,
+        default_value: Optional[Value] = None,
+        directives: Optional[List[Directive]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: py_gql.lang.ast.Type:
         self.type = type
-        #: py_gql.lang.ast.Value:
         self.default_value = default_value
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
@@ -684,24 +661,18 @@ class InterfaceTypeDefinition(TypeDefinition):
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        fields=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        fields: Optional[List[FieldDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.FieldDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.fields: List[FieldDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
@@ -710,24 +681,18 @@ class UnionTypeDefinition(TypeDefinition):
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        types=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        types: Optional[List[NamedType]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.NamedType]:
-        self.types = types or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.types: List[NamedType] = types or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
@@ -736,74 +701,56 @@ class EnumTypeDefinition(TypeDefinition):
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        values=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        values=None,  # type: Optional[List[EnumValueDefinition]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.EnumValueDefinition]:
-        self.values = values or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.values: List[EnumValueDefinition] = values or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
-class EnumValueDefinition(Node):
+class EnumValueDefinition(SupportDirectives, SupportDescription, Node):
     __slots__ = ("source", "loc", "description", "name", "directives")
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
 class InputObjectTypeDefinition(TypeDefinition):
     __slots__ = ("source", "loc", "description", "name", "directives", "fields")
-    __defaults__ = {"directives": [], "fields": []}
 
     def __init__(
         self,
-        name=None,
-        directives=None,
-        fields=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        fields: Optional[List[InputValueDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.InputValueDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.fields: List[InputValueDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
@@ -815,33 +762,37 @@ class SchemaExtension(TypeSystemExtension):
     __slots__ = ("source", "loc", "directives", "operation_types")
 
     def __init__(
-        self, directives=None, operation_types=None, source=None, loc=None
+        self,
+        directives: Optional[List[Directive]] = None,
+        operation_types: Optional[List[OperationTypeDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.OperationTypeDefinition]:
-        self.operation_types = operation_types or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.operation_types: List[
+            OperationTypeDefinition
+        ] = operation_types or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
 class TypeExtension(TypeSystemExtension):
-    pass
+    name: Name
 
 
 class ScalarTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives")
 
-    def __init__(self, name=None, directives=None, source=None, loc=None):
-        #: py_gql.lang.ast.Name:
+    def __init__(
+        self,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+    ):
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -850,24 +801,18 @@ class ObjectTypeExtension(TypeExtension):
 
     def __init__(
         self,
-        name=None,
-        interfaces=None,
-        directives=None,
-        fields=None,
-        source=None,
-        loc=None,
+        name: Name,
+        interfaces: Optional[List[NamedType]] = None,
+        directives: Optional[List[Directive]] = None,
+        fields=None,  # type: Optional[List[FieldDefinition]]
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.NamedType]:
-        self.interfaces = interfaces or []
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.FieldDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.interfaces: List[NamedType] = interfaces or []
+        self.directives: List[Directive] = directives or []
+        self.fields: List[FieldDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -875,17 +820,17 @@ class InterfaceTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "fields")
 
     def __init__(
-        self, name=None, directives=None, fields=None, source=None, loc=None
+        self,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        fields: Optional[List[FieldDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.FieldDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.fields: List[FieldDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -893,17 +838,17 @@ class UnionTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "types")
 
     def __init__(
-        self, name=None, directives=None, types=None, source=None, loc=None
+        self,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        types: Optional[List[NamedType]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.NamedType]:
-        self.types = types or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.types: List[NamedType] = types or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -911,17 +856,18 @@ class EnumTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "values")
 
     def __init__(
-        self, name=None, directives=None, values=None, source=None, loc=None
+        self,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        values: Optional[List[EnumValueDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.EnumValueDefinition]:
+        self.directives: List[Directive] = directives or []
+        self.values: List[EnumValueDefinition] = values or []
         self.values = values or []
-        #: str: source document
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
@@ -929,21 +875,21 @@ class InputObjectTypeExtension(TypeExtension):
     __slots__ = ("source", "loc", "name", "directives", "fields")
 
     def __init__(
-        self, name=None, directives=None, fields=None, source=None, loc=None
+        self,
+        name: Name,
+        directives: Optional[List[Directive]] = None,
+        fields: Optional[List[InputValueDefinition]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.Directives]:
-        self.directives = directives or []
-        #: List[py_gql.lang.ast.InputValueDefinition]:
-        self.fields = fields or []
-        #: str: source document
+        self.directives: List[Directive] = directives or []
+        self.fields: List[InputValueDefinition] = fields or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
 
 
-class DirectiveDefinition(TypeSystemDefinition):
+class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
     __slots__ = (
         "source",
         "loc",
@@ -955,28 +901,37 @@ class DirectiveDefinition(TypeSystemDefinition):
 
     def __init__(
         self,
-        name=None,
-        arguments=None,
-        locations=None,
-        source=None,
-        loc=None,
-        description=None,
+        name: Name,
+        arguments: Optional[List[InputValueDefinition]] = None,
+        locations: Optional[List[Name]] = None,
+        source: Optional[str] = None,
+        loc: Optional[Tuple[int, int]] = None,
+        description: Optional[StringValue] = None,
     ):
-        #: py_gql.lang.ast.Name:
         self.name = name
-        #: List[py_gql.lang.ast.InputValueDefinition]:
-        self.arguments = arguments or []
-        #: List[py_gql.lang.ast.Name]:
-        self.locations = locations or []
-        #: str: source document
+        self.arguments: List[InputValueDefinition] = arguments or []
+        self.locations: List[Name] = locations or []
         self.source = source
-        #: Tuple[int, int]: Node position as (start position, end position)
         self.loc = loc
-        #: py_gql.lang.ast.SringValue:
         self.description = description
 
 
-def node_to_dict(node):
+def _node_to_dict(node):
+    if isinstance(node, Node):
+        return dict(
+            {
+                attr: _node_to_dict(getattr(node, attr))
+                for attr in node._props()
+            },
+            __kind__=node.__class__.__name__,
+        )
+    elif isinstance(node, list):
+        return [_node_to_dict(v) for v in node]
+    else:
+        return node
+
+
+def node_to_dict(node: Node) -> Dict[str, Any]:
     """ Recrusively convert a ``py_gql.lang.ast.Node`` instance to a dict.
 
     This is mostly useful for testing and when you need to convert nodes to JSON
@@ -992,16 +947,4 @@ def node_to_dict(node):
     Returns:
         Converted value
     """
-    if isinstance(node, Node):
-        return dict(
-            {
-                attr: node_to_dict(getattr(node, attr))
-                for attr in node.__slots__
-                if attr != "source"
-            },
-            __kind__=node.__class__.__name__,
-        )
-    elif isinstance(node, list):
-        return [node_to_dict(v) for v in node]
-    else:
-        return node
+    return cast(Dict[str, Any], _node_to_dict(node))

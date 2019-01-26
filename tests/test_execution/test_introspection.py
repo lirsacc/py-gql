@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 """ tests related to introspection queries """
-from __future__ import unicode_literals
 
 import json
 
@@ -19,7 +18,7 @@ from py_gql.schema import (
 )
 from py_gql.utilities import introspection_query
 
-from ._test_utils import check_execution
+from ._test_utils import assert_sync_execution
 
 # Star Wars schema related tests. These are simpler than other tests down
 # this file and should be easier to debug if something breaks while
@@ -27,7 +26,7 @@ from ._test_utils import check_execution
 
 
 def test_allows_querying_the_schema_for_types(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionTypeQuery {
@@ -65,7 +64,7 @@ def test_allows_querying_the_schema_for_types(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_query_type(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionQueryTypeQuery {
@@ -82,7 +81,7 @@ def test_allows_querying_the_schema_for_query_type(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_a_specific_type(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionDroidTypeQuery {
@@ -97,7 +96,7 @@ def test_allows_querying_the_schema_for_a_specific_type(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_an_object_kind(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionDroidKindQuery {
@@ -113,7 +112,7 @@ def test_allows_querying_the_schema_for_an_object_kind(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_an_interface_kind(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionCharacterKindQuery {
@@ -129,7 +128,7 @@ def test_allows_querying_the_schema_for_an_interface_kind(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_object_fields(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
      query IntrospectionDroidFieldsQuery {
@@ -175,7 +174,7 @@ def test_allows_querying_the_schema_for_object_fields(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionDroidNestedFieldsQuery {
@@ -258,7 +257,7 @@ def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_field_args(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionQueryTypeQuery {
@@ -350,7 +349,7 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
 
 
 def test_allows_querying_the_schema_for_documentation(starwars_schema):
-    check_execution(
+    assert_sync_execution(
         starwars_schema,
         """
     query IntrospectionDroidDescriptionQuery {
@@ -373,7 +372,7 @@ def test_allows_querying_the_schema_for_documentation(starwars_schema):
 def test_intropsection_query():
     empty_schema = Schema(ObjectType("QueryRoot", [Field("onlyField", String)]))
 
-    check_execution(
+    assert_sync_execution(
         empty_schema,
         introspection_query(False),
         expected_data={
@@ -1264,7 +1263,7 @@ def test_intropsection_on_input_object():
 
     schema = Schema(test_type)
 
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1342,7 +1341,7 @@ def test_intropsection_on_input_object():
 def test_it_supports_the_type_root_field():
     test_type = ObjectType("TestType", [Field("testField", String)])
     schema = Schema(test_type)
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1366,7 +1365,7 @@ def test_it_identifies_deprecated_fields():
     )
     schema = Schema(test_type)
 
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1411,7 +1410,7 @@ def test_it_respects_the_include_deprecated_parameter_for_fields():
     )
     schema = Schema(test_type)
 
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1453,7 +1452,7 @@ def test_it_identifies_deprecated_enum_values():
     test_type = ObjectType("TestType", [Field("testEnum", test_enum)])
     schema = Schema(test_type)
 
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1505,7 +1504,7 @@ def test_it_respects_the_include_deprecated_parameter_for_enum_values():
     test_type = ObjectType("TestType", [Field("testEnum", test_enum)])
     schema = Schema(test_type)
 
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1543,7 +1542,7 @@ def test_it_respects_the_include_deprecated_parameter_for_enum_values():
 def test_it_fails_as_expected_on_the_type_root_field_without_an_arg():
     test_type = ObjectType("TestType", [Field("testField", String)])
     schema = Schema(test_type)
-    check_execution(
+    assert_sync_execution(
         schema,
         "{ __type { name } }",
         expected_data={"__type": None},
@@ -1559,7 +1558,7 @@ def test_it_fails_as_expected_on_the_type_root_field_without_an_arg():
 
 def test_it_exposes_descriptions_on_types_and_fields():
     schema = Schema(ObjectType("QueryRoot", [Field("onlyField", String)]))
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {
@@ -1610,7 +1609,7 @@ def test_it_exposes_descriptions_on_types_and_fields():
 
 def test_it_exposes_descriptions_on_enums():
     schema = Schema(ObjectType("QueryRoot", [Field("onlyField", String)]))
-    check_execution(
+    assert_sync_execution(
         schema,
         """
     {

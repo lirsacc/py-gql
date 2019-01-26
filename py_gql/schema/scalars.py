@@ -3,17 +3,24 @@
 
 import re
 import uuid
-
-import six
+from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar, Union
 
 from ..lang import ast as _ast
 from .types import ScalarType
 
+T = TypeVar("T")
+
+_ScalarValueNode = Union[
+    _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
+]
+
 
 # Shortcut to generate ``parse_literal`` from a simple
 # parsing function by adding node type validation.
-def _typed_coerce(coerce_, *types):
-    def _coerce(node, _variables):
+def _typed_coerce(
+    coerce_: Callable[[Any], T], *types: Type[_ScalarValueNode]
+) -> Callable[[_ScalarValueNode, Mapping[str, Any]], T]:
+    def _coerce(node: _ScalarValueNode, _variables: Mapping[str, Any]) -> T:
         if type(node) not in types:
             raise TypeError("Invalid literal %s" % node.__class__.__name__)
         return coerce_(node.value)
@@ -34,12 +41,12 @@ Boolean = ScalarType(
 
 
 # Spec says -2^31 to 2^31... use floats to get larger numbers.
-MAX_INT = 2147483647
-MIN_INT = -2147483648
+MAX_INT = 2_147_483_647
+MIN_INT = -2_147_483_648
 EXPONENT_RE = re.compile(r"1e\d+")
 
 
-def coerce_int(maybe_int):
+def coerce_int(maybe_int: str) -> int:
     """ Spec compliant int conversion. """
     if maybe_int == "":
         raise ValueError(
@@ -49,7 +56,7 @@ def coerce_int(maybe_int):
     if maybe_int is None:
         raise ValueError("Int cannot represent non 32-bit signed integer: None")
 
-    if isinstance(maybe_int, six.string_types):
+    if isinstance(maybe_int, str):
         try:
             if EXPONENT_RE.match(maybe_int):
                 numeric = int(float(maybe_int))
@@ -74,7 +81,7 @@ def coerce_int(maybe_int):
     return numeric
 
 
-def coerce_float(maybe_float):
+def coerce_float(maybe_float: str) -> float:
     """ Spec compliant float conversion. """
     if maybe_float == "":
         raise ValueError(
@@ -119,13 +126,13 @@ Float = ScalarType(
 )
 
 
-def _parse_string(value):
+def _parse_string(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         raise ValueError('String cannot represent list value "%s"' % value)
-    return six.text_type(value)
+    return str(value)
 
 
-def _serialize_string(value):
+def _serialize_string(value: Any) -> str:
     if value in (True, False):
         return str(value).lower()
     return _parse_string(value)
@@ -134,7 +141,7 @@ def _serialize_string(value):
 _coerce_string_node = _typed_coerce(_parse_string, _ast.StringValue)
 
 
-String = ScalarType(
+String: ScalarType[str] = ScalarType(
     "String",
     description=(
         "The `String` scalar type represents textual data, represented as "
@@ -146,7 +153,7 @@ String = ScalarType(
     parse_literal=_coerce_string_node,
 )
 
-_coerce_id_node = _typed_coerce(six.text_type, _ast.StringValue, _ast.IntValue)
+_coerce_id_node = _typed_coerce(str, _ast.StringValue, _ast.IntValue)
 
 
 ID = ScalarType(
@@ -159,8 +166,8 @@ ID = ScalarType(
         'as `"4"`) or integer (such as `4`) input value will be accepted as '
         "an ID."
     ),
-    serialize=six.text_type,
-    parse=six.text_type,
+    serialize=str,
+    parse=str,
     parse_literal=_coerce_id_node,
 )
 
@@ -173,14 +180,14 @@ SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID)
 # be available by default 2) not be available in other GraphQL servers a-priori.
 
 
-def _serialize_uuid(maybe_uuid):
+def _serialize_uuid(maybe_uuid: Any) -> str:
     if isinstance(maybe_uuid, uuid.UUID):
         return str(maybe_uuid)
     else:
         return str(uuid.UUID(maybe_uuid))
 
 
-def _parse_uuid(maybe_uuid):
+def _parse_uuid(maybe_uuid: Any) -> uuid.UUID:
     if isinstance(maybe_uuid, uuid.UUID):
         return maybe_uuid
     return uuid.UUID(maybe_uuid)
@@ -189,7 +196,7 @@ def _parse_uuid(maybe_uuid):
 _coerce_uuid_node = _typed_coerce(_parse_uuid, _ast.StringValue)
 
 
-UUID = ScalarType(
+UUID: ScalarType[uuid.UUID] = ScalarType(
     "UUID",
     description=(
         "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
@@ -201,7 +208,7 @@ UUID = ScalarType(
 )
 
 
-class RegexType(ScalarType):
+class RegexType(ScalarType[str]):
     """ Types to validate regex patterns.
 
     Args:
@@ -216,7 +223,7 @@ class RegexType(ScalarType):
 
     def __init__(self, name, regex, description=None):
 
-        if isinstance(regex, six.string_types):
+        if isinstance(regex, str):
             self.regex = re.compile(regex)
         else:
             self.regex = regex
@@ -224,7 +231,7 @@ class RegexType(ScalarType):
         if description is None:
             description = "String matching pattern /%s/" % self.regex.pattern
 
-        def _parse(value):
+        def _parse(value: Any) -> str:
             string_value = _serialize_string(value)
             if not self.regex.match(string_value):
                 raise ValueError(
@@ -244,11 +251,17 @@ class RegexType(ScalarType):
         )
 
 
-def _identity(value):
+def _identity(value: T) -> T:
     return value
 
 
-def default_scalar(name, description=None, nodes=None):
+def default_scalar(
+    name: str,
+    description: Optional[str] = None,
+    nodes: Optional[
+        List[Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]]
+    ] = None,
+) -> ScalarType[Any]:
     """ Default noop scalar types used when generating scalars from schema
     definitions. """
     return ScalarType(

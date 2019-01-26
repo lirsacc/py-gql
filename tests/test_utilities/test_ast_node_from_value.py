@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import Any
+
 import pytest
 
 from py_gql.lang import ast as _ast
@@ -20,14 +22,14 @@ from py_gql.schema.scalars import MAX_INT
 from py_gql.utilities import ast_node_from_value
 
 
-def _custom_serialize(x):
+def _custom_serialize(x: Any) -> Any:
     if x == 42:
         return None
     return x
 
 
-CustomScalar = ScalarType(
-    name="CustomScalar", serialize=_custom_serialize, parse=lambda x: x
+CustomScalar: ScalarType[Any] = ScalarType(
+    name="CustomScalara", serialize=_custom_serialize, parse=lambda x: x
 )
 
 

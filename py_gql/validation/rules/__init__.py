@@ -3,12 +3,16 @@
 <http://facebook.github.io/graphql/June2018/#sec-Validation>`_ of the
 specification. """
 
+from collections import defaultdict
+from typing import Dict, List, Set, Tuple
+
 from ..._string_utils import infer_suggestions, quoted_options_list
-from ..._utils import DefaultOrderedDict, OrderedDict, deduplicate
+from ..._utils import deduplicate
 from ...exc import UnknownType
 from ...lang import ast as _ast, print_ast
 from ...lang.visitor import SkipNode
 from ...schema import (
+    GraphQLType,
     InterfaceType,
     NonNullType,
     ObjectType,
@@ -20,9 +24,38 @@ from ...schema import (
 )
 from ..visitors import ValidationVisitor, VariablesCollector
 from .overlapping_fields_can_be_merged import (  # noqa: F401
-    OverlappingFieldsCanBeMergedChecker
+    OverlappingFieldsCanBeMergedChecker,
 )
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
+
+__all__ = (
+    "ExecutableDefinitionsChecker",
+    "UniqueOperationNameChecker",
+    "LoneAnonymousOperationChecker",
+    "SingleFieldSubscriptionsChecker",
+    "KnownTypeNamesChecker",
+    "FragmentsOnCompositeTypesChecker",
+    "VariablesAreInputTypesChecker",
+    "ScalarLeafsChecker",
+    "FieldsOnCorrectTypeChecker",
+    "UniqueFragmentNamesChecker",
+    "KnownFragmentNamesChecker",
+    "NoUnusedFragmentsChecker",
+    "PossibleFragmentSpreadsChecker",
+    "NoFragmentCyclesChecker",
+    "UniqueVariableNamesChecker",
+    "NoUndefinedVariablesChecker",
+    "NoUnusedVariablesChecker",
+    "KnownDirectivesChecker",
+    "UniqueDirectivesPerLocationChecker",
+    "KnownArgumentNamesChecker",
+    "UniqueArgumentNamesChecker",
+    "ValuesOfCorrectTypeChecker",
+    "ProvidedRequiredArgumentsChecker",
+    "VariablesInAllowedPositionChecker",
+    "OverlappingFieldsCanBeMergedChecker",
+    "UniqueInputFieldNamesChecker",
+)
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
@@ -35,14 +68,13 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
     def enter_document(self, node):
         for definition in node.definitions:
             if not isinstance(definition, _ast.ExecutableDefinition):
+                name = (
+                    "schema"
+                    if isinstance(definition, _ast.SchemaDefinition)
+                    else definition.name.value
+                )
                 self.add_error(
-                    'Definition "%s" is not executable'
-                    % (
-                        "schema"
-                        if isinstance(definition, _ast.SchemaDefinition)
-                        else definition.name.value
-                    ),
-                    [definition],
+                    'Definition "%s" is not executable' % name, [definition]
                 )
                 raise SkipNode()
 
@@ -53,7 +85,7 @@ class UniqueOperationNameChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueOperationNameChecker, self).__init__(schema, type_info)
-        self.names = set()
+        self.names: Set[str] = set()
 
     def enter_operation_definition(self, node):
         op_name = node.name.value if node.name else node.operation
@@ -91,11 +123,14 @@ class SingleFieldSubscriptionsChecker(ValidationVisitor):
     def enter_operation_definition(self, node):
         if node.operation == "subscription":
             if len(node.selection_set.selections) != 1:
-                self.add_error(
-                    'Subscription "%s" must select only one top level field.'
-                    % (node.name.value if node.name else ""),
-                    [node],
-                )
+                if node.name:
+                    msg = (
+                        'Subscription "%s" must select only one top level field.'
+                        % node.name.value
+                    )
+                else:
+                    msg = "Subscription must select only one top level field."
+                self.add_error(msg, [node])
 
 
 class KnownTypeNamesChecker(ValidationVisitor):
@@ -116,7 +151,7 @@ class KnownTypeNamesChecker(ValidationVisitor):
         try:
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
-            self.add_error('Unknown type "%s"' % str(err), [node])
+            self.add_error('Unknown type "%s"' % err, [node])
 
     enter_named_type = _enter_type_literal
     enter_list_type = _enter_type_literal
@@ -133,8 +168,8 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
             type_ = self.schema.get_type_from_literal(node.type_condition)
             if not is_composite_type(type_):
                 self.add_error(
-                    "Fragment type condition cannot be on non-composite "
-                    'type "%s"' % (type_.name),
+                    'Fragment type condition cannot be on non-composite type "%s"'
+                    % type_.name,
                     [node],
                 )
                 raise SkipNode()
@@ -143,8 +178,8 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
         type_ = self.schema.get_type_from_literal(node.type_condition)
         if not is_composite_type(type_):
             self.add_error(
-                'Fragment "%s" type condition cannot be on non-composite '
-                'type "%s"' % (node.name.value, type_.name),
+                'Fragment "%s" type condition cannot be on non-composite type "%s"'
+                % (node.name.value, type_.name),
                 [node],
             )
             raise SkipNode()
@@ -175,8 +210,8 @@ class ScalarLeafsChecker(ValidationVisitor):
 
         if is_leaf_type(unwrap_type(type_)) and node.selection_set:
             self.add_error(
-                'Field "%s" cannot have a selection as type "%s" has no '
-                "fields" % (node.name.value, type_),
+                'Field "%s" cannot have a selection as type "%s" has no fields'
+                % (node.name.value, type_),
                 [node],
             )
 
@@ -206,40 +241,40 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
                 suggestions = infer_suggestions(node.name.value, fieldnames)
                 if suggestions:
                     self.add_error(
-                        'Cannot query field "%s" on type "%r", '
-                        "did you mean %s?"
+                        'Cannot query field "%s" on type "%s", did you mean %s?'
                         % (
                             node.name.value,
-                            self.type_info.parent_type,
+                            self.type_info.parent_type.name,
                             quoted_options_list(suggestions),
                         ),
                         [node],
                     )
                 else:
                     self.add_error(
-                        'Cannot query field "%s" on type "%r"'
-                        % (node.name.value, self.type_info.parent_type),
+                        'Cannot query field "%s" on type "%s"'
+                        % (node.name.value, self.type_info.parent_type.name),
                         [node],
                     )
 
             elif isinstance(self.type_info.parent_type, UnionType):
+                options = quoted_options_list(
+                    [t.name for t in self.type_info.parent_type.types]
+                )
                 self.add_error(
-                    'Cannot query field "%s" on type "%r", '
-                    "did you mean to use an inline fragment on %s?"
+                    'Cannot query field "%s" on type "%s", did you mean to use '
+                    "an inline fragment on %s?"
                     % (
                         node.name.value,
-                        self.type_info.parent_type,
-                        quoted_options_list(
-                            [t.name for t in self.type_info.parent_type.types]
-                        ),
+                        self.type_info.parent_type.name,
+                        options,
                     ),
                     [node],
                 )
 
             else:
                 self.add_error(
-                    'Cannot query field "%s" on type "%r"'
-                    % (node.name.value, self.type_info.parent_type),
+                    'Cannot query field "%s" on type "%s"'
+                    % (node.name.value, self.type_info.parent_type.name),
                     [node],
                 )
 
@@ -250,7 +285,7 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueFragmentNamesChecker, self).__init__(schema, type_info)
-        self._names = set()
+        self._names: Set[str] = set()
 
     def enter_fragment_definition(self, node):
         name = node.name.value
@@ -280,7 +315,7 @@ class KnownFragmentNamesChecker(ValidationVisitor):
     def enter_fragment_spread(self, node):
         name = node.name.value
         if name not in self._fragment_names:
-            self.add_error('Unknown fragment "%s"' % name)
+            self.add_error('Unknown fragment "%s"' % name, [node])
 
 
 class NoUnusedFragmentsChecker(ValidationVisitor):
@@ -290,8 +325,8 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(NoUnusedFragmentsChecker, self).__init__(schema, type_info)
-        self._fragments = set()
-        self._used_fragments = set()
+        self._fragments: Set[str] = set()
+        self._used_fragments: Set[str] = set()
 
     def enter_fragment_definition(self, node):
         self._fragments.add(node.name.value)
@@ -302,10 +337,8 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
     def leave_document(self, _node):
         unused = self._fragments - self._used_fragments
         if unused:
-            self.add_error(
-                "Unused fragment(s) %s"
-                % ", ".join(['"%s"' % n for n in sorted(unused)])
-            )
+            quoted = ", ".join('"%s"' % x for x in sorted(unused))
+            self.add_error("Unused fragment(s) %s" % quoted)
 
 
 class PossibleFragmentSpreadsChecker(ValidationVisitor):
@@ -315,7 +348,7 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(PossibleFragmentSpreadsChecker, self).__init__(schema, type_info)
-        self._fragment_types = dict()
+        self._fragment_types: Dict[str, GraphQLType] = dict()
 
     def enter_document(self, node):
         self._fragment_types.update(
@@ -368,7 +401,7 @@ class NoFragmentCyclesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(NoFragmentCyclesChecker, self).__init__(schema, type_info)
-        self._spreads = OrderedDict()
+        self._spreads: Dict[str, List[str]] = dict()
         self._current = None
 
     def enter_fragment_definition(self, node):
@@ -436,7 +469,7 @@ class UniqueVariableNamesChecker(ValidationVisitor):
     named. """
 
     def enter_operation_definition(self, _node):
-        self._variables = set()
+        self._variables: Set[str] = set()
 
     def leave_operation_definition(self, _node):
         self._variables = None
@@ -490,7 +523,7 @@ class NoUnusedVariablesChecker(VariablesCollector):
     def leave_document(self, node):
         super(NoUnusedVariablesChecker, self).leave_document(node)
 
-        used_variables = DefaultOrderedDict(set)
+        used_variables: Dict[str, Set[str]] = defaultdict(set)
 
         for op, fragments in self._op_fragments.items():
             for fragment in deduplicate(fragments):
@@ -514,7 +547,7 @@ class KnownDirectivesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(KnownDirectivesChecker, self).__init__(schema, type_info)
-        self._ancestors = []
+        self._ancestors: List[_ast.Node] = []
 
     def _enter_ancestor(self, node):
         self._ancestors.append(node)
@@ -626,7 +659,7 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
     are uniquely named. """
 
     def _validate_unique_directive_names(self, node):
-        seen = set()
+        seen: Set[str] = set()
         for directive in node.directives:
             name = directive.name.value
             if name in seen:
@@ -648,7 +681,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
     def enter_field(self, node):
         field_def = self.type_info.field
         if field_def is not None:
-            known = set((a.name for a in field_def.args))
+            known = set((a.name for a in field_def.arguments))
             for arg in node.arguments:
                 name = arg.name.value
                 if name not in known:
@@ -679,7 +712,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
     def enter_directive(self, node):
         directive_def = self.type_info.directive
         if directive_def is not None:
-            known = set((a.name for a in directive_def.args))
+            known = set((a.name for a in directive_def.arguments))
             for arg in node.arguments:
                 name = arg.name.value
                 if name not in known:
@@ -707,7 +740,7 @@ class UniqueArgumentNamesChecker(ValidationVisitor):
     are uniquely named. """
 
     def _check_duplicate_args(self, node):
-        argnames = set()
+        argnames: Set[str] = set()
         for arg in node.arguments:
             name = arg.name.value
             if name in argnames:
@@ -732,7 +765,7 @@ class ProvidedRequiredArgumentsChecker(ValidationVisitor):
     def leave_field(self, node):
         field_def = self.type_info.field
         if field_def:
-            for arg in self._missing_args(field_def.args, node):
+            for arg in self._missing_args(field_def.arguments, node):
                 self.add_error(
                     'Field "%s" argument "%s" of type %s is required but '
                     "not provided" % (field_def.name, arg.name, arg.type),
@@ -743,7 +776,7 @@ class ProvidedRequiredArgumentsChecker(ValidationVisitor):
     def leave_directive(self, node):
         directive_def = self.type_info.directive
         if directive_def:
-            for arg in self._missing_args(directive_def.args, node):
+            for arg in self._missing_args(directive_def.arguments, node):
                 self.add_error(
                     'Directive "@%s" argument "%s" of type %s is required but '
                     "not provided" % (directive_def.name, arg.name, arg.type),
@@ -820,7 +853,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueInputFieldNamesChecker, self).__init__(schema, type_info)
-        self._stack = []
+        self._stack: List[Tuple[_ast.ObjectValue, Set[str]]] = []
 
     def enter_object_value(self, node):
         self._stack.append((node, set()))
@@ -837,33 +870,3 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
                 [node],
             )
         names.add(fieldname)
-
-
-__all__ = (
-    "ExecutableDefinitionsChecker",
-    "UniqueOperationNameChecker",
-    "LoneAnonymousOperationChecker",
-    "SingleFieldSubscriptionsChecker",
-    "KnownTypeNamesChecker",
-    "FragmentsOnCompositeTypesChecker",
-    "VariablesAreInputTypesChecker",
-    "ScalarLeafsChecker",
-    "FieldsOnCorrectTypeChecker",
-    "UniqueFragmentNamesChecker",
-    "KnownFragmentNamesChecker",
-    "NoUnusedFragmentsChecker",
-    "PossibleFragmentSpreadsChecker",
-    "NoFragmentCyclesChecker",
-    "UniqueVariableNamesChecker",
-    "NoUndefinedVariablesChecker",
-    "NoUnusedVariablesChecker",
-    "KnownDirectivesChecker",
-    "UniqueDirectivesPerLocationChecker",
-    "KnownArgumentNamesChecker",
-    "UniqueArgumentNamesChecker",
-    "ValuesOfCorrectTypeChecker",
-    "ProvidedRequiredArgumentsChecker",
-    "VariablesInAllowedPositionChecker",
-    "OverlappingFieldsCanBeMergedChecker",
-    "UniqueInputFieldNamesChecker",
-)

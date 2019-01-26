@@ -9,6 +9,7 @@ Note:
 """
 
 import functools as ft
+from typing import Callable, Iterable, Tuple, TypeVar, Union
 
 from . import ast as _ast
 from ..exc import GraphQLError
@@ -22,37 +23,32 @@ __all__ = (
 )
 
 
+N = TypeVar("N", bound=_ast.Node)
+
+
 class SkipNode(GraphQLError):
     def __init__(self):
-        super(SkipNode, self).__init__("")
+        super().__init__("")
 
 
 class Visitor(object):
     """ Visitor base class. """
 
-    def enter(self, node):
+    def enter(self, node: _ast.Node) -> None:
         """ Function called when entering a node.
 
         Raising :class:`SkipNode` in this function will lead to ignoring the
         current node and all it's descendants. as well as prevent running
         :meth:`leave`.
-
-        Args:
-            node (py_gql.lang.ast.Node) Node being visited
         """
-        pass
 
-    def leave(self, node):
+    def leave(self, node: _ast.Node) -> None:
         """ Function called when leaving a node. Will not be called if
         :class:`SkipNode` was raised in `enter`.
-
-        Args:
-            node (py_gql.lang.ast.Node) Node being visited
         """
-        pass
 
 
-def visit(visitor, ast_root):
+def visit(visitor: Visitor, ast_root: _ast.Document) -> None:
     """ Visit a GraphQL parse tree.
 
     All side effects and results of traversal should be contained in the
@@ -66,13 +62,15 @@ def visit(visitor, ast_root):
     _visit_document(visitor, ast_root)
 
 
-def _visiting(func):
+def _visiting(
+    func: Callable[[Visitor, N], None]
+) -> Callable[[Visitor, N], None]:
     """ Wrap a function to call the provided visitor ``enter`` / ``leave``
     functions before / after processing a node.
     """
 
     @ft.wraps(func)
-    def wrapper(visitor, node):
+    def wrapper(visitor: Visitor, node: N) -> None:
         if node is None:
             return
 
@@ -87,7 +85,9 @@ def _visiting(func):
     return wrapper
 
 
-def _many(fn, visitor, nodes):
+def _many(
+    fn: Callable[[Visitor, N], None], visitor: Visitor, nodes: Iterable[N]
+) -> None:
     """ Run a visiting procedure on multiple nodes """
     if nodes:
         for node in nodes:
@@ -95,185 +95,250 @@ def _many(fn, visitor, nodes):
 
 
 @_visiting
-def _visit_document(visitor, document):
+def _visit_document(visitor: Visitor, document: _ast.Document) -> None:
     for definition in document.definitions:
         _visit_definition(visitor, definition)
 
 
-def _visit_definition(visitor, definition):
-    func = {
-        _ast.OperationDefinition: _visit_operation_definition,
-        _ast.FragmentDefinition: _visit_fragment_definition,
-        _ast.SchemaDefinition: _visit_schema_definition,
-        _ast.ScalarTypeDefinition: _visit_scalar_type_definition,
-        _ast.ObjectTypeDefinition: _visit_object_type_definition,
-        _ast.InterfaceTypeDefinition: _visit_interface_type_definition,
-        _ast.UnionTypeDefinition: _visit_union_type_definition,
-        _ast.EnumTypeDefinition: visit_enum_type_definition,
-        _ast.InputObjectTypeDefinition: _visit_input_object_type_definition,
-        _ast.SchemaExtension: _visit_schema_definition,
-        _ast.ScalarTypeExtension: _visit_scalar_type_definition,
-        _ast.ObjectTypeExtension: _visit_object_type_definition,
-        _ast.InterfaceTypeExtension: _visit_interface_type_definition,
-        _ast.UnionTypeExtension: _visit_union_type_definition,
-        _ast.EnumTypeExtension: visit_enum_type_definition,
-        _ast.InputObjectTypeExtension: _visit_input_object_type_definition,
-        _ast.DirectiveDefinition: _visit_directive_definition,
-    }.get(type(definition), None)
-    if func is not None:
-        func(visitor, definition)
+def _visit_definition(  # noqa: C901
+    visitor: Visitor, definition: _ast.Definition
+) -> None:
+    if isinstance(definition, _ast.OperationDefinition):
+        _visit_operation_definition(visitor, definition)
+    elif isinstance(definition, _ast.FragmentDefinition):
+        _visit_fragment_definition(visitor, definition)
+    elif isinstance(definition, _ast.SchemaDefinition):
+        _visit_schema_definition(visitor, definition)
+    elif isinstance(definition, _ast.ScalarTypeDefinition):
+        _visit_scalar_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.ObjectTypeDefinition):
+        _visit_object_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.InterfaceTypeDefinition):
+        _visit_interface_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.UnionTypeDefinition):
+        _visit_union_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.EnumTypeDefinition):
+        visit_enum_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.InputObjectTypeDefinition):
+        _visit_input_object_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.SchemaExtension):
+        _visit_schema_definition(visitor, definition)
+    elif isinstance(definition, _ast.ScalarTypeExtension):
+        _visit_scalar_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.ObjectTypeExtension):
+        _visit_object_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.InterfaceTypeExtension):
+        _visit_interface_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.UnionTypeExtension):
+        _visit_union_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.EnumTypeExtension):
+        visit_enum_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.InputObjectTypeExtension):
+        _visit_input_object_type_definition(visitor, definition)
+    elif isinstance(definition, _ast.DirectiveDefinition):
+        _visit_directive_definition(visitor, definition)
 
 
 @_visiting
-def _visit_operation_definition(visitor, definition):
+def _visit_operation_definition(
+    visitor: Visitor, definition: _ast.OperationDefinition
+) -> None:
     _many(_visit_variable_definition, visitor, definition.variable_definitions)
     _many(_visit_directive, visitor, definition.directives)
     _visit_selection_set(visitor, definition.selection_set)
 
 
 @_visiting
-def _visit_fragment_definition(visitor, definition):
+def _visit_fragment_definition(
+    visitor: Visitor, definition: _ast.FragmentDefinition
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
     _visit_selection_set(visitor, definition.selection_set)
 
 
 @_visiting
-def _visit_variable_definition(visitor, variable_definition):
+def _visit_variable_definition(
+    visitor: Visitor, variable_definition: _ast.VariableDefinition
+) -> None:
     if variable_definition.default_value:
         _visit_input_value(visitor, variable_definition.default_value)
-    _visit_named_type(visitor, variable_definition.type)
+    _visit_type(visitor, variable_definition.type)
 
 
 @_visiting
-def _visit_named_type(_visitor, _named_type):
+def _visit_type(_visitor: Visitor, _type: _ast.Type) -> None:
     pass
 
 
 @_visiting
-def _visit_directive(visitor, directive):
+def _visit_directive(visitor: Visitor, directive: _ast.Directive) -> None:
     _many(_visit_argument, visitor, directive.arguments)
 
 
 @_visiting
-def _visit_argument(visitor, argument):
+def _visit_argument(visitor: Visitor, argument: _ast.Argument) -> None:
     _visit_input_value(visitor, argument.value)
 
 
 @_visiting
-def _visit_selection_set(visitor, selection_set):
+def _visit_selection_set(
+    visitor: Visitor, selection_set: _ast.SelectionSet
+) -> None:
     _many(_visit_selection, visitor, selection_set.selections)
 
 
-def _visit_selection(visitor, selection):
-    func = {
-        _ast.Field: _visit_field,
-        _ast.FragmentSpread: _visit_fragment_spread,
-        _ast.InlineFragment: _visit_inline_fragment,
-    }[type(selection)]
-    func(visitor, selection)
+def _visit_selection(visitor: Visitor, selection: _ast.Selection) -> None:
+    if isinstance(selection, _ast.Field):
+        _visit_field(visitor, selection)
+    elif isinstance(selection, _ast.FragmentSpread):
+        _visit_fragment_spread(visitor, selection)
+    elif isinstance(selection, _ast.InlineFragment):
+        _visit_inline_fragment(visitor, selection)
 
 
 @_visiting
-def _visit_field(visitor, field):
+def _visit_field(visitor: Visitor, field: _ast.Field) -> None:
     _many(_visit_argument, visitor, field.arguments)
     _many(_visit_directive, visitor, field.directives)
-    _visit_selection_set(visitor, field.selection_set)
+    if field.selection_set is not None:
+        _visit_selection_set(visitor, field.selection_set)
 
 
 @_visiting
-def _visit_fragment_spread(visitor, spread):
+def _visit_fragment_spread(
+    visitor: Visitor, spread: _ast.FragmentSpread
+) -> None:
     _many(_visit_directive, visitor, spread.directives)
 
 
 @_visiting
-def _visit_inline_fragment(visitor, fragment):
+def _visit_inline_fragment(
+    visitor: Visitor, fragment: _ast.InlineFragment
+) -> None:
     _many(_visit_directive, visitor, fragment.directives)
     if fragment.selection_set:
         _visit_selection_set(visitor, fragment.selection_set)
 
 
 @_visiting
-def _visit_input_value(visitor, input_value):
-    kind = type(input_value)
-    if kind == _ast.ObjectValue:
+def _visit_input_value(
+    visitor: Visitor, input_value: Union[_ast.Value, _ast.Variable]
+) -> None:
+    if isinstance(input_value, _ast.ObjectValue):
         _many(_visit_object_field, visitor, input_value.fields)
-    elif kind == _ast.ListValue:
+    elif isinstance(input_value, _ast.ListValue):
         _many(_visit_input_value, visitor, input_value.values)
 
 
 @_visiting
-def _visit_object_field(visitor, field):
+def _visit_object_field(visitor: Visitor, field: _ast.ObjectField) -> None:
     _visit_input_value(visitor, field.value)
 
 
 @_visiting
-def _visit_schema_definition(visitor, definition):
+def _visit_schema_definition(
+    visitor: Visitor,
+    definition: Union[_ast.SchemaDefinition, _ast.SchemaExtension],
+) -> None:
     _many(_visit_operation_type_definition, visitor, definition.operation_types)
     _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def _visit_operation_type_definition(visitor, definition):
-    _visit_named_type(visitor, definition.type)
+def _visit_operation_type_definition(
+    visitor: Visitor, definition: _ast.OperationTypeDefinition
+) -> None:
+    _visit_type(visitor, definition.type)
 
 
 @_visiting
-def _visit_scalar_type_definition(visitor, definition):
+def _visit_scalar_type_definition(
+    visitor: Visitor,
+    definition: Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension],
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def _visit_object_type_definition(visitor, definition):
-    _many(_visit_named_type, visitor, definition.interfaces)
+def _visit_object_type_definition(
+    visitor: Visitor,
+    definition: Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension],
+) -> None:
+    _many(_visit_type, visitor, definition.interfaces)
     _many(_visit_directive, visitor, definition.directives)
     _many(_visit_field_definition, visitor, definition.fields)
 
 
 @_visiting
-def _visit_interface_type_definition(visitor, definition):
+def _visit_interface_type_definition(
+    visitor: Visitor,
+    definition: Union[
+        _ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension
+    ],
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
     _many(_visit_field_definition, visitor, definition.fields)
 
 
 @_visiting
-def _visit_union_type_definition(visitor, definition):
+def _visit_union_type_definition(
+    visitor: Visitor,
+    definition: Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension],
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
-    _many(_visit_named_type, visitor, definition.types)
+    _many(_visit_type, visitor, definition.types)
 
 
 @_visiting
-def visit_enum_type_definition(visitor, definition):
+def visit_enum_type_definition(
+    visitor: Visitor,
+    definition: Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension],
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
     _many(_visit_enum_value_definition, visitor, definition.values)
 
 
 @_visiting
-def _visit_input_object_type_definition(visitor, definition):
+def _visit_input_object_type_definition(
+    visitor: Visitor,
+    definition: Union[
+        _ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension
+    ],
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
     _many(_visit_input_value_definition, visitor, definition.fields)
 
 
 @_visiting
-def _visit_field_definition(visitor, definition):
-    _visit_named_type(visitor, definition.type)
+def _visit_field_definition(
+    visitor: Visitor, definition: _ast.FieldDefinition
+) -> None:
+    _visit_type(visitor, definition.type)
     _many(_visit_input_value_definition, visitor, definition.arguments)
     _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def _visit_input_value_definition(visitor, definition):
-    _visit_named_type(visitor, definition.type)
-    _visit_input_value(visitor, definition.default_value)
+def _visit_input_value_definition(
+    visitor: Visitor, definition: _ast.InputValueDefinition
+) -> None:
+    _visit_type(visitor, definition.type)
+    if definition.default_value is not None:
+        _visit_input_value(visitor, definition.default_value)
     _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def _visit_enum_value_definition(visitor, definition):
+def _visit_enum_value_definition(
+    visitor: Visitor, definition: _ast.EnumValueDefinition
+) -> None:
     _many(_visit_directive, visitor, definition.directives)
 
 
 @_visiting
-def _visit_directive_definition(visitor, definition):
+def _visit_directive_definition(
+    visitor: Visitor, definition: _ast.DirectiveDefinition
+) -> None:
     _many(_visit_input_value_definition, visitor, definition.arguments)
 
 
@@ -465,131 +530,289 @@ class DispatchingVisitor(Visitor):
     def _default_handler(self, node):
         pass
 
-    enter_document = _default_handler
-    leave_document = _default_handler
+    def enter_document(self, _: _ast.Document) -> None:
+        pass
 
-    enter_operation_definition = _default_handler
-    leave_operation_definition = _default_handler
+    def leave_document(self, _: _ast.Document) -> None:
+        pass
 
-    enter_fragment_definition = _default_handler
-    leave_fragment_definition = _default_handler
+    def enter_operation_definition(self, _: _ast.OperationDefinition) -> None:
+        pass
 
-    enter_variable_definition = _default_handler
-    leave_variable_definition = _default_handler
+    def leave_operation_definition(self, _: _ast.OperationDefinition) -> None:
+        pass
 
-    enter_directive = _default_handler
-    leave_directive = _default_handler
+    def enter_fragment_definition(self, _: _ast.FragmentDefinition) -> None:
+        pass
 
-    enter_argument = _default_handler
-    leave_argument = _default_handler
+    def leave_fragment_definition(self, _: _ast.FragmentDefinition) -> None:
+        pass
 
-    enter_selection_set = _default_handler
-    leave_selection_set = _default_handler
+    def enter_variable_definition(self, _: _ast.VariableDefinition) -> None:
+        pass
 
-    enter_field = _default_handler
-    leave_field = _default_handler
+    def leave_variable_definition(self, _: _ast.VariableDefinition) -> None:
+        pass
 
-    enter_fragment_spread = _default_handler
-    leave_fragment_spread = _default_handler
+    def enter_directive(self, _: _ast.Directive) -> None:
+        pass
 
-    enter_inline_fragment = _default_handler
-    leave_inline_fragment = _default_handler
+    def leave_directive(self, _: _ast.Directive) -> None:
+        pass
 
-    enter_null_value = _default_handler
-    leave_null_value = _default_handler
+    def enter_argument(self, _: _ast.Argument) -> None:
+        pass
 
-    enter_int_value = _default_handler
-    leave_int_value = _default_handler
+    def leave_argument(self, _: _ast.Argument) -> None:
+        pass
 
-    enter_float_value = _default_handler
-    leave_float_value = _default_handler
+    def enter_selection_set(self, _: _ast.SelectionSet) -> None:
+        pass
 
-    enter_string_value = _default_handler
-    leave_string_value = _default_handler
+    def leave_selection_set(self, _: _ast.SelectionSet) -> None:
+        pass
 
-    enter_boolean_value = _default_handler
-    leave_boolean_value = _default_handler
+    def enter_field(self, _: _ast.Field) -> None:
+        pass
 
-    enter_enum_value = _default_handler
-    leave_enum_value = _default_handler
+    def leave_field(self, _: _ast.Field) -> None:
+        pass
 
-    enter_variable = _default_handler
-    leave_variable = _default_handler
+    def enter_fragment_spread(self, _: _ast.FragmentSpread) -> None:
+        pass
 
-    enter_list_value = _default_handler
-    leave_list_value = _default_handler
+    def leave_fragment_spread(self, _: _ast.FragmentSpread) -> None:
+        pass
 
-    enter_object_value = _default_handler
-    leave_object_value = _default_handler
+    def enter_inline_fragment(self, _: _ast.InlineFragment) -> None:
+        pass
 
-    enter_object_field = _default_handler
-    leave_object_field = _default_handler
+    def leave_inline_fragment(self, _: _ast.InlineFragment) -> None:
+        pass
 
-    enter_named_type = _default_handler
-    leave_named_type = _default_handler
+    def enter_null_value(self, _: _ast.NullValue) -> None:
+        pass
 
-    enter_list_type = _default_handler
-    leave_list_type = _default_handler
+    def leave_null_value(self, _: _ast.NullValue) -> None:
+        pass
 
-    enter_non_null_type = _default_handler
-    leave_non_null_type = _default_handler
+    def enter_int_value(self, _: _ast.IntValue) -> None:
+        pass
 
-    enter_schema_definition = _default_handler
-    leave_schema_definition = _default_handler
+    def leave_int_value(self, _: _ast.IntValue) -> None:
+        pass
 
-    enter_operation_type_definition = _default_handler
-    leave_operation_type_definition = _default_handler
+    def enter_float_value(self, _: _ast.FloatValue) -> None:
+        pass
 
-    enter_scalar_type_definition = _default_handler
-    leave_scalar_type_definition = _default_handler
+    def leave_float_value(self, _: _ast.FloatValue) -> None:
+        pass
 
-    enter_object_type_definition = _default_handler
-    leave_object_type_definition = _default_handler
+    def enter_string_value(self, _: _ast.StringValue) -> None:
+        pass
 
-    enter_field_definition = _default_handler
-    leave_field_definition = _default_handler
+    def leave_string_value(self, _: _ast.StringValue) -> None:
+        pass
 
-    enter_input_value_definition = _default_handler
-    leave_input_value_definition = _default_handler
+    def enter_boolean_value(self, _: _ast.BooleanValue) -> None:
+        pass
 
-    enter_interface_type_definition = _default_handler
-    leave_interface_type_definition = _default_handler
+    def leave_boolean_value(self, _: _ast.BooleanValue) -> None:
+        pass
 
-    enter_union_type_definition = _default_handler
-    leave_union_type_definition = _default_handler
+    def enter_enum_value(self, _: _ast.EnumValue) -> None:
+        pass
 
-    enter_enum_type_definition = _default_handler
-    leave_enum_type_definition = _default_handler
+    def leave_enum_value(self, _: _ast.EnumValue) -> None:
+        pass
 
-    enter_enum_value_definition = _default_handler
-    leave_enum_value_definition = _default_handler
+    def enter_variable(self, _: _ast.Variable) -> None:
+        pass
 
-    enter_input_object_type_definition = _default_handler
-    leave_input_object_type_definition = _default_handler
+    def leave_variable(self, _: _ast.Variable) -> None:
+        pass
 
-    enter_schema_extension = _default_handler
-    leave_schema_extension = _default_handler
+    def enter_list_value(self, _: _ast.ListValue) -> None:
+        pass
 
-    enter_scalar_type_extension = _default_handler
-    leave_scalar_type_extension = _default_handler
+    def leave_list_value(self, _: _ast.ListValue) -> None:
+        pass
 
-    enter_object_type_extension = _default_handler
-    leave_object_type_extension = _default_handler
+    def enter_object_value(self, _: _ast.ObjectValue) -> None:
+        pass
 
-    enter_interface_type_extension = _default_handler
-    leave_interface_type_extension = _default_handler
+    def leave_object_value(self, _: _ast.ObjectValue) -> None:
+        pass
 
-    enter_union_type_extension = _default_handler
-    leave_union_type_extension = _default_handler
+    def enter_object_field(self, _: _ast.ObjectField) -> None:
+        pass
 
-    enter_enum_type_extension = _default_handler
-    leave_enum_type_extension = _default_handler
+    def leave_object_field(self, _: _ast.ObjectField) -> None:
+        pass
 
-    enter_input_object_type_extension = _default_handler
-    leave_input_object_type_extension = _default_handler
+    def enter_named_type(self, _: _ast.NamedType) -> None:
+        pass
 
-    enter_directive_definition = _default_handler
-    leave_directive_definition = _default_handler
+    def leave_named_type(self, _: _ast.NamedType) -> None:
+        pass
+
+    def enter_list_type(self, _: _ast.ListType) -> None:
+        pass
+
+    def leave_list_type(self, _: _ast.ListType) -> None:
+        pass
+
+    def enter_non_null_type(self, _: _ast.NonNullType) -> None:
+        pass
+
+    def leave_non_null_type(self, _: _ast.NonNullType) -> None:
+        pass
+
+    def enter_schema_definition(self, _: _ast.SchemaDefinition) -> None:
+        pass
+
+    def leave_schema_definition(self, _: _ast.SchemaDefinition) -> None:
+        pass
+
+    def enter_operation_type_definition(
+        self, _: _ast.OperationTypeDefinition
+    ) -> None:
+        pass
+
+    def leave_operation_type_definition(
+        self, _: _ast.OperationTypeDefinition
+    ) -> None:
+        pass
+
+    def enter_scalar_type_definition(
+        self, _: _ast.ScalarTypeDefinition
+    ) -> None:
+        pass
+
+    def leave_scalar_type_definition(
+        self, _: _ast.ScalarTypeDefinition
+    ) -> None:
+        pass
+
+    def enter_object_type_definition(
+        self, _: _ast.ObjectTypeDefinition
+    ) -> None:
+        pass
+
+    def leave_object_type_definition(
+        self, _: _ast.ObjectTypeDefinition
+    ) -> None:
+        pass
+
+    def enter_field_definition(self, _: _ast.FieldDefinition) -> None:
+        pass
+
+    def leave_field_definition(self, _: _ast.FieldDefinition) -> None:
+        pass
+
+    def enter_input_value_definition(
+        self, _: _ast.InputValueDefinition
+    ) -> None:
+        pass
+
+    def leave_input_value_definition(
+        self, _: _ast.InputValueDefinition
+    ) -> None:
+        pass
+
+    def enter_interface_type_definition(
+        self, _: _ast.InterfaceTypeDefinition
+    ) -> None:
+        pass
+
+    def leave_interface_type_definition(
+        self, _: _ast.InterfaceTypeDefinition
+    ) -> None:
+        pass
+
+    def enter_union_type_definition(self, _: _ast.UnionTypeDefinition) -> None:
+        pass
+
+    def leave_union_type_definition(self, _: _ast.UnionTypeDefinition) -> None:
+        pass
+
+    def enter_enum_type_definition(self, _: _ast.EnumTypeDefinition) -> None:
+        pass
+
+    def leave_enum_type_definition(self, _: _ast.EnumTypeDefinition) -> None:
+        pass
+
+    def enter_enum_value_definition(self, _: _ast.EnumValueDefinition) -> None:
+        pass
+
+    def leave_enum_value_definition(self, _: _ast.EnumValueDefinition) -> None:
+        pass
+
+    def enter_input_object_type_definition(
+        self, _: _ast.InputObjectTypeDefinition
+    ) -> None:
+        pass
+
+    def leave_input_object_type_definition(
+        self, _: _ast.InputObjectTypeDefinition
+    ) -> None:
+        pass
+
+    def enter_schema_extension(self, _: _ast.SchemaExtension) -> None:
+        pass
+
+    def leave_schema_extension(self, _: _ast.SchemaExtension) -> None:
+        pass
+
+    def enter_scalar_type_extension(self, _: _ast.ScalarTypeExtension) -> None:
+        pass
+
+    def leave_scalar_type_extension(self, _: _ast.ScalarTypeExtension) -> None:
+        pass
+
+    def enter_object_type_extension(self, _: _ast.ObjectTypeExtension) -> None:
+        pass
+
+    def leave_object_type_extension(self, _: _ast.ObjectTypeExtension) -> None:
+        pass
+
+    def enter_interface_type_extension(
+        self, _: _ast.InterfaceTypeExtension
+    ) -> None:
+        pass
+
+    def leave_interface_type_extension(
+        self, _: _ast.InterfaceTypeExtension
+    ) -> None:
+        pass
+
+    def enter_union_type_extension(self, _: _ast.UnionTypeExtension) -> None:
+        pass
+
+    def leave_union_type_extension(self, _: _ast.UnionTypeExtension) -> None:
+        pass
+
+    def enter_enum_type_extension(self, _: _ast.EnumTypeExtension) -> None:
+        pass
+
+    def leave_enum_type_extension(self, _: _ast.EnumTypeExtension) -> None:
+        pass
+
+    def enter_input_object_type_extension(
+        self, _: _ast.InputObjectTypeExtension
+    ) -> None:
+        pass
+
+    def leave_input_object_type_extension(
+        self, _: _ast.InputObjectTypeExtension
+    ) -> None:
+        pass
+
+    def enter_directive_definition(self, _: _ast.DirectiveDefinition) -> None:
+        pass
+
+    def leave_directive_definition(self, _: _ast.DirectiveDefinition) -> None:
+        pass
 
 
 class ParrallelVisitor(Visitor):
@@ -600,12 +823,11 @@ class ParrallelVisitor(Visitor):
       to run
 
     Args:
-        *visitors (List[Visitor]): List of visitors to run
+        *visitors: List of visitors to run
     """
 
-    # pylint: disable = super-init-not-called
-    def __init__(self, *visitors):
-        self.visitors = visitors
+    def __init__(self, *visitors: Visitor):
+        self.visitors: Tuple[Visitor, ...] = visitors
 
     def enter(self, node):
         for v in self.visitors:

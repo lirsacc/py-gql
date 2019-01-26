@@ -5,6 +5,8 @@ import os
 
 import pytest
 
+from py_gql.execution import AsyncExecutor, SyncExecutor
+
 
 @pytest.fixture
 def fixture_file():
@@ -36,3 +38,8 @@ def raiser():
         return _raiser
 
     return factory
+
+
+@pytest.fixture(params=[SyncExecutor, AsyncExecutor])
+def executor_cls(request):
+    yield request.param

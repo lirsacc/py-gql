@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """ Utilities to extract Python values from an ast node. """
 
+from typing import Any, Dict, Mapping, Optional, Union
+
 from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
 from ..schema import (
     EnumType,
+    GraphQLType,
     InputObjectType,
     ListType,
     NonNullType,
@@ -12,7 +15,11 @@ from ..schema import (
 )
 
 
-def value_from_ast(node, type_, variables=None):
+def value_from_ast(
+    node: Union[_ast.Value, _ast.Variable],
+    type_: GraphQLType,
+    variables: Optional[Mapping[str, Any]] = None,
+) -> Any:
     """ Convert an ast value node into a valid python value while validating
     against a given type.
 
@@ -21,12 +28,12 @@ def value_from_ast(node, type_, variables=None):
         assumed to have been validated before.
 
     Args:
-        node (py_gql.lang.ast.Value): The value node
-        variables (Optional[dict]): Variables mapping (coerced)
-        type_ (py_gql.schema.Type): Type to validate against
+        node: The value node
+        variables: Variables mapping (coerced)
+        type_: Type to validate against
 
     Returns:
-        any: Extracted value
+        Extracted value
 
     Raises:
         :py:class:`TypeError`:
@@ -36,32 +43,20 @@ def value_from_ast(node, type_, variables=None):
         :class:`~py_gql.exc.UnknownVariable`:
             if a variable is required and doesn't exist
     """
-    kind = type(node)
-
-    if kind == _ast.Variable:
-        varname = node.name.value
-        if not variables or varname not in variables:
-            raise UnknownVariable(varname, [node])
-        variable_value = variables[varname]
-        if isinstance(type_, NonNullType) and variable_value is None:
-            raise InvalidValue(
-                'Variable "$%s" used for type "%s" must not be null.'
-                % (varname, type_),
-                [node],
-            )
-        return variable_value
+    if isinstance(node, _ast.Variable):
+        return _extract_variable(node, type_, variables)
 
     if isinstance(type_, NonNullType):
-        if kind == _ast.NullValue:
+        if isinstance(node, _ast.NullValue):
             raise InvalidValue("Expected non null value.", [node])
         else:
             type_ = type_.type
 
-    if kind == _ast.NullValue:
+    if isinstance(node, _ast.NullValue):
         return None
 
     if isinstance(type_, ListType):
-        if kind != _ast.ListValue:
+        if not isinstance(node, _ast.ListValue):
             return [value_from_ast(node, type_.type, variables)]
 
         return [
@@ -69,24 +64,41 @@ def value_from_ast(node, type_, variables=None):
         ]
 
     if isinstance(type_, InputObjectType):
-        if kind != _ast.ObjectValue:
+        if not isinstance(node, _ast.ObjectValue):
             raise InvalidValue(
-                "Expected Object but got %s" % kind.__name__, [node]
+                "Expected Object but got %s" % node.__class__.__name__, [node]
             )
         return _extract_input_object(node, type_, variables)
 
     if isinstance(type_, EnumType):
-        if kind != _ast.EnumValue:
+        if not isinstance(node, _ast.EnumValue):
             raise InvalidValue("Expected EnumValue", [node])
         return type_.get_value(node.value)
 
     if isinstance(type_, ScalarType):
+        if not isinstance(
+            node,
+            (
+                _ast.IntValue,
+                _ast.FloatValue,
+                _ast.StringValue,
+                _ast.BooleanValue,
+            ),
+        ):
+            raise InvalidValue(
+                "Invalid literal %s for scalar type %s"
+                % (node.__class__.__name__, type_.name)
+            )
         return type_.parse_literal(node, variables)
 
     raise TypeError("Invalid type for input coercion %s" % type_)
 
 
-def _extract_input_object(node, type_, variables):
+def _extract_input_object(
+    node: _ast.ObjectValue,
+    type_: InputObjectType,
+    variables: Optional[Mapping[str, Any]],
+) -> Dict[str, Any]:
     coerced = {}
     node_fields = {f.name.value: f for f in node.fields}
     for field in type_.fields:
@@ -101,3 +113,21 @@ def _extract_input_object(node, type_, variables):
             coerced[name] = value_from_ast(value, field.type, variables)
 
     return coerced
+
+
+def _extract_variable(
+    node: _ast.Variable,
+    type_: GraphQLType,
+    variables: Optional[Mapping[str, Any]],
+) -> Any:
+    varname = node.name.value
+    if not variables or varname not in variables:
+        raise UnknownVariable(varname, [node])
+    variable_value = variables[varname]
+    if isinstance(type_, NonNullType) and variable_value is None:
+        raise InvalidValue(
+            'Variable "$%s" used for type "%s" must not be null.'
+            % (varname, type_),
+            [node],
+        )
+    return variable_value

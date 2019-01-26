@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-# pylint: disable = redefined-outer-name
 """ execution tests related to abstract types (Interface, Union) """
-from __future__ import unicode_literals
+# pylint: disable = redefined-outer-name
+
+import pytest
 
 from py_gql.schema import (
     Boolean,
@@ -14,7 +15,10 @@ from py_gql.schema import (
     UnionType,
 )
 
-from ._test_utils import check_execution
+from ._test_utils import assert_execution
+
+# All test coroutines will be treated as marked.
+pytestmark = pytest.mark.asyncio
 
 
 class Dog(object):
@@ -41,17 +45,19 @@ class Person(object):
         self.friends = friends
 
 
-def test_ObjectType_is_type_of_for_interface_runtime_inference():
+async def test_ObjectType_is_type_of_for_interface_runtime_inference(
+    executor_cls
+):
     PetType = InterfaceType("Pet", [Field("name", String)])
 
-    DogType = ObjectType(
+    DogType: ObjectType = ObjectType(
         "Dog",
         [Field("name", String), Field("woofs", Boolean)],
         interfaces=[PetType],
         is_type_of=Dog,
     )
 
-    CatType = ObjectType(
+    CatType: ObjectType = ObjectType(
         "Cat",
         [Field("name", String), Field("meows", Boolean)],
         interfaces=[PetType],
@@ -75,7 +81,7 @@ def test_ObjectType_is_type_of_for_interface_runtime_inference():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
             pets {
@@ -85,17 +91,17 @@ def test_ObjectType_is_type_of_for_interface_runtime_inference():
                 ... on Cat { meows }
             }
         }""",
+        executor_cls=executor_cls,
         expected_data={
             "pets": [
                 {"name": "Odie", "woofs": True, "__typename": "Dog"},
                 {"name": "Garfield", "meows": False, "__typename": "Cat"},
             ]
         },
-        expected_errors=[],
     )
 
 
-def test_ObjectType_is_type_of_for_union_runtime_inference():
+async def test_ObjectType_is_type_of_for_union_runtime_inference(executor_cls):
     DogType = ObjectType(
         "Dog", [Field("name", String), Field("woofs", Boolean)], is_type_of=Dog
     )
@@ -123,7 +129,7 @@ def test_ObjectType_is_type_of_for_union_runtime_inference():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
             pets {
@@ -132,21 +138,21 @@ def test_ObjectType_is_type_of_for_union_runtime_inference():
                 ... on Cat { meows, name }
             }
         }""",
+        executor_cls=executor_cls,
         expected_data={
             "pets": [
                 {"name": "Odie", "woofs": True, "__typename": "Dog"},
                 {"name": "Garfield", "meows": False, "__typename": "Cat"},
             ]
         },
-        expected_errors=[],
     )
 
 
-def test_type_resolution_on_interface_yields_useful_error():
+async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value, **_):
+    def _resolve_pet_type(value, *_, **__):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
@@ -187,7 +193,7 @@ def test_type_resolution_on_interface_yields_useful_error():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
         pets {
@@ -197,26 +203,25 @@ def test_type_resolution_on_interface_yields_useful_error():
             ... on Cat { meows }
         }
         }""",
-        expected_exc=RuntimeError,
-        expected_msg=(
-            'Runtime ObjectType "Human" is not a possible type for field '
-            '"pets[2]" of type "Pet".'
+        executor_cls=executor_cls,
+        expected_exc=(
+            RuntimeError,
+            (
+                'Runtime ObjectType "Human" is not a possible type for field '
+                '"pets[2]" of type "Pet".'
+            ),
         ),
     )
 
 
-def test_type_resolution_on_union_yields_useful_error():
+async def test_type_resolution_on_union_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value, **_):
+    def _resolve_pet_type(value, *_, **__):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
-
-    PetType = InterfaceType(
-        "Pet", [Field("name", String)], resolve_type=_resolve_pet_type
-    )
 
     HumanType = ObjectType("Human", [Field("name", String)])
 
@@ -250,7 +255,7 @@ def test_type_resolution_on_union_yields_useful_error():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
         pets {
@@ -259,16 +264,19 @@ def test_type_resolution_on_union_yields_useful_error():
             ... on Cat { meows, name }
         }
         }""",
-        expected_exc=RuntimeError,
-        expected_msg=(
-            'Runtime ObjectType "Human" is not a possible type for field '
-            '"pets[2]" of type "Pet".'
+        executor_cls=executor_cls,
+        expected_exc=(
+            RuntimeError,
+            (
+                'Runtime ObjectType "Human" is not a possible type for field '
+                '"pets[2]" of type "Pet".'
+            ),
         ),
     )
 
 
-def test_type_resolution_supports_strings():
-    def _resolve_pet_type(value, **_):
+async def test_type_resolution_supports_strings(executor_cls):
+    def _resolve_pet_type(value, *_, **__):
         return type(value).__name__
 
     PetType = InterfaceType(
@@ -304,7 +312,7 @@ def test_type_resolution_supports_strings():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
         pets {
@@ -314,11 +322,11 @@ def test_type_resolution_supports_strings():
             ... on Cat { meows }
         }
         }""",
-        expected_errors=[],
+        executor_cls=executor_cls,
     )
 
 
-def test_type_resolution_supports_object_attribute():
+async def test_type_resolution_supports_object_attribute(executor_cls):
     PetType = InterfaceType("Pet", [Field("name", String)])
 
     DogType = ObjectType(
@@ -334,7 +342,7 @@ def test_type_resolution_supports_object_attribute():
     )
 
     class Dog(object):
-        __typename__ = DogType
+        __typename__ = "Dog"
 
         def __init__(self, name, woofs):
             self.name = name
@@ -364,7 +372,7 @@ def test_type_resolution_supports_object_attribute():
         types=[DogType, CatType],
     )
 
-    check_execution(
+    await assert_execution(
         schema,
         """{
         pets {
@@ -374,7 +382,7 @@ def test_type_resolution_supports_object_attribute():
             ... on Cat { meows }
         }
         }""",
-        expected_errors=[],
+        executor_cls=executor_cls,
     )
 
 
@@ -424,32 +432,33 @@ _LIZ = Person("Liz", None, None)
 _JOHN = Person("John", [_GARFIELD, _ODIE], [_LIZ, _ODIE])
 
 
-def test_it_can_introspect_on_union_and_intersection_types():
-    check_execution(
+async def test_it_can_introspect_on_union_and_intersection_types(executor_cls):
+    await assert_execution(
         _SCHEMA,
         """
-    {
-        Named: __type(name: "Named") {
-            kind
-            name
-            fields { name }
-            interfaces { name }
-            possibleTypes { name }
-            enumValues { name }
-            inputFields { name }
-        }
-        Pet: __type(name: "Pet") {
-            kind
-            name
-            fields { name }
-            interfaces { name }
-            possibleTypes { name }
-            enumValues { name }
-            inputFields { name }
-        }
-    }
-    """,
         {
+            Named: __type(name: "Named") {
+                kind
+                name
+                fields { name }
+                interfaces { name }
+                possibleTypes { name }
+                enumValues { name }
+                inputFields { name }
+            }
+            Pet: __type(name: "Pet") {
+                kind
+                name
+                fields { name }
+                interfaces { name }
+                possibleTypes { name }
+                enumValues { name }
+                inputFields { name }
+            }
+        }
+        """,
+        executor_cls=executor_cls,
+        expected_data={
             "Named": {
                 "enumValues": None,
                 "fields": [{"name": "name"}],
@@ -473,27 +482,26 @@ def test_it_can_introspect_on_union_and_intersection_types():
                 "possibleTypes": [{"name": "Cat"}, {"name": "Dog"}],
             },
         },
-        [],
     )
 
 
-def test_it_executes_union_types():
+async def test_it_executes_union_types(executor_cls):
     # This is an *invalid* query, but it should be an *executable* query.
-    check_execution(
+    await assert_execution(
         _SCHEMA,
         """
-    {
-        __typename
-        name
-        pets {
+        {
             __typename
             name
-            woofs
-            meows
+            pets {
+                __typename
+                name
+                woofs
+                meows
+            }
         }
-    }
-    """,
-        {
+        """,
+        expected_data={
             "__typename": "Person",
             "name": "John",
             "pets": [
@@ -501,27 +509,29 @@ def test_it_executes_union_types():
                 {"__typename": "Dog", "name": "Odie", "woofs": True},
             ],
         },
-        [],
+        executor_cls=executor_cls,
         initial_value=_JOHN,
     )
 
 
-def test_it_executes_union_types_using_inline_fragments():
+async def test_it_executes_union_types_using_inline_fragments(executor_cls):
     # This is the valid version of the query in the above test.
-    check_execution(
+    await assert_execution(
         _SCHEMA,
         """
-    {
-        __typename
-        name
-        pets {
-            __typename
-            ... on Dog { name woofs }
-            ... on Cat { name meows }
-        }
-    }
-    """,
         {
+            __typename
+            name
+            pets {
+                __typename
+                ... on Dog { name woofs }
+                ... on Cat { name meows }
+            }
+        }
+        """,
+        initial_value=_JOHN,
+        executor_cls=executor_cls,
+        expected_data={
             "__typename": "Person",
             "name": "John",
             "pets": [
@@ -529,28 +539,28 @@ def test_it_executes_union_types_using_inline_fragments():
                 {"__typename": "Dog", "name": "Odie", "woofs": True},
             ],
         },
-        [],
-        initial_value=_JOHN,
     )
 
 
-def test_it_executes_interface_types():
+async def test_it_executes_interface_types(executor_cls):
     # This is an *invalid* query, but it should be an *executable* query.
-    check_execution(
+    await assert_execution(
         _SCHEMA,
         """
-    {
-        __typename
-        name
-        friends {
+        {
             __typename
             name
-            woofs
-            meows
+            friends {
+                __typename
+                name
+                woofs
+                meows
+            }
         }
-    }
-    """,
-        {
+        """,
+        initial_value=_JOHN,
+        executor_cls=executor_cls,
+        expected_data={
             "__typename": "Person",
             "friends": [
                 {"__typename": "Person", "name": "Liz"},
@@ -558,65 +568,65 @@ def test_it_executes_interface_types():
             ],
             "name": "John",
         },
-        [],
-        initial_value=_JOHN,
     )
 
 
-def test_it_executes_interface_types_using_inline_fragments():
+async def test_it_executes_interface_types_using_inline_fragments(executor_cls):
     # This is the valid version of the query in the above test.
-    check_execution(
+    await assert_execution(
         _SCHEMA,
         """
-    {
-        __typename
-        name
-        friends {
+        {
+            __typename
+            name
+            friends {
+                __typename
+                name
+                ... on Dog { woofs }
+                ... on Cat { meows }
+            }
+        }
+        """,
+        initial_value=_JOHN,
+        executor_cls=executor_cls,
+        expected_data={
+            "__typename": "Person",
+            "friends": [
+                {"__typename": "Person", "name": "Liz"},
+                {"__typename": "Dog", "name": "Odie", "woofs": True},
+            ],
+            "name": "John",
+        },
+    )
+
+
+async def test_it_allows_fragment_conditions_to_be_abstract_types(executor_cls):
+    await assert_execution(
+        _SCHEMA,
+        """
+        {
+            __typename
+            name
+            pets { ...PetFields }
+            friends { ...FriendFields }
+        }
+
+        fragment PetFields on Pet {
+            __typename
+            ... on Dog { name woofs }
+            ... on Cat { name meows }
+        }
+
+        fragment FriendFields on Named {
             __typename
             name
             ... on Dog { woofs }
             ... on Cat { meows }
         }
-    }
-    """,
-        {
-            "__typename": "Person",
-            "friends": [
-                {"__typename": "Person", "name": "Liz"},
-                {"__typename": "Dog", "name": "Odie", "woofs": True},
-            ],
-            "name": "John",
-        },
-        [],
+        """,
         initial_value=_JOHN,
-    )
-
-
-def test_it_allows_fragment_conditions_to_be_abstract_types():
-    check_execution(
-        _SCHEMA,
-        """
-    {
-        __typename
-        name
-        pets { ...PetFields }
-        friends { ...FriendFields }
-    }
-
-    fragment PetFields on Pet {
-        __typename
-        ... on Dog { name woofs }
-        ... on Cat { name meows }
-    }
-
-    fragment FriendFields on Named {
-        __typename
-        name
-        ... on Dog { woofs }
-        ... on Cat { meows }
-    }
-    """,
-        {
+        executor_cls=executor_cls,
+        expected_data={
             "__typename": "Person",
             "friends": [
                 {"__typename": "Person", "name": "Liz"},
@@ -628,6 +638,4 @@ def test_it_allows_fragment_conditions_to_be_abstract_types():
                 {"__typename": "Dog", "name": "Odie", "woofs": True},
             ],
         },
-        [],
-        initial_value=_JOHN,
     )

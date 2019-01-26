@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 
+from typing import Callable, List, Optional, Sequence, TypeVar, Union
 
-from py_gql._utils import find_one
-from py_gql.exc import UnknownEnumValue, UnknownType
-from py_gql.lang.visitor import DispatchingVisitor
-from py_gql.schema import (
+from .._utils import find_one
+from ..exc import UnknownEnumValue, UnknownType
+from ..lang.visitor import DispatchingVisitor
+from ..schema import (
+    Argument,
+    Directive,
     EnumType,
+    EnumValue,
+    Field,
+    InputField,
     InputObjectType,
     InterfaceType,
     ListType,
@@ -16,18 +22,21 @@ from py_gql.schema import (
     nullable_type,
     unwrap_type,
 )
-from py_gql.schema.introspection import (
-    schema_field,
-    type_field,
-    type_name_field,
-)
+from ..schema.introspection import schema_field, type_field, type_name_field
+
+T = TypeVar("T")
 
 
-def _peek(lst, count=1, default=None):
+OptList = List[Optional[T]]
+
+
+def _peek(
+    lst: Sequence[T], count: int = 1, default: Optional[T] = None
+) -> Optional[T]:
     return lst[-1 * count] if len(lst) >= count else default
 
 
-def _or_none(value, predicate=bool):
+def _or_none(value: T, predicate: Callable[[T], bool] = bool) -> Optional[T]:
     return value if predicate(value) else None
 
 
@@ -78,55 +87,46 @@ class TypeInfoVisitor(DispatchingVisitor):
         "enum_value",
     )
 
-    # pylint: disable = super-init-not-called
     def __init__(self, schema, _get_field_def=None):
         self._schema = schema
 
-        self._type_stack = []
-        self._parent_type_stack = []
-        self._input_type_stack = []
-        self._field_stack = []
-        self._input_value_def_stack = []
+        self._type_stack: OptList[ObjectType] = []
+        self._parent_type_stack: OptList[ObjectType] = []
+        self._input_type_stack: OptList[InputObjectType] = []
+        self._field_stack: OptList[Field] = []
+        self._input_value_def_stack: OptList[Union[Argument, InputField]] = []
 
-        #: Optional[:class:`py_gql.schema.Directive`]: Current directive if applicable
-        self.directive = None
-        #: Optional[:class:`py_gql.schema.Argument`]: Current argument if applicable
-        self.argument = None
-        #: Optional[:class:`py_gql.schema.EnumValue`]: Current enum value if applicable
-        self.enum_value = None
+        self.directive: Optional[Directive] = None
+        self.argument: Optional[Argument] = None
+        self.enum_value: Optional[EnumValue] = None
 
     @property
-    def type(self):
-        """ Optional[:class:`py_gql.schema.Type`]: Current type if applicable
-        """
+    def type(self) -> Optional[ObjectType]:
+        """ Current type if applicable """
         return _peek(self._type_stack)
 
     @property
-    def parent_type(self):
-        """ Optional[:class:`py_gql.schema.Type`]: Current type if applicable
-        """
+    def parent_type(self) -> Optional[ObjectType]:
+        """ Current type if applicable """
         return _peek(self._parent_type_stack, 1)
 
     @property
-    def input_type(self):
-        """ Optional[:class:`py_gql.schema.Type`]: Current input type if
-        applicable (when visiting arguments) """
+    def input_type(self) -> Optional[InputObjectType]:
+        """ Current input type if applicable (when visiting arguments) """
         return _peek(self._input_type_stack, 1)
 
     @property
-    def parent_input_type(self):
-        """ Optional[:class:`py_gql.schema.Type`]: Current parent input type if
-        applicable (when visiting input objects) """
+    def parent_input_type(self) -> Optional[InputObjectType]:
+        """ Current parent input type if applicable (when visiting input objects) """
         return _peek(self._input_type_stack, 2)
 
     @property
-    def field(self):
-        """ Optional[:class:`py_gql.schema.Field`]: Current field definition if
-        applicable (when visiting object) """
+    def field(self) -> Optional[Field]:
+        """ Current field definition if applicable (when visiting object) """
         return _peek(self._field_stack)
 
     @property
-    def input_value_def(self):
+    def input_value_def(self) -> Optional[Union[Argument, InputField]]:
         """ Optional[Union[:class:`py_gql.schema.Argument`,
         :class:`py_gql.schema.InputField`]]: Current input value definition
         (e.g. arg def, input field) if applicable """
@@ -221,7 +221,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         ctx = self.directive or self.field
         if ctx:
             name = node.name.value
-            self.argument = find_one(ctx.args, lambda a: a.name == name)
+            self.argument = find_one(ctx.arguments, lambda a: a.name == name)
             self._input_value_def_stack.append(self.argument)
             self._input_type_stack.append(
                 self.argument.type
@@ -242,7 +242,11 @@ class TypeInfoVisitor(DispatchingVisitor):
         item_type = (
             unwrap_type(list_type) if isinstance(list_type, ListType) else None
         )
-        self._input_type_stack.append(_or_none(item_type, is_input_type))
+        self._input_type_stack.append(
+            _or_none(item_type, is_input_type)
+            if item_type is not None
+            else None
+        )
         # List positions never have a default value.
         self._input_value_def_stack.append(None)
 

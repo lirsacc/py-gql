@@ -4,121 +4,75 @@ This is based of ther way Apollo graphql handles them which is in essence an
 extension of the Visitor concept.
 """
 
-from .. import types as _types
+from typing import (
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
+
 from ..._utils import flatten
 from ...exc import SDLError
+from ...lang import ast as _ast
 from ...utilities import coerce_argument_values
 from ..directives import SPECIFIED_DIRECTIVES
 from ..scalars import SPECIFIED_SCALAR_TYPES
 from ..schema import Schema
+from ..types import (
+    Argument,
+    Directive,
+    EnumType,
+    EnumValue,
+    Field,
+    GraphQLType,
+    InputField,
+    InputObjectType,
+    InterfaceType,
+    ListType,
+    NamedType,
+    NonNullType,
+    ObjectType,
+    ScalarType,
+    UnionType,
+)
 
 _SPECIFIED_DIRECTIVE_NAMES = frozenset(d.name for d in SPECIFIED_DIRECTIVES)
 
 
-def visit_schema(visitor, schema):
-    """ Traverse a schema based on a visitor instance.
+T = TypeVar("T")
+GT = TypeVar("GT", bound=GraphQLType)
+AT = TypeVar("AT", bound=type)
 
-    Args:
-        visitor (SchemaVisitor): Visitor to use
-        schema (py_gql.schema.Schema): Schema to visit
-
-    Returns:
-        py_gql.schema.Schema:
-    """
-    visitor.visit_schema(schema)
-
-    updated_types = {}
-    for type_name, old_type in schema.types.items():
-        if type_name.startswith("__"):
-            continue
-        new_type = _visit(visitor, old_type)
-        if new_type is not None and new_type is not old_type:
-            updated_types[type_name] = new_type
-
-    if updated_types:
-        for k, v in updated_types.items():
-            schema.type_map[k] = v
-        schema._rebuild_caches()
-
-    return schema
+_HasDirectives = Union[
+    Schema, GraphQLType, Field, Argument, InputField, EnumValue
+]
 
 
-def _visit_and_filter(visitor, iterator):
-    # type: (Visitor, Iterator[T]) -> List[T]
-    visited = (_visit(visitor, entry) for entry in iterator)
-    return [value for value in visited if value is not None]
+def _map_and_filter(
+    func: Callable[[T], Optional[T]], iterator: Iterable[T]
+) -> List[T]:
+    return [
+        value
+        for value in (func(entry) for entry in iterator)
+        if value is not None
+    ]
 
 
-def _visit(visitor, definition):
-    # type: (Visitor, T) -> Optional[T]
-    if isinstance(definition, Schema):
-        return visit_schema(visitor, definition)
-    elif isinstance(definition, _types.ObjectType):
-        return _visit_object(visitor, definition)
-    elif isinstance(definition, _types.InterfaceType):
-        return _visit_interface(visitor, definition)
-    elif isinstance(definition, _types.InputObjectType):
-        return _visit_input_object(visitor, definition)
-    elif isinstance(definition, _types.ScalarType):
-        if definition not in SPECIFIED_SCALAR_TYPES:
-            return visitor.visit_scalar(definition)
-        return definition
-    elif isinstance(definition, _types.UnionType):
-        return visitor.visit_union(definition)
-    elif isinstance(definition, _types.EnumType):
-        return _visit_enum(visitor, definition)
-    elif isinstance(definition, _types.Field):
-        return _visit_field(visitor, definition)
-    elif isinstance(definition, _types.Argument):
-        return visitor.visit_argument(definition)
-    elif isinstance(definition, _types.InputField):
-        return visitor.visit_input_field(definition)
-    elif isinstance(definition, _types.EnumValue):
-        return visitor.visit_enum_value(definition)
+def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:
+    node = getattr(definition, "node", None)
+    if node:
+        return cast(_ast.SupportDirectives, node).directives or []
 
-    raise TypeError(type(definition))
-
-
-def _visit_object(visitor, object_type):
-    # type: (Visitor, _types.ObjectType) -> Optional[_types.ObjectType]
-    new_type = visitor.visit_object(object_type)
-    if new_type is not None:
-        new_type.fields = _visit_and_filter(visitor, new_type.fields)
-    return new_type
-
-
-def _visit_interface(visitor, iface):
-    # type: (Visitor, _types.InterfaceType) -> Optional[_types.InterfaceType]
-    new_type = visitor.visit_interface(iface)
-    if new_type is not None:
-        new_type.fields = _visit_and_filter(visitor, new_type.fields)
-    return new_type
-
-
-def _visit_field(visitor, field):
-    # type: (Visitor, _types.Field) -> Optional[_types.Field]
-    new_field = visitor.visit_field(field)
-    if new_field is not None:
-        if new_field.args:
-            new_field.args = _visit_and_filter(visitor, new_field.args)
-    return new_field
-
-
-def _visit_input_object(visitor, input_object):
-    # type: (Visitor, _types.InputObjectType) -> Optional[_types.InputObjectType]
-    new_type = visitor.visit_input_object(input_object)
-    if new_type is not None:
-        new_type.fields = _visit_and_filter(visitor, new_type.fields)
-    return new_type
-
-
-def _visit_enum(visitor, enum):
-    # type: (Visitor, _types.EnumType) -> Optional[_types.EnumType]
-    new_type = visitor.visit_enum(enum)
-    return _types.EnumType(
-        name=new_type.name,
-        description=new_type.description,
-        values=_visit_and_filter(visitor, new_type.values),
+    nodes = getattr(definition, "nodes", [])
+    return list(
+        flatten(cast(_ast.SupportDirectives, n).directives for n in nodes if n)
     )
 
 
@@ -126,156 +80,134 @@ class SchemaVisitor(object):
     """ Base class to encode schema traversal and inline modifications.
 
     Subclass and override the ``visit_*`` methods to implement custom behaviour.
+    All visitor methods *must* return the modified value; returning ``None``
+    will drop the respective values from their context.
     """
 
-    def visit(self, definition):
-        return _visit(self, definition)
+    def visit_schema(self, schema: Schema) -> Schema:
+        updated_types = {}
 
-    def default(self, definition):
-        return definition
+        for type_name, original in schema.types.items():
+            if type_name.startswith("__"):
+                continue
 
-    # Override these methods to actually do anything to the schema
-    visit_schema = lambda self, definition: self.default(definition)
-    visit_scalar = lambda self, definition: self.default(definition)
-    visit_object = lambda self, definition: self.default(definition)
-    visit_field = lambda self, definition: self.default(definition)
-    visit_argument = lambda self, definition: self.default(definition)
-    visit_interface = lambda self, definition: self.default(definition)
-    visit_union = lambda self, definition: self.default(definition)
-    visit_enum = lambda self, definition: self.default(definition)
-    visit_enum_value = lambda self, definition: self.default(definition)
-    visit_input_object = lambda self, definition: self.default(definition)
-    visit_input_field = lambda self, definition: self.default(definition)
+            updated: Optional[GraphQLType]
 
+            if isinstance(original, ObjectType):
+                updated = self.visit_object(original)
+            elif isinstance(original, InterfaceType):
+                updated = self.visit_interface(original)
+            elif isinstance(original, InputObjectType):
+                updated = self.visit_input_object(original)
+            elif isinstance(original, ScalarType):
+                updated = (
+                    self.visit_scalar(original)
+                    if original not in SPECIFIED_SCALAR_TYPES
+                    else None
+                )
+            elif isinstance(original, UnionType):
+                updated = self.visit_union(original)
+            elif isinstance(original, EnumType):
+                updated = self.visit_enum(original)
+            elif isinstance(original, Field):
+                updated = self.visit_field(original)
+            else:
+                raise TypeError(type(original))
 
-_CLS_TO_LOC = {
-    Schema: "SCHEMA",
-    _types.ScalarType: "SCALAR",
-    _types.ObjectType: "OBJECT",
-    _types.Field: "FIELD_DEFINITION",
-    _types.Argument: "ARGUMENT_DEFINITION",
-    _types.InterfaceType: "INTERFACE",
-    _types.UnionType: "UNION",
-    _types.EnumType: "ENUM",
-    _types.EnumValue: "ENUM_VALUE",
-    _types.InputObjectType: "INPUT_OBJECT",
-    _types.InputField: "INPUT_FIELD_DEFINITION",
-}
+            if updated is not None and updated is not original:
+                updated_types[type_name] = updated
 
+        if not updated_types:
+            return schema
 
-def _find_directives(definition):
-    node = getattr(definition, "node", None)
-    if node:
-        return definition.node.directives or []
-    nodes = getattr(definition, "nodes", [])
-    return list(flatten(node.directives or [] for node in nodes if node))
+        for k, v in updated_types.items():
+            schema.type_map[k] = v
 
+        schema.query_type = cast(
+            ObjectType,
+            (
+                updated_types.get(schema.query_type.name, schema.query_type)
+                if schema.query_type
+                else None
+            ),
+        )
 
-class HealSchemaVisitor(SchemaVisitor):
-    """ Ensure internal representation of types match the ones in the
-    schema's top level type map.
+        schema.mutation_type = cast(
+            ObjectType,
+            (
+                updated_types.get(
+                    schema.mutation_type.name, schema.mutation_type
+                )
+                if schema.mutation_type
+                else None
+            ),
+        )
 
-    This useful after modifying a schema inline or using a
-    :class:`SchemaVisitor` instance where a type may have swapped out but not
-    all references (e.g. arguments, fields, union, etc.) were. """
+        schema.subscription_type = cast(
+            ObjectType,
+            (
+                updated_types.get(
+                    schema.subscription_type.name, schema.subscription_type
+                )
+                if schema.subscription_type
+                else None
+            ),
+        )
 
-    def __init__(self, schema):
-        self.schema = schema
+        schema._rebuild_caches()
 
-    def _healed(self, original):
-        if isinstance(original, (_types.NonNullType, _types.ListType)):
-            return type(original)(self._healed(original.type))
-        return self.schema.get_type(original.name, original)
+        return schema
 
-    def visit_schema(self, schema):
-        if schema.query_type:
-            schema.query_type = self._healed(schema.query_type)
-        if schema.mutation_type:
-            schema.mutation_type = self._healed(schema.mutation_type)
-        if schema.subscription_type:
-            schema.subscription_type = self._healed(schema.subscription_type)
+    def visit_scalar(self, scalar: ScalarType[AT]) -> Optional[ScalarType[AT]]:
+        return scalar
 
-    def visit_object(self, object_definition):
-        object_definition.interfaces = [
-            self._healed(iface) for iface in object_definition.interfaces
-        ]
-        return object_definition
+    def visit_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+        updated_fields = _map_and_filter(self.visit_field, object_type.fields)
+        if updated_fields != object_type.fields:
+            object_type._fields = updated_fields
+        return object_type
 
-    def visit_field(self, field_definition):
-        field_definition.type = self._healed(field_definition.type)
-        return field_definition
+    def visit_field(self, field: Field) -> Optional[Field]:
+        updated_args = _map_and_filter(self.visit_argument, field.arguments)
+        if updated_args != field.arguments:
+            field._args = updated_args
+        return field
 
-    def visit_argument(self, argument_definition):
-        argument_definition.type = self._healed(argument_definition.type)
-        return argument_definition
+    def visit_argument(self, argument: Argument) -> Optional[Argument]:
+        return argument
 
-    def visit_union(self, union):
-        union.types = [self._healed(t) for t in union.types]
+    def visit_interface(
+        self, interface: InterfaceType
+    ) -> Optional[InterfaceType]:
+        updated_fields = _map_and_filter(self.visit_field, interface.fields)
+        if updated_fields != interface.fields:
+            interface._fields = updated_fields
+        return interface
+
+    def visit_union(self, union: UnionType) -> Optional[UnionType]:
         return union
 
-    def visit_input_field(self, input_field):
-        input_field.type = self._healed(input_field.type)
-        return input_field
+    def visit_enum(self, enum: EnumType) -> Optional[EnumType]:
+        updated_values = _map_and_filter(self.visit_enum_value, enum.values)
+        if updated_values != enum.values:
+            enum._set_values(updated_values)
+        return enum
 
+    def visit_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
+        return enum_value
 
-class _SchemaDirectivesApplicator(SchemaVisitor):
-    def __init__(self, schema, schema_directives, strict=False):
-        self._schema = schema
-        self._schema_directives = schema_directives
-        self._strict = strict
+    def visit_input_object(
+        self, input_object: InputObjectType
+    ) -> Optional[InputObjectType]:
+        updated_fields = _map_and_filter(
+            self.visit_input_field, input_object.fields
+        )
+        if updated_fields != input_object.fields:
+            input_object._fields = updated_fields
+        return input_object
 
-        assert isinstance(schema, Schema)
-
-        directive_definitions = dict(schema.directives)
-        for directive_name, schema_directive in schema_directives.items():
-            assert issubclass(schema_directive, SchemaDirective)
-            if schema_directive.definition:
-                directive_definitions[
-                    directive_name
-                ] = schema_directive.definition
-
-        for directive_name in directive_definitions:
-            visitor_cls = schema_directives.get(directive_name)
-            if visitor_cls is None:
-                continue
-
-        self._directive_definitions = directive_definitions
-
-    def default(self, definition):
-        applied = set()
-        for directive_node in _find_directives(definition):
-            name = directive_node.name.value
-            directive_def = self._directive_definitions.get(name)
-            if directive_def is None:
-                raise SDLError(
-                    'Unknown directive "@%s' % name, [directive_node]
-                )
-
-            schema_directive = self._schema_directives.get(name)
-            if schema_directive is None:
-                if name not in _SPECIFIED_DIRECTIVE_NAMES and self._strict:
-                    raise SDLError(
-                        'Missing directive implementation for "@%s"' % name
-                    )
-                continue
-
-            loc = _CLS_TO_LOC.get(type(definition))
-            if loc not in directive_def.locations:
-                raise SDLError(
-                    'Directive "@%s" not applicable to "%s"' % (name, loc),
-                    [directive_node],
-                )
-
-            if name in applied:
-                raise SDLError(
-                    'Directive "@%s" already applied' % name, [directive_node]
-                )
-
-            args = coerce_argument_values(directive_def, directive_node)
-            definition = _visit(schema_directive(args), definition)
-            applied.add(directive_def.name)
-
-        return definition
+    def visit_input_field(self, field: InputField) -> Optional[InputField]:
+        return field
 
 
 # REVIEW: With the definition and the usage as a keyed map we end up repeating
@@ -330,7 +262,211 @@ class SchemaDirective(SchemaVisitor):
         schema directives.
     """
 
-    definition = None
+    definition: Directive = NotImplemented
 
     def __init__(self, args=None):
         self.args = args
+
+
+class SchemaDirectivesApplicationVisitor(SchemaVisitor):
+    """ Used to apply multiple SchemaDirectives to a schema. """
+
+    def __init__(
+        self,
+        directive_definitions: Mapping[str, Directive],
+        schema_directives: Mapping[str, Type[SchemaDirective]],
+        strict: bool = False,
+    ):
+        self._schema_directives = schema_directives
+        self._strict = strict
+        directive_definitions = dict(directive_definitions)
+
+        for directive_name, schema_directive in schema_directives.items():
+            assert issubclass(schema_directive, SchemaDirective)
+            if schema_directive.definition != NotImplemented:
+                directive_definitions[
+                    directive_name
+                ] = schema_directive.definition
+
+        for directive_name in directive_definitions:
+            visitor_cls = schema_directives.get(directive_name)
+            if visitor_cls is None:
+                continue
+
+        self._directive_definitions = directive_definitions
+
+    def _collect_schema_directives(
+        self, definition: _HasDirectives, loc: str
+    ) -> Iterator[SchemaDirective]:
+
+        applied: Set[str] = set()
+
+        for node in _find_directives(definition):
+            name = node.name.value
+            try:
+                directive_def = self._directive_definitions[name]
+            except KeyError:
+                raise SDLError('Unknown directive "@%s' % name, [node])
+
+            try:
+                schema_directive_cls = self._schema_directives[name]
+            except KeyError:
+                if name not in _SPECIFIED_DIRECTIVE_NAMES and self._strict:
+                    raise SDLError('Missing implementation for "@%s"' % name)
+                continue
+
+            if loc not in directive_def.locations:
+                raise SDLError(
+                    'Directive "@%s" not applicable to "%s"' % (name, loc),
+                    [node],
+                )
+
+            if name in applied:
+                raise SDLError('Directive "@%s" already applied' % name, [node])
+
+            args = coerce_argument_values(directive_def, node)
+            applied.add(name)
+            yield schema_directive_cls(args)
+
+    def visit_schema(self, schema: Schema) -> Schema:
+        for sd in self._collect_schema_directives(schema, "SCHEMA"):
+            schema = sd.visit_schema(schema)
+        return super().visit_schema(schema)
+
+    def visit_scalar(self, scalar: ScalarType[AT]) -> Optional[ScalarType[AT]]:
+        for sd in self._collect_schema_directives(scalar, "SCALAR"):
+            scalar = sd.visit_scalar(scalar)  # type: ignore
+            if scalar is None:
+                return None
+        return super().visit_scalar(scalar)
+
+    def visit_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+        for sd in self._collect_schema_directives(object_type, "OBJECT"):
+            object_type = sd.visit_object(object_type)  # type: ignore
+            if object_type is None:
+                return object_type
+        return super().visit_object(object_type)
+
+    def visit_field(self, field: Field) -> Optional[Field]:
+        for sd in self._collect_schema_directives(field, "FIELD_DEFINITION"):
+            field = sd.visit_field(field)  # type: ignore
+            if field is None:
+                return None
+        return super().visit_field(field)
+
+    def visit_argument(self, arg: Argument) -> Optional[Argument]:
+        for sd in self._collect_schema_directives(arg, "ARGUMENT_DEFINITION"):
+            arg = sd.visit_argument(arg)  # type: ignore
+            if arg is None:
+                return None
+        return super().visit_argument(arg)
+
+    def visit_interface(
+        self, interface: InterfaceType
+    ) -> Optional[InterfaceType]:
+        for sd in self._collect_schema_directives(interface, "INTERFACE"):
+            interface = sd.visit_interface(interface)  # type: ignore
+            if interface is None:
+                return None
+        return super().visit_interface(interface)
+
+    def visit_union(self, union: UnionType) -> Optional[UnionType]:
+        for sd in self._collect_schema_directives(union, "UNION"):
+            union = sd.visit_union(union)  # type: ignore
+            if union is None:
+                return None
+        return super().visit_union(union)
+
+    def visit_enum(self, enum: EnumType) -> Optional[EnumType]:
+        for sd in self._collect_schema_directives(enum, "ENUM"):
+            enum = sd.visit_enum(enum)  # type: ignore
+            if enum is None:
+                return None
+        return super().visit_enum(enum)
+
+    def visit_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
+        for sd in self._collect_schema_directives(enum_value, "ENUM_VALUE"):
+            enum_value = sd.visit_enum_value(enum_value)  # type: ignore
+            if enum_value is None:
+                return None
+        return super().visit_enum_value(enum_value)
+
+    def visit_input_object(
+        self, input_object: InputObjectType
+    ) -> Optional[InputObjectType]:
+        for sd in self._collect_schema_directives(input_object, "INPUT_OBJECT"):
+            input_object = sd.visit_input_object(input_object)  # type: ignore
+            if input_object is None:
+                return None
+        return super().visit_input_object(input_object)
+
+    def visit_input_field(self, field: InputField) -> Optional[InputField]:
+        for sd in self._collect_schema_directives(
+            field, "INPUT_FIELD_DEFINITION"
+        ):
+            field = sd.visit_input_field(field)  # type: ignore
+            if field is None:
+                return None
+        return super().visit_input_field(field)
+
+
+class HealSchemaVisitor(SchemaVisitor):
+    """ Ensure internal representation of types match the ones in the
+    schema's top level type map.
+
+    This is useful after modifying a schema inline or using a
+    :class:`SchemaVisitor` instance where a type may have swapped out but not
+    all references (e.g. arguments, fields, union, etc.) were. """
+
+    def __init__(self, schema: Schema):
+        self._schema = schema
+
+    def __call__(self) -> Schema:
+        return self.visit_schema(self._schema)
+
+    def _healed(self, original: GraphQLType) -> GraphQLType:
+        if isinstance(original, NonNullType):
+            return NonNullType(self._healed(original.type))
+        elif isinstance(original, ListType):
+            return ListType(self._healed(original.type))
+        else:
+            return self._schema.get_type(
+                cast(NamedType, original).name, cast(NamedType, original)
+            )
+
+    def visit_schema(self, schema: Schema) -> Schema:
+        return super().visit_schema(schema)
+
+    def visit_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+        updated = super().visit_object(object_type)
+        if updated is not None:
+            updated.interfaces = [
+                cast(InterfaceType, self._healed(i)) for i in updated.interfaces
+            ]
+        return updated
+
+    def visit_field(self, field: Field) -> Optional[Field]:
+        updated = super().visit_field(field)
+        if updated is not None:
+            updated.type = self._healed(updated.type)
+        return updated
+
+    def visit_argument(self, argument: Argument) -> Optional[Argument]:
+        updated = super().visit_argument(argument)
+        if updated is not None:
+            updated.type = self._healed(updated.type)
+        return updated
+
+    def visit_union(self, union: UnionType) -> Optional[UnionType]:
+        updated = super().visit_union(union)
+        if updated is not None:
+            updated.types = [
+                cast(ObjectType, self._healed(i)) for i in updated.types
+            ]
+        return updated
+
+    def visit_input_field(self, field: InputField) -> Optional[InputField]:
+        updated = super().visit_input_field(field)
+        if updated is not None:
+            updated.type = self._healed(updated.type)
+        return updated

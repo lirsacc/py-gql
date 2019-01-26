@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import re
-
-import six
+from typing import Any
 
 from ..lang import ast as _ast
 from ..schema import (
     ID,
     EnumType,
     Float,
+    GraphQLType,
     InputObjectType,
     Int,
     ListType,
@@ -21,7 +21,9 @@ from ..schema.scalars import MAX_INT, MIN_INT, SPECIFIED_SCALAR_TYPES
 _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 
 
-def ast_node_from_value(value, input_type):  # noqa
+def ast_node_from_value(  # noqa: C901
+    value: Any, input_type: GraphQLType
+) -> _ast.Value:
     """ Infer an ast Node for a Python value given an input type.
 
     Args:
@@ -35,6 +37,7 @@ def ast_node_from_value(value, input_type):  # noqa
         :py:class:`ValueError`: when coercion into a node fails
     """
     assert is_input_type(input_type), "Only supports input types"
+
     if isinstance(input_type, NonNullType):
         node = ast_node_from_value(value, input_type.type)
         if isinstance(node, _ast.NullValue):
@@ -96,9 +99,9 @@ def ast_node_from_value(value, input_type):  # noqa
                 return _ast.IntValue(value=str(int(serialized)))
             elif MIN_INT < serialized < MAX_INT:
                 return _ast.FloatValue(value=str(serialized))
-        return _ast.FloatValue(value="%s" % serialized)
+        return _ast.FloatValue(value=str(serialized))
 
-    if isinstance(serialized, six.string_types):
+    if isinstance(serialized, str):
         if isinstance(input_type, EnumType):
             return _ast.EnumValue(value=serialized)
         elif input_type is ID and _INT_RE.match(serialized):
@@ -118,10 +121,10 @@ def ast_node_from_value(value, input_type):  # noqa
             except ValueError:
                 pass
             else:
-                return _ast.FloatValue(value="%s" % fl)
+                return _ast.FloatValue(value=str(fl))
 
         return _ast.StringValue(value=serialized)
 
     raise ValueError(
-        'Cannot convert value %r of type "%s"' % (value, input_type)
+        'Cannot convert value %r for type "%s"' % (value, input_type)
     )

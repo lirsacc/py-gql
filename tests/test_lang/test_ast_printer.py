@@ -332,7 +332,7 @@ extend schema @onSchema {
     )
 
 
-def test_comment_descriptions(fixture_file):
+def test_comment_descriptions():
     node = _ast.ObjectTypeDefinition(
         name=_ast.Name(value="Foo"),
         description=_ast.StringValue(
@@ -346,7 +346,9 @@ def test_comment_descriptions(fixture_file):
         ],
     )
 
-    assert ASTPrinter(indent=4, description_format="comments")(node) == dedent(
+    assert ASTPrinter(indent=4, use_legacy_comment_descriptions=True)(
+        node
+    ) == dedent(
         """
         # This is a description
         # of the `Foo` type.

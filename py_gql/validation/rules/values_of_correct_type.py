@@ -2,8 +2,11 @@
 """
 """
 
+from typing import Optional, Union
+
 from ..._string_utils import infer_suggestions, quoted_options_list
 from ...exc import ScalarParsingError, UnknownEnumValue
+from ...lang import ast as _ast
 from ...lang.visitor import SkipNode
 from ...schema import (
     EnumType,
@@ -23,13 +26,23 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
     # WARN: This check ignores cases where the input type is not known, which
     # should be caught by other validators.
 
-    def _report_bad_value(self, input_type, node, extra=None):
+    def _report_bad_value(
+        self,
+        input_type: InputObjectType,
+        node: _ast.Node,
+        extra: Optional[str] = None,
+    ) -> None:
         msg = "Expected type %s, found %s" % (input_type, node)
         if extra:
             msg += " (%s)" % extra
         self.add_error(msg, [node])
 
-    def _check_scalar(self, node):
+    def _check_scalar(
+        self,
+        node: Union[
+            _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
+        ],
+    ) -> None:
         input_type = self.type_info.input_type
         if not input_type:
             return
@@ -46,10 +59,17 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 # Preserve message for custom scalar types.
                 self._report_bad_value(input_type, node, extra=extra)
 
-    enter_int_value = _check_scalar
-    enter_float_value = _check_scalar
-    enter_string_value = _check_scalar
-    enter_boolean_value = _check_scalar
+    def enter_int_value(self, node):
+        self._check_scalar(node)
+
+    def enter_float_value(self, node):
+        self._check_scalar(node)
+
+    def enter_string_value(self, node):
+        self._check_scalar(node)
+
+    def enter_boolean_value(self, node):
+        self._check_scalar(node)
 
     def enter_null_value(self, node):
         input_type = self.type_info.input_type

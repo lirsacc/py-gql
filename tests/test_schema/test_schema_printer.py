@@ -31,8 +31,12 @@ def _single_field_schema(*args, **opts):
     return Schema(ObjectType("Query", [Field("singleField", *args, **opts)]))
 
 
+def test_empty_schema():
+    assert print_schema(Schema()) == ""
+
+
 @pytest.mark.parametrize(
-    "type, opts, expected",
+    "type_, opts, expected",
     [
         (String, {}, "String"),
         (ListType(String), {}, "[String]"),
@@ -42,16 +46,17 @@ def _single_field_schema(*args, **opts):
         (NonNullType(ListType(NonNullType(String))), {}, "[String!]!"),
     ],
 )
-def test_single_field_schema(type, opts, expected):
-    assert print_schema(
-        _single_field_schema(type, **opts), indent="    "
-    ) == dedent(
-        """
-        type Query {
-            singleField: %s
-        }
-        """
-        % expected
+def test_single_field_schema(type_, opts, expected):
+    assert (
+        dedent(
+            """
+            type Query {
+                singleField: %s
+            }
+            """
+            % expected
+        )
+        == print_schema(_single_field_schema(type_, **opts), indent="    ")
     )
 
 
@@ -378,7 +383,10 @@ def test_description_has_leading_space():
 
 def test_introspection_schema(fixture_file):
     assert print_schema(
-        Schema(), indent=2, include_introspection=True
+        Schema(),
+        indent=2,
+        include_introspection=True,
+        use_legacy_comment_descriptions=False,
     ) == fixture_file("introspection-schema.graphql")
 
 
@@ -387,5 +395,5 @@ def test_introspection_schema_comments(fixture_file):
         Schema(),
         indent=2,
         include_introspection=True,
-        description_format="comments",
+        use_legacy_comment_descriptions=True,
     ) == fixture_file("intropsection-schema-comments.graphql")

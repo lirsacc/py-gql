@@ -3,7 +3,7 @@
 
 import pytest
 
-from py_gql._utils import deduplicate
+from py_gql._utils import deduplicate, lazy
 from py_gql.schema import (
     Field,
     Int,
@@ -14,20 +14,24 @@ from py_gql.schema import (
     String,
 )
 
-from ._test_utils import check_execution
+from ._test_utils import assert_execution
+
+# All test coroutines will be treated as marked.
+pytestmark = pytest.mark.asyncio
 
 
-def run_test(
+async def run_test(
     test_type,
     test_data,
     expected_data=None,
     expected_errors=None,
+    executor_cls=None,
     expected_exc=None,
     expected_msg=None,
 ):
 
     data = {"test": test_data}
-    data_type = ObjectType(
+    data_type: ObjectType = ObjectType(
         "DataType",
         [
             Field("test", test_type),
@@ -36,16 +40,18 @@ def run_test(
     )
     schema = Schema(data_type)
 
-    check_execution(
+    await assert_execution(
         schema,
         "{ nest { test } }",
         initial_value=data,
-        expected_data={"nest": {"test": expected_data}}
-        if expected_data is not None
-        else None,
+        executor_cls=executor_cls,
+        expected_data=(
+            {"nest": {"test": expected_data}}
+            if expected_data is not None
+            else None
+        ),
         expected_errors=expected_errors,
-        expected_exc=expected_exc,
-        expected_msg=expected_msg,
+        expected_exc=(expected_exc, expected_msg),
     )
 
 
@@ -71,18 +77,25 @@ _FRUITS = ["apple", "banana", "apple", "coconut"]
     [
         (_FRUITS, _FRUITS),
         (_sortedset(_FRUITS), ["apple", "banana", "coconut"]),
-        (_generator(_FRUITS), _FRUITS),
+        (lambda: _generator(_FRUITS), _FRUITS),
     ],
 )
-def test_it_accepts_iterables_for_list_type(iterable, result):
-    run_test(ListType(String), iterable, result, [])
+async def test_it_accepts_iterables_for_list_type(
+    executor_cls, iterable, result
+):
+    await run_test(
+        ListType(String), lazy(iterable), result, [], executor_cls=executor_cls
+    )
 
 
 @pytest.mark.parametrize("not_iterable", ["apple", 42, object()])
-def test_it_raises_on_non_iterable_value_for_list_type(not_iterable):
-    run_test(
+async def test_it_raises_on_non_iterable_value_for_list_type(
+    executor_cls, not_iterable
+):
+    await run_test(
         ListType(String),
         not_iterable,
+        executor_cls=executor_cls,
         expected_exc=RuntimeError,
         expected_msg=(
             'Field "nest.test" is a list type and resolved value should '
@@ -104,8 +117,8 @@ def test_it_raises_on_non_iterable_value_for_list_type(not_iterable):
         pytest.param(_lazy(None), None, id="[T], callable, null"),
     ],
 )
-def test_nullable_list_of_nullable_items(data, expected):
-    run_test(ListType(Int), data, expected)
+async def test_nullable_list_of_nullable_items(executor_cls, data, expected):
+    await run_test(ListType(Int), data, expected, executor_cls=executor_cls)
 
 
 @pytest.mark.parametrize(
@@ -121,8 +134,12 @@ def test_nullable_list_of_nullable_items(data, expected):
         ),
     ],
 )
-def test_non_nullable_list_of_nullable_items_ok(data, expected):
-    run_test(NonNullType(ListType(Int)), data, expected)
+async def test_non_nullable_list_of_nullable_items_ok(
+    executor_cls, data, expected
+):
+    await run_test(
+        NonNullType(ListType(Int)), data, expected, executor_cls=executor_cls
+    )
 
 
 @pytest.mark.parametrize(
@@ -135,8 +152,16 @@ def test_non_nullable_list_of_nullable_items_ok(data, expected):
         ),
     ],
 )
-def test_non_nullable_list_of_nullable_items_fail(data, expected_err):
-    run_test(NonNullType(ListType(Int)), data, None, [expected_err])
+async def test_non_nullable_list_of_nullable_items_fail(
+    executor_cls, data, expected_err
+):
+    await run_test(
+        NonNullType(ListType(Int)),
+        data,
+        None,
+        [expected_err],
+        executor_cls=executor_cls,
+    )
 
 
 @pytest.mark.parametrize(
@@ -148,8 +173,12 @@ def test_non_nullable_list_of_nullable_items_fail(data, expected_err):
         pytest.param(_lazy(None), None, id="[T!], callable, null"),
     ],
 )
-def test_nullable_list_of_non_nullable_items_ok(data, expected):
-    run_test(ListType(NonNullType(Int)), data, expected)
+async def test_nullable_list_of_non_nullable_items_ok(
+    executor_cls, data, expected
+):
+    await run_test(
+        ListType(NonNullType(Int)), data, expected, executor_cls=executor_cls
+    )
 
 
 @pytest.mark.parametrize(
@@ -165,5 +194,13 @@ def test_nullable_list_of_non_nullable_items_ok(data, expected):
         ),
     ],
 )
-def test_nullable_list_of_non_nullable_items_fail(data, expected_err):
-    run_test(ListType(NonNullType(Int)), data, None, [expected_err])
+async def test_nullable_list_of_non_nullable_items_fail(
+    executor_cls, data, expected_err
+):
+    await run_test(
+        ListType(NonNullType(Int)),
+        data,
+        None,
+        [expected_err],
+        executor_cls=executor_cls,
+    )

@@ -1,13 +1,35 @@
 # -*- coding: utf-8 -*-
 """ Some generic laguage level utilities for internal use. """
 
-import collections
-import sys
+from asyncio import gather
+from inspect import isawaitable
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Hashable,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
-import six
+T = TypeVar("T")
+G = TypeVar("G")
+H = TypeVar("H", bound=Hashable)
+
+Lazy = Union[T, Callable[[], T]]
+MaybeAwaitable = Union[Awaitable[T], T]
 
 
-def lazy(maybe_callable):
+def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
     """ Calls a value if callable else returns it.
 
     >>> lazy(42)
@@ -24,41 +46,9 @@ def lazy(maybe_callable):
 _MISSING = object()
 
 
-class cached_property(property):
-    """ Decorator that converts a method into a lazy property.
-    The method behaves like a regular ``@property`` except that it
-    is called only once.
-
-    **Warning** This requires the class to have a ``__dict__`` attribute,
-    so no class using __slots__.
-    """
-
-    # pylint: disable = super-init-not-called
-    def __init__(self, func, name=None, doc=None):
-        self.__name__ = name or func.__name__
-        self.__module__ = func.__module__
-        self.__doc__ = doc or func.__doc__
-        self.func = func
-
-    def __set__(self, obj, value):
-        obj.__dict__[self.__name__] = value
-
-    # pylint: disable = redefined-builtin
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        value = obj.__dict__.get(self.__name__, _MISSING)
-        if value is _MISSING:
-            value = self.func(obj)
-            obj.__dict__[self.__name__] = value
-        return value
-
-
-def _ident(x):
-    return x
-
-
-def deduplicate(iterable, key=_ident):
+def deduplicate(
+    iterable: Iterable[H], key: Optional[Callable[[H], Hashable]] = None
+) -> Iterator[H]:
     """ Deduplicate an iterable.
 
     Args:
@@ -74,17 +64,24 @@ def deduplicate(iterable, key=_ident):
     >>> list(deduplicate([1, 2, 1, 3, 3], key=lambda x: x % 2))
     [1, 2]
     """
-    seen = set()
+    seen: Set[Hashable] = set()
 
-    for entry in iterable:
-        key_ = key(entry)
+    keyed: Iterator[Tuple[H, Hashable]] = (
+        ((entry, entry) for entry in iterable)
+        if key is None
+        else ((entry, key(entry)) for entry in iterable)
+    )
+
+    for entry, key_ in keyed:
         if key_ in seen:
             continue
         seen.add(key_)
         yield entry
 
 
-def maybe_first(iterable, default=None):
+def maybe_first(
+    iterable: Iterable[T], default: Optional[T] = None
+) -> Optional[T]:
     """ Return the first item in an iterable or None.
 
     >>> maybe_first([1, 2, 3])
@@ -102,7 +99,11 @@ def maybe_first(iterable, default=None):
         return default
 
 
-def find_one(iterable, predicate, default=None):
+def find_one(
+    iterable: Iterable[T],
+    predicate: Callable[[T], Any],
+    default: Optional[T] = None,
+) -> Optional[T]:
     """ Extract first item matching a predicate function in an iterable.
     Returns ``None`` if no entry is found.
 
@@ -117,58 +118,7 @@ def find_one(iterable, predicate, default=None):
     )
 
 
-if sys.version >= "3.7":  # flake8: noqa
-    # Take advantage that dicts are guaranteed ordered from 3.7 onward
-    OrderedDict = dict
-    DefaultOrderedDict = collections.defaultdict
-else:
-    OrderedDict = collections.OrderedDict
-
-    # Source: http://stackoverflow.com/a/6190500/562769
-    class DefaultOrderedDict(OrderedDict):
-        def __init__(self, default_factory=None, *a, **kw):
-            if default_factory is not None and not callable(default_factory):
-                raise TypeError("first argument must be callable")
-            OrderedDict.__init__(self, *a, **kw)
-            self.default_factory = default_factory
-
-        def __getitem__(self, key):
-            try:
-                return OrderedDict.__getitem__(self, key)
-            except KeyError:
-                return self.__missing__(key)
-
-        def __missing__(self, key):
-            if self.default_factory is None:
-                raise KeyError(key)
-            self[key] = value = self.default_factory()
-            return value
-
-        def __reduce__(self):
-            if self.default_factory is None:
-                args = tuple()
-            else:
-                args = (self.default_factory,)
-            return type(self), args, None, None, self.items()
-
-        def copy(self):
-            return self.__copy__()
-
-        def __copy__(self):
-            return type(self)(self.default_factory, self)
-
-        def __deepcopy__(self, memo):
-            import copy
-
-            return type(self)(self.default_factory, copy.deepcopy(self.items()))
-
-        def __repr__(self):
-            return "DefaultOrderedDict(%s, %s)" % (
-                self.default_factory,
-                OrderedDict.__repr__(self),
-            )
-
-
+# TODO: Not sure how to type this correctly without recursive types.
 def flatten(lst):
     """ Recursive flatten (list, tuple) of potentially (lists, tuples)
     `itertools.chain` could be used instead but would flatten all iterables
@@ -185,7 +135,7 @@ def flatten(lst):
             yield entry
 
 
-def is_iterable(value, strings=True):
+def is_iterable(value: Any, strings: bool = True) -> bool:
     """ Check if a value is iterable.
 
     This does no type comparisons.
@@ -215,10 +165,12 @@ def is_iterable(value, strings=True):
     except TypeError:
         return False
     else:
-        return strings or not isinstance(value, six.string_types)
+        return strings or not isinstance(value, (str, bytes))
 
 
-def nested_key(obj, *keys, **kwargs):
+def nested_key(
+    obj: Mapping[str, Any], *keys: str, default: Any = _MISSING
+) -> Any:
     """ Safely extract nested key from dicts and lists.
 
     >>> source = {'foo': {'bar': [{}, {}, {'baz': 42}]}}
@@ -238,7 +190,6 @@ def nested_key(obj, *keys, **kwargs):
     True
 
     """
-    default = kwargs.get("default", _MISSING)
     for key in keys:
         try:
             obj = obj[key]
@@ -247,3 +198,119 @@ def nested_key(obj, *keys, **kwargs):
                 raise
             return default
     return obj
+
+
+def deferred_apply(
+    value: MaybeAwaitable[T], func: Callable[[T], G]
+) -> MaybeAwaitable[G]:
+    """ Apply a transformation to a value which can be deferred or not.
+
+    If the value is deferred (respectively not deferred) the result of this
+    function is deferred (respectively not deferred).
+    """
+    if isawaitable(value):
+
+        async def deferred() -> G:
+            return func(await cast(Awaitable[T], value))
+
+        return deferred()
+    return func(cast(T, value))
+
+
+def deferred_list(
+    source: Iterable[MaybeAwaitable[T]]
+) -> MaybeAwaitable[List[T]]:
+    """ Transform an iterator of deferred values into a deferred iterator.
+
+    If no value in the source iterator is deferred, the result is not deferred,
+    while if any value is deferred then the result is deferred.
+    """
+    deferred: List[int] = []
+    results: List[MaybeAwaitable[T]] = []
+
+    for index, value in enumerate(source):
+        if isawaitable(value):
+            deferred.append(index)
+        results.append(value)
+
+    if not deferred:
+        return cast(List[T], results)
+
+    async def deferred_result() -> List[T]:
+        awaited = await gather(
+            *(cast(Awaitable[T], results[index]) for index in deferred)
+        )
+        for index, result in zip(deferred, awaited):
+            results[index] = result
+        return cast(List[T], results)
+
+    return deferred_result()
+
+
+def deferred_dict(
+    source: Iterable[Tuple[str, MaybeAwaitable[T]]]
+) -> MaybeAwaitable[Dict[str, T]]:
+    """ Transform an iterator of keys and deferred values into a deferred dict.
+
+    If no value in the source iterator is deferred, the result is not deferred,
+    while if any value is deferred then the result is deferred.
+    """
+    deferred: List[str] = []
+    target: Dict[str, MaybeAwaitable[T]] = {}
+
+    for key, value in source:
+        if isawaitable(value):
+            deferred.append(key)
+        target[key] = value
+
+    if not deferred:
+        return cast(Dict[str, T], target)
+
+    async def deferred_result() -> Dict[str, T]:
+        awaited = await gather(
+            *(cast(Awaitable[T], target[key]) for key in deferred)
+        )
+        for key, result in zip(deferred, awaited):
+            target[key] = result
+
+        return cast(Dict[str, T], target)
+
+    return deferred_result()
+
+
+async def ensure_deferred(value: MaybeAwaitable[T]) -> T:
+    return (
+        (await cast(Awaitable[T], value))
+        if isawaitable(value)
+        else cast(T, value)
+    )
+
+
+def deferred_serial(
+    steps: List[Callable[[], MaybeAwaitable[T]]]
+) -> MaybeAwaitable[List[T]]:
+    """ Runs a series of function in a serial manner, unwrapping coroutines
+    along the way. """
+    steps = list(steps)[::-1]
+    results: List[T] = []
+
+    def _next() -> MaybeAwaitable[List[T]]:
+        try:
+            result = steps.pop()()
+        except IndexError:
+            return results
+        else:
+            if isawaitable(result):
+
+                async def deferred() -> List[T]:
+                    inner = await cast(Awaitable[T], result)
+                    results.append(inner)
+                    return await ensure_deferred(_next())
+
+                return deferred()
+
+            else:
+                results.append(cast(T, result))
+                return _next()
+
+    return _next()

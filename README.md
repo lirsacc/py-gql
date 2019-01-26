@@ -9,7 +9,7 @@ py-gql
 [![Read the Docs (version)](https://img.shields.io/readthedocs/pip/latest.svg)](https://py-gql.readthedocs.io/)
 
 
-py-gql is a [GraphQL](http://facebook.github.io/graphql/) implementation of for Python aimed at creating GraphQL servers.
+py-gql is a pure python [GraphQL](http://facebook.github.io/graphql/) implementation aimed at creating GraphQL servers.
 
 It supports:
 

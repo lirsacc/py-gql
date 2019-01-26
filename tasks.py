@@ -1,11 +1,18 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable
+# flake8: noqa
+""" Development scripts.
+
+You need ``invoke`` installed to run them.
+"""
 import os
 import sys
 
 import invoke
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-PKG = "py_gql"
+PACKAGE = "py_gql"
 
 
 def _join(cmd):
@@ -22,7 +29,7 @@ def deps(ctx, upgrade=False):
                     "pip",
                     "install",
                     "--upgrade" if upgrade else None,
-                    "-r %s" % "dev-requirements.txt",
+                    "-r dev-requirements.txt",
                 ]
             ),
             echo=True,
@@ -35,7 +42,7 @@ def clean(ctx):
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache)" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache|.mypy_cache)" '
             "| xargs rm -rf",
             echo=True,
         )
@@ -43,7 +50,7 @@ def clean(ctx):
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
-@invoke.task
+@invoke.task(iterable=["files", "ignore"])
 def test(
     ctx,
     coverage=False,
@@ -52,115 +59,103 @@ def test(
     grep=None,
     files=None,
     junit=False,
+    ignore=None,
 ):
-    """ Run test suite (using: py.test) """
+    """ Run test suite (using: py.test)
 
-    ignore = []
-    if sys.version < "3.5":
-        ignore.extend(["py_gql/asyncio.py", "tests/test_asyncio.py"])
+    You should be able to run pytest directly but this provides some useful
+    shortcuts.
+    """
+
+    ignore = ignore or []
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
 
     with ctx.cd(ROOT):
         ctx.run(
             _join(
                 [
                     "py.test",
-                    "-c pytest.ini",
+                    "-c setup.cfg",
                     "--exitfirst" if bail else None,
                     (
-                        "--cov %s --cov-config pytest.ini --no-cov-on-fail "
+                        "--cov %s --cov-config setup.cfg --no-cov-on-fail "
                         "--cov-report term --cov-report html --cov-report xml "
-                        % PKG
                     )
+                    % PACKAGE
                     if coverage
                     else None,
                     "--junit-xml junit.xml" if junit else None,
-                    "-vvl --full-trace" if verbose else None,
+                    "-vvl --full-trace" if verbose else "-q",
                     "-k %s" % grep if grep else None,
                     (
                         " ".join("--ignore %s" % i for i in ignore)
                         if ignore
                         else None
                     ),
-                    "%s tests" % PKG if files is None else files,
-                ]
-            ),
-            echo=True,
-            pty=True,
-        )
-
-
-@invoke.task(name="tox", aliases=["test.tox"])
-def tox(ctx, rebuild=False, hashseed=None, strict=False, envlist=None):
-    """ Run test suite against multiple python versions (using: tox) """
-    with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                [
-                    "tox -c tox.ini",
-                    "--recreate" if rebuild else None,
-                    "--hashseed %s" % hashseed
-                    if hashseed is not None
-                    else None,
-                    "-e %s" % envlist if envlist is not None else None,
-                    "--skip-missing-interpreters" if strict else None,
-                ]
-            ),
-            echo=True,
-            pty=True,
-        )
-
-
-@invoke.task
-def lint(ctx, pylint=True, flake8=True, files=None):
-    """ Run linters """
-
-    if files is None:
-        files = "%s tests" % PKG
-
-    with ctx.cd(ROOT):
-        if flake8:
-            ctx.run("flake8 --config .flake8 %s" % files, echo=True)
-
-        if pylint:
-            ctx.run(
-                _join(
-                    [
-                        "pylint",
-                        "--rcfile=.pylintrc",
-                        "--output-format=colorized",
-                        "--jobs=0",
-                        files,
-                    ]
-                ),
-                echo=True,
-            )
-
-
-@invoke.task
-def fmt(ctx, files=None):
-    """ Run formatters """
-
-    if files is None:
-        files = "%s/**/*.py tests/**/*.py examples/**/*.py" % PKG
-
-    with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                [
-                    "isort",
-                    "--multi-line=3",
-                    "--trailing-comma",
-                    "--force-grid-wrap=0",
-                    "--combine-as",
-                    "--apply",
-                    "--line-width=80",
-                    "-ns __init__.py",
                     files,
                 ]
             ),
             echo=True,
+            pty=True,
         )
 
+
+@invoke.task(aliases=["lint.flake8"], iterable=["files"])
+def flake8(ctx, files=None):
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    ctx.run("flake8 %s" % files, echo=True)
+
+
+@invoke.task(aliases=["lint.pylint"], iterable=["files"])
+def pylint(ctx, files=None):
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    ctx.run(
+        "pylint --rcfile=.pylintrc --output-format=colorized -j 0 %s" % files,
+        echo=True,
+    )
+
+
+@invoke.task(aliases=["lint.mypy", "typecheck"], iterable=["files"])
+def mypy(ctx, files=None):
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    ctx.run("mypy %s" % files, echo=True)
+
+
+@invoke.task(iterable=["files"])
+def lint(ctx, files=None):
+    """ Run all available linters """
+    linters = [
+        task
+        for task in ns.tasks.values()
+        if any(alias.startswith("lint.") for alias in task.aliases)
+    ]
+    failures = []
+
+    for linter in linters:
+        try:
+            linter(ctx, files=files)
+        except invoke.UnexpectedExit:
+            failures.append(linter.__name__)
+
+    if failures:
+        raise invoke.exceptions.Exit(
+            "Linter(s) %s failed" % ", ".join(failures)
+        )
+
+
+@invoke.task(aliases=["format"], iterable=["files"])
+def fmt(ctx, files=None):
+    """ Run formatters """
+    files = (
+        "%s/**/*.py tests/**/*.py examples/**/*.py" % PACKAGE
+        if not files
+        else " ".join(files)
+    )
+
+    with ctx.cd(ROOT):
+        ctx.run(_join(["isort", files]), echo=True)
+        # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
+        # support.
         ctx.run(_join(["black", "--line-length=80", files]), echo=True)
 
 
@@ -190,3 +185,11 @@ def build(ctx):
     with ctx.cd(ROOT):
         ctx.run("rm -rf dist", echo=True)
         ctx.run("python setup.py sdist bdist_wheel", echo=True)
+
+
+ns = invoke.Collection.from_module(sys.modules[__name__])
+
+
+# Support calling a standalone CLI tool as long as invoke is installed.
+if __name__ == "__main__":
+    invoke.Program(namespace=ns).run()

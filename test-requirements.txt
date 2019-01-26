@@ -1,8 +1,7 @@
 # Dependencies related to testing.
 
-pytest ~= 3.7.0
-pytest-cov ~= 2.5.1
+pytest ~= 4.2.0
+pytest-cov ~= 2.6.1
 pytest-mock ~= 1.10.0
-tox ~= 3.1.2
 pytest-runner >= 4.2
-pytest-asyncio ~= 0.9.0; python_version >= "3.5"
+pytest-asyncio ~= 0.10.0; python_version >= "3.5"

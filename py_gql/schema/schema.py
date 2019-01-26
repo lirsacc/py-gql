@@ -1,30 +1,32 @@
 # -*- coding: utf-8 -*-
 """ Schema definition. """
 
+import itertools as it
 from collections import defaultdict
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
-from ._validation import validate_schema
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import __Schema__
 from .printer import SchemaPrinter
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
+    GraphQLType,
     InputObjectType,
     InterfaceType,
     ListType,
+    NamedType,
     NonNullType,
     ObjectType,
-    Type,
     UnionType,
-    WrappingType,
     is_abstract_type,
     unwrap_type,
 )
+from .validation import validate_schema
 
-_unset = object()
+_UNSET_NAMED_TYPE = NamedType()
 
 
 class Schema(object):
@@ -33,28 +35,20 @@ class Schema(object):
     This is the main container for a GraphQL schema and its related types.
 
     Args:
-        query_type (py_gql.schema.ObjectType):
-            The root query type for the schema
+        query_type: The root query type for the schema
+        mutation_type: The root mutation type for the schema
+        subscription_type: The root subscription type for the schema
 
-        mutation_type (py_gql.schema.ObjectType):
-            The root mutation type for the schema
-
-        subscription_type (py_gql.schema.ObjectType):
-            The root subscription type for the schema
-
-        directives (List[py_gql.schema.Directive]):
-            List of possible directives to use.
+        directives: List of possible directives to use.
             The default, specified directives (``@include``, ``@skip``) will
-            always be included.
+            **always** be included.
 
-        types (List[py_gql.schema.Type]):
-            List of additional types on top of the types that would be infered
-            from the root types.
+        types: List of additional supported types.
+            This only necessary for types that cannot be inferred by traversing
+            the root types.
 
-        node (List[Union[py_gql.lang.ast.SchemaDefinition, \
-                         py_gql.lang.ast.SchemaExtension]]):
-            AST node for the schema if applicable, i.e. when creating the schema
-            from a GraphQL (SDL) document.
+        nodes: AST node for the schema if applicable, i.e. when creating
+            the schema from a GraphQL (SDL) document.
 
     Attributes:
         query_type (py_gql.schema.ObjectType):
@@ -89,20 +83,28 @@ class Schema(object):
 
     def __init__(
         self,
-        query_type=None,
-        mutation_type=None,
-        subscription_type=None,
-        directives=None,
-        types=None,
-        nodes=None,
+        query_type: Optional[ObjectType] = None,
+        mutation_type: Optional[ObjectType] = None,
+        subscription_type: Optional[ObjectType] = None,
+        directives: Optional[List[Directive]] = None,
+        types: Optional[List[GraphQLType]] = None,
+        nodes: Optional[
+            List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
+        ] = None,
     ):
         self.query_type = query_type
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
 
-        self._types = [query_type, mutation_type, subscription_type]
+        self._types: List[GraphQLType] = [
+            x
+            for x in (query_type, mutation_type, subscription_type)
+            if x is not None
+        ]
         self._types.append(__Schema__)
-        self.nodes = nodes or []
+        self.nodes: List[
+            Union[_ast.SchemaDefinition, _ast.SchemaExtension]
+        ] = nodes or []
 
         # NOTE: This is the notion of the specified types being always
         # available. As a result of this line, intropection queries will always
@@ -114,59 +116,73 @@ class Schema(object):
         if types:
             self._types.extend(types)
 
-        self._directives = []
+        self._directives: List[Directive] = []
         if directives:
             self._directives.extend(directives)
         _directive_names = set(
-            (d.name for d in self._directives if isinstance(d, Directive))
+            d.name for d in self._directives if isinstance(d, Directive)
         )
         for d in SPECIFIED_DIRECTIVES:
             if d.name not in _directive_names:
                 self._directives.append(d)
 
-        self._possible_types = {}
-        self._is_valid = None
-        self._literal_types_cache = {}
+        self._possible_types: Dict[
+            Union[UnionType, InterfaceType], List[ObjectType]
+        ] = {}
+        self._is_valid: Optional[bool] = None
+        self._literal_types_cache: Dict[_ast.Type, GraphQLType] = {}
 
-        self.type_map = _build_type_map(self._types + self._directives)
+        self.type_map = _build_type_map(self._types, self._directives)
         self._rebuild_caches()
 
     def _rebuild_caches(self):
-        self.types = {
+        self.types: Dict[str, NamedType] = {
             name: t
             for name, t in self.type_map.items()
             if not isinstance(t, Directive)
         }
+
         self.directives = {
             name: t
             for name, t in self.type_map.items()
             if isinstance(t, Directive)
         }
-        self.implementations = defaultdict(list)
+
+        self.implementations: Dict[str, List[ObjectType]] = defaultdict(list)
+
         for type_ in self.types.values():
             if isinstance(type_, ObjectType):
-                for iface in type_.interfaces:
-                    self.implementations[iface.name].append(type_)
+                for i in type_.interfaces:
+                    self.implementations[i.name].append(type_)
+
         self._is_valid = None
 
     def validate(self):
         """ Check that the schema is valid and cache the result.
 
-        Returns:
-            bool: ``True`` if the schema is valid
-
         Raises:
             :class:`~py_gql.exc.SchemaError` if the schema is invalid.
         """
+        validate_schema(self)
+
+    @property
+    def is_valid(self) -> bool:
         if self._is_valid is None:
-            self._is_valid = validate_schema(self)
+            try:
+                self.validate()
+            except SchemaError:
+                self._is_valid = False
+            else:
+                self._is_valid = True
         return self._is_valid
 
-    def get_type(self, name, default=_unset):
+    def get_type(
+        self, name: str, default: NamedType = _UNSET_NAMED_TYPE
+    ) -> GraphQLType:
         """ Get a type by name.
 
         Args:
-            name (str): Requested type name
+            name: Requested type name
             default: If set, will be returned in case there is no matching type
 
         Returns:
@@ -180,11 +196,19 @@ class Schema(object):
         try:
             return self.types[name]
         except KeyError:
-            if default is not _unset:
+            if default is not _UNSET_NAMED_TYPE:
                 return default
             raise UnknownType(name)
 
-    def get_type_from_literal(self, ast_node):
+    def has_type(self, name: str) -> bool:
+        try:
+            self.types[name]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def get_type_from_literal(self, ast_node: _ast.Type) -> GraphQLType:
         """ Given an AST node describing a type, return a
         corresponding :class:`py_gql.schema.Type` instance.
 
@@ -194,12 +218,6 @@ class Schema(object):
         If a type called ``User`` is not found in the schema, then
         :class:`~py_gql.exc.UnknownType` will be raised.
 
-        Args:
-            ast_node (py_gql.lang.ast.Type)
-
-        Returns:
-            py_gql.schema.Type: Corresponding type instance
-
         Raises:
             :class:`~py_gql.exc.UnknownType`: if  any named type is not found
         """
@@ -207,55 +225,52 @@ class Schema(object):
             return self._literal_types_cache[ast_node]
 
         if isinstance(ast_node, _ast.ListType):
-            t = ListType(self.get_type_from_literal(ast_node.type))
-            self._literal_types_cache[ast_node] = t
-            return t
+            t1 = ListType(self.get_type_from_literal(ast_node.type))
+            self._literal_types_cache[ast_node] = t1
+            return t1
         elif isinstance(ast_node, _ast.NonNullType):
-            t = NonNullType(self.get_type_from_literal(ast_node.type))
-            self._literal_types_cache[ast_node] = t
-            return t
+            t2 = NonNullType(self.get_type_from_literal(ast_node.type))
+            self._literal_types_cache[ast_node] = t2
+            return t2
         elif isinstance(ast_node, _ast.NamedType):
-            t = self.get_type(ast_node.name.value)
-            self._literal_types_cache[ast_node] = t
-            return t
+            t3 = self.get_type(ast_node.name.value)
+            self._literal_types_cache[ast_node] = t3
+            return t3
         raise TypeError("Invalid type node %r" % ast_node)
 
-    def get_possible_types(self, type_):
+    def get_possible_types(
+        self, abstract_type: Union[UnionType, InterfaceType]
+    ) -> List[ObjectType]:
         """ Get the possible implementations of an abstract type.
 
         Args:
-            type_ (Union[py_gql.schema.types.UnionType, \
-py_gql.schema.types.InterfaceType]):
-                Abstract type to check.
+            type_: Abstract type to check.
 
-        Returns:
-            List[py_gql.schema.types.ObjectType]: List of possible implementations.
+        Returns: List of possible implementations.
         """
-        if type_ in self._possible_types:
-            return self._possible_types[type_]
+        if abstract_type in self._possible_types:
+            return self._possible_types[abstract_type]
 
-        if isinstance(type_, UnionType):
-            self._possible_types[type_] = type_.types or []
-            return self._possible_types[type_]
-        elif isinstance(type_, InterfaceType):
-            self._possible_types[type_] = self.implementations.get(
-                type_.name, []
+        if isinstance(abstract_type, UnionType):
+            self._possible_types[abstract_type] = abstract_type.types or []
+            return self._possible_types[abstract_type]
+        elif isinstance(abstract_type, InterfaceType):
+            self._possible_types[abstract_type] = self.implementations.get(
+                abstract_type.name, []
             )
-            return self._possible_types[type_]
+            return self._possible_types[abstract_type]
 
-        raise TypeError("Not an abstract type: %s" % type_)
+        raise TypeError("Not an abstract type: %s" % abstract_type)
 
-    def is_possible_type(self, abstract_type, type_):
+    def is_possible_type(
+        self, abstract_type: Union[UnionType, InterfaceType], type_: GraphQLType
+    ) -> bool:
         """ Check that ``type_`` is a possible realization of ``abstract_type``.
 
-        Args:
-            abstract_type (Union[py_gql.schema.types.UnionType, \
-py_gql.schema.types.InterfaceType]):
-            type_ (py_gql.schema.Type): Concrete type to check
-
-        Returns:
-            bool: ``True`` if ``type_`` is valid for ``abstract_type``
+        Returns: ``True`` if ``type_`` is valid for ``abstract_type``
         """
+        if not isinstance(type_, ObjectType):
+            return False
         return type_ in self.get_possible_types(abstract_type)
 
     def is_subtype(self, type_, super_type):
@@ -274,8 +289,8 @@ py_gql.schema.types.InterfaceType]):
             return True
 
         if (
-            isinstance(type_, WrappingType)
-            and isinstance(super_type, WrappingType)
+            isinstance(type_, (ListType, NonNullType))
+            and isinstance(super_type, (ListType, NonNullType))
             and type(type_) == type(super_type)
         ):
             return self.is_subtype(type_.type, super_type.type)
@@ -292,7 +307,7 @@ py_gql.schema.types.InterfaceType]):
             and self.is_possible_type(super_type, type_)
         )
 
-    def types_overlap(self, rhs, lhs):
+    def types_overlap(self, rhs: GraphQLType, lhs: GraphQLType) -> bool:
         """ Provided two composite types, determine if they "overlap". Two
         composite types overlap when the Sets of possible concrete types for
         each intersect.
@@ -300,68 +315,43 @@ py_gql.schema.types.InterfaceType]):
         This is often used to determine if a fragment of a given type could
         possibly be visited in a context of another type. This function is
         commutative.
-
-        Args:
-            rhs (py_gql.schema.Type):
-            lhs (py_gql.schema.Type):
-
-        Returns:
-            bool:
         """
         if rhs == lhs:
             return True
 
         if is_abstract_type(rhs) and is_abstract_type(lhs):
-            rhs_types = self.get_possible_types(rhs)
-            lhs_types = self.get_possible_types(lhs)
+            rhs_types = self.get_possible_types(
+                cast(Union[UnionType, InterfaceType], rhs)
+            )
+            lhs_types = self.get_possible_types(
+                cast(Union[UnionType, InterfaceType], lhs)
+            )
             return any((t in lhs_types for t in rhs_types))
 
-        return (is_abstract_type(rhs) and self.is_possible_type(rhs, lhs)) or (
-            is_abstract_type(lhs) and self.is_possible_type(lhs, rhs)
+        return (
+            is_abstract_type(rhs)
+            and self.is_possible_type(
+                cast(Union[UnionType, InterfaceType], rhs), lhs
+            )
+        ) or (
+            is_abstract_type(lhs)
+            and self.is_possible_type(
+                cast(Union[UnionType, InterfaceType], lhs), rhs
+            )
         )
 
-    def to_string(
-        self,
-        indent=4,
-        include_descriptions=True,
-        description_format="block",
-        include_introspection=False,
-        cls=SchemaPrinter,
-    ):
-        """ Format the schema as a string
+    def to_string(self, **kwargs: Any) -> str:
+        """ Format the schema as an SDL string.
 
-        Args:
-            indent (Union[str, int]): Indent character or number of spaces
-
-            include_descriptions (bool):
-                If ``True`` include descriptions in the output
-
-            description_format ("comments"|"block"):
-                Control how descriptions are formatted. ``"comments"`` is the
-                old standard and will be compatible with most GraphQL parsers
-                while ``"block"`` is part of the most recent specification and
-                includes descriptions as block strings that can be extracted
-                according to the specification.
-
-            include_introspection (bool):
-                If ``True``, include introspection types in the output
-
-            cls (callable): Custom formatter
-                Use this to customize the behaviour, by default this uses
-                :class:`py_gql.schema.printer.SchemaPrinter`.
-
-        Returns:
-            str: Formatted GraphQL schema
+        All arguments are forwarded to :cls:`SchemaPrinter`.
         """
-        return cls(
-            indent=indent,
-            include_descriptions=include_descriptions,
-            description_format=description_format,
-            include_introspection=include_introspection,
-        )(self)
+        return SchemaPrinter(**kwargs)(self)
 
 
-def _build_type_map(types, _type_map=None):
+def _build_type_map(
+    *types: Sequence[GraphQLType],
+    _type_map: Optional[Dict[str, GraphQLType]] = None,
+) -> Dict[str, GraphQLType]:
     """ Recursively build a mapping name <> Type from a list of types to include
     all referenced types.
 
@@ -369,23 +359,22 @@ def _build_type_map(types, _type_map=None):
         This will flatten all lazy type definitions and attributes.
 
     Args:
-        types (List[py_gql.schema.Type]): List of types
-        _type_map (Dict[str, py_gql.schema.Type]):
-            Pre-built type map ( recursive calls)
-
-    Returns:
-        Dict[str, py_gql.schema.Type]
+        types: List of types
+        _type_map: Pre-built type map (used for recursive calls)
     """
-    type_map = _type_map or {}
-    for type_ in types or []:
+    type_map: Dict[
+        str, GraphQLType
+    ] = _type_map if _type_map is not None else {}
+
+    for type_ in it.chain(*types):
         if not type_:
             continue
 
         type_ = unwrap_type(type_)
 
-        if not (isinstance(type_, Type) and hasattr(type_, "name")):
+        if not isinstance(type_, NamedType):
             raise SchemaError(
-                'Expected named types but got "%s" of type %s'
+                'Expected NamedType but got "%s" of type %s'
                 % (type_, type(type_))
             )
 
@@ -396,7 +385,7 @@ def _build_type_map(types, _type_map=None):
             continue
 
         type_map[name] = type_
-        child_types = []
+        child_types: List[GraphQLType] = []
 
         if isinstance(type_, UnionType):
             child_types.extend(type_.types)
@@ -407,14 +396,14 @@ def _build_type_map(types, _type_map=None):
         if isinstance(type_, (ObjectType, InterfaceType)):
             for field in type_.fields:
                 child_types.append(field.type)
-                child_types.extend([arg.type for arg in field.args or []])
+                child_types.extend([arg.type for arg in field.arguments or []])
 
         if isinstance(type_, InputObjectType):
-            for field in type_.fields:
-                child_types.append(field.type)
+            for input_field in type_.fields:
+                child_types.append(input_field.type)
 
         if isinstance(type_, Directive):
-            child_types.extend([arg.type for arg in type_.args or []])
+            child_types.extend([arg.type for arg in type_.arguments or []])
 
         type_map.update(_build_type_map(child_types, _type_map=type_map))
 

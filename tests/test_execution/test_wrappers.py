@@ -3,6 +3,7 @@
 import pytest
 
 from py_gql._string_utils import dedent
+from py_gql.exc import ResolverError
 from py_gql.execution import GraphQLExtension, GraphQLResult
 
 
@@ -23,12 +24,13 @@ def test_GraphQLResult_json():
 
 def test_GraphQLResult_bool():
     assert GraphQLResult(data={"foo": 42})
-    assert not GraphQLResult(errors=["foo"])
-    assert not GraphQLResult(data={"foo": None}, errors=["foo"])
+    assert not GraphQLResult(errors=[ResolverError("foo")])
+    assert not GraphQLResult(data={"foo": None}, errors=[ResolverError("foo")])
 
 
 def test_GraphQLResult_add_extension():
     class Ext(GraphQLExtension):
+        @property
         def name(self):
             return "foo"
 
@@ -42,8 +44,7 @@ def test_GraphQLResult_add_extension():
 
 def test_GraphQLResult_add_extension_raises_on_duplicate():
     class Ext(GraphQLExtension):
-        def name(self):
-            return "foo"
+        name = "foo"
 
         def payload(self):
             return {"bar": "baz"}

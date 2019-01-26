@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 """ Work with strings """
-from __future__ import division
 
 import operator
 import re
-
-import six
+from typing import (
+    Callable,
+    Container,
+    Iterable,
+    Iterator,
+    List,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
 LEADING_WS = re.compile(r"^[\t\s]*")
 
+ResponsePath = Sequence[Union[int, str]]
 
-def ensure_unicode(string):
-    if isinstance(string, six.binary_type):
+
+def ensure_unicode(string: Union[str, bytes]) -> str:
+    if isinstance(string, bytes):
         return string.decode("utf8")
     return string
 
 
-def leading_whitespace(string):
+def leading_whitespace(string: str) -> int:
     r""" Detect of leading whitespace in a string.
 
     Args:
@@ -36,7 +45,7 @@ def leading_whitespace(string):
     return len(string) - len(LEADING_WS.sub("", string))
 
 
-def is_blank(string):
+def is_blank(string: str) -> bool:
     """
     Args:
         string (str): Input value
@@ -48,8 +57,10 @@ def is_blank(string):
 
 
 def parse_block_string(
-    raw_string, strip_trailing_newlines=True, strip_leading_newlines=True
-):
+    raw_string: str,
+    strip_trailing_newlines: bool = True,
+    strip_leading_newlines: bool = True,
+) -> str:
     """ Parse a raw string according to the GraphQL spec's BlockStringValue()
     http://facebook.github.io/graphql/draft/#BlockStringValue() static
     algorithm. Similar to Coffeescript's block string, Python's docstring trim
@@ -95,7 +106,7 @@ def parse_block_string(
 dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
 
 
-def index_to_loc(body, position):
+def index_to_loc(body: str, position: int) -> Tuple[int, int]:
     r""" Get the (line number, column number) tuple from a zero-indexed offset.
 
     Args:
@@ -143,7 +154,7 @@ def index_to_loc(body, position):
     return (lines + 1, cols + 1)
 
 
-def loc_to_index(body, loc):
+def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
     r""" Get the zero-indexed offset from a (lineno, col) tuple.
 
     Args:
@@ -188,7 +199,7 @@ def loc_to_index(body, loc):
     raise IndexError("%s:%s" % (lineo, col))
 
 
-def highlight_location(body, position, delta=2):
+def highlight_location(body: str, position: int, delta: int = 2) -> str:
     """ Nicely format a highlited view of a position into a source string.
 
     Args:
@@ -232,12 +243,14 @@ def highlight_location(body, position, delta=2):
     return "\n".join(output) + "\n"
 
 
-def _split_words_with_boundaries(string, word_boundaries):
+def _split_words_with_boundaries(
+    string: str, word_boundaries: Container[str]
+) -> Iterator[str]:
     """
     >>> list(_split_words_with_boundaries("ab cd -ef_gh", " -_"))
     ['ab', ' ', 'cd', ' ', '-', 'ef', '_', 'gh']
     """
-    stack = []
+    stack: List[str] = []
     for char in string:
         if char in word_boundaries:
             if stack:
@@ -251,7 +264,9 @@ def _split_words_with_boundaries(string, word_boundaries):
         yield "".join(stack)
 
 
-def wrapped_lines(lines, max_len, word_boundaries=" -_"):
+def wrapped_lines(
+    lines: Iterable[str], max_len: int, word_boundaries: Container[str] = " -_"
+) -> Iterator[str]:
     """ Wrap provided lines to a given length.
 
     Lines that are under ``max_len`` are left as is, otherwise this splits
@@ -284,7 +299,7 @@ def wrapped_lines(lines, max_len, word_boundaries=" -_"):
             yield wrapped
 
 
-def levenshtein(s1, s2):
+def levenshtein(s1: str, s2: str) -> int:
     """ Compute the Levenshtein edit distance between 2 strings.
 
     Args:
@@ -300,7 +315,7 @@ def levenshtein(s1, s2):
     if len(s2) == 0:
         return len(s1)
 
-    previous_row = range(len(s2) + 1)
+    previous_row = list(range(len(s2) + 1))
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
         for j, c2 in enumerate(s2):
@@ -313,7 +328,11 @@ def levenshtein(s1, s2):
     return previous_row[-1]
 
 
-def infer_suggestions(candidate, options, distance=levenshtein):
+def infer_suggestions(
+    candidate: str,
+    options: Iterable[str],
+    distance: Callable[[str, str], int] = levenshtein,
+) -> List[str]:
     """ Extract the most similar entries to an input string given multiple
     options and a distance function.
 
@@ -325,20 +344,19 @@ def infer_suggestions(candidate, options, distance=levenshtein):
             where the more similar the inputs are, the lower the result is.
 
     Returns:
-        List[str]: Most similar options sorted by similarity (most similar to
-        least similar)
+        Most similar options sorted by similarity (most similar to least similar)
     """
     distances = []
     half = len(candidate) / 2
     for option in options:
-        distance = levenshtein(candidate, option)
+        dist = distance(candidate, option)
         threshold = max(half, len(option) / 2, 1)
-        if distance <= threshold:
-            distances.append((option, distance))
+        if dist <= threshold:
+            distances.append((option, dist))
     return [opt for opt, _ in sorted(distances, key=operator.itemgetter(1))]
 
 
-def quoted_options_list(options):
+def quoted_options_list(options: Sequence[str]) -> str:
     """ Quote a list of possible strings.
 
     Args:
@@ -371,7 +389,7 @@ def quoted_options_list(options):
     )
 
 
-def stringify_path(path):
+def stringify_path(path: ResponsePath) -> str:
     """ Concatenate traversal path into a string.
 
     >>> stringify_path(['foo', 0, 'bar'])

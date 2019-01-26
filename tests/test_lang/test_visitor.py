@@ -2,6 +2,8 @@
 """
 """
 
+from typing import List
+
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
 from py_gql.lang.visitor import SkipNode, Visitor, visit
@@ -34,7 +36,7 @@ def test_null_visitor_does_not_crash_on_kitchen_sink_schema(fixture_file):
 
 class Tracker(NullVisitor):
     def __init__(self):
-        self.stack = []
+        self.stack: List[_ast.Node] = []
 
     def enter(self, node):
         self.stack.append(("enter", node.__class__.__name__))

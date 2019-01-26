@@ -19,29 +19,24 @@ def assert_node_equal(ref, expected):
     assert _ast.node_to_dict(ref) == _ast.node_to_dict(expected)
 
 
-def test_it_asserts_that_a_source_to_parse_was_provided():
-    with pytest.raises(ValueError):
-        parse(None)
-
-
 @pytest.mark.parametrize(
     "value, error_cls, position, message",
     [
-        (u"{", UnexpectedToken, 1, 'Expected Name but found "<EOF>"'),
+        ("{", UnexpectedToken, 1, 'Expected Name but found "<EOF>"'),
         (
-            u"\n{ ...MissingOn }\nfragment MissingOn Type",
+            "\n{ ...MissingOn }\nfragment MissingOn Type",
             UnexpectedToken,
             37,
             'Expected "on" but found "Type"',
         ),
-        (u"{ field: {} }", UnexpectedToken, 9, 'Expected Name but found "{"'),
+        ("{ field: {} }", UnexpectedToken, 9, 'Expected Name but found "{"'),
         (
-            u"notanoperation Foo { field }",
+            "notanoperation Foo { field }",
             UnexpectedToken,
             0,
             'Unexpected "notanoperation"',
         ),
-        (u"...", UnexpectedToken, 0, 'Unexpected "..."'),
+        ("...", UnexpectedToken, 0, 'Unexpected "..."'),
     ],
 )
 def test_it_provides_useful_errors(value, error_cls, position, message):
@@ -56,38 +51,38 @@ def test_it_provides_useful_errors(value, error_cls, position, message):
 
 def test_it_parses_variable_inline_values():
     # assert doesn't raise
-    parse(u"{ field(complex: { a: { b: [ $var ] } }) }")
+    parse("{ field(complex: { a: { b: [ $var ] } }) }")
 
 
 def test_it_parses_constant_default_values():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse(u"query Foo($x: Complex = { a: { b: [ $var ] } }) { field }")
+        parse("query Foo($x: Complex = { a: { b: [ $var ] } }) { field }")
     assert exc_info.value.position == 36
     assert exc_info.value.message == 'Unexpected "$"'
 
 
 def test_it_does_not_accept_fragments_named_on():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse(u"fragment on on on { on }")
+        parse("fragment on on on { on }")
     assert exc_info.value.position == 9
     assert exc_info.value.message == 'Unexpected "on"'
 
 
 def test_it_does_not_accept_fragments_spread_of_on():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse(u"{ ...on }")
+        parse("{ ...on }")
     assert exc_info.value.position == 8
     assert exc_info.value.message == 'Expected Name but found "}"'
 
 
 def test_it_parses_multi_bytes_characters():
-    source = u"""
+    source = """
         # This comment has a \u0A0A multi-byte character.
         { field(arg: "Has a \u0A0A multi-byte character.") }
       """
     tree = parse(source, no_location=True)
     assert_node_equal(
-        tree.definitions[0].selection_set.selections,
+        tree.definitions[0].selection_set.selections,  # type: ignore
         [
             _ast.Field(
                 name=_ast.Name(value="field"),
@@ -95,7 +90,7 @@ def test_it_parses_multi_bytes_characters():
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value=u"Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character."
                         ),
                     )
                 ],
@@ -114,19 +109,19 @@ def test_it_parses_kitchen_sink(fixture_file):
 @pytest.mark.parametrize(
     "keyword",
     [
-        (u"on"),
-        (u"fragment"),
-        (u"query"),
-        (u"mutation"),
-        (u"subscription"),
-        (u"true"),
-        (u"false"),
+        ("on"),
+        ("fragment"),
+        ("query"),
+        ("mutation"),
+        ("subscription"),
+        ("true"),
+        ("false"),
     ],
 )
 def test_it_allows_non_keywords_anywhere_a_name_is_allowed(keyword):
     fragment_name = keyword if keyword != "on" else "a"
     assert parse(
-        u"""
+        """
     query %(keyword)s {
         ... %(fragment_name)s
         ... on %(keyword)s { field }
@@ -142,7 +137,7 @@ def test_it_allows_non_keywords_anywhere_a_name_is_allowed(keyword):
 def test_it_parses_anonymous_mutation_operations():
     # assert doesn't raise
     assert parse(
-        u"""
+        """
     mutation {
         mutationField
     }
@@ -154,7 +149,7 @@ def test_it_parses_anonymous_mutation_operations():
 def test_it_parses_anonymous_subscription_operations():
     # assert doesn't raise
     assert parse(
-        u"""
+        """
     subscription {
         subscriptionField
     }
@@ -165,7 +160,7 @@ def test_it_parses_anonymous_subscription_operations():
 
 def test_it_parses_named_mutation_operations():
     assert parse(
-        u"""
+        """
     mutation Foo {
         mutationField
     }
@@ -176,7 +171,7 @@ def test_it_parses_named_mutation_operations():
 
 def test_it_parses_named_subscription_operations():
     assert parse(
-        u"""
+        """
     subscription Foo {
         subscriptionField
     }""",
@@ -187,7 +182,7 @@ def test_it_parses_named_subscription_operations():
 def test_it_creates_ast():
     assert_node_equal(
         parse(
-            u"""{
+            """{
   node(id: 4) {
     id,
     name
@@ -256,7 +251,7 @@ def test_it_creates_ast():
 
 
 def test_it_creates_ast_from_nameless_query_without_variables():
-    body = u"""query {
+    body = """query {
   node {
     id
   }
@@ -307,31 +302,31 @@ def test_it_creates_ast_from_nameless_query_without_variables():
 
 
 def test_it_allows_parsing_without_source_location_information():
-    assert parse(u"{ id }", no_location=True).loc is None
+    assert parse("{ id }", no_location=True).loc is None
 
 
 def test_it_experimental_allows_parsing_fragment_defined_variables():
     with pytest.raises(GraphQLSyntaxError):
-        parse(u"fragment a($v: Boolean = false) on t { f(v: $v) }")
+        parse("fragment a($v: Boolean = false) on t { f(v: $v) }")
 
     assert parse(
-        u"fragment a($v: Boolean = false) on t { f(v: $v) }",
+        "fragment a($v: Boolean = false) on t { f(v: $v) }",
         experimental_fragment_variables=True,
     )
 
 
 def test_it_contains_references_to_source():
-    doc = parse(u"{ id }")
+    doc = parse("{ id }")
     assert doc.source == "{ id }"
 
 
 def test_parse_value_it_parses_null_value():
-    assert_node_equal(parse_value(u"null"), _ast.NullValue(loc=(0, 4)))
+    assert_node_equal(parse_value("null"), _ast.NullValue(loc=(0, 4)))
 
 
 def test_parse_value_it_parses_list_values():
     assert_node_equal(
-        parse_value(u'[123 "abc"]'),
+        parse_value('[123 "abc"]'),
         _ast.ListValue(
             loc=(0, 11),
             values=[
@@ -344,7 +339,7 @@ def test_parse_value_it_parses_list_values():
 
 def test_parse_value_it_parses_block_strings():
     assert_node_equal(
-        parse_value(u'["""long""" "short"]'),
+        parse_value('["""long""" "short"]'),
         _ast.ListValue(
             loc=(0, 20),
             values=[
@@ -357,21 +352,21 @@ def test_parse_value_it_parses_block_strings():
 
 def test_parse_type_it_parses_well_known_types():
     assert_node_equal(
-        parse_type(u"String"),
+        parse_type("String"),
         _ast.NamedType(loc=(0, 6), name=_ast.Name(loc=(0, 6), value="String")),
     )
 
 
 def test_parse_type_it_parses_custom_types():
     assert_node_equal(
-        parse_type(u"MyType"),
+        parse_type("MyType"),
         _ast.NamedType(loc=(0, 6), name=_ast.Name(loc=(0, 6), value="MyType")),
     )
 
 
 def test_parse_type_it_parses_list_types():
     assert_node_equal(
-        parse_type(u"[MyType]"),
+        parse_type("[MyType]"),
         _ast.ListType(
             loc=(0, 8),
             type=_ast.NamedType(
@@ -383,7 +378,7 @@ def test_parse_type_it_parses_list_types():
 
 def test_parse_type_it_parses_non_null_types():
     assert_node_equal(
-        parse_type(u"MyType!"),
+        parse_type("MyType!"),
         _ast.NonNullType(
             loc=(0, 7),
             type=_ast.NamedType(
@@ -395,7 +390,7 @@ def test_parse_type_it_parses_non_null_types():
 
 def test_parse_type_it_parses_nested_types():
     assert_node_equal(
-        parse_type(u"[MyType!]"),
+        parse_type("[MyType!]"),
         _ast.ListType(
             loc=(0, 9),
             type=_ast.NonNullType(
@@ -415,7 +410,7 @@ def test_parse_type_it_parses_nested_types():
 
 def test_parse_type_it_parses_nested_types_2():
     assert_node_equal(
-        parse_type(u"[MyType!]!"),
+        parse_type("[MyType!]!"),
         _ast.NonNullType(
             loc=(0, 10),
             type=_ast.ListType(

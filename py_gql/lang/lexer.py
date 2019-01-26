@@ -8,11 +8,13 @@
 # [TODO] Settle on using HEX codes or chars, this make the code a bit
 # inconsistent.
 
-import six
+
+from typing import Iterator, List, Optional, Union, cast
 
 from . import token
 from .._string_utils import ensure_unicode, parse_block_string
 from ..exc import (
+    GraphQLSyntaxError,
     InvalidCharacter,
     InvalidEscapeSequence,
     NonTerminatedString,
@@ -28,7 +30,7 @@ IGNORED_CHARS = (
 )
 
 SYMBOLS = {
-    cls.__char__: cls
+    cls.__const__: cls
     for cls in (
         token.ExclamationMark,
         token.Dollar,
@@ -47,18 +49,20 @@ SYMBOLS = {
 }
 
 QUOTED_CHARS = {
-    0x0022: u'"',
-    0x005c: u"\\",
-    0x002f: u"/",
-    0x0062: u"\u0008",
-    0x0066: u"\u000c",
-    0x006e: u"\n",
-    0x0072: u"\r",
-    0x0074: u"\t",
+    0x0022: '"',
+    0x005C: "\\",
+    0x002F: "/",
+    0x0062: "\u0008",
+    0x0066: "\u000c",
+    0x006E: "\n",
+    0x0072: "\r",
+    0x0074: "\t",
 }
 
 
-def _unexpected(expected, char, position, source):
+def _unexpected(
+    expected: str, char: str, position: int, source: str
+) -> GraphQLSyntaxError:
     if char is None:
         return UnexpectedEOF(position - 1, source)
     else:
@@ -67,7 +71,7 @@ def _unexpected(expected, char, position, source):
         )
 
 
-class Lexer(object):
+class Lexer(Iterator[token.Token]):
     """ Iterable GraphQL language lexer / tokenizer.
 
     This class is not typically exposed through the parser but can be used
@@ -84,7 +88,7 @@ class Lexer(object):
 
     __slots__ = ("_source", "_len", "_done", "_position", "_started")
 
-    def __init__(self, source):
+    def __init__(self, source: Union[str, bytes]):
 
         if source is None:
             raise ValueError("source cannot be None")
@@ -95,13 +99,13 @@ class Lexer(object):
         self._started = False
         self._position = 0
 
-    def _peek(self):
+    def _peek(self) -> Optional[str]:
         try:
             return self._source[self._position]
         except IndexError:
             return None
 
-    def _range(self, start=0, end=1):
+    def _range(self, start: int = 0, end: int = 1) -> str:
         return self._source[self._position + start : self._position + end]
 
     def _read_over_whitespace(self):
@@ -137,29 +141,25 @@ class Lexer(object):
 
         self._position = pos
 
-    def _read_ellipsis(self):
+    def _read_ellipsis(self) -> token.Ellip:
         """ Advance lexer over an ellipsis token (...).
-
-        Returns:
-            py_gql.lang.token.Ellipsis_: parse token
         """
         start = self._position
         for _ in range(3):
             char = self._peek()
             self._position += 1
             if char != ".":
-                raise _unexpected(".", char, self._position, self._source)
-        return token.Ellipsis_(start, self._position)
+                raise _unexpected(
+                    ".", cast(str, char), self._position, self._source
+                )
+        return token.Ellip(start, self._position)
 
-    def _read_string(self):
+    def _read_string(self) -> token.String:
         """ Advance lexer over a quoted string.
-
-        Returns:
-            py_gql.lang.token.String: parse token
         """
         start = self._position
         self._position += 1
-        acc = []
+        acc: List[str] = []
         while True:
             char = self._peek()
 
@@ -174,7 +174,7 @@ class Lexer(object):
                 return token.String(start, self._position, value)
             elif char == "\\":
                 acc.append(self._read_escape_sequence())
-            elif code == 0x000a or code == 0x000d:  # \n or \r
+            elif code == 0x000A or code == 0x000D:  # \n or \r
                 raise NonTerminatedString("", self._position - 1, self._source)
             elif not (code >= 0x0020 or code == 0x0009):
                 raise InvalidCharacter(char, self._position - 1, self._source)
@@ -183,15 +183,12 @@ class Lexer(object):
 
         raise NonTerminatedString("", self._position, self._source)
 
-    def _read_block_string(self):
+    def _read_block_string(self) -> token.BlockString:
         """ Advance lexer over a triple quoted block string.
-
-        Returns:
-            py_gql.lang.token.BlockString: parse token
         """
         start = self._position
         self._position += 3
-        acc = []
+        acc: List[str] = []
 
         while True:
             char = self._peek()
@@ -211,7 +208,7 @@ class Lexer(object):
             if char == "\\":
                 if self._range(0, 3) == '"""':
                     for _ in range(3):
-                        acc.append(self._peek())
+                        acc.append(cast(str, self._peek()))
                         self._position += 1
                 else:
                     acc.append(char)
@@ -222,11 +219,10 @@ class Lexer(object):
 
         raise NonTerminatedString("", self._position, self._source)
 
-    def _read_escape_sequence(self):
+    def _read_escape_sequence(self) -> str:
         """ Advance lexer over an escape character
 
-        Returns:
-            chr: Escaped character value
+        Returns: Escaped character value
         """
         char = self._peek()
         self._position += 1
@@ -241,14 +237,13 @@ class Lexer(object):
             return self._read_escaped_unicode()
         else:
             raise InvalidEscapeSequence(
-                u"\\%s" % char, self._position - 1, self._source
+                "\\%s" % char, self._position - 1, self._source
             )
 
-    def _read_escaped_unicode(self):
+    def _read_escaped_unicode(self) -> str:
         """ Advance lexer over a unicode character
 
-        Returns:
-            chr: Escaped character value
+        Returns: Escaped character value
         """
         start = self._position
         for _ in range(4):
@@ -263,35 +258,31 @@ class Lexer(object):
 
         if len(escape) != 4:
             raise InvalidEscapeSequence(
-                u"\\u%s" % escape, start - 1, self._source
+                "\\u%s" % escape, start - 1, self._source
             )
 
         try:
-            return u"%c" % six.unichr(int(escape, 16))
+            return str(chr(int(escape, 16)))
         except ValueError:
             raise InvalidEscapeSequence(
-                u"\\u%s" % escape, start - 1, self._source
+                "\\u%s" % escape, start - 1, self._source
             )
 
-    def _read_number(self):
+    def _read_number(self) -> Union[token.Integer, token.Float]:
         """ Advance lexer over a number
-
-        Returns:
-            Union[py_gql.lang.token.Integer, py_gql.lang.token.Float]:
-                parse token
         """
         start = self._position
         is_float = False
 
         char = self._peek()
-        if ord(char) == 0x002d:  # "-"
+        if char is not None and ord(char) == 0x002D:  # "-"
             self._position += 1
 
         self._read_over_integer()
 
         char = self._peek()
 
-        if char is not None and ord(char) == 0x002e:  # "."
+        if char is not None and ord(char) == 0x002E:  # "."
             self._position += 1
             is_float = True
             self._read_over_digits()
@@ -302,7 +293,7 @@ class Lexer(object):
             self._position += 1
             is_float = True
             char = self._peek()
-            if char is not None and ord(char) in (0x002d, 0x002b):  # "-", "+"
+            if char is not None and ord(char) in (0x002D, 0x002B):  # "-", "+"
                 self._position += 1
 
             self._read_over_integer()
@@ -316,11 +307,7 @@ class Lexer(object):
         )
 
     def _read_over_integer(self):
-        """ Advance lexer over an integer
-
-        Returns:
-            int: parsed value
-        """
+        """ Advance lexer over an integer """
         char = self._peek()
         if char is None:
             raise UnexpectedEOF(self._position, self._source)
@@ -358,11 +345,8 @@ class Lexer(object):
             else:
                 break
 
-    def _read_name(self):
+    def _read_name(self) -> token.Name:
         """ Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
-
-        Returns:
-            py_gql.lang.token.Name: parse token
         """
         start = self._position
         char = self._peek()
@@ -373,9 +357,9 @@ class Lexer(object):
 
             code = ord(char)
             if (
-                code == 0x005f
-                or 0x0041 <= code <= 0x005a
-                or 0x0061 <= code <= 0x007a
+                code == 0x005F
+                or 0x0041 <= code <= 0x005A
+                or 0x0061 <= code <= 0x007A
                 or 0x0030 <= code <= 0x0039
             ):
                 self._position += 1
@@ -386,15 +370,12 @@ class Lexer(object):
         value = self._source[start:end]
         return token.Name(start, end, value)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[token.Token]:
         return self
 
-    def __next__(self):
+    def __next__(self) -> token.Token:
         """ Advance lexer and return the next :class:`py_gql.lang.token.Token`
         instance.
-
-        Returns:
-            py_gql.lang.token.Token: parse token
 
         Raises:
             :class:`~py_gql.exc.UnexpectedEOF`
@@ -432,17 +413,15 @@ class Lexer(object):
             return self._read_block_string()
         elif char == '"':
             return self._read_string()
-        elif code == 0x002d or 0x0030 <= code <= 0x0039:
+        elif code == 0x002D or 0x0030 <= code <= 0x0039:
             return self._read_number()
         elif (
-            code == 0x005f
-            or 0x0041 <= code <= 0x005a
-            or 0x0061 <= code <= 0x007a
+            code == 0x005F
+            or 0x0041 <= code <= 0x005A
+            or 0x0061 <= code <= 0x007A
         ):
             return self._read_name()
         else:
             raise UnexpectedCharacter(
                 'Unexpected character "%s"' % char, self._position, self._source
             )
-
-    next = __next__  # Python 2 iterator interface

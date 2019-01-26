@@ -2,6 +2,7 @@
 """ Utilities to validate Python values against a schema / types """
 
 import json
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from .._utils import find_one
 from ..exc import (
@@ -16,7 +17,10 @@ from ..exc import (
 )
 from ..lang import ast as _ast, print_ast
 from ..schema import (
+    Directive,
     EnumType,
+    Field,
+    GraphQLType,
     InputObjectType,
     ListType,
     NonNullType,
@@ -25,6 +29,13 @@ from ..schema import (
 )
 from .value_from_ast import value_from_ast
 
+# pylint: disable=using-constant-test,unused-import
+if False:  # Fix import cycles of types needed for Mypy checking
+    from ..schema import Schema
+
+
+Path = List[Union[int, str]]
+
 
 def _path(path):
     if not path:
@@ -32,19 +43,23 @@ def _path(path):
     return ["value"] + path
 
 
-def coerce_value(value, type_, node=None, path=None):
+def coerce_value(
+    value: Any,
+    type_: GraphQLType,
+    node: Optional[_ast.Node] = None,
+    path: Optional[Path] = None,
+) -> Any:
     """ Coerce a Python value given a GraphQL Type.
 
     Args:
-        value (any): Value to coerce
-        type_ (py_gql.schema.Type): Expected type
-        node (Optional[py_gql.lang.ast.Node]): Relevant node
-        path: (Optional[list]):
-            Path into the value for nested values (lists, objects).
+        value: Value to coerce
+        type_: Expected type
+        node: Relevant node
+        path: Path into the value for nested values (lists, objects).
             Should only be set on recursive calls.
 
     Returns:
-        any: The coerced value
+        The coerced value
 
     Raises:
         :class:`~py_gql.exc.CoercionError`: if coercion fails
@@ -88,7 +103,9 @@ def coerce_value(value, type_, node=None, path=None):
         return _coerce_input_object(value, type_, node, path)
 
 
-def _coerce_list_value(value, type_, node, path):
+def _coerce_list_value(
+    value: Any, type_: ListType, node: Optional[_ast.Node], path: Path
+) -> List[Any]:
     if isinstance(value, (list, tuple)):
         coerced = []
         errors = []
@@ -116,10 +133,12 @@ def _coerce_list_value(value, type_, node, path):
         return [coerce_value(value, type_.type, node=node, path=path + [0])]
 
 
-def _coerce_input_object(value, type_, node, path):
+def _coerce_input_object(
+    value: Any, type_: InputObjectType, node: Optional[_ast.Node], path: Path
+) -> Dict[str, Any]:
     if not isinstance(value, dict):
         raise CoercionError(
-            "Expected type %s to be an object" % type_,
+            "Expected type %s to be an object" % type_.name,
             node,
             value_path=_path(path),
         )
@@ -164,33 +183,33 @@ def _coerce_input_object(value, type_, node, path):
     return coerced
 
 
-def coerce_argument_values(definition, node, variables=None):
+def coerce_argument_values(
+    definition: Union[Field, Directive],
+    node: Union[_ast.Field, _ast.Directive],
+    variables: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, Any]:
     """ Prepare a dict of argument values given a field or directive
     definition and a field or directive node.
 
     Args:
-        definition (Union[py_gql.schema.Directive, py_gql.schema.Field]):
-            Field or Directive definition from which to extract argument
+        definition: Field or Directive definition from which to extract argument
             definitions.
-        node (Union[py_gql.lang.ast.Field, py_gql.lang.ast.Directive]):
-            AST node
-        variables (Optional[dict]):  Coerced variable values
-
+        node: AST node
+        variables: Coerced variable values
 
     Returns:
-        dict: Coerced arguments
+        Coerced arguments
 
     Raises:
         :class:`~py_gql.exc.CoercionError`:
             if any argument value fails to coerce, required argument is
             missing, etc.
     """
-    variables = dict() if variables is None else variables
+    variables = {} if variables is None else variables
     coerced_values = {}
 
     values = {a.name.value: a for a in node.arguments}
-    defs = definition.arguments
-    for arg_def in defs:
+    for arg_def in definition.arguments:
         argname = arg_def.name
         argtype = arg_def.type
         if argname not in values:
@@ -223,27 +242,29 @@ def coerce_argument_values(definition, node, variables=None):
                     )
                 except InvalidValue as err:
                     raise CoercionError(
-                        'Argument "%s" of type "%s" was provided invalid value '
-                        "%s (%s)"
-                        % (argname, argtype, print_ast(arg.value), str(err)),
+                        'Argument "%s" of type "%s" was provided invalid value %s (%s)'
+                        % (argname, argtype, print_ast(arg.value), err),
                         [node],
                     )
 
     return coerced_values
 
 
-def directive_arguments(definition, node, variables=None):
+def directive_arguments(
+    definition: Directive,
+    node: _ast.SupportDirectives,
+    variables: Optional[Mapping[str, Any]] = None,
+) -> Optional[Dict[str, Any]]:
     """ Extract directive argument given a field node and a directive
     definition.
 
     Args:
-        definition (py_gql.schema.Directive):
-            Directive definition from which to extract arguments
-        node (py_gql.lang.ast.Field): Ast node
-        variables (Optional[dict]): Coerced variable values
+        definition: Directive definition from which to extract arguments
+        node: Ast node
+        variables: Coerced variable values
 
     Returns:
-        Optional[dict]: Coerced directive arguments, ``None`` if the directive
+        Coerced directive arguments, ``None`` if the directive
         is not present on the node.
 
     Raises:
@@ -262,7 +283,11 @@ def directive_arguments(definition, node, variables=None):
     )
 
 
-def coerce_variable_values(schema, operation, variables):  # noqa: C901
+def coerce_variable_values(  # noqa: C901
+    schema: "Schema",
+    operation: _ast.OperationDefinition,
+    variables: Mapping[str, Any],
+) -> Dict[str, Any]:
     """ Prepares an object map of variable values of the correct type based on
     the provided operation definition and arbitrary JSON input. If the input
     cannot be parsed to match the variable definitions, an ExecutionError will
@@ -272,13 +297,12 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
     Extra variables are ignored and filtered out.
 
     Args:
-        schema (py_gql.schema.Schema): GraphQL Schema to consider
-        operation (py_gql.lang.ast.OperationDefinition):
-            Operation definition containing the variable definitions
-        variables (dict): Provided raw variables
+        schema: GraphQL Schema to consider
+        operation: Operation definition containing the variable definitions
+        variables: Provided raw variables
 
     Returns:
-        dict: Coerced variables
+        Coerced variables
 
     Raises:
         :class:`~py_gql.exc.VariablesCoercionError`:
@@ -291,7 +315,7 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
 
         try:
             var_type = schema.get_type_from_literal(var_def.type)
-        except UnknownType as err:
+        except UnknownType:
             errors.append(
                 VariableCoercionError(
                     'Unknown type "%s" for variable "$%s"'
@@ -304,9 +328,8 @@ def coerce_variable_values(schema, operation, variables):  # noqa: C901
         if not is_input_type(var_type):
             errors.append(
                 VariableCoercionError(
-                    'Variable "$%s" expected value of type "%s" which cannot '
-                    "be used as an input type."
-                    % (name, print_ast(var_def.type)),
+                    'Variable "$%s" expected value of type "%s" which cannot be used '
+                    "as an input type." % (name, print_ast(var_def.type)),
                     [var_def],
                 )
             )

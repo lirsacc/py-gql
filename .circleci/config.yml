@@ -4,13 +4,13 @@ references:
 
     docker-python35: &docker-python35
         docker:
-            - image: circleci/python:3.5.5
+            - image: circleci/python:3.5
               environment:
                 PY: 35
 
     docker-python36: &docker-python36
         docker:
-            - image: circleci/python:3.6.5
+            - image: circleci/python:3.6
               environment:
                 PY: 36
 
@@ -19,12 +19,6 @@ references:
             - image: circleci/python:3.7
               environment:
                 PY: 37
-
-    docker-python27: &docker-python27
-        docker:
-            - image: circleci/python:2.7.14
-              environment:
-                PY: 27
 
     workspace: &workspace
         attach_workspace:
@@ -38,9 +32,6 @@ references:
 
     cache-python-37: &cache-python-37
         key: py37-deps-{{ arch }}-{{ checksum "workspace/.py-cache" }}
-
-    cache-python-27: &cache-python-27
-        key: py27-deps-{{ arch }}-{{ checksum "workspace/.py-cache" }}
 
     deps: &deps
         run:
@@ -58,7 +49,7 @@ references:
             name: Run tests
             command: |
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                inv test --coverage --junit --no-bail
+                inv test -v --coverage --junit --no-bail
 
     mv-tests: &mv-tests
         run:
@@ -80,9 +71,23 @@ references:
         store_test_results:
             path: workspace/test-results
 
+    run-lint: &run-lint
+        - run:
+            name: Running Flake8
+            when: always
+            command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                inv flake8
+        - run:
+            name: Running MyPy
+            when: always
+            command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                inv mypy
+
 jobs:
     checkout:
-        <<: *docker-python36
+        <<: *docker-python37
         steps:
             - run:
                 name: Prepare working directory
@@ -101,19 +106,6 @@ jobs:
                 paths: workspace
                 root: .
 
-    deps-36:
-        <<: *docker-python36
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-36
-            - *deps
-            - save_cache:
-                <<: *cache-python-36
-                paths: ~/.cache/pip
-            - persist_to_workspace:
-                paths: venv36
-                root: .
-
     deps-35:
         <<: *docker-python35
         steps:
@@ -127,17 +119,17 @@ jobs:
                 paths: venv35
                 root: .
 
-    deps-27:
-        <<: *docker-python27
+    deps-36:
+        <<: *docker-python36
         steps:
             - *workspace
-            - restore_cache: *cache-python-27
+            - restore_cache: *cache-python-36
             - *deps
             - save_cache:
-                <<: *cache-python-27
+                <<: *cache-python-36
                 paths: ~/.cache/pip
             - persist_to_workspace:
-                paths: venv27
+                paths: venv36
                 root: .
 
     deps-37:
@@ -177,18 +169,6 @@ jobs:
                 paths: workspace/test-results/python35
                 root: .
 
-    test-27:
-        <<: *docker-python27
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-27
-            - *run-tests
-            - *mv-tests
-            - *store-tests
-            - persist_to_workspace:
-                paths: workspace/test-results/python27
-                root: .
-
     test-37:
         <<: *docker-python37
         steps:
@@ -202,7 +182,7 @@ jobs:
                 root: .
 
     collect-tests:
-        <<: *docker-python36
+        <<: *docker-python37
         steps:
             - *workspace
             - run:
@@ -237,19 +217,29 @@ jobs:
             - *store-tests
             - store_artifacts: {path: workspace/test-results, destination: .}
 
-    lint:
+    lint-35:
+        <<: *docker-python35
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-35
+            - *run-lint
+
+    lint-36:
         <<: *docker-python36
         steps:
             - *workspace
             - restore_cache: *cache-python-36
-            - run:
-                name: Running linter(s)
-                command: |
-                    . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                    inv lint
+            - *run-lint
+
+    lint-37:
+        <<: *docker-python37
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-37
+            - *run-lint
 
     docs:
-        <<: *docker-python36
+        <<: *docker-python37
         steps:
             - *workspace
             - restore_cache: *cache-python-36
@@ -269,43 +259,47 @@ workflows:
   build:
     jobs:
         - checkout
+
+        - deps-35:
+            requires:
+                - checkout
+        - lint-35:
+            requires:
+                - deps-35
+        - test-35:
+            requires:
+                - deps-35
+
         - deps-36:
             requires:
                 - checkout
-        - lint:
+        - lint-36:
             requires:
                 - deps-36
         - test-36:
             requires:
                 - deps-36
-        - deps-35:
-            requires:
-                - checkout
-        - test-35:
-            requires:
-                - deps-35
-        - deps-27:
-            requires:
-                - checkout
-        - test-27:
-            requires:
-                - deps-27
+
         - deps-37:
             requires:
                 - checkout
+        - lint-37:
+            requires:
+                - deps-37
         - test-37:
             requires:
                 - deps-37
+
         - collect-tests:
             requires:
-                - test-27
                 - test-35
                 - test-36
                 - test-37
         - docs:
             requires:
-                - lint
-                - test-27
+                - lint-35
+                - lint-36
+                - lint-37
                 - test-35
                 - test-36
                 - test-37

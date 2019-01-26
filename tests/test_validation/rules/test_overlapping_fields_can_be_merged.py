@@ -619,7 +619,7 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
             '("scalar" and "unrelatedField" are different fields). Use different '
             "aliases on the fields to fetch both if this was intentional."
         ],
-        [[(697, 748), (867, 873), (761, 812), (928, 950)]],
+        [[(697, 748), (761, 812), (867, 873), (928, 950)]],
     )
 
 

@@ -3,19 +3,22 @@
 The :mod:`py_gql.schema` module exposes all the necessary classes and
 functions to programatically creating, validating and inspecting GraphQL
 schemas against which you can execute queries.
-
-isort:skip_file
 """
 
+# TODO: Encode as much of the rules a validate_schema in the type system
+
+# isort:skip_file
 # flake8: noqa
 
 from .types import (
+    AbstractTypes,
     Argument,
+    CompositeTypes,
     Directive,
-    EnumValue,
     EnumType,
+    EnumValue,
     Field,
-    ObjectType,
+    GraphQLType,
     InputField,
     InputObjectType,
     InterfaceType,
@@ -24,17 +27,34 @@ from .types import (
     is_input_type,
     is_leaf_type,
     is_output_type,
+    LeafTypes,
     ListType,
     NonNullType,
     nullable_type,
+    ObjectType,
+    OutputTypes,
     ScalarType,
     Type,
     UnionType,
     unwrap_type,
-    WrappingType,
 )
-from .scalars import Int, Float, ID, UUID, String, Boolean, RegexType
-from .directives import IncludeDirective, SkipDirective, DeprecatedDirective
+from .scalars import (
+    Int,
+    Float,
+    ID,
+    UUID,
+    String,
+    Boolean,
+    RegexType,
+    SPECIFIED_SCALAR_TYPES,
+)
+from .directives import (
+    IncludeDirective,
+    SkipDirective,
+    DeprecatedDirective,
+    SPECIFIED_DIRECTIVES,
+)
+
 from .build import (
     make_executable_schema,
     build_schema_from_ast,

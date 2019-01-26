@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import copy
 import functools as ft
 import hashlib
+from typing import Any, cast
 
 import pytest
-import six
 
-from py_gql import graphql
+from py_gql import graphql_sync
 from py_gql._string_utils import dedent
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.schema import (
@@ -31,15 +30,21 @@ def wrap_resolver(field_def, func):
     source_resolver = field_def.resolve or default_resolver
 
     @ft.wraps(source_resolver)
-    def wrapped(parent_value, args, context, info):
-        value = source_resolver(parent_value, args, context, info)
+    def wrapped(parent_value, context, info, **args):
+        value = source_resolver(parent_value, context, info, **args)
         if value is None:
             return value
         return func(value)
 
-    field_def = copy.copy(field_def)
-    field_def.resolve = wrapped
-    return field_def
+    return Field(
+        name=field_def.name,
+        type_=field_def.type,
+        description=field_def.description,
+        deprecation_reason=field_def.deprecation_reason,
+        args=field_def.arguments,
+        resolve=wrapped,
+        node=field_def.node,
+    )
 
 
 def test_simple_field_modifier():
@@ -48,7 +53,7 @@ def test_simple_field_modifier():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     assert (
-        graphql(
+        graphql_sync(
             make_executable_schema(
                 """
                 directive @upper on FIELD_DEFINITION
@@ -61,7 +66,7 @@ def test_simple_field_modifier():
             ),
             "{ foo }",
             {},
-            initial_value={"foo": "lowerCase"},
+            root={"foo": "lowerCase"},
         ).response()
         == {"data": {"foo": "LOWERCASE"}}
     )
@@ -108,7 +113,7 @@ def test_field_modifier_using_arguments():
         definition = Directive(
             "power",
             ["FIELD_DEFINITION"],
-            [Argument("exponent", Int, default_value=2)],
+            args=[Argument("exponent", Int, default_value=2)],
         )
 
         # pylint: disable = super-init-not-called
@@ -119,7 +124,7 @@ def test_field_modifier_using_arguments():
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     assert (
-        graphql(
+        graphql_sync(
             make_executable_schema(
                 """
                 type Query {
@@ -131,7 +136,7 @@ def test_field_modifier_using_arguments():
             ),
             "{ foo, bar }",
             {},
-            initial_value={"foo": 2, "bar": 2},
+            root={"foo": 2, "bar": 2},
         ).response()
         == {"data": {"foo": 4, "bar": 8}}
     )
@@ -149,10 +154,9 @@ def test_object_modifier_and_field_modifier():
             self.source = args["source"]
             assert len(self.source)
 
-        def resolve(self, root, *args):
+        def resolve(self, root, *_, **args):
             m = hashlib.sha256()
             for fieldname in self.source:
-                print(fieldname)
                 m.update(str(root.get(fieldname, "")).encode("utf8"))
             return m.hexdigest()
 
@@ -206,11 +210,10 @@ def test_object_modifier_and_field_modifier():
         """
     )
 
-    assert graphql(
+    assert graphql_sync(
         schema,
         "{ foo { uid, name, id } }",
-        {},
-        initial_value={"foo": {"name": "some lower case name", "id": 42}},
+        root={"foo": {"name": "some lower case name", "id": 42}},
     ).response() == {
         "data": {
             "foo": {
@@ -251,7 +254,7 @@ def test_multiple_directives_applied_in_order():
         definition = Directive(
             "power",
             ["FIELD_DEFINITION"],
-            [Argument("exponent", Int, default_value=2)],
+            args=[Argument("exponent", Int, default_value=2)],
         )
 
         # pylint:disable=super-init-not-called
@@ -268,7 +271,7 @@ def test_multiple_directives_applied_in_order():
             return wrap_resolver(field_definition, lambda x: x + 1)
 
     assert (
-        graphql(
+        graphql_sync(
             make_executable_schema(
                 """
                 type Query {
@@ -282,17 +285,18 @@ def test_multiple_directives_applied_in_order():
                 },
             ),
             "{ foo, bar }",
-            {},
-            initial_value={"foo": 2, "bar": 2},
+            root={"foo": 2, "bar": 2},
         ).response()
         == {"data": {"foo": 5, "bar": 9}}
     )
 
 
 def test_input_values():
-    class LimitedLengthScalarType(ScalarType):
+    class LimitedLengthScalarType(ScalarType[str]):
         @classmethod
-        def wrap(cls, type_, *args, **kwargs):
+        def wrap(
+            cls, type_: ScalarType[str], *args: Any, **kwargs: Any
+        ) -> "LimitedLengthScalarType":
             if isinstance(type_, (NonNullType, ListType)):
                 return type(type_)(cls.wrap(type_.type, *args, **kwargs))
             return cls(type_, *args, **kwargs)
@@ -312,7 +316,7 @@ def test_input_values():
 
         def parse(self, value):
             parsed = self.type.parse(value)
-            if not isinstance(parsed, six.string_types):
+            if not isinstance(parsed, str):
                 raise ScalarParsingError("Not a string")
             if not (self.min <= len(parsed) <= self.max):
                 raise ScalarParsingError(
@@ -374,11 +378,11 @@ def test_input_values():
         """
     )
 
-    assert graphql(
+    assert graphql_sync(
         schema,
         '{ foo (foo: "abcdef") }',
         {},
-        initial_value={"foo": lambda _, args, *r: args["foo"]},
+        root={"foo": lambda *_, **args: args["foo"]},
     ).response() == {
         "errors": [
             {
@@ -392,25 +396,25 @@ def test_input_values():
         ]
     }
 
-    assert graphql(
+    assert graphql_sync(
         schema,
         '{ foo (foo: "abcd") }',
         {},
-        initial_value={"foo": lambda _, args, *r: args["foo"]},
+        root={"foo": lambda *_, **args: args["foo"]},
     ).response() == {"data": {"foo": "abcd"}}
 
-    assert graphql(
+    assert graphql_sync(
         schema,
         '{ foo (bar: {baz: "abcd"}) }',
         {},
-        initial_value={"foo": lambda _, args, *r: args["bar"]["baz"]},
+        root={"foo": lambda *_, **args: args["bar"]["baz"]},
     ).response() == {"data": {"foo": "abcd"}}
 
-    assert graphql(
+    assert graphql_sync(
         schema,
         '{ foo (bar: {baz: "a"}) }',
         {},
-        initial_value={"foo": lambda _, args, *r: args["bar"]["baz"]},
+        root={"foo": lambda *_, **args: args["bar"]["baz"]},
     ).response() == {
         "errors": [
             {
@@ -429,9 +433,7 @@ def test_enum_value_directive():
     """ generating custom enum values """
 
     # These could be pre-loaded from a database or a config file dynamically
-    VALUES = dict(
-        [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
-    )
+    VALUES = {"RED": "#FF4136", "BLUE": "#0074D9", "GREEN": "#2ECC40"}
 
     class CSSColorDirective(SchemaDirective):
         def visit_enum_value(self, enum_value):
@@ -459,7 +461,7 @@ def test_enum_value_directive():
         schema_directives={"cssColor": CSSColorDirective},
     )
 
-    enum = schema.get_type("Color")
+    enum = cast(EnumType, schema.get_type("Color"))
     for k, v in VALUES.items():
         assert enum.get_value(k) == v
         assert enum.get_name(v) == k
@@ -509,7 +511,7 @@ def test_enum_type_directive():
         """
     )
 
-    enum = schema.get_type("Color")
+    enum = cast(EnumType, schema.get_type("Color"))
     values_dict = dict(VALUES)
     for k, v in values_dict.items():
         assert enum.get_value(k) == v
