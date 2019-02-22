@@ -4,41 +4,40 @@ import asyncio
 import pytest
 
 from py_gql._string_utils import stringify_path
-from py_gql.execution import AsyncExecutor
 from py_gql.execution.middleware import apply_middlewares
 
 from ._test_utils import assert_execution
 
 
 def test_apply_middlewares_noop_on_empty_args():
-    def source(*a, **k):
-        return (a, k)
+    def source(*args, **kwargs):
+        return (args, kwargs)
 
     assert apply_middlewares(source, []) is source
 
 
 def test_apply_sync_middlewares_on_sync_functions():
-    def a(n, *a, **k):
-        k["steps"].append("> a")
-        return n(*a, **k)
+    def a(n, *args, **kwargs):
+        kwargs["steps"].append("> a")
+        return n(*args, **kwargs)
 
-    def b(n, *a, **k):
-        k["steps"].append("> b")
-        yield n(*a, **k)
-        k["steps"].append("< b")
+    def b(n, *args, **kwargs):
+        kwargs["steps"].append("> b")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< b")
 
-    def c(n, *a, **k):
-        k["steps"].append("> c")
-        return n(*a, **k)
+    def c(n, *args, **kwargs):
+        kwargs["steps"].append("> c")
+        return n(*args, **kwargs)
 
-    def d(n, *a, **k):
-        k["steps"].append("> d")
-        yield n(*a, **k)
-        k["steps"].append("< d")
+    def d(n, *args, **kwargs):
+        kwargs["steps"].append("> d")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< d")
 
-    def source(*a, **k):
-        k["steps"].append("*")
-        return (a, k)
+    def source(*args, **kwargs):
+        kwargs["steps"].append("*")
+        return (args, kwargs)
 
     applied = apply_middlewares(source, [a, b, c, d])
     assert applied(42, bar=42, steps=[]) == (
@@ -49,27 +48,28 @@ def test_apply_sync_middlewares_on_sync_functions():
 
 @pytest.mark.asyncio
 async def test_apply_sync_middleware_on_async_function():
-    async def a(n, *a, **k):
-        k["steps"].append("> a")
-        return await n(*a, **k)
+    async def a(n, *args, **kwargs):
+        kwargs["steps"].append("> a")
+        return await n(*args, **kwargs)
 
-    async def b(n, *a, **k):
-        k["steps"].append("> b")
-        yield await n(*a, **k)
-        k["steps"].append("< b")
+    def b(n, *args, **kwargs):
+        kwargs["steps"].append("> b")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< b")
 
-    def c(n, *a, **k):
-        k["steps"].append("> c")
-        return n(*a, **k)
+    def c(n, *args, **kwargs):
+        kwargs["steps"].append("> c")
+        return n(*args, **kwargs)
 
-    def d(n, *a, **k):
-        k["steps"].append("> d")
-        yield n(*a, **k)
-        k["steps"].append("< d")
+    def d(n, *args, **kwargs):
+        kwargs["steps"].append("> d")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< d")
 
-    async def source(*a, **k):
-        k["steps"].append("*")
-        return (a, k)
+    async def source(*args, **kwargs):
+        kwargs["steps"].append("*")
+        await asyncio.sleep(0.001)
+        return (args, kwargs)
 
     applied = apply_middlewares(source, [a, b, c, d])
     assert await applied(42, bar=42, steps=[]) == (
@@ -79,32 +79,29 @@ async def test_apply_sync_middleware_on_async_function():
 
 
 @pytest.mark.asyncio
-async def test_apply_sync_middleware_on_sync_function():
-    async def a(n, *a, **k):
-        print("a", a, k)
-        k["steps"].append("> a")
-        return await n(*a, **k)
+async def test_apply_async_middleware_on_async_function():
+    async def a(n, *args, **kwargs):
+        kwargs["steps"].append("> a")
+        await asyncio.sleep(0.001)
+        return n(*args, **kwargs)
 
-    async def b(n, *a, **k):
-        print("b", a, k)
-        k["steps"].append("> b")
-        yield n(*a, **k)
-        k["steps"].append("< b")
+    def b(n, *args, **kwargs):
+        kwargs["steps"].append("> b")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< b")
 
-    def c(n, *a, **k):
-        print("c", a, k)
-        k["steps"].append("> c")
-        return n(*a, **k)
+    def c(n, *args, **kwargs):
+        kwargs["steps"].append("> c")
+        return n(*args, **kwargs)
 
-    def d(n, *a, **k):
-        print("d", a, k)
-        k["steps"].append("> d")
-        yield n(*a, **k)
-        k["steps"].append("< d")
+    def d(n, *args, **kwargs):
+        kwargs["steps"].append("> d")
+        yield n(*args, **kwargs)
+        kwargs["steps"].append("< d")
 
-    def source(*a, **k):
-        k["steps"].append("*")
-        return (a, k)
+    def source(*args, **kwargs):
+        kwargs["steps"].append("*")
+        return (args, kwargs)
 
     applied = apply_middlewares(source, [a, b, c, d])
     assert await applied(42, bar=42, steps=[]) == (
@@ -142,9 +139,9 @@ HERO_RESULT = {
 async def test_function_middleware(executor_cls, starwars_schema):
     log = []
 
-    def path_collector_one_way(next_, root, context, info, **args):
+    def path_collector_one_way(next_, root, context, info, **argsrgs):
         log.append("> %s" % stringify_path(info.path))
-        return next_(root, context, info, **args)
+        return next_(root, context, info, **argsrgs)
 
     await assert_execution(
         starwars_schema,
@@ -171,9 +168,9 @@ async def test_function_middleware(executor_cls, starwars_schema):
 async def test_generator_middleware(executor_cls, starwars_schema):
     log = []
 
-    def path_collector(next_, root, context, info, **args):
+    def path_collector(next_, root, context, info, **argsrgs):
         log.append("> %s" % stringify_path(info.path))
-        yield next_(root, context, info, **args)
+        yield next_(root, context, info, **argsrgs)
         log.append("< %s" % stringify_path(info.path))
 
     await assert_execution(
@@ -206,15 +203,13 @@ async def test_generator_middleware(executor_cls, starwars_schema):
 
 
 @pytest.mark.asyncio
-async def test_async_generator_middleware(starwars_schema):
+async def test_class_middleware(executor_cls, starwars_schema):
     log = []
 
     class PathCollectorAsync(object):
-        async def __call__(self, next_, root, context, info, **args):
+        def __call__(self, next_, root, context, info, **argsrgs):
             log.append("> %s" % stringify_path(info.path))
-            await asyncio.sleep(0.0001)
-            yield next_(root, context, info, **args)
-            await asyncio.sleep(0.0001)
+            yield next_(root, context, info, **argsrgs)
             log.append("< %s" % stringify_path(info.path))
 
     path_collector = PathCollectorAsync()
@@ -224,7 +219,7 @@ async def test_async_generator_middleware(starwars_schema):
         HERO_QUERY,
         middlewares=[path_collector],
         expected_data=HERO_RESULT,
-        executor_cls=AsyncExecutor,
+        executor_cls=executor_cls,
     )
 
     # Async case might re-order fields.

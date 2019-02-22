@@ -35,12 +35,7 @@ yields to the next step.
 # stronger assumptions in order to optimise this.
 
 import functools as ft
-from inspect import (
-    isasyncgenfunction,
-    isawaitable,
-    iscoroutinefunction,
-    isgeneratorfunction,
-)
+from inspect import isawaitable, iscoroutinefunction, isgeneratorfunction
 from typing import Any, Callable, Sequence
 
 
@@ -56,7 +51,6 @@ def _check_func_or_callable(
 
 _isgeneratorfunc = _check_func_or_callable(isgeneratorfunction)
 _isasyncfunc = _check_func_or_callable(iscoroutinefunction)
-_isasyncgenfunc = _check_func_or_callable(isasyncgenfunction)
 
 
 def apply_middlewares(
@@ -78,10 +72,10 @@ def apply_middlewares(
     for mw in reversed(middlewares):
         assert callable(mw)
 
-        if _isgeneratorfunc(mw):
+        # Second part of this condition is for Pthon 3.5 where
+        # `isgeneratorfunction` is true for async functions.
+        if _isgeneratorfunc(mw) and not _isasyncfunc(mw):
             tail = wrap_with_generator_middleware(mw, tail)
-        elif _isasyncgenfunc(mw):
-            tail = wrap_with_async_generator_middleware(mw, tail)
         elif _isasyncfunc(tail) and not _isasyncfunc(mw):
             tail = wrap_async_with_sync(mw, tail)
         else:
@@ -130,35 +124,5 @@ def wrap_with_generator_middleware(mw, func):
             return await wrapped(*args, **kwargs)
 
         return _wrapped
-
-    return wrapped
-
-
-def wrap_with_async_generator_middleware(mw, func):
-    async def wrapped(*args, **kwargs):
-        gen = mw(func, *args, **kwargs)
-
-        async def _run_cleanup():
-            try:
-                await gen.__anext__()
-            except StopAsyncIteration:
-                pass
-
-        try:
-            res = await gen.__anext__()
-        except StopAsyncIteration:
-            raise RuntimeError("Generator middleware did not yield")
-
-        if isawaitable(res):
-
-            async def _deferred():
-                final = await res
-                await _run_cleanup()
-                return final
-
-            return await _deferred()
-        else:
-            await _run_cleanup()
-            return res
 
     return wrapped
