@@ -157,7 +157,7 @@ def validate_directives(schema: "Schema") -> None:
         _assert_valid_name(directive.name)
 
         # TODO: Ensure proper locations.
-        argnames: Set[str] = set()
+        argnames = set()  # type: Set[str]
         for arg in directive.arguments:
 
             _assert(
@@ -188,7 +188,7 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
         composite_type.fields,
         'Type "%s" must define at least one field' % composite_type,
     )
-    fieldnames: Set[str] = set()
+    fieldnames = set()  # type: Set[str]
     for field in composite_type.fields:
         _assert(
             isinstance(field, Field),
@@ -208,7 +208,7 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
             % (field.name, composite_type, field.type),
         )
 
-        argnames: Set[str] = set()
+        argnames = set()  # type: Set[str]
 
         for arg in field.arguments:
 
@@ -238,7 +238,7 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
 
 
 def validate_interfaces(schema: "Schema", type_: ObjectType) -> None:
-    imlemented_types: Set[str] = set()
+    imlemented_types = set()  # type: Set[str]
     for interface in type_.interfaces:
         _assert(
             isinstance(interface, InterfaceType),
@@ -325,7 +325,7 @@ def validate_union_members(union_type: UnionType) -> None:
         'UnionType "%s" must at least define one member' % union_type,
     )
 
-    member_type_names: Set[str] = set()
+    member_type_names = set()  # type: Set[str]
     for member_type in union_type.types:
         _assert(
             isinstance(member_type, ObjectType),
@@ -364,7 +364,7 @@ def validate_input_fields(input_object: InputObjectType) -> None:
         'Type "%s" must define at least one field' % input_object,
     )
 
-    fieldnames: Set[str] = set()
+    fieldnames = set()  # type: Set[str]
 
     for field in input_object.fields:
         _assert(

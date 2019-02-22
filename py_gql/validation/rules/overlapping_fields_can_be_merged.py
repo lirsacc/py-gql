@@ -1,16 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import (
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-)
+from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple, TypeVar
 
 from ..._utils import deduplicate, flatten
 from ...exc import UnknownType
@@ -39,11 +29,18 @@ FieldsAndFragments = Tuple[FieldMap, List[str]]
 Conflict = Tuple[str, str, Sequence[_ast.Node]]
 
 
-class Context(NamedTuple):
-    schema: Schema
-    fields_and_fragments: Dict[_ast.SelectionSet, FieldsAndFragments]
-    compared_fragment_pairs: Set[Tuple[Tuple[str, str], bool]]
-    fragments: Dict[str, _ast.FragmentDefinition]
+class Context(object):
+    def __init__(
+        self,
+        schema: Schema,
+        fields_and_fragments: Dict[_ast.SelectionSet, FieldsAndFragments],
+        compared_fragment_pairs: Set[Tuple[Tuple[str, str], bool]],
+        fragments: Dict[str, _ast.FragmentDefinition],
+    ):
+        self.schema = schema
+        self.fields_and_fragments = fields_and_fragments
+        self.compared_fragment_pairs = compared_fragment_pairs
+        self.fragments = fragments
 
 
 def _permutations(lst: Sequence[T]) -> Iterator[Tuple[T, T]]:
@@ -112,9 +109,9 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
         )
 
     def enter_selection_set(self, node):
-        conflicts: List[Conflict] = find_conflicts_within_selection_set(
+        conflicts = find_conflicts_within_selection_set(
             self.ctx, node, self.type_info.parent_type
-        )
+        )  # type: List[Conflict]
 
         for response_name, reason, locs in conflicts:
             self.add_error(
@@ -190,7 +187,7 @@ def find_conflicts_within_selection_set(
     # Implementation note: all functions detecting conflicts are generators
     # to keep the code simple and only this one collects the generators into a
     # list.
-    conflicts: List[Conflict] = []
+    conflicts = []  # type: List[Conflict]
 
     field_map, fragment_names = _fields_and_fragments(
         ctx, parent_type, selection_set
@@ -200,7 +197,7 @@ def find_conflicts_within_selection_set(
     for conflict in _conflicts_within(ctx, field_map):
         conflicts.append(conflict)
 
-    compared_fragments: Set[str] = set()
+    compared_fragments = set()  # type: Set[str]
     for fragment_name in fragment_names:
         # (B) Then collect conflicts between these fields and those represented
         # by each spread fragment name found.

@@ -41,8 +41,8 @@ Boolean = ScalarType(
 
 
 # Spec says -2^31 to 2^31... use floats to get larger numbers.
-MAX_INT = 2_147_483_647
-MIN_INT = -2_147_483_648
+MAX_INT = 2147483647
+MIN_INT = -2147483648
 EXPONENT_RE = re.compile(r"1e\d+")
 
 
@@ -141,7 +141,7 @@ def _serialize_string(value: Any) -> str:
 _coerce_string_node = _typed_coerce(_parse_string, _ast.StringValue)
 
 
-String: ScalarType[str] = ScalarType(
+String = ScalarType(
     "String",
     description=(
         "The `String` scalar type represents textual data, represented as "
@@ -151,7 +151,7 @@ String: ScalarType[str] = ScalarType(
     serialize=_serialize_string,
     parse=_parse_string,
     parse_literal=_coerce_string_node,
-)
+)  # type: ScalarType[str]
 
 _coerce_id_node = _typed_coerce(str, _ast.StringValue, _ast.IntValue)
 
@@ -196,7 +196,7 @@ def _parse_uuid(maybe_uuid: Any) -> uuid.UUID:
 _coerce_uuid_node = _typed_coerce(_parse_uuid, _ast.StringValue)
 
 
-UUID: ScalarType[uuid.UUID] = ScalarType(
+UUID = ScalarType(
     "UUID",
     description=(
         "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
@@ -205,20 +205,20 @@ UUID: ScalarType[uuid.UUID] = ScalarType(
     serialize=_serialize_uuid,
     parse=_parse_uuid,
     parse_literal=_coerce_uuid_node,
-)
+)  # type: ScalarType[uuid.UUID]
 
 
 class RegexType(ScalarType[str]):
     """ Types to validate regex patterns.
 
     Args:
-        name (str): Type name
-        regex (Union[str, compiled pattern]): Regular expression
-        description (Optional[str]): Type description
+        name: Type name
+        regex: Regular expression
+        description: Type description
 
     Attributes:
-        name (str): Type name
-        description (str): Type description
+        name: Type name
+        description: Type description
     """
 
     def __init__(self, name, regex, description=None):

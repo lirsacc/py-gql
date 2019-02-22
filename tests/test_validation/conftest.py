@@ -209,7 +209,9 @@ def schema():
         return str(value)
 
     InvalidScalar = ScalarType("Invalid", _stringify, _invalid, _invalid)
-    AnyScalar: ScalarType[Any] = ScalarType("Any", _stringify, lambda x: x)
+    AnyScalar = ScalarType(
+        "Any", _stringify, lambda x: x
+    )  # type: ScalarType[Any]
 
     return Schema(
         ObjectType(
@@ -255,14 +257,12 @@ def schema():
 
 @pytest.fixture
 def schema_2():
-    SomeBox: InterfaceType = InterfaceType(
+    SomeBox = InterfaceType(
         "SomeBox",
         [Field("deepBox", lambda: SomeBox), Field("unrelatedField", String)],
-    )
+    )  # type: InterfaceType
 
-    IntBox: ObjectType  # yuck! Not sure how to make mypy type inference happy otherwise
-
-    StringBox: ObjectType = ObjectType(
+    StringBox = ObjectType(
         "StringBox",
         [
             Field("scalar", String),
@@ -270,10 +270,10 @@ def schema_2():
             Field("unrelatedField", String),
             Field("listStringBox", lambda: ListType(StringBox)),
             Field("stringBox", lambda: StringBox),
-            Field("intBox", lambda: IntBox),
+            Field("intBox", lambda: IntBox),  # type: ignore
         ],
         [SomeBox],
-    )
+    )  # type: ObjectType
 
     IntBox = ObjectType(
         "IntBox",
@@ -286,7 +286,7 @@ def schema_2():
             Field("intBox", lambda: IntBox),
         ],
         [SomeBox],
-    )
+    )  # type: ObjectType
 
     NonNullStringBox1 = InterfaceType(
         "NonNullStringBox1", [Field("scalar", NonNullType(String))]

@@ -9,7 +9,7 @@ Note:
 """
 
 import functools as ft
-from typing import Callable, Iterable, Tuple, TypeVar, Union
+from typing import Callable, Iterable, TypeVar, Union
 
 from . import ast as _ast
 from ..exc import GraphQLError
@@ -827,7 +827,7 @@ class ParrallelVisitor(Visitor):
     """
 
     def __init__(self, *visitors: Visitor):
-        self.visitors: Tuple[Visitor, ...] = visitors
+        self.visitors = tuple(visitors)
 
     def enter(self, node):
         for v in self.visitors:

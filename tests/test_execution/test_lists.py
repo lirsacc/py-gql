@@ -31,13 +31,13 @@ async def run_test(
 ):
 
     data = {"test": test_data}
-    data_type: ObjectType = ObjectType(
+    data_type = ObjectType(
         "DataType",
         [
             Field("test", test_type),
             Field("nest", lambda: data_type, resolve=lambda *_: data),
         ],
-    )
+    )  # type: ObjectType
     schema = Schema(data_type)
 
     await assert_execution(

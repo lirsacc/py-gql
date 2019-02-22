@@ -88,23 +88,19 @@ class SchemaVisitor(object):
         updated_types = {}
 
         for type_name, original in schema.types.items():
-            if type_name.startswith("__"):
+            if type_name.startswith("__") or original in SPECIFIED_SCALAR_TYPES:
                 continue
 
-            updated: Optional[GraphQLType]
-
             if isinstance(original, ObjectType):
-                updated = self.visit_object(original)
+                updated = self.visit_object(
+                    original
+                )  # type: Optional[GraphQLType]
             elif isinstance(original, InterfaceType):
                 updated = self.visit_interface(original)
             elif isinstance(original, InputObjectType):
                 updated = self.visit_input_object(original)
             elif isinstance(original, ScalarType):
-                updated = (
-                    self.visit_scalar(original)
-                    if original not in SPECIFIED_SCALAR_TYPES
-                    else None
-                )
+                updated = self.visit_scalar(original)
             elif isinstance(original, UnionType):
                 updated = self.visit_union(original)
             elif isinstance(original, EnumType):
@@ -262,7 +258,7 @@ class SchemaDirective(SchemaVisitor):
         schema directives.
     """
 
-    definition: Directive = NotImplemented
+    definition = NotImplemented  # type: Directive
 
     def __init__(self, args=None):
         self.args = args
@@ -299,7 +295,7 @@ class SchemaDirectivesApplicationVisitor(SchemaVisitor):
         self, definition: _HasDirectives, loc: str
     ) -> Iterator[SchemaDirective]:
 
-        applied: Set[str] = set()
+        applied = set()  # type: Set[str]
 
         for node in _find_directives(definition):
             name = node.name.value

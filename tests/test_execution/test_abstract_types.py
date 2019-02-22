@@ -50,19 +50,19 @@ async def test_ObjectType_is_type_of_for_interface_runtime_inference(
 ):
     PetType = InterfaceType("Pet", [Field("name", String)])
 
-    DogType: ObjectType = ObjectType(
+    DogType = ObjectType(
         "Dog",
         [Field("name", String), Field("woofs", Boolean)],
         interfaces=[PetType],
         is_type_of=Dog,
-    )
+    )  # type: ObjectType
 
-    CatType: ObjectType = ObjectType(
+    CatType = ObjectType(
         "Cat",
         [Field("name", String), Field("meows", Boolean)],
         interfaces=[PetType],
         is_type_of=Cat,
-    )
+    )  # type: ObjectType
 
     schema = Schema(
         ObjectType(

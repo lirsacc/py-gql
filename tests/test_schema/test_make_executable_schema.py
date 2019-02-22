@@ -843,9 +843,9 @@ def test_inject_custom_types():
 
 
 def test_inject_resolvers():
-    resolvers: Dict[str, Dict[str, Callable[..., Any]]] = {
+    resolvers = {
         "Query": {"foo": lambda *_: "foo"}
-    }
+    }  # type: Dict[str, Dict[str, Callable[..., Any]]]
 
     schema = make_executable_schema(
         """
@@ -864,7 +864,9 @@ def test_inject_resolvers():
 
 
 def test_inject_resolvers_as_flat_map():
-    resolvers: Dict[str, Callable[..., Any]] = {"Query.foo": lambda *_: "foo"}
+    resolvers = {
+        "Query.foo": lambda *_: "foo"
+    }  # type: Dict[str, Callable[..., Any]]
 
     schema = make_executable_schema(
         """

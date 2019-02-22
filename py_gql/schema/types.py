@@ -71,7 +71,7 @@ class NamedType(GraphQLType):
         name: Type name.
     """
 
-    name: str
+    name = NotImplemented  # type: str
 
     def __str__(self) -> str:
         return self.name
@@ -104,7 +104,7 @@ class NonNullType(GraphQLType):
     ):
         assert not isinstance(type_, NonNullType)
         self._ltype = type_
-        self._type: Optional[GraphQLType] = None
+        self._type = None  # type: Optional[GraphQLType]
         self.node = node
 
     def __str__(self) -> str:
@@ -143,7 +143,7 @@ class ListType(GraphQLType):
         self, type_: Lazy[GraphQLType], node: Optional[_ast.ListType] = None
     ):
         self._ltype = type_
-        self._type: Optional[GraphQLType] = None
+        self._type = None  # type: Optional[GraphQLType]
         self.node = node
 
     def __str__(self):
@@ -193,7 +193,7 @@ class InputField(object):
         self.node = node
 
         self._ltype = type_
-        self._type: Optional[GraphQLType] = None
+        self._type = None  # type: Optional[GraphQLType]
 
     @property
     def default_value(self) -> Any:
@@ -272,10 +272,10 @@ class InputObjectType(NamedType):
         self.name = name
         self.description = description
         self._source_fields = fields
-        self._fields: Optional[List[InputField]] = None
-        self.nodes: List[
-            Union[_ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension]
-        ] = [] if nodes is None else nodes
+        self._fields = None  # type: Optional[List[InputField]]
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # noqa: B950, type: List[Union[_ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension]]
 
     @property
     def fields(self) -> List[InputField]:
@@ -402,9 +402,9 @@ class EnumType(NamedType):
     ):
         self.name = name
         self.description = description
-        self.nodes: List[
-            Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]
-        ] = [] if nodes is None else nodes
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # type: List[Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]]
 
         self._set_values(values)
 
@@ -414,9 +414,9 @@ class EnumType(NamedType):
             Union[EnumValue, str, Tuple[str, Any], Dict[str, Any]]
         ],
     ) -> None:
-        self.values: List[EnumValue] = []
-        self._values: Dict[str, EnumValue] = {}
-        self._reverse_values: Dict[Any, EnumValue] = {}
+        self.values = []  # type: List[EnumValue]
+        self._values = {}  # type: Dict[str, EnumValue]
+        self._reverse_values = {}  # type: Dict[Any, EnumValue]
 
         for v in values:
             v = EnumValue.from_def(v)
@@ -532,9 +532,9 @@ class ScalarType(Generic[T], NamedType):
         self._parse = parse
         assert parse_literal is None or callable(parse_literal)
         self._parse_literal = parse_literal
-        self.nodes: List[
-            Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]
-        ] = [] if nodes is None else nodes
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # type: List[Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]]
 
     def serialize(self, value: Any) -> Union[str, int, float, bool, None]:
         """ Transform a Python value in a JSON serializable one.
@@ -625,7 +625,7 @@ class Argument(object):
         self.node = node
 
         self._ltype = type_
-        self._type: Optional[GraphQLType] = None
+        self._type = None  # type: Optional[GraphQLType]
 
     @property
     def default_value(self) -> Any:
@@ -711,11 +711,11 @@ class Field(object):
         self.deprecation_reason = deprecation_reason
         self.resolve = resolve
         self._source_args = args
-        self._args: Optional[List[Argument]] = None
+        self._args = None  # type: Optional[List[Argument]]
         self.node = node
 
         self._ltype = type_
-        self._type: Optional[GraphQLType] = None
+        self._type = None  # type: Optional[GraphQLType]
 
     @property
     def type(self) -> GraphQLType:
@@ -790,10 +790,10 @@ class InterfaceType(NamedType):
         self.name = name
         self.description = description
         self._source_fields = fields
-        self._fields: Optional[List[Field]] = None
-        self.nodes: List[
-            Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]
-        ] = [] if nodes is None else nodes
+        self._fields = None  # type: Optional[List[Field]]
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
 
         assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
@@ -853,12 +853,12 @@ class ObjectType(NamedType):
         self.description = description
         self._source_fields = fields
         self._source_fields = fields
-        self._fields: Optional[List[Field]] = None
+        self._fields = None  # type: Optional[List[Field]]
         self._source_interfaces = interfaces
-        self._interfaces: Optional[List[InterfaceType]] = None
-        self.nodes: List[
-            Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]
-        ] = [] if nodes is None else nodes
+        self._interfaces = None  # type: Optional[List[InterfaceType]]
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
 
         assert is_type_of is None or callable(is_type_of)
         if isinstance(is_type_of, type):
@@ -931,10 +931,10 @@ class UnionType(NamedType):
         self.name = name
         self.description = description
         self._source_types = types
-        self._types: Optional[List[ObjectType]] = None
-        self.nodes: List[
-            Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]
-        ] = [] if nodes is None else nodes
+        self._types = None  # type: Optional[List[ObjectType]]
+        self.nodes = (
+            [] if nodes is None else nodes
+        )  # type: List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]
 
         assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type

@@ -2,7 +2,7 @@
 """
 """
 
-from typing import List
+from typing import List, Tuple
 
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
@@ -36,7 +36,7 @@ def test_null_visitor_does_not_crash_on_kitchen_sink_schema(fixture_file):
 
 class Tracker(NullVisitor):
     def __init__(self):
-        self.stack: List[_ast.Node] = []
+        self.stack = []  # type: List[Tuple[str, str]]
 
     def enter(self, node):
         self.stack.append(("enter", node.__class__.__name__))

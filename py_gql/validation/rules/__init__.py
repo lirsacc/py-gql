@@ -85,14 +85,14 @@ class UniqueOperationNameChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueOperationNameChecker, self).__init__(schema, type_info)
-        self.names: Set[str] = set()
+        self._names = set()  # type: Set[str]
 
     def enter_operation_definition(self, node):
         op_name = node.name.value if node.name else node.operation
-        if op_name in self.names:
+        if op_name in self._names:
             self.add_error('Duplicate operation "%s".' % op_name, [node])
             raise SkipNode()
-        self.names.add(op_name)
+        self._names.add(op_name)
 
 
 class LoneAnonymousOperationChecker(ValidationVisitor):
@@ -285,7 +285,7 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueFragmentNamesChecker, self).__init__(schema, type_info)
-        self._names: Set[str] = set()
+        self._names = set()  # type: Set[str]
 
     def enter_fragment_definition(self, node):
         name = node.name.value
@@ -325,8 +325,8 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(NoUnusedFragmentsChecker, self).__init__(schema, type_info)
-        self._fragments: Set[str] = set()
-        self._used_fragments: Set[str] = set()
+        self._fragments = set()  # type: Set[str]
+        self._used_fragments = set()  # type: Set[str]
 
     def enter_fragment_definition(self, node):
         self._fragments.add(node.name.value)
@@ -348,7 +348,7 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(PossibleFragmentSpreadsChecker, self).__init__(schema, type_info)
-        self._fragment_types: Dict[str, GraphQLType] = dict()
+        self._fragment_types = dict()  # type: Dict[str, GraphQLType]
 
     def enter_document(self, node):
         self._fragment_types.update(
@@ -401,7 +401,7 @@ class NoFragmentCyclesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(NoFragmentCyclesChecker, self).__init__(schema, type_info)
-        self._spreads: Dict[str, List[str]] = dict()
+        self._spreads = dict()  # type: Dict[str, List[str]]
         self._current = None
 
     def enter_fragment_definition(self, node):
@@ -469,7 +469,7 @@ class UniqueVariableNamesChecker(ValidationVisitor):
     named. """
 
     def enter_operation_definition(self, _node):
-        self._variables: Set[str] = set()
+        self._variables = set()  # type: Set[str]
 
     def leave_operation_definition(self, _node):
         self._variables = None
@@ -523,7 +523,7 @@ class NoUnusedVariablesChecker(VariablesCollector):
     def leave_document(self, node):
         super(NoUnusedVariablesChecker, self).leave_document(node)
 
-        used_variables: Dict[str, Set[str]] = defaultdict(set)
+        used_variables = defaultdict(set)  # type: Dict[str, Set[str]]
 
         for op, fragments in self._op_fragments.items():
             for fragment in deduplicate(fragments):
@@ -547,7 +547,7 @@ class KnownDirectivesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(KnownDirectivesChecker, self).__init__(schema, type_info)
-        self._ancestors: List[_ast.Node] = []
+        self._ancestors = []  # type: List[_ast.Node]
 
     def _enter_ancestor(self, node):
         self._ancestors.append(node)
@@ -659,7 +659,7 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
     are uniquely named. """
 
     def _validate_unique_directive_names(self, node):
-        seen: Set[str] = set()
+        seen = set()  # type: Set[str]
         for directive in node.directives:
             name = directive.name.value
             if name in seen:
@@ -740,7 +740,7 @@ class UniqueArgumentNamesChecker(ValidationVisitor):
     are uniquely named. """
 
     def _check_duplicate_args(self, node):
-        argnames: Set[str] = set()
+        argnames = set()  # type: Set[str]
         for arg in node.arguments:
             name = arg.name.value
             if name in argnames:
@@ -853,7 +853,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(UniqueInputFieldNamesChecker, self).__init__(schema, type_info)
-        self._stack: List[Tuple[_ast.ObjectValue, Set[str]]] = []
+        self._stack = []  # type: List[Tuple[_ast.ObjectValue, Set[str]]]
 
     def enter_object_value(self, node):
         self._stack.append((node, set()))

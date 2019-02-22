@@ -57,7 +57,7 @@ def test_EnumType_get_name_fail():
         (Int, "123", 123),
         (Int, 0, 0),
         (Int, -1, -1),
-        (Int, 1e5, 100_000),
+        (Int, 1e5, 100000),
         (Int, False, 0),
         (Int, True, 1),
         (Float, 1, 1.0),
@@ -96,7 +96,7 @@ def test_scalar_serialization_ok(type_, input_, output):
         (Int, "-1.1", "Int cannot represent non-integer value: -1.1"),
         (
             Int,
-            9_876_504_321,
+            9876504321,
             "Int cannot represent non 32-bit signed integer: 9876504321",
         ),
         (

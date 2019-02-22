@@ -335,8 +335,8 @@ def _collect_definitions(
     Dict[str, _ast.DirectiveDefinition],
 ]:
     schema_definition = None
-    types: Dict[str, _ast.TypeDefinition] = {}
-    directives: Dict[str, _ast.DirectiveDefinition] = {}
+    types = {}  # type: Dict[str, _ast.TypeDefinition]
+    directives = {}  # type: Dict[str, _ast.DirectiveDefinition]
 
     for node in document.definitions:
         if isinstance(node, _ast.SchemaDefinition):
@@ -401,13 +401,13 @@ def _collect_extensions(  # noqa: C901
     Dict[str, _ast.DirectiveDefinition],
     Dict[str, List[_ast.TypeExtension]],
 ]:
-    schema_exts: List[_ast.SchemaExtension] = []
-    type_defs: Dict[str, _ast.TypeDefinition] = {}
-    _type_exts: List[_ast.TypeExtension] = []
-    type_exts: Dict[str, List[_ast.TypeExtension]] = collections.defaultdict(
+    schema_exts = []  # type: List[_ast.SchemaExtension]
+    type_defs = {}  # type: Dict[str, _ast.TypeDefinition]
+    _type_exts = []  # type: List[_ast.TypeExtension]
+    type_exts = collections.defaultdict(
         list
-    )
-    directive_defs: Dict[str, _ast.DirectiveDefinition] = {}
+    )  # type: Dict[str, List[_ast.TypeExtension]]
+    directive_defs = {}  # type: Dict[str, _ast.DirectiveDefinition]
 
     for definition in document.definitions:
         if strict and isinstance(definition, _ast.SchemaDefinition):
@@ -467,7 +467,7 @@ def _collect_extensions(  # noqa: C901
 def _merge_type_maps(
     *type_maps: Union[Mapping[str, NamedType], List[NamedType]]
 ) -> Dict[str, NamedType]:
-    type_map: Dict[str, NamedType] = {}
+    type_map = {}  # type: Dict[str, NamedType]
     for tm in type_maps:
         if isinstance(tm, list):
             type_map.update({type_.name: type_ for type_ in tm})

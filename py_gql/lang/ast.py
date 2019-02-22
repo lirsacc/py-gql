@@ -7,7 +7,17 @@
 # pylint: disable=redefined-builtin
 
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 
 class Node(object):
@@ -18,14 +28,13 @@ class Node(object):
     - The ``source`` attribute is ignored for comparisons and serialization.
     """
 
-    __slots__ = ("source", "loc")
+    __slots__ = ()
 
-    source: Optional[str]
-    loc: Optional[Tuple[int, int]]
+    source = None  # type: Optional[str]
+    loc = None  # type: Optional[Tuple[int, int]]
 
     def _props(self) -> Iterator[str]:
-        attr: str
-        for attr in self.__slots__:
+        for attr in cast(Sequence[str], self.__slots__):
             if attr != "source":
                 yield attr
 
@@ -99,7 +108,7 @@ class Type(Node):
 
 
 class SupportDirectives(object):
-    directives: List["Directive"]
+    directives = NotImplemented  # type: List["Directive"]
 
 
 class NamedType(Type):
@@ -153,7 +162,7 @@ class Document(Node):
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
-        self.definitions: List[Definition] = definitions or []
+        self.definitions = definitions or []  # type: List[Definition]
         self.source = source
         self.loc = loc
 
@@ -182,10 +191,10 @@ class OperationDefinition(SupportDirectives, ExecutableDefinition):
         self.operation = operation
         self.name = name
         self.selection_set = selection_set
-        self.variable_definitions: List[
-            VariableDefinition
-        ] = variable_definitions or []
-        self.directives: List[Directive] = directives or []
+        self.variable_definitions = (
+            variable_definitions or []
+        )  # type: List[VariableDefinition]
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
 
@@ -235,7 +244,7 @@ class SelectionSet(Node):
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
-        self.selections: List[Selection] = selections or []
+        self.selections = selections or []  # type: List[Selection]
         self.source = source
         self.loc = loc
 
@@ -264,8 +273,8 @@ class Field(SupportDirectives, Selection):
     ):
         self.alias = alias
         self.name = name
-        self.arguments: List[Argument] = arguments or []
-        self.directives: List[Directive] = directives or []
+        self.arguments = arguments or []  # type: List[Argument]
+        self.directives = directives or []  # type: List[Directive]
         self.selection_set = selection_set
         self.source = source
         self.loc = loc
@@ -299,7 +308,7 @@ class FragmentSpread(SupportDirectives, Selection):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
 
@@ -322,7 +331,7 @@ class InlineFragment(SupportDirectives, Selection):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.type_condition = type_condition
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.selection_set = selection_set
         self.source = source
         self.loc = loc
@@ -349,11 +358,11 @@ class FragmentDefinition(SupportDirectives, ExecutableDefinition):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.variable_definitions: List[
-            VariableDefinition
-        ] = variable_definitions or []
+        self.variable_definitions = (
+            variable_definitions or []
+        )  # type: List[VariableDefinition]
         self.type_condition = type_condition
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.selection_set = selection_set
         self.source = source
         self.loc = loc
@@ -497,13 +506,13 @@ class Directive(Node):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.arguments: List[Argument] = arguments or []
+        self.arguments = arguments or []  # type: List[Argument]
         self.source = source
         self.loc = loc
 
 
 class SupportDescription(object):
-    description: Optional[StringValue]
+    description = NotImplemented  # type: Optional[StringValue]
 
 
 class TypeSystemDefinition(SupportDirectives, Definition):
@@ -520,10 +529,10 @@ class SchemaDefinition(TypeSystemDefinition):
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
-        self.directives: List[Directive] = directives or []
-        self.operation_types: List[
-            OperationTypeDefinition
-        ] = operation_types or []
+        self.directives = directives or []  # type: List[Directive]
+        self.operation_types = (
+            operation_types or []
+        )  # type: List[OperationTypeDefinition]
         self.source = source
         self.loc = loc
 
@@ -545,7 +554,7 @@ class OperationTypeDefinition(Node):
 
 
 class TypeDefinition(SupportDescription, TypeSystemDefinition):
-    name: Name
+    name = NotImplemented  # type:  Name
 
 
 class ScalarTypeDefinition(TypeDefinition):
@@ -560,7 +569,7 @@ class ScalarTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
         self.description = description
@@ -588,9 +597,9 @@ class ObjectTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.interfaces: List[NamedType] = interfaces or []
-        self.directives: List[Directive] = directives or []
-        self.fields: List[FieldDefinition] = fields or []
+        self.interfaces = interfaces or []  # type: List[NamedType]
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
         self.loc = loc
         self.description = description
@@ -618,9 +627,9 @@ class FieldDefinition(SupportDirectives, SupportDescription, Node):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.arguments: List[InputValueDefinition] = arguments or []
+        self.arguments = arguments or []  # type: List[InputValueDefinition]
         self.type = type
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
         self.description = description
@@ -650,7 +659,7 @@ class InputValueDefinition(SupportDirectives, SupportDescription, Node):
         self.name = name
         self.type = type
         self.default_value = default_value
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
         self.description = description
@@ -669,8 +678,8 @@ class InterfaceTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.fields: List[FieldDefinition] = fields or []
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
         self.loc = loc
         self.description = description
@@ -689,8 +698,8 @@ class UnionTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.types: List[NamedType] = types or []
+        self.directives = directives or []  # type: List[Directive]
+        self.types = types or []  # type: List[NamedType]
         self.source = source
         self.loc = loc
         self.description = description
@@ -709,8 +718,8 @@ class EnumTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.values: List[EnumValueDefinition] = values or []
+        self.directives = directives or []  # type: List[Directive]
+        self.values = values or []  # type: List[EnumValueDefinition]
         self.source = source
         self.loc = loc
         self.description = description
@@ -728,7 +737,7 @@ class EnumValueDefinition(SupportDirectives, SupportDescription, Node):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
         self.description = description
@@ -747,8 +756,8 @@ class InputObjectTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.fields: List[InputValueDefinition] = fields or []
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[InputValueDefinition]
         self.source = source
         self.loc = loc
         self.description = description
@@ -768,16 +777,16 @@ class SchemaExtension(TypeSystemExtension):
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
-        self.directives: List[Directive] = directives or []
-        self.operation_types: List[
-            OperationTypeDefinition
-        ] = operation_types or []
+        self.directives = directives or []  # type: List[Directive]
+        self.operation_types = (
+            operation_types or []
+        )  # type: List[OperationTypeDefinition]
         self.source = source
         self.loc = loc
 
 
 class TypeExtension(TypeSystemExtension):
-    name: Name
+    name = NotImplemented  # type: Name
 
 
 class ScalarTypeExtension(TypeExtension):
@@ -791,7 +800,7 @@ class ScalarTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
 
@@ -809,9 +818,9 @@ class ObjectTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.interfaces: List[NamedType] = interfaces or []
-        self.directives: List[Directive] = directives or []
-        self.fields: List[FieldDefinition] = fields or []
+        self.interfaces = interfaces or []  # type: List[NamedType]
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
         self.loc = loc
 
@@ -828,8 +837,8 @@ class InterfaceTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.fields: List[FieldDefinition] = fields or []
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
         self.loc = loc
 
@@ -846,8 +855,8 @@ class UnionTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.types: List[NamedType] = types or []
+        self.directives = directives or []  # type: List[Directive]
+        self.types = types or []  # type: List[NamedType]
         self.source = source
         self.loc = loc
 
@@ -864,8 +873,8 @@ class EnumTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.values: List[EnumValueDefinition] = values or []
+        self.directives = directives or []  # type: List[Directive]
+        self.values = values or []  # type: List[EnumValueDefinition]
         self.values = values or []
         self.source = source
         self.loc = loc
@@ -883,8 +892,8 @@ class InputObjectTypeExtension(TypeExtension):
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
-        self.directives: List[Directive] = directives or []
-        self.fields: List[InputValueDefinition] = fields or []
+        self.directives = directives or []  # type: List[Directive]
+        self.fields = fields or []  # type: List[InputValueDefinition]
         self.source = source
         self.loc = loc
 
@@ -909,8 +918,8 @@ class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
-        self.arguments: List[InputValueDefinition] = arguments or []
-        self.locations: List[Name] = locations or []
+        self.arguments = arguments or []  # type: List[InputValueDefinition]
+        self.locations = locations or []  # type: List[Name]
         self.source = source
         self.loc = loc
         self.description = description

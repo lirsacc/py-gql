@@ -234,15 +234,18 @@ class Parser(object):
 
         _Loc = Callable[[_token.Token], Optional[Tuple[int, int]]]
         if no_location:
-            self._loc: _Loc = lambda _: None
+            self._loc = lambda _: None  # type: _Loc
         else:
-            self._loc: _Loc = lambda start: (start.start, self._last.end)
+            self._loc = lambda start: (
+                start.start,
+                self._last.end,
+            )  # type: _Loc
 
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead
         # semantics and can only be consumed once.
         # TODO: Do we need dequeue here or can we go with a list?
-        self._buffer: Deque[_token.Token] = collections.deque()
+        self._buffer = collections.deque()  # type: Deque[_token.Token]
 
     def _advance_window(self):
         """ Advance the parsing window by one element.
@@ -576,8 +579,8 @@ class Parser(object):
         start = self.peek()
         name_or_alias = self.parse_name()
         if self.skip(_token.Colon):
-            alias: Optional[_ast.Name] = name_or_alias
-            name: _ast.Name = self.parse_name()
+            alias = name_or_alias  # type: Optional[_ast.Name]
+            name = self.parse_name()  # type: _ast.Name
         else:
             alias, name = None, name_or_alias
 
@@ -599,7 +602,7 @@ class Parser(object):
         """ Arguments[Const] : ( Argument[?Const]+ )
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         if _is(self.peek(), _token.ParenOpen):
             return self.many(
@@ -613,7 +616,7 @@ class Parser(object):
         """ Argument[Const] : Name : Value[?Const]
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         start = self.peek()
         return _ast.Argument(
@@ -701,7 +704,7 @@ class Parser(object):
         - EnumValue : Name but not "true", "false" or "null"
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         token = self.peek()
         kind = type(token)
@@ -757,7 +760,7 @@ class Parser(object):
         """ ListValue[Const] : [ ] | [ Value[?Const]+ ]
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         start = self.peek()
         return _ast.ListValue(
@@ -774,7 +777,7 @@ class Parser(object):
         """ ObjectValue[Const] { } | { ObjectField[?Const]+ }
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         start = self.expect(_token.CurlyOpen)
         fields = []
@@ -788,7 +791,7 @@ class Parser(object):
         """ ObjectField[Const] : Name : Value[?Const]
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
 
         Returns:
             py_gql.lang.ast.ObjectField:
@@ -808,7 +811,7 @@ class Parser(object):
         """ Directives[Const] : Directive[?Const]+
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         directives = []
         while _is(self.peek(), _token.At):
@@ -819,7 +822,7 @@ class Parser(object):
         """ Directive[Const] : @ Name Arguments[?Const]?
 
         Args:
-            const (bool): Whether or not to parse the Const variant
+            const: Whether or not to parse the Const variant
         """
         start = self.expect(_token.At)
         return _ast.Directive(
@@ -833,13 +836,13 @@ class Parser(object):
         """ Type : NamedType | ListType | NonNullType
         """
         start = self.peek()
-        type_: Union[_ast.ListType, _ast.NamedType]
+
         if self.skip(_token.BracketOpen):
             inner_type = self.parse_type_reference()
             self.expect(_token.BracketClose)
             type_ = _ast.ListType(
                 type=inner_type, loc=self._loc(start), source=self._source
-            )
+            )  # type: Union[_ast.ListType, _ast.NamedType]
         else:
             type_ = self.parse_named_type()
 

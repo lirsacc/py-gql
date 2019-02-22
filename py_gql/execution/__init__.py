@@ -178,18 +178,20 @@ class Executor(object):
 
         self._middlewares = middlewares
 
-        self._errors: List[GraphQLResponseError] = []
+        self._errors = []  # type: List[GraphQLResponseError]
 
         # Caches
-        self._grouped_fields: Dict[
-            Tuple[str, Tuple[_ast.Selection, ...]], GroupedFields
-        ] = {}
-        self._fragment_type_applies: Dict[Tuple[str, _ast.Type], bool] = {}
-        self._field_defs: Dict[Tuple[str, str], Optional[Field]] = {}
-        self._argument_values: Dict[
-            Tuple[Field, _ast.Field], Dict[str, Any]
-        ] = {}
-        self._resolver_cache: Dict[Resolver, Resolver] = {}
+        self._grouped_fields = (
+            {}
+        )  # type: Dict[Tuple[str, Tuple[_ast.Selection, ...]], GroupedFields]
+        self._fragment_type_applies = (
+            {}
+        )  # type: Dict[Tuple[str, _ast.Type], bool]
+        self._field_defs = {}  # type: Dict[Tuple[str, str], Optional[Field]]
+        self._argument_values = (
+            {}
+        )  # type: Dict[Tuple[Field, _ast.Field], Dict[str, Any]]
+        self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
 
     def add_error(
         self,
@@ -282,7 +284,7 @@ class Executor(object):
             return self._grouped_fields[cache_key]
         except KeyError:
             visited_fragments = visited_fragments or set()
-            grouped_fields: GroupedFields = {}
+            grouped_fields = {}  # type: GroupedFields
 
             for selection in selections:
                 if isinstance(selection, _ast.Field):
@@ -690,7 +692,7 @@ class AsyncExecutor(Executor):
         fields: GroupedFields,
     ) -> Dict[str, Any]:
         args = []
-        done: List[Tuple[str, Any]] = []
+        done = []  # type: List[Tuple[str, Any]]
 
         for key, nodes in fields.items():
             field_def = self.field_definition(parent_type, nodes[0].name.value)

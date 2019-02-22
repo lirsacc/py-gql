@@ -28,9 +28,9 @@ def _custom_serialize(x: Any) -> Any:
     return x
 
 
-CustomScalar: ScalarType[Any] = ScalarType(
+CustomScalar = ScalarType(
     name="CustomScalara", serialize=_custom_serialize, parse=lambda x: x
-)
+)  # type: ScalarType[Any]
 
 
 @pytest.mark.parametrize(

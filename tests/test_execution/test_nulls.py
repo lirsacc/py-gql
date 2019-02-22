@@ -11,7 +11,7 @@ from ._test_utils import assert_execution
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
-NullNonNullDataType: ObjectType = ObjectType(
+NullNonNullDataType = ObjectType(
     "DataType",
     [
         Field("scalar", String),
@@ -19,7 +19,7 @@ NullNonNullDataType: ObjectType = ObjectType(
         Field("nested", lambda: NullNonNullDataType),
         Field("nestedNonNull", lambda: NonNullType(NullNonNullDataType)),
     ],
-)
+)  # type: ObjectType
 
 NullAndNonNullSchema = Schema(NullNonNullDataType)
 

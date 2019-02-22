@@ -198,7 +198,7 @@ async def test_forwarded_resolver_arguments(mocker, executor_cls):
 
 
 async def test_merge_of_parallel_fragments(executor_cls):
-    T: ObjectType = ObjectType(
+    T = ObjectType(
         "Type",
         [
             Field("a", String, resolve=lambda *_: "Apple"),
@@ -206,7 +206,8 @@ async def test_merge_of_parallel_fragments(executor_cls):
             Field("c", String, resolve=lambda *_: "Cherry"),
             Field("deep", lambda: T, resolve=lambda *_: dict()),
         ],
-    )
+    )  # type: ObjectType
+
     schema = Schema(T)
 
     await assert_execution(
@@ -241,7 +242,7 @@ async def test_merge_of_parallel_fragments(executor_cls):
 
 
 async def test_full_response_path_is_included_on_error(raiser, executor_cls):
-    A: ObjectType = ObjectType(
+    A = ObjectType(
         "A",
         [
             Field("nullableA", lambda: A, resolve=lambda *_: {}),
@@ -252,7 +253,7 @@ async def test_full_response_path_is_included_on_error(raiser, executor_cls):
                 resolve=raiser(ResolverError, "Catch me if you can"),
             ),
         ],
-    )
+    )  # type: ObjectType
 
     await assert_execution(
         Schema(
@@ -341,7 +342,7 @@ BlogImage = ObjectType(
     "Image", [Field("url", String), Field("width", Int), Field("height", Int)]
 )
 
-BlogArticle: ObjectType = ObjectType(
+BlogArticle = ObjectType(
     "Article",
     [
         Field("id", String),
@@ -351,9 +352,9 @@ BlogArticle: ObjectType = ObjectType(
         Field("body", String),
         Field("keywords", ListType(String)),
     ],
-)
+)  # type: ObjectType
 
-BlogAuthor: ObjectType = ObjectType(
+BlogAuthor = ObjectType(
     "Author",
     [
         Field("id", String),
@@ -363,7 +364,7 @@ BlogAuthor: ObjectType = ObjectType(
         ),
         Field("recentArticle", lambda: BlogArticle),
     ],
-)
+)  # type: ObjectType
 
 BlogQuery = ObjectType(
     "Query",

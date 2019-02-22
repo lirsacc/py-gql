@@ -77,7 +77,7 @@ __Schema__ = ObjectType(
 )
 
 
-__Directive__: ObjectType = ObjectType(
+__Directive__ = ObjectType(
     "__Directive",
     description=(
         "A Directive provides a way to describe alternate runtime execution "
@@ -100,10 +100,10 @@ __Directive__: ObjectType = ObjectType(
             resolve=lambda r, *_, **__: r.arguments,
         ),
     ],
-)
+)  # type: ObjectType
 
 
-__DirectiveLocation__: EnumType = EnumType(
+__DirectiveLocation__ = EnumType(
     "__DirectiveLocation",
     [
         EnumValue(
@@ -178,7 +178,7 @@ __DirectiveLocation__: EnumType = EnumType(
         "A Directive can be adjacent to many parts of the GraphQL language, a "
         "__DirectiveLocation describes one such possible adjacencies."
     ),
-)
+)  # type: EnumType
 
 
 def _resolve_type_kind(type_, *_):
@@ -201,7 +201,7 @@ def _resolve_type_kind(type_, *_):
     raise TypeError("Unknown kind of type: %s" % type_)
 
 
-__Type__: ObjectType = ObjectType(
+__Type__ = ObjectType(
     "__Type",
     description=(
         "The fundamental unit of any GraphQL Schema is the type. There are "
@@ -285,10 +285,10 @@ __Type__: ObjectType = ObjectType(
             ),
         ),
     ],
-)
+)  # type: ObjectType
 
 
-__EnumValue__: ObjectType = ObjectType(
+__EnumValue__ = ObjectType(
     "__EnumValue",
     description=(
         "One possible value for a given Enum. Enum values are unique values, "
@@ -309,7 +309,7 @@ __EnumValue__: ObjectType = ObjectType(
             resolve=lambda ev, *_: ev.deprecation_reason,
         ),
     ],
-)
+)  # type: ObjectType
 
 
 def _format_default_value(
@@ -327,7 +327,7 @@ def _format_default_value(
     return json.dumps(dv)
 
 
-__InputValue__: ObjectType = ObjectType(
+__InputValue__ = ObjectType(
     "__InputValue",
     description=(
         "Arguments provided to Fields or Directives and the input fields "
@@ -348,10 +348,10 @@ __InputValue__: ObjectType = ObjectType(
             resolve=lambda iv, *_: _format_default_value(iv),
         ),
     ],
-)
+)  # type: ObjectType
 
 
-__Field__: ObjectType = ObjectType(
+__Field__ = ObjectType(
     "__Field",
     description=(
         "Object and Interface types are described by a list of Fields, "
@@ -378,10 +378,10 @@ __Field__: ObjectType = ObjectType(
             resolve=lambda field, *_: field.deprecation_reason,
         ),
     ],
-)
+)  # type: ObjectType
 
 
-__TypeKind__: EnumType = EnumType(
+__TypeKind__ = EnumType(
     "__TypeKind",
     [
         EnumValue("SCALAR", description="Indicates this type is a scalar."),
@@ -435,7 +435,7 @@ __TypeKind__: EnumType = EnumType(
         ),
     ],
     description="An enum describing what kind of type a given `__Type` is.",
-)
+)  # type: EnumType
 
 
 INTROPSPECTION_TYPES = (

@@ -134,7 +134,7 @@ def resolve_character_type(character, _, __):
     return {"Human": Human, "Droid": Droid}[character["type"]]
 
 
-Character: InterfaceType = InterfaceType(
+Character = InterfaceType(
     "Character",
     [
         Field(
@@ -162,7 +162,7 @@ Character: InterfaceType = InterfaceType(
     ],
     description="A character in the Star Wars Trilogy",
     resolve_type=resolve_character_type,
-)
+)  # type: InterfaceType
 
 
 def resolve_secret_backstory(*args, **kwargs):

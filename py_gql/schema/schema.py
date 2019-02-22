@@ -51,34 +51,25 @@ class Schema(object):
             the schema from a GraphQL (SDL) document.
 
     Attributes:
-        query_type (py_gql.schema.ObjectType):
-            The root query type for the schema (required)
+        query_type: The root query type for the schema (required)
 
-        mutation_type (py_gql.schema.ObjectType):
-            The root mutation type for the schema (optional)
+        mutation_type: The root mutation type for the schema (optional)
 
-        subscription_type (py_gql.schema.ObjectType):
-            The root subscription type for the schema (optional)
+        subscription_type: The root subscription type for the schema (optional)
 
-        node (List[Union[py_gql.lang.ast.SchemaDefinition, \
-                         py_gql.lang.ast.SchemaExtension]]):
-            AST node for the schema if applicable, i.e. when creating the schema
-            from a GraphQL (SDL) document.
+        node: AST node for the schema if applicable, i.e. when creating the
+            schema from a GraphQL (SDL) document.
 
-        type_map (Dict[str, py_gql.schema.Type]):
-            Mapping ``type name -> Type instance`` of all types used in the
-            schema, including directives.
+        type_map: Mapping ``type name -> Type instance`` of all types used in
+            the schema, including directives.
 
-        types (Dict[str, py_gql.schema.Type]):
-            Mapping ``type name -> Type instance`` of all types used in the
+        types: Mapping ``type name -> Type instance`` of all types used in the
             schema, excluding directives.
 
-        directives (Dict[str, py_gql.schema.Directive]):
-            Mapping ``directive name -> Directive instance`` of all directives
-            used in the schema.
+        directives: Mapping ``directive name -> Directive instance`` of all
+            directives used in the schema.
 
-        implementations (Dict[str, List[py_gql.schema.Directive]]):
-            Mapping of ``interface name -> [implementing object types]``.
+        implementations: Mapping of ``interface name -> [implementing object types]``.
     """
 
     def __init__(
@@ -96,15 +87,15 @@ class Schema(object):
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
 
-        self._types: List[GraphQLType] = [
+        self._types = [
             x
             for x in (query_type, mutation_type, subscription_type)
             if x is not None
-        ]
+        ]  # type: List[GraphQLType]
         self._types.append(__Schema__)
-        self.nodes: List[
-            Union[_ast.SchemaDefinition, _ast.SchemaExtension]
-        ] = nodes or []
+        self.nodes = (
+            nodes or []
+        )  # type: List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
 
         # NOTE: This is the notion of the specified types being always
         # available. As a result of this line, intropection queries will always
@@ -116,31 +107,33 @@ class Schema(object):
         if types:
             self._types.extend(types)
 
-        self._directives: List[Directive] = []
+        self._directives = []  # type: List[Directive]
         if directives:
             self._directives.extend(directives)
+
         _directive_names = set(
             d.name for d in self._directives if isinstance(d, Directive)
         )
+
         for d in SPECIFIED_DIRECTIVES:
             if d.name not in _directive_names:
                 self._directives.append(d)
 
-        self._possible_types: Dict[
-            Union[UnionType, InterfaceType], List[ObjectType]
-        ] = {}
-        self._is_valid: Optional[bool] = None
-        self._literal_types_cache: Dict[_ast.Type, GraphQLType] = {}
+        self._possible_types = (
+            {}
+        )  # type: Dict[Union[UnionType, InterfaceType], List[ObjectType]]
+        self._is_valid = None  # type: Optional[bool]
+        self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
         self.type_map = _build_type_map(self._types, self._directives)
         self._rebuild_caches()
 
     def _rebuild_caches(self):
-        self.types: Dict[str, NamedType] = {
+        self.types = {
             name: t
             for name, t in self.type_map.items()
             if not isinstance(t, Directive)
-        }
+        }  # type: Dict[str, NamedType]
 
         self.directives = {
             name: t
@@ -148,7 +141,9 @@ class Schema(object):
             if isinstance(t, Directive)
         }
 
-        self.implementations: Dict[str, List[ObjectType]] = defaultdict(list)
+        self.implementations = defaultdict(
+            list
+        )  # type: Dict[str, List[ObjectType]]
 
         for type_ in self.types.values():
             if isinstance(type_, ObjectType):
@@ -350,7 +345,7 @@ class Schema(object):
 
 def _build_type_map(
     *types: Sequence[GraphQLType],
-    _type_map: Optional[Dict[str, GraphQLType]] = None,
+    _type_map: Optional[Dict[str, GraphQLType]] = None
 ) -> Dict[str, GraphQLType]:
     """ Recursively build a mapping name <> Type from a list of types to include
     all referenced types.
@@ -362,9 +357,9 @@ def _build_type_map(
         types: List of types
         _type_map: Pre-built type map (used for recursive calls)
     """
-    type_map: Dict[
-        str, GraphQLType
-    ] = _type_map if _type_map is not None else {}
+    type_map = (
+        _type_map if _type_map is not None else {}
+    )  # type: Dict[str, GraphQLType]
 
     for type_ in it.chain(*types):
         if not type_:
@@ -385,7 +380,7 @@ def _build_type_map(
             continue
 
         type_map[name] = type_
-        child_types: List[GraphQLType] = []
+        child_types = []  # type: List[GraphQLType]
 
         if isinstance(type_, UnionType):
             child_types.extend(type_.types)

@@ -97,8 +97,8 @@ class TypesBuilder(object):
         self._type_defs = type_defs
         self._directive_defs = directive_defs
 
-        self._cache: Dict[str, GraphQLType] = dict(_DEFAULT_TYPES_MAP)
-        self._extended_cache: Dict[str, GraphQLType] = {}
+        self._cache = dict(_DEFAULT_TYPES_MAP)  # type: Dict[str, GraphQLType]
+        self._extended_cache = {}  # type: Dict[str, GraphQLType]
         self._extensions = type_extensions
 
         if additional_types is not None:
@@ -158,10 +158,10 @@ class TypesBuilder(object):
                 else:
                     type_def = cast(_ast.TypeDefinition, type_node)
 
-                built: GraphQLType
-
                 if isinstance(type_def, _ast.ObjectTypeDefinition):
-                    built = self._build_object_type(type_def)
+                    built = self._build_object_type(
+                        type_def
+                    )  # type: GraphQLType
                 elif isinstance(type_def, _ast.InterfaceTypeDefinition):
                     built = self._build_interface_type(type_def)
                 elif isinstance(type_def, _ast.EnumTypeDefinition):
@@ -205,13 +205,11 @@ class TypesBuilder(object):
         if name in _DEFAULT_TYPES_MAP:
             return type_
 
-        extended: GraphQLType
-
         try:
             return self._extended_cache[name]
         except KeyError:
             if isinstance(type_, ObjectType):
-                extended = self._extend_object_type(type_)
+                extended = self._extend_object_type(type_)  # type: GraphQLType
             elif isinstance(type_, InterfaceType):
                 extended = self._extend_interface_type(type_)
             elif isinstance(type_, EnumType):

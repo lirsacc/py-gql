@@ -51,7 +51,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
         super().__init__(message)
         self.source = source
         self.position = position
-        self._highlighted: Optional[str] = None
+        self._highlighted = None  # type: Optional[str]
 
     @property
     def highlighted(self) -> str:
@@ -139,7 +139,7 @@ class GraphQLLocatedError(GraphQLResponseError):
     ):
         super().__init__(message)
         self.path = path
-        self.nodes: List[_ast.Node] = list(nodes[:]) if nodes else []
+        self.nodes = list(nodes[:]) if nodes else []  # type: List[_ast.Node]
 
     def __str__(self) -> str:
         return self.message

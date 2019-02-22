@@ -38,7 +38,7 @@ class ValidationVisitor(DispatchingVisitor):
         super(ValidationVisitor, self).__init__()
         self.schema = schema
         self.type_info = type_info
-        self.errors: List[ValidationError] = []
+        self.errors = []  # type: List[ValidationError]
 
     def add_error(
         self, message: str, nodes: Optional[Sequence[_ast.Node]] = None
@@ -68,14 +68,20 @@ class VariablesCollector(ValidationVisitor):
         super(VariablesCollector, self).__init__(schema, type_info)
 
         self._op = None
-        self._op_variables: MMap[_ast.Variable] = defaultdict(dict)
-        self._op_defined_variables: MMap[_ast.VariableDefinition] = defaultdict(
+        self._op_variables = defaultdict(dict)  # type: MMap[_ast.Variable]
+        self._op_defined_variables = defaultdict(
             dict
-        )
-        self._op_fragments: LMap[_ast.FragmentSpread] = defaultdict(list)
+        )  # type: MMap[_ast.VariableDefinition]
+        self._op_fragments = defaultdict(
+            list
+        )  # type: LMap[_ast.FragmentSpread]
         self._fragment = None
-        self._fragment_variables: MMap[_ast.Variable] = defaultdict(dict)
-        self._fragment_fragments: LMap[_ast.FragmentSpread] = defaultdict(list)
+        self._fragment_variables = defaultdict(
+            dict
+        )  # type: MMap[_ast.Variable]
+        self._fragment_fragments = defaultdict(
+            list
+        )  # type: LMap[_ast.FragmentSpread]
         self._in_var_def = False
 
     def enter_operation_definition(self, node):

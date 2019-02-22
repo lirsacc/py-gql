@@ -57,7 +57,7 @@ def test_evaluates_callables():
         "deep": lambda *_: data,
     }
 
-    Fruits: ObjectType = ObjectType(
+    Fruits = ObjectType(
         "Fruits",
         [
             Field("a", String),
@@ -67,7 +67,7 @@ def test_evaluates_callables():
             Field("e", String),
             Field("deep", lambda: Fruits),
         ],
-    )
+    )  # type: ObjectType
 
     assert_sync_execution(
         Schema(Fruits),

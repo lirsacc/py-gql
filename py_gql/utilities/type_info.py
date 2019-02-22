@@ -90,15 +90,17 @@ class TypeInfoVisitor(DispatchingVisitor):
     def __init__(self, schema, _get_field_def=None):
         self._schema = schema
 
-        self._type_stack: OptList[ObjectType] = []
-        self._parent_type_stack: OptList[ObjectType] = []
-        self._input_type_stack: OptList[InputObjectType] = []
-        self._field_stack: OptList[Field] = []
-        self._input_value_def_stack: OptList[Union[Argument, InputField]] = []
+        self._type_stack = []  # type: OptList[ObjectType]
+        self._parent_type_stack = []  # type: OptList[ObjectType]
+        self._input_type_stack = []  # type: OptList[InputObjectType]
+        self._field_stack = []  # type: OptList[Field]
+        self._input_value_def_stack = (
+            []
+        )  # type: OptList[Union[Argument, InputField]]
 
-        self.directive: Optional[Directive] = None
-        self.argument: Optional[Argument] = None
-        self.enum_value: Optional[EnumValue] = None
+        self.directive = None  # type: Optional[Directive]
+        self.argument = None  # type: Optional[Argument]
+        self.enum_value = None  # type: Optional[EnumValue]
 
     @property
     def type(self) -> Optional[ObjectType]:

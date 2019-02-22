@@ -60,7 +60,7 @@ class SchemaPrinter(object):
         self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
 
         if isinstance(indent, int):
-            self.indent: str = indent * " "
+            self.indent = indent * " "  # type: str
         else:
             self.indent = indent
 

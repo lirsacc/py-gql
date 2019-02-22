@@ -105,12 +105,12 @@ def test_Float_raises_for_string_input():
     _test("meow", Float, None, "Float cannot represent non numeric value: meow")
 
 
-Enum = EnumType("TestEnum", [("FOO", "InternalFoo"), ("BAR", 123_456_789)])
+Enum = EnumType("TestEnum", [("FOO", "InternalFoo"), ("BAR", 123456789)])
 
 
 def test_Enum_for_a_known_enum_names():
     _test("FOO", Enum, "InternalFoo")
-    _test("BAR", Enum, 123_456_789)
+    _test("BAR", Enum, 123456789)
 
 
 def test_Enum_raises_for_misspelled_enum_value():

@@ -74,7 +74,7 @@ def assert_sync_execution(
     expected_data: Any = None,
     expected_errors: Optional[List[ExpectedError]] = None,
     expected_exc: Optional[ExpectedExcDef] = None,
-    **kwargs: Any,
+    **kwargs: Any
 ) -> None:
     doc = ensure_document(doc)
 
@@ -102,7 +102,7 @@ async def assert_execution(
     expected_errors: Optional[List[ExpectedError]] = None,
     expected_exc: Optional[ExpectedExcDef] = None,
     executor_cls: Type[Executor] = SyncExecutor,
-    **kwargs: Any,
+    **kwargs: Any
 ) -> None:
     if isinstance(expected_exc, tuple):
         expected_exc, expected_msg = expected_exc

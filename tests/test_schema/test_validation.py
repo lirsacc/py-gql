@@ -26,12 +26,12 @@ from py_gql.schema import (
 )
 from py_gql.schema.validation import validate_schema
 
-SomeScalar: ScalarType[None] = ScalarType(
+SomeScalar = ScalarType(
     "SomeScalar",
     serialize=lambda a: None,
     parse=lambda a: None,
     parse_literal=lambda a, **k: None,
-)
+)  # type: ScalarType[None]
 
 SomeObject = ObjectType("SomeObject", [Field("f", String)])
 
@@ -53,7 +53,7 @@ def _type_modifiers(t):
 
 
 def _with_modifiers(types):
-    out: List[GraphQLType] = []
+    out = []  # type: List[GraphQLType]
     for t in types:
         out.extend(_type_modifiers(t))
     return out
@@ -601,10 +601,12 @@ def test_reject_object_with_incorrectly_typed_interface_field():
 
 
 def test_accept_object_fields_with_interface_subtype_of_interface_field():
-    iface: InterfaceType = InterfaceType("IFace", [Field("f", lambda: iface)])
-    obj: ObjectType = ObjectType(
+    iface = InterfaceType(
+        "IFace", [Field("f", lambda: iface)]
+    )  # type: InterfaceType
+    obj = ObjectType(
         "Obj", [Field("f", lambda: obj)], interfaces=[iface]
-    )
+    )  # type: ObjectType
     schema = _single_type_schema(obj)
     assert schema.is_valid
 

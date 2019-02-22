@@ -64,13 +64,13 @@ def deduplicate(
     >>> list(deduplicate([1, 2, 1, 3, 3], key=lambda x: x % 2))
     [1, 2]
     """
-    seen: Set[Hashable] = set()
+    seen = set()  # type: Set[Hashable]
 
-    keyed: Iterator[Tuple[H, Hashable]] = (
+    keyed = (
         ((entry, entry) for entry in iterable)
         if key is None
         else ((entry, key(entry)) for entry in iterable)
-    )
+    )  # type: Iterator[Tuple[H, Hashable]]
 
     for entry, key_ in keyed:
         if key_ in seen:
@@ -225,8 +225,8 @@ def deferred_list(
     If no value in the source iterator is deferred, the result is not deferred,
     while if any value is deferred then the result is deferred.
     """
-    deferred: List[int] = []
-    results: List[MaybeAwaitable[T]] = []
+    deferred = []  # type: List[int]
+    results = []  # type: List[MaybeAwaitable[T]]
 
     for index, value in enumerate(source):
         if isawaitable(value):
@@ -255,8 +255,8 @@ def deferred_dict(
     If no value in the source iterator is deferred, the result is not deferred,
     while if any value is deferred then the result is deferred.
     """
-    deferred: List[str] = []
-    target: Dict[str, MaybeAwaitable[T]] = {}
+    deferred = []  # type: List[str]
+    target = {}  # type: Dict[str, MaybeAwaitable[T]]
 
     for key, value in source:
         if isawaitable(value):
@@ -292,7 +292,7 @@ def deferred_serial(
     """ Runs a series of function in a serial manner, unwrapping coroutines
     along the way. """
     steps = list(steps)[::-1]
-    results: List[T] = []
+    results = []  # type: List[T]
 
     def _next() -> MaybeAwaitable[List[T]]:
         try:

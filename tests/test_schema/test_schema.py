@@ -52,7 +52,7 @@ BlogAuthor = ObjectType(
     ],
 )
 
-BlogArticle: ObjectType = ObjectType(
+BlogArticle = ObjectType(
     "Article",
     [
         Field("id", String),
@@ -61,7 +61,7 @@ BlogArticle: ObjectType = ObjectType(
         Field("title", String),
         Field("body", String),
     ],
-)
+)  # type: ObjectType
 
 BlogQuery = ObjectType(
     "Query",

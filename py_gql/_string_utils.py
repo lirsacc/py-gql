@@ -158,8 +158,8 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
     r""" Get the zero-indexed offset from a (lineno, col) tuple.
 
     Args:
-        body (str): Source string
-        loc (Tuple[int, int]): (line number, column number)
+        body: Source string
+        loc: (line number, column number)
 
     Returns:
         int: 0-indexed position of the character
@@ -250,7 +250,7 @@ def _split_words_with_boundaries(
     >>> list(_split_words_with_boundaries("ab cd -ef_gh", " -_"))
     ['ab', ' ', 'cd', ' ', '-', 'ef', '_', 'gh']
     """
-    stack: List[str] = []
+    stack = []  # type: List[str]
     for char in string:
         if char in word_boundaries:
             if stack:

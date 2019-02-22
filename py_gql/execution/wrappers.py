@@ -85,12 +85,12 @@ class GraphQLResult(object):
         data: Optional[Any] = _UNSET,
         errors: Optional[Sequence[GraphQLResponseError]] = None,
     ):
-        self.data: Any = data
-        self.errors: List[GraphQLResponseError] = (
+        self.data = data  # type: Any
+        self.errors = (
             list(errors) if errors is not None else []
-        )
-        self.extensions: List[GraphQLExtension] = []
-        self._known_extensions: Set[str] = set()
+        )  # type: List[GraphQLResponseError]
+        self.extensions = []  # type: List[GraphQLExtension]
+        self._known_extensions = set()  # type: Set[str]
 
     def __bool__(self) -> bool:
         return not self.errors

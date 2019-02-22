@@ -159,7 +159,7 @@ class Lexer(Iterator[token.Token]):
         """
         start = self._position
         self._position += 1
-        acc: List[str] = []
+        acc = []  # type: List[str]
         while True:
             char = self._peek()
 
@@ -188,7 +188,7 @@ class Lexer(Iterator[token.Token]):
         """
         start = self._position
         self._position += 3
-        acc: List[str] = []
+        acc = []  # type: List[str]
 
         while True:
             char = self._peek()
