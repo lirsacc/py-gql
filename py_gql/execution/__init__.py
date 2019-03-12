@@ -27,7 +27,13 @@ from typing import (
 )
 
 from .._string_utils import stringify_path
-from .._utils import MaybeAwaitable, deferred_apply, find_one, is_iterable
+from .._utils import (
+    MaybeAwaitable,
+    OrderedDict,
+    deferred_apply,
+    find_one,
+    is_iterable,
+)
 from ..exc import (
     CoercionError,
     ExecutionError,
@@ -284,7 +290,7 @@ class Executor(object):
             return self._grouped_fields[cache_key]
         except KeyError:
             visited_fragments = visited_fragments or set()
-            grouped_fields = {}  # type: GroupedFields
+            grouped_fields = OrderedDict()  # type: GroupedFields
 
             for selection in selections:
                 if isinstance(selection, _ast.Field):
@@ -609,7 +615,7 @@ class SyncExecutor(Executor):
         path: ResponsePath,
         fields: GroupedFields,
     ) -> Dict[str, Any]:
-        result = {}
+        result = OrderedDict()  # type: Dict[str, Any]
         for key, nodes in fields.items():
             field_def = self.field_definition(parent_type, nodes[0].name.value)
             if field_def is None:

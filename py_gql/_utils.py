@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """ Some generic laguage level utilities for internal use. """
 
+import collections
+import sys
 from asyncio import gather
 from inspect import isawaitable
 from typing import (
+    AbstractSet,
     Any,
     Awaitable,
     Callable,
@@ -13,11 +16,13 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Tuple,
     TypeVar,
     Union,
+    ValuesView,
     cast,
 )
 
@@ -126,6 +131,12 @@ def flatten(lst):
 
     >>> list(flatten([1, 2, (1, 2, [3])]))
     [1, 2, 1, 2, 3]
+
+    >>> list(flatten([]))
+    []
+
+    >>> list(flatten([[], []]))
+    []
     """
     for entry in lst:
         if type(entry) in (list, tuple):
@@ -149,6 +160,9 @@ def is_iterable(value: Any, strings: bool = True) -> bool:
         bool: Whether ``value`` is iterable
 
     >>> is_iterable([])
+    True
+
+    >>> is_iterable((x for x in range(10)))
     True
 
     >>> is_iterable("Hello World!")
@@ -314,3 +328,76 @@ def deferred_serial(
                 return _next()
 
     return _next()
+
+
+if sys.version < "3.6":  # noqa: C901
+    OrderedDict = collections.OrderedDict
+
+    K = TypeVar("K")
+    V = TypeVar("V")
+
+    # TODO: There is most certainly a more terse implementation but inherinting
+    # from OrderedDict doesn't seem to play nice with mypy.
+    class DefaultOrderedDict(MutableMapping[K, V]):
+
+        __slots__ = ("_inner", "default_factory")
+
+        def __init__(
+            self, default_factory: Callable[[], V], *args: Any, **kwargs: Any
+        ):
+            if default_factory is not None and not callable(default_factory):
+                raise TypeError("default_factory must be callable")
+
+            self.default_factory = default_factory
+            self._inner = OrderedDict()  # type: MutableMapping[K, V]
+
+        def __getitem__(self, key: K) -> V:
+            try:
+                return self._inner[key]
+            except KeyError:
+                return self.__missing__(key)
+
+        def __missing__(self, key: K) -> V:
+            if self.default_factory is None:
+                raise KeyError(key)
+
+            self._inner[key] = value = self.default_factory()
+            return value
+
+        def __len__(self):
+            return len(self._inner)
+
+        def __setitem__(self, key: K, value: V) -> None:
+            self._inner[key] = value
+
+        def __delitem__(self, key: K) -> None:
+            del self._inner[key]
+
+        def __iter__(self) -> Iterator[K]:
+            return iter(self._inner)
+
+        def clear(self) -> None:
+            self._inner.clear()
+
+        def keys(self) -> AbstractSet[K]:
+            return self._inner.keys()
+
+        def values(self) -> ValuesView[V]:
+            return self._inner.values()
+
+        def items(self) -> AbstractSet[Tuple[K, V]]:
+            return self._inner.items()
+
+        def pop(self, key: K, **kwargs: Any) -> V:  # type: ignore
+            return self._inner.pop(key, **kwargs)
+
+        def __contains__(self, key: Any) -> bool:
+            return key in self._inner
+
+        def __bool__(self) -> bool:
+            return bool(self._inner)
+
+
+else:
+    OrderedDict = dict  # type: ignore
+    DefaultOrderedDict = collections.defaultdict  # type: ignore

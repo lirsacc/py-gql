@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 from ..._string_utils import infer_suggestions, quoted_options_list
-from ..._utils import deduplicate
+from ..._utils import OrderedDict, deduplicate
 from ...exc import UnknownType
 from ...lang import ast as _ast, print_ast
 from ...lang.visitor import SkipNode
@@ -401,7 +401,7 @@ class NoFragmentCyclesChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(NoFragmentCyclesChecker, self).__init__(schema, type_info)
-        self._spreads = dict()  # type: Dict[str, List[str]]
+        self._spreads = OrderedDict()  # type: Dict[str, List[str]]
         self._current = None
 
     def enter_fragment_definition(self, node):

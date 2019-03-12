@@ -2,10 +2,9 @@
 """
 """
 
-from collections import defaultdict
 from typing import List, Mapping, Optional, Sequence, TypeVar
 
-from .._utils import deduplicate
+from .._utils import DefaultOrderedDict, OrderedDict, deduplicate
 from ..exc import ValidationError
 from ..lang import ast as _ast
 from ..lang.visitor import DispatchingVisitor
@@ -68,18 +67,20 @@ class VariablesCollector(ValidationVisitor):
         super(VariablesCollector, self).__init__(schema, type_info)
 
         self._op = None
-        self._op_variables = defaultdict(dict)  # type: MMap[_ast.Variable]
-        self._op_defined_variables = defaultdict(
-            dict
+        self._op_variables = DefaultOrderedDict(
+            OrderedDict
+        )  # type: MMap[_ast.Variable]
+        self._op_defined_variables = DefaultOrderedDict(
+            OrderedDict
         )  # type: MMap[_ast.VariableDefinition]
-        self._op_fragments = defaultdict(
+        self._op_fragments = DefaultOrderedDict(
             list
         )  # type: LMap[_ast.FragmentSpread]
         self._fragment = None
-        self._fragment_variables = defaultdict(
-            dict
+        self._fragment_variables = DefaultOrderedDict(
+            OrderedDict
         )  # type: MMap[_ast.Variable]
-        self._fragment_fragments = defaultdict(
+        self._fragment_fragments = DefaultOrderedDict(
             list
         )  # type: LMap[_ast.FragmentSpread]
         self._in_var_def = False
