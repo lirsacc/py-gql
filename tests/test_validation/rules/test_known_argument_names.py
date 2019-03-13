@@ -15,8 +15,6 @@ def test_single_arg_is_known(schema):
             doesKnowCommand(dogCommand: SIT)
         }
         """,
-        [],
-        [],
     )
 
 
@@ -29,8 +27,6 @@ def test_multiple_args_are_known(schema):
             multipleReqs(req1: 1, req2: 2)
         }
         """,
-        [],
-        [],
     )
 
 
@@ -43,8 +39,6 @@ def test_ignores_args_of_unknown_fields(schema):
             unknownField(unknownArg: SIT)
         }
         """,
-        [],
-        [],
     )
 
 
@@ -57,8 +51,6 @@ def test_multiple_args_in_reverse_order_are_known(schema):
         multipleReqs(req2: 2, req1: 1)
         }
         """,
-        [],
-        [],
     )
 
 
@@ -71,8 +63,6 @@ def test_no_args_on_optional_arg(schema):
             isHousetrained
         }
         """,
-        [],
-        [],
     )
 
 
@@ -94,8 +84,6 @@ def test_args_are_known_deeply(schema):
             }
         }
         """,
-        [],
-        [],
     )
 
 
@@ -108,8 +96,6 @@ def test_directive_args_are_known(schema):
             dog @skip(if: true)
         }
         """,
-        [],
-        [],
     )
 
 
@@ -118,12 +104,12 @@ def test_unknown_directive_args_are_invalid(schema):
         KnownArgumentNamesChecker,
         schema,
         """
-    {
-        dog @skip(unless: true)
-    }
-    """,
+        {
+            dog @skip(unless: true)
+        }
+        """,
         ['Unknown argument "unless" on directive "@skip"'],
-        [(25, 37)],
+        [(16, 28)],
     )
 
 
@@ -132,12 +118,12 @@ def test_misspelled_directive_args_are_reported(schema):
         KnownArgumentNamesChecker,
         schema,
         """
-    {
-        dog @skip(iff: true)
-    }
-    """,
+        {
+            dog @skip(iff: true)
+        }
+        """,
         ['Unknown argument "iff" on directive "@skip", did you mean "if"?'],
-        [(25, 34)],
+        [(16, 25)],
     )
 
 
@@ -146,12 +132,12 @@ def test_invalid_arg_name(schema):
         KnownArgumentNamesChecker,
         schema,
         """
-    fragment invalidArgName on Dog {
-        doesKnowCommand(unknown: true)
-    }
-    """,
+        fragment invalidArgName on Dog {
+            doesKnowCommand(unknown: true)
+        }
+        """,
         ['Unknown argument "unknown" on field "doesKnowCommand" of type "Dog"'],
-        [(62, 75)],
+        [(53, 66)],
     )
 
 

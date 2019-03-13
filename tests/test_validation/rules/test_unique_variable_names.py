@@ -17,9 +17,9 @@ def test_unique_variable_names(schema):
         UniqueVariableNamesChecker,
         schema,
         """
-        query A($x: Int, $y: String) { __typename }
-        query B($x: String, $y: Int) { __typename }
-    """,
+            query A($x: Int, $y: String) { __typename }
+            query B($x: String, $y: Int) { __typename }
+        """,
     )
 
 
@@ -28,15 +28,15 @@ def test_duplicate_variable_names(schema):
         UniqueVariableNamesChecker,
         schema,
         """
-        query A($x: Int, $x: Int, $x: String) { __typename }
-        query B($x: String, $x: Int) { __typename }
-        query C($x: Int, $x: Int) { __typename }
-    """,
+            query A($x: Int, $x: Int, $x: String) { __typename }
+            query B($x: String, $x: Int) { __typename }
+            query C($x: Int, $x: Int) { __typename }
+        """,
         [
             'Duplicate variable "$x"',
             'Duplicate variable "$x"',
             'Duplicate variable "$x"',
             'Duplicate variable "$x"',
         ],
-        [(26, 33), (35, 45), (90, 97), (139, 146)],
+        [[(17, 24)], [(26, 36)], [(73, 80)], [(114, 121)]],
     )

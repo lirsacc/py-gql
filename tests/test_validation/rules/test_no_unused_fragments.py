@@ -17,26 +17,25 @@ def test_all_fragment_names_are_used(schema):
         NoUnusedFragmentsChecker,
         schema,
         """
-    {
-        human(id: 4) {
-            ...HumanFields1
-            ... on Human {
-                ...HumanFields2
+        {
+            human(id: 4) {
+                ...HumanFields1
+                ... on Human {
+                    ...HumanFields2
+                }
             }
         }
-    }
-    fragment HumanFields1 on Human {
-        name
-        ...HumanFields3
-    }
-    fragment HumanFields2 on Human {
-        name
-    }
-    fragment HumanFields3 on Human {
-        name
-    }
-    """,
-        [],
+        fragment HumanFields1 on Human {
+            name
+            ...HumanFields3
+        }
+        fragment HumanFields2 on Human {
+            name
+        }
+        fragment HumanFields3 on Human {
+            name
+        }
+        """,
     )
 
 
@@ -45,28 +44,27 @@ def test_all_fragment_names_are_used_by_multiple_operations(schema):
         NoUnusedFragmentsChecker,
         schema,
         """
-    query Foo {
-        human(id: 4) {
-            ...HumanFields1
+        query Foo {
+            human(id: 4) {
+                ...HumanFields1
+            }
         }
-    }
-    query Bar {
-        human(id: 4) {
-            ...HumanFields2
+        query Bar {
+            human(id: 4) {
+                ...HumanFields2
+            }
         }
-    }
-    fragment HumanFields1 on Human {
-        name
-        ...HumanFields3
-    }
-    fragment HumanFields2 on Human {
-        name
-    }
-    fragment HumanFields3 on Human {
-        name
-    }
-    """,
-        [],
+        fragment HumanFields1 on Human {
+            name
+            ...HumanFields3
+        }
+        fragment HumanFields2 on Human {
+            name
+        }
+        fragment HumanFields3 on Human {
+            name
+        }
+        """,
     )
 
 
@@ -75,33 +73,33 @@ def test_contains_unknown_fragments(schema):
         NoUnusedFragmentsChecker,
         schema,
         """
-    query Foo {
-        human(id: 4) {
-            ...HumanFields1
+        query Foo {
+            human(id: 4) {
+                ...HumanFields1
+            }
         }
-    }
-    query Bar {
-        human(id: 4) {
-            ...HumanFields2
+        query Bar {
+            human(id: 4) {
+                ...HumanFields2
+            }
         }
-    }
-    fragment HumanFields1 on Human {
-        name
-        ...HumanFields3
-    }
-    fragment HumanFields2 on Human {
-        name
-    }
-    fragment HumanFields3 on Human {
-        name
-    }
-    fragment Unused1 on Human {
-        name
-    }
-    fragment Unused2 on Human {
-        name
-    }
-    """,
+        fragment HumanFields1 on Human {
+            name
+            ...HumanFields3
+        }
+        fragment HumanFields2 on Human {
+            name
+        }
+        fragment HumanFields3 on Human {
+            name
+        }
+        fragment Unused1 on Human {
+            name
+        }
+        fragment Unused2 on Human {
+            name
+        }
+        """,
         ['Unused fragment(s) "Unused1", "Unused2"'],
     )
 
@@ -114,35 +112,35 @@ def test_contains_unknown_fragments_with_ref_cycle(schema):
         NoUnusedFragmentsChecker,
         schema,
         """
-    query Foo {
-        human(id: 4) {
-            ...HumanFields1
+        query Foo {
+            human(id: 4) {
+                ...HumanFields1
+            }
         }
-    }
-    query Bar {
-        human(id: 4) {
-            ...HumanFields2
+        query Bar {
+            human(id: 4) {
+                ...HumanFields2
+            }
         }
-    }
-    fragment HumanFields1 on Human {
-        name
-        ...HumanFields3
-    }
-    fragment HumanFields2 on Human {
-        name
-    }
-    fragment HumanFields3 on Human {
-        name
-    }
-    fragment Unused1 on Human {
-        name
-        ...Unused2
-    }
-    fragment Unused2 on Human {
-        name
-        ...Unused1
-    }
-    """,
+        fragment HumanFields1 on Human {
+            name
+            ...HumanFields3
+        }
+        fragment HumanFields2 on Human {
+            name
+        }
+        fragment HumanFields3 on Human {
+            name
+        }
+        fragment Unused1 on Human {
+            name
+            ...Unused2
+        }
+        fragment Unused2 on Human {
+            name
+            ...Unused1
+        }
+        """,
     )
 
 
@@ -151,14 +149,14 @@ def test_contains_unknown_and_undef_fragments(schema):
         NoUnusedFragmentsChecker,
         schema,
         """
-    query Foo {
-        human(id: 4) {
-            ...bar
+        query Foo {
+            human(id: 4) {
+                ...bar
+            }
         }
-    }
-    fragment foo on Human {
-        name
-    }
-    """,
+        fragment foo on Human {
+            name
+        }
+        """,
         ['Unused fragment(s) "foo"'],
     )

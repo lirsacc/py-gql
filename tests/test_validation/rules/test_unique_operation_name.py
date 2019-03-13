@@ -17,8 +17,9 @@ def test_no_operations(schema):
         UniqueOperationNameChecker,
         schema,
         """fragment fragA on Type {
-        field
-    }""",
+            field
+        }
+        """,
     )
 
 
@@ -27,8 +28,9 @@ def test_one_anon_operation(schema):
         UniqueOperationNameChecker,
         schema,
         """{
-        field
-    }""",
+            field
+        }
+        """,
     )
 
 
@@ -37,8 +39,9 @@ def test_one_named_operation(schema):
         UniqueOperationNameChecker,
         schema,
         """query {
-        field
-    }""",
+            field
+        }
+        """,
     )
 
 
@@ -47,14 +50,14 @@ def test_multiple_operations(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        field
-    }
+        query Foo {
+            field
+        }
 
-    query Bar {
-        field
-    }
-    """,
+        query Bar {
+            field
+        }
+        """,
     )
 
 
@@ -63,18 +66,18 @@ def test_multiple_operations_of_different_types(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        field
-    }
+        query Foo {
+            field
+        }
 
-    mutation Bar {
-        field
-    }
+        mutation Bar {
+            field
+        }
 
-    subscription Baz {
-        field
-    }
-    """,
+        subscription Baz {
+            field
+        }
+        """,
     )
 
 
@@ -83,13 +86,13 @@ def test_fragment_and_operation_named_the_same(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        ...Foo
-    }
-    fragment Foo on Type {
-        field
-    }
-    """,
+        query Foo {
+            ...Foo
+        }
+        fragment Foo on Type {
+            field
+        }
+        """,
     )
 
 
@@ -98,14 +101,14 @@ def test_multiple_operations_of_same_name(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        fieldA
-    }
+        query Foo {
+            fieldA
+        }
 
-    query Foo {
-        fieldB
-    }
-    """,
+        query Foo {
+            fieldB
+        }
+        """,
         ['Duplicate operation "Foo".'],
     )
 
@@ -115,14 +118,14 @@ def test_multiple_ops_of_same_name_of_different_types_mutation(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        fieldA
-    }
+        query Foo {
+            fieldA
+        }
 
-    mutation Foo {
-        fieldB
-    }
-    """,
+        mutation Foo {
+            fieldB
+        }
+        """,
         ['Duplicate operation "Foo".'],
     )
 
@@ -132,13 +135,13 @@ def test_multiple_ops_of_same_name_of_different_types_subscription(schema):
         UniqueOperationNameChecker,
         schema,
         """
-    query Foo {
-        fieldA
-    }
+        query Foo {
+            fieldA
+        }
 
-    subscription Foo {
-        fieldB
-    }
-    """,
+        subscription Foo {
+            fieldB
+        }
+        """,
         ['Duplicate operation "Foo".'],
     )

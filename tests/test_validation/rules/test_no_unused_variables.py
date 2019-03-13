@@ -17,12 +17,10 @@ def test_uses_all_variables(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query ($a: String, $b: String, $c: String) {
-        field(a: $a, b: $b, c: $c)
-    }
-    """,
-        [],
-        [],
+        query ($a: String, $b: String, $c: String) {
+            field(a: $a, b: $b, c: $c)
+        }
+        """,
     )
 
 
@@ -31,16 +29,14 @@ def test_uses_all_variables_deeply(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        field(a: $a) {
-            field(b: $b) {
-               field(c: $c)
+        query Foo($a: String, $b: String, $c: String) {
+            field(a: $a) {
+                field(b: $b) {
+                field(c: $c)
+                }
             }
         }
-    }
-    """,
-        [],
-        [],
+        """,
     )
 
 
@@ -49,20 +45,18 @@ def test_uses_all_variables_deeply_in_inline_fragments(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        ... on Type {
-            field(a: $a) {
-                field(b: $b) {
-                    ... on Type {
-                        field(c: $c)
+        query Foo($a: String, $b: String, $c: String) {
+            ... on Type {
+                field(a: $a) {
+                    field(b: $b) {
+                        ... on Type {
+                            field(c: $c)
+                        }
                     }
                 }
             }
         }
-    }
-    """,
-        [],
-        [],
+        """,
     )
 
 
@@ -71,25 +65,23 @@ def test_uses_all_variables_in_fragments(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a) {
-            ...FragB
+        query Foo($a: String, $b: String, $c: String) {
+            ...FragA
         }
-    }
-    fragment FragB on Type {
-        field(b: $b) {
-            ...FragC
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragB
+            }
         }
-    }
-    fragment FragC on Type {
-        field(c: $c)
-    }
-    """,
-        [],
-        [],
+        fragment FragB on Type {
+            field(b: $b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            field(c: $c)
+        }
+        """,
     )
 
 
@@ -98,21 +90,19 @@ def test_variable_used_by_fragment_in_multiple_operations(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String) {
-        ...FragA
-    }
-    query Bar($b: String) {
-        ...FragB
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
-        [],
-        [],
+        query Foo($a: String) {
+            ...FragA
+        }
+        query Bar($b: String) {
+            ...FragB
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
     )
 
 
@@ -121,17 +111,15 @@ def test_variable_used_by_recursive_fragment(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a) {
+        query Foo($a: String) {
             ...FragA
         }
-    }
-    """,
-        [],
-        [],
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragA
+            }
+        }
+        """,
     )
 
 
@@ -140,12 +128,12 @@ def test_variable_not_used(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query ($a: String, $b: String, $c: String) {
-        field(a: $a, b: $b)
-    }
-    """,
+        query ($a: String, $b: String, $c: String) {
+            field(a: $a, b: $b)
+        }
+        """,
         ['Unused variable "$c"'],
-        [(36, 46)],
+        [[(31, 41)]],
     )
 
 
@@ -154,12 +142,12 @@ def test_multiple_variables_not_used(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        field(b: $b)
-    }
-    """,
+        query Foo($a: String, $b: String, $c: String) {
+            field(b: $b)
+        }
+        """,
         ['Unused variable "$a"', 'Unused variable "$c"'],
-        [(15, 25), (39, 49)],
+        [[(10, 20)], [(34, 44)]],
     )
 
 
@@ -168,25 +156,25 @@ def test_variable_not_used_in_fragments(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($a: String, $b: String, $c: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a) {
-            ...FragB
+        query Foo($a: String, $b: String, $c: String) {
+            ...FragA
         }
-    }
-    fragment FragB on Type {
-        field(b: $b) {
-            ...FragC
+        fragment FragA on Type {
+            field(a: $a) {
+                ...FragB
+            }
         }
-    }
-    fragment FragC on Type {
-        field
-    }
-    """,
+        fragment FragB on Type {
+            field(b: $b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            field
+        }
+        """,
         ['Unused variable "$c"'],
-        [(39, 49)],
+        [[(34, 44)]],
     )
 
 
@@ -211,7 +199,7 @@ def test_multiple_variables_not_used_in_fragments(schema):
         fragment FragC on Type {
             field
         }
-    """,
+        """,
         ['Unused variable "$a"', 'Unused variable "$c"'],
     )
 
@@ -221,16 +209,16 @@ def test_variable_not_used_by_unreferenced_fragment(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragA
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragA
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
         ['Unused variable "$b"'],
     )
 
@@ -240,18 +228,18 @@ def test_variable_not_used_by_fragment_used_by_other_operation(schema):
         NoUnusedVariablesChecker,
         schema,
         """
-    query Foo($b: String) {
-        ...FragA
-    }
-    query Bar($a: String) {
-        ...FragB
-    }
-    fragment FragA on Type {
-        field(a: $a)
-    }
-    fragment FragB on Type {
-        field(b: $b)
-    }
-    """,
+        query Foo($b: String) {
+            ...FragA
+        }
+        query Bar($a: String) {
+            ...FragB
+        }
+        fragment FragA on Type {
+            field(a: $a)
+        }
+        fragment FragB on Type {
+            field(b: $b)
+        }
+        """,
         ['Unused variable "$b"', 'Unused variable "$a"'],
     )

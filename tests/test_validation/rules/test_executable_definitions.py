@@ -17,12 +17,12 @@ def test_only_operation(schema):
         ExecutableDefinitionsChecker,
         schema,
         """
-    query Foo {
-        dog {
-            name
+        query Foo {
+            dog {
+                name
+            }
         }
-    }
-    """,
+        """,
     )
 
 
@@ -31,17 +31,17 @@ def test_operation_and_fragment(schema):
         ExecutableDefinitionsChecker,
         schema,
         """
-    query Foo {
-        dog {
-            name
-            ...Frag
+        query Foo {
+            dog {
+                name
+                ...Frag
+            }
         }
-    }
 
-    fragment Frag on Dog {
-        name
-    }
-    """,
+        fragment Frag on Dog {
+            name
+        }
+        """,
     )
 
 
@@ -50,20 +50,20 @@ def test_type_definition(schema):
         ExecutableDefinitionsChecker,
         schema,
         """
-    query Foo {
-        dog {
-            name
+        query Foo {
+            dog {
+                name
+            }
         }
-    }
 
-    type Cow {
-        name: String
-    }
+        type Cow {
+            name: String
+        }
 
-    extend type Dog {
-        color: String
-    }
-    """,
+        extend type Dog {
+            color: String
+        }
+        """,
         [
             'Definition "Cow" is not executable',
             # 'Definition "Dog" is not executable',
@@ -76,14 +76,14 @@ def test_schema_definition(schema):
         ExecutableDefinitionsChecker,
         schema,
         """
-    schema {
-        query: Query
-    }
+        schema {
+            query: Query
+        }
 
-    type Query {
-        test: String
-    }
-    """,
+        type Query {
+            test: String
+        }
+        """,
         [
             'Definition "schema" is not executable',
             # 'Definition "Dog" is not executable',

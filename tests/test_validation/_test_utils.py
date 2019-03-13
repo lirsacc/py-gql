@@ -2,6 +2,7 @@
 """ """
 from __future__ import print_function
 
+from py_gql._string_utils import dedent
 from py_gql.lang import parse
 from py_gql.validation import validate_ast
 
@@ -21,7 +22,7 @@ def assert_validation_result(
     expected_locs = expected_locs or []
 
     print(source)
-    result = validate_ast(schema, parse(source), checkers)
+    result = validate_ast(schema, parse(dedent(source)), checkers)
     errors = result.errors
 
     msgs = [str(err) for err in errors]

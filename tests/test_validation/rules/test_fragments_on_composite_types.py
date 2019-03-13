@@ -17,10 +17,10 @@ def test_object_is_valid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment validFragment on Dog {
-        barks
-    }
-    """,
+        fragment validFragment on Dog {
+            barks
+        }
+        """,
     )
 
 
@@ -29,11 +29,10 @@ def test_interface_is_valid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment validFragment on Pet {
-        name
-    }
-    """,
-        [],
+        fragment validFragment on Pet {
+            name
+        }
+        """,
     )
 
 
@@ -42,13 +41,12 @@ def test_object_is_valid_inline_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment validFragment on Pet {
-        ... on Dog {
-            barks
+        fragment validFragment on Pet {
+            ... on Dog {
+                barks
+            }
         }
-    }
-    """,
-        [],
+        """,
     )
 
 
@@ -57,13 +55,12 @@ def test_inline_fragment_without_type_is_valid(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment validFragment on Pet {
-        ... {
-            name
+        fragment validFragment on Pet {
+            ... {
+                name
+            }
         }
-    }
-    """,
-        [],
+        """,
     )
 
 
@@ -72,11 +69,10 @@ def test_union_is_valid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment validFragment on CatOrDog {
-        __typename
-    }
-    """,
-        [],
+        fragment validFragment on CatOrDog {
+            __typename
+        }
+        """,
     )
 
 
@@ -85,10 +81,10 @@ def test_scalar_is_invalid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment scalarFragment on Boolean {
-        bad
-    }
-    """,
+        fragment scalarFragment on Boolean {
+            bad
+        }
+        """,
         [
             'Fragment "scalarFragment" type condition cannot be on '
             'non-composite type "Boolean"'
@@ -101,10 +97,10 @@ def test_enum_is_invalid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment scalarFragment on FurColor {
-        bad
-    }
-    """,
+        fragment scalarFragment on FurColor {
+            bad
+        }
+        """,
         [
             'Fragment "scalarFragment" type condition cannot be on '
             'non-composite type "FurColor"'
@@ -117,10 +113,10 @@ def test_input_object_is_invalid_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment inputFragment on ComplexInput {
-        stringField
-    }
-    """,
+        fragment inputFragment on ComplexInput {
+            stringField
+        }
+        """,
         [
             'Fragment "inputFragment" type condition cannot be on '
             'non-composite type "ComplexInput"'
@@ -133,11 +129,11 @@ def test_scalar_is_invalid_inline_fragment_type(schema):
         FragmentsOnCompositeTypesChecker,
         schema,
         """
-    fragment invalidFragment on Pet {
-        ... on String {
-            barks
+        fragment invalidFragment on Pet {
+            ... on String {
+                barks
+            }
         }
-    }
-    """,
+        """,
         ['Fragment type condition cannot be on non-composite type "String"'],
     )

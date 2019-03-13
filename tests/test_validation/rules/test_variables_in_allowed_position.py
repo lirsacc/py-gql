@@ -244,7 +244,7 @@ def test_int_to_required_int(schema):
         }
         """,
         ['Variable "$intArg" of type Int used in position expecting type Int!'],
-        [(117, 124)],
+        [(92, 99)],
     )
 
 
@@ -264,7 +264,7 @@ def test_int_to_required_int_within_fragment(schema):
         }
         """,
         ['Variable "$intArg" of type Int used in position expecting type Int!'],
-        [(108, 115)],
+        [(91, 98)],
     )
 
 
@@ -288,7 +288,7 @@ def test_int_to_required_int_within_nested_fragment(schema):
         }
         """,
         ['Variable "$intArg" of type Int used in position expecting type Int!'],
-        [(205, 212)],
+        [(164, 171)],
     )
 
 
@@ -390,7 +390,7 @@ def test_int_to_non_null_int_fails_when_variable_provides_null_default(schema):
         }
         """,
         ['Variable "$intVar" of type Int used in position expecting type Int!'],
-        [(124, 131)],
+        [(99, 106)],
     )
 
 

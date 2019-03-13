@@ -136,7 +136,6 @@ def test_variable_within_recursive_fragment_defined(schema):
             }
         }
         """,
-        [],
     )
 
 
@@ -150,7 +149,7 @@ def test_variable_not_defined(schema):
         }
         """,
         ['Variable "$d" is not defined on "Foo" operation'],
-        [(99, 101)],
+        [[(82, 84)]],
     )
 
 
@@ -164,7 +163,7 @@ def test_variable_not_defined_by_unnamed_query(schema):
         }
         """,
         ['Variable "$a" is not defined on anonymous operation'],
-        [(32, 34)],
+        [[(15, 17)]],
     )
 
 

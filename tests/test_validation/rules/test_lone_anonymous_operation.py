@@ -17,9 +17,9 @@ def test_no_operations(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    fragment fragA on Type {
-        field
-    }""",
+        fragment fragA on Type {
+            field
+        }""",
     )
 
 
@@ -28,9 +28,9 @@ def test_one_anon_operation(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    {
-        field
-    }""",
+        {
+            field
+        }""",
     )
 
 
@@ -39,13 +39,13 @@ def test_multiple_named_operations(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    query Foo {
-        field
-    }
+        query Foo {
+            field
+        }
 
-    query Bar {
-        field
-    }""",
+        query Bar {
+            field
+        }""",
     )
 
 
@@ -54,12 +54,12 @@ def test_anon_operation_with_fragment(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    {
-        ...Foo
-    }
-    fragment Foo on Type {
-        field
-    }""",
+        {
+            ...Foo
+        }
+        fragment Foo on Type {
+            field
+        }""",
     )
 
 
@@ -68,13 +68,13 @@ def test_multiple_anon_operations(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    {
-        fieldA
-    }
-    {
-        fieldB
-    }
-    """,
+        {
+            fieldA
+        }
+        {
+            fieldB
+        }
+        """,
         ["The anonymous operation must be the only defined operation."],
     )
 
@@ -84,13 +84,13 @@ def test_anon_operation_with_a_mutation(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    {
-        fieldA
-    }
-    mutation Foo {
-        fieldB
-    }
-    """,
+        {
+            fieldA
+        }
+        mutation Foo {
+            fieldB
+        }
+        """,
         ["The anonymous operation must be the only defined operation."],
     )
 
@@ -100,12 +100,12 @@ def test_anon_operation_with_a_subscription(schema):
         LoneAnonymousOperationChecker,
         schema,
         """
-    {
-        fieldA
-    }
-    subscription Foo {
-        fieldB
-    }
-    """,
+        {
+            fieldA
+        }
+        subscription Foo {
+            fieldB
+        }
+        """,
         ["The anonymous operation must be the only defined operation."],
     )

@@ -17,9 +17,10 @@ def test_valid_scalar_selection(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelection on Dog {
-        barks
-    }""",
+        fragment scalarSelection on Dog {
+            barks
+        }
+        """,
     )
 
 
@@ -28,9 +29,10 @@ def test_object_type_missing_selection(schema):
         ScalarLeafsChecker,
         schema,
         """
-    query directQueryOnObjectWithoutSubFields {
-        human
-    }""",
+        query directQueryOnObjectWithoutSubFields {
+            human
+        }
+        """,
         ['Field "human" of type "Human" must have a subselection'],
     )
 
@@ -40,9 +42,10 @@ def test_interface_type_missing_selection(schema):
         ScalarLeafsChecker,
         schema,
         """
-    {
-        human { pets }
-    }""",
+        {
+            human { pets }
+        }
+        """,
         ['Field "pets" of type "[Pet]" must have a subselection'],
     )
 
@@ -52,9 +55,10 @@ def test_valid_scalar_selection_with_args(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionWithArgs on Dog {
-        doesKnowCommand(dogCommand: SIT)
-    }""",
+        fragment scalarSelectionWithArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+        }
+        """,
     )
 
 
@@ -63,9 +67,10 @@ def test_scalar_selection_not_allowed_on_boolean(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionsNotAllowedOnBoolean on Dog {
-        barks { sinceWhen }
-    }""",
+        fragment scalarSelectionsNotAllowedOnBoolean on Dog {
+            barks { sinceWhen }
+        }
+        """,
         [
             'Field "barks" cannot have a selection as type "Boolean" '
             "has no fields"
@@ -78,9 +83,10 @@ def test_scalar_selection_not_allowed_on_enum(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionsNotAllowedOnEnum on Cat {
-        furColor { inHexdec }
-    }""",
+        fragment scalarSelectionsNotAllowedOnEnum on Cat {
+            furColor { inHexdec }
+        }
+        """,
         [
             'Field "furColor" cannot have a selection as type "FurColor" '
             "has no fields"
@@ -93,9 +99,10 @@ def test_scalar_selection_not_allowed_with_args(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionsNotAllowedWithArgs on Dog {
-        doesKnowCommand(dogCommand: SIT) { sinceWhen }
-    }""",
+        fragment scalarSelectionsNotAllowedWithArgs on Dog {
+            doesKnowCommand(dogCommand: SIT) { sinceWhen }
+        }
+        """,
         [
             'Field "doesKnowCommand" cannot have a selection as type "Boolean" '
             "has no fields"
@@ -108,9 +115,10 @@ def test_scalar_selection_not_allowed_with_directives(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionsNotAllowedWithDirectives on Dog {
-        name @include(if: true) { isAlsoHumanName }
-    }""",
+        fragment scalarSelectionsNotAllowedWithDirectives on Dog {
+            name @include(if: true) { isAlsoHumanName }
+        }
+        """,
         [
             'Field "name" cannot have a selection as type "String" '
             "has no fields"
@@ -123,9 +131,10 @@ def test_scalar_selection_not_allowed_with_directives_and_args(schema):
         ScalarLeafsChecker,
         schema,
         """
-    fragment scalarSelectionsNotAllowedWithDirectivesAndArgs on Dog {
-        doesKnowCommand(dogCommand: SIT) @include(if: true) { sinceWhen }
-    }""",
+        fragment scalarSelectionsNotAllowedWithDirectivesAndArgs on Dog {
+            doesKnowCommand(dogCommand: SIT) @include(if: true) { sinceWhen }
+        }
+        """,
         [
             'Field "doesKnowCommand" cannot have a selection as type "Boolean" '
             "has no fields"

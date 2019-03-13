@@ -17,17 +17,15 @@ def test_with_no_directives(schema):
         KnownDirectivesChecker,
         schema,
         """
-    query Foo {
-        name
-        ...Frag
-    }
+        query Foo {
+            name
+            ...Frag
+        }
 
-    fragment Frag on Dog {
-        name
-    }
-    """,
-        [],
-        [],
+        fragment Frag on Dog {
+            name
+        }
+        """,
     )
 
 
@@ -36,17 +34,15 @@ def test_with_known_directives(schema):
         KnownDirectivesChecker,
         schema,
         """
-    {
-        dog @include(if: true) {
-            name
+        {
+            dog @include(if: true) {
+                name
+            }
+            human @skip(if: false) {
+                name
+            }
         }
-        human @skip(if: false) {
-            name
-        }
-    }
-    """,
-        [],
-        [],
+        """,
     )
 
 
@@ -55,14 +51,14 @@ def test_with_unknown_directive(schema):
         KnownDirectivesChecker,
         schema,
         """
-    {
-        dog @unknown(directive: "value") {
-            name
+        {
+            dog @unknown(directive: "value") {
+                name
+            }
         }
-    }
-    """,
+        """,
         ['Unknown directive "@unknown"'],
-        [(19, 47)],
+        [[(10, 38)]],
     )
 
 
@@ -71,24 +67,24 @@ def test_with_many_unknown_directives(schema):
         KnownDirectivesChecker,
         schema,
         """
-    {
-        dog @unknown(directive: "value") {
-            name
-        }
-        human @unknown(directive: "value") {
-            name
-            pets @unknown(directive: "value") {
-               name
+        {
+            dog @unknown(directive: "value") {
+                name
+            }
+            human @unknown(directive: "value") {
+                name
+                pets @unknown(directive: "value") {
+                name
+                }
             }
         }
-    }
-    """,
+        """,
         [
             'Unknown directive "@unknown"',
             'Unknown directive "@unknown"',
             'Unknown directive "@unknown"',
         ],
-        [(19, 47), (91, 119), (156, 184)],
+        [[(10, 38)], [(70, 98)], [(127, 155)]],
     )
 
 
@@ -97,19 +93,17 @@ def test_with_well_placed_directives(schema):
         KnownDirectivesChecker,
         schema,
         """
-    query Foo @onQuery {
-        name @include(if: true)
-        ...Frag @include(if: true)
-        skippedField @skip(if: true)
-        ...SkippedFrag @skip(if: true)
-    }
+        query Foo @onQuery {
+            name @include(if: true)
+            ...Frag @include(if: true)
+            skippedField @skip(if: true)
+            ...SkippedFrag @skip(if: true)
+        }
 
-    mutation Bar @onMutation {
-        someField
-    }
-    """,
-        [],
-        [],
+        mutation Bar @onMutation {
+            someField
+        }
+        """,
     )
 
 
@@ -118,22 +112,22 @@ def test_with_misplaced_directives(schema):
         KnownDirectivesChecker,
         schema,
         """
-    query Foo @include(if: true) {
-        name @onQuery
-        ...Frag @onQuery
-    }
+        query Foo @include(if: true) {
+            name @onQuery
+            ...Frag @onQuery
+        }
 
-    mutation Bar @onQuery {
-        someField
-    }
-    """,
+        mutation Bar @onQuery {
+            someField
+        }
+        """,
         [
             'Directive "@include" may not be used on QUERY',
             'Directive "@onQuery" may not be used on FIELD',
             'Directive "@onQuery" may not be used on FRAGMENT_SPREAD',
             'Directive "@onQuery" may not be used on MUTATION',
         ],
-        [(15, 33), (49, 57), (74, 82), (107, 115)],
+        [[(10, 28)], [(40, 48)], [(61, 69)], [(86, 94)]],
     )
 
 
@@ -142,44 +136,42 @@ def test_with_well_placed_directives_within_schema_language(schema):
         KnownDirectivesChecker,
         schema,
         """
-    type MyObj implements MyInterface @onObject {
-        myField(myArg: Int @onArgumentDefinition): String @onFieldDefinition
-    }
+        type MyObj implements MyInterface @onObject {
+            myField(myArg: Int @onArgumentDefinition): String @onFieldDefinition
+        }
 
-    extend type MyObj @onObject
+        extend type MyObj @onObject
 
-    scalar MyScalar @onScalar
+        scalar MyScalar @onScalar
 
-    extend scalar MyScalar @onScalar
+        extend scalar MyScalar @onScalar
 
-    interface MyInterface @onInterface {
-        myField(myArg: Int @onArgumentDefinition): String @onFieldDefinition
-    }
+        interface MyInterface @onInterface {
+            myField(myArg: Int @onArgumentDefinition): String @onFieldDefinition
+        }
 
-    extend interface MyInterface @onInterface
+        extend interface MyInterface @onInterface
 
-    union MyUnion @onUnion = MyObj | Other
+        union MyUnion @onUnion = MyObj | Other
 
-    extend union MyUnion @onUnion
+        extend union MyUnion @onUnion
 
-    enum MyEnum @onEnum {
-        MY_VALUE @onEnumValue
-    }
+        enum MyEnum @onEnum {
+            MY_VALUE @onEnumValue
+        }
 
-    extend enum MyEnum @onEnum
+        extend enum MyEnum @onEnum
 
-    input MyInput @onInputObject {
-        myField: Int @onInputFieldDefinition
-    }
+        input MyInput @onInputObject {
+            myField: Int @onInputFieldDefinition
+        }
 
-    extend input MyInput @onInputObject
+        extend input MyInput @onInputObject
 
-    schema @onSchema {
-        query: MyQuery
-    }
-    """,
-        [],
-        [],
+        schema @onSchema {
+            query: MyQuery
+        }
+        """,
     )
 
 
@@ -188,32 +180,32 @@ def test_with_misplaced_directives_within_schema_language(schema):
         KnownDirectivesChecker,
         schema,
         """
-    type MyObj implements MyInterface @onInterface {
-        myField(myArg: Int @onInputFieldDefinition): \
-String @onInputFieldDefinition
-    }
+        type MyObj implements MyInterface @onInterface {
+            myField(myArg: Int @onInputFieldDefinition): \
+    String @onInputFieldDefinition
+        }
 
-    scalar MyScalar @onEnum
+        scalar MyScalar @onEnum
 
-    interface MyInterface @onObject {
-        myField(myArg: Int @onInputFieldDefinition): \
-String @onInputFieldDefinition
-    }
+        interface MyInterface @onObject {
+            myField(myArg: Int @onInputFieldDefinition): \
+    String @onInputFieldDefinition
+        }
 
-    union MyUnion @onEnumValue = MyObj | Other
+        union MyUnion @onEnumValue = MyObj | Other
 
-    enum MyEnum @onScalar {
-        MY_VALUE @onUnion
-    }
+        enum MyEnum @onScalar {
+            MY_VALUE @onUnion
+        }
 
-    input MyInput @onEnum {
-        myField: Int @onArgumentDefinition
-    }
+        input MyInput @onEnum {
+            myField: Int @onArgumentDefinition
+        }
 
-    schema @onObject {
-        query: MyQuery
-    }
-    """,
+        schema @onObject {
+            query: MyQuery
+        }
+        """,
         [
             'Directive "@onInterface" may not be used on OBJECT',
             'Directive "@onInputFieldDefinition" may not be used on '

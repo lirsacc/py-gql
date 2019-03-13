@@ -17,12 +17,10 @@ def test_no_directives(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type {
-        field
-    }
-    """,
-        [],
-        [],
+        fragment Test on Type {
+            field
+        }
+        """,
     )
 
 
@@ -31,12 +29,10 @@ def test_unique_directives_in_different_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type @directiveA {
-        field @directiveB
-    }
-    """,
-        [],
-        [],
+        fragment Test on Type @directiveA {
+            field @directiveB
+        }
+        """,
     )
 
 
@@ -45,12 +41,10 @@ def test_unique_directives_in_same_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type @directiveA @directiveB {
-        field @directiveA @directiveB
-    }
-    """,
-        [],
-        [],
+        fragment Test on Type @directiveA @directiveB {
+            field @directiveA @directiveB
+        }
+        """,
     )
 
 
@@ -59,12 +53,10 @@ def test_same_directives_in_different_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type @directiveA {
-        field @directiveA
-    }
-    """,
-        [],
-        [],
+        fragment Test on Type @directiveA {
+            field @directiveA
+        }
+        """,
     )
 
 
@@ -73,12 +65,11 @@ def test_same_directives_in_similar_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type {
-        field @directive
-        field @directive
-    }""",
-        [],
-        [],
+        fragment Test on Type {
+            field @directive
+            field @directive
+        }
+        """,
     )
 
 
@@ -87,12 +78,12 @@ def test_duplicate_directives_in_one_location(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type {
-        field @directive @directive
-    }
-    """,
+        fragment Test on Type {
+            field @directive @directive
+        }
+        """,
         ['Duplicate directive "@directive"'],
-        [(54, 64)],
+        [[(45, 55)]],
     )
 
 
@@ -101,15 +92,15 @@ def test_many_duplicate_directives_in_one_location(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type {
-        field @directive @directive @directive
-    }
-    """,
+        fragment Test on Type {
+            field @directive @directive @directive
+        }
+        """,
         [
             'Duplicate directive "@directive"',
             'Duplicate directive "@directive"',
         ],
-        [(54, 64), (65, 75)],
+        [[(45, 55)], [(56, 66)]],
     )
 
 
@@ -118,15 +109,15 @@ def test_different_duplicate_directives_in_one_location(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type {
-        field @directiveA @directiveB @directiveA @directiveB
-    }
-    """,
+        fragment Test on Type {
+            field @directiveA @directiveB @directiveA @directiveB
+        }
+        """,
         [
             'Duplicate directive "@directiveA"',
             'Duplicate directive "@directiveB"',
         ],
-        [(67, 78), (79, 90)],
+        [[(58, 69)], [(70, 81)]],
     )
 
 
@@ -135,13 +126,13 @@ def test_duplicate_directives_in_many_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-    fragment Test on Type @directive @directive {
-    field @directive @directive
-    }
-    """,
+        fragment Test on Type @directive @directive {
+            field @directive @directive
+        }
+        """,
         [
             'Duplicate directive "@directive"',
             'Duplicate directive "@directive"',
         ],
-        [(38, 48), (72, 82)],
+        [[(33, 43)], [(67, 77)]],
     )

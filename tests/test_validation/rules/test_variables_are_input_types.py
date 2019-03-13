@@ -17,10 +17,10 @@ def test_input_types_are_valid(schema):
         VariablesAreInputTypesChecker,
         schema,
         """
-    query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
-        field(a: $a, b: $b, c: $c)
-    }
-    """,
+        query Foo($a: String, $b: [Boolean!]!, $c: ComplexInput) {
+            field(a: $a, b: $b, c: $c)
+        }
+        """,
     )
 
 
@@ -29,10 +29,10 @@ def test_output_types_are_invalid(schema):
         VariablesAreInputTypesChecker,
         schema,
         """
-    query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {
-        field(a: $a, b: $b, c: $c)
-    }
-    """,
+        query Foo($a: Dog, $b: [[CatOrDog!]]!, $c: Pet) {
+            field(a: $a, b: $b, c: $c)
+        }
+        """,
         [
             'Variable "$a" must be input type',
             'Variable "$b" must be input type',
@@ -46,9 +46,9 @@ def test_unknown_types_are_invalid(schema):
         VariablesAreInputTypesChecker,
         schema,
         """
-    query Foo($a: Bar) {
-        field(a: $a)
-    }
-    """,
+        query Foo($a: Bar) {
+            field(a: $a)
+        }
+        """,
         ['Variable "$a" must be input type'],
     )

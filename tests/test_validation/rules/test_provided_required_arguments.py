@@ -195,7 +195,7 @@ def test_missing_one_non_nullable_argument(schema):
             'Field "multipleReqs" argument "req1" of type Int! is required '
             "but not provided"
         ],
-        [(57, 78)],
+        [[(32, 53)]],
     )
 
 

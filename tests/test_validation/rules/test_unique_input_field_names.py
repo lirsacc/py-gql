@@ -17,10 +17,10 @@ def test_input_object_with_fields(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg: { f: true })
-    }
-    """,
+        {
+            field(arg: { f: true })
+        }
+        """,
     )
 
 
@@ -29,10 +29,10 @@ def test_same_input_object_within_two_args(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg1: { f: true }, arg2: { f: true })
-    }
-    """,
+        {
+            field(arg1: { f: true }, arg2: { f: true })
+        }
+        """,
     )
 
 
@@ -41,10 +41,10 @@ def test_multiple_input_object_fields(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg: { f1: "value", f2: "value", f3: "value" })
-    }
-    """,
+        {
+            field(arg: { f1: "value", f2: "value", f3: "value" })
+        }
+        """,
     )
 
 
@@ -53,18 +53,18 @@ def test_allows_for_nested_input_objects_with_similar_fields(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg: {
-            deep: {
+        {
+            field(arg: {
                 deep: {
+                    deep: {
+                        id: 1
+                    }
                     id: 1
                 }
                 id: 1
-            }
-            id: 1
-        })
-    }
-    """,
+            })
+        }
+        """,
     )
 
 
@@ -73,12 +73,12 @@ def test_duplicate_input_object_fields(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg: { f1: "value", f1: "value" })
-    }
-    """,
+        {
+            field(arg: { f1: "value", f1: "value" })
+        }
+        """,
         ["There can be only one input field named f1."],
-        [(41, 52)],
+        [[(32, 43)]],
     )
 
 
@@ -87,13 +87,13 @@ def test_many_duplicate_input_object_fields(schema):
         UniqueInputFieldNamesChecker,
         schema,
         """
-    {
-        field(arg: { f1: "value", f1: "value", f1: "value" })
-    }
-    """,
+        {
+            field(arg: { f1: "value", f1: "value", f1: "value" })
+        }
+        """,
         [
             "There can be only one input field named f1.",
             "There can be only one input field named f1.",
         ],
-        [(41, 52), (54, 65)],
+        [[(32, 43)], [(45, 56)]],
     )

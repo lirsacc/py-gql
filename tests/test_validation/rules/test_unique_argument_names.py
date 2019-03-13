@@ -17,12 +17,10 @@ def test_no_arguments_on_field(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field
-    }
-    """,
-        [],
-        [],
+        {
+            field
+        }
+        """,
     )
 
 
@@ -31,12 +29,10 @@ def test_no_arguments_on_directive(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive
-    }
-    """,
-        [],
-        [],
+        {
+            field @directive
+        }
+        """,
     )
 
 
@@ -45,12 +41,10 @@ def test_argument_on_field(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field(arg: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field(arg: "value")
+        }
+        """,
     )
 
 
@@ -59,12 +53,10 @@ def test_argument_on_directive(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive(arg: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field @directive(arg: "value")
+        }
+        """,
     )
 
 
@@ -73,13 +65,11 @@ def test_same_argument_on_two_fields(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        one: field(arg: "value")
-        two: field(arg: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            one: field(arg: "value")
+            two: field(arg: "value")
+        }
+        """,
     )
 
 
@@ -88,12 +78,10 @@ def test_same_argument_on_field_and_directive(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field(arg: "value") @directive(arg: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field(arg: "value") @directive(arg: "value")
+        }
+        """,
     )
 
 
@@ -102,12 +90,10 @@ def test_same_argument_on_two_directives(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive1(arg: "value") @directive2(arg: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field @directive1(arg: "value") @directive2(arg: "value")
+        }
+        """,
     )
 
 
@@ -116,12 +102,10 @@ def test_multiple_field_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field(arg1: "value", arg2: "value", arg3: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field(arg1: "value", arg2: "value", arg3: "value")
+        }
+        """,
     )
 
 
@@ -130,12 +114,10 @@ def test_multiple_directive_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive(arg1: "value", arg2: "value", arg3: "value")
-    }
-    """,
-        [],
-        [],
+        {
+            field @directive(arg1: "value", arg2: "value", arg3: "value")
+        }
+        """,
     )
 
 
@@ -144,12 +126,12 @@ def test_duplicate_field_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field(arg1: "value", arg1: "value")
-    }
-    """,
+        {
+            field(arg1: "value", arg1: "value")
+        }
+        """,
         ['Duplicate argument "arg1"'],
-        [(36, 49)],
+        [[(27, 40)]],
     )
 
 
@@ -158,12 +140,12 @@ def test_many_duplicate_field_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field(arg1: "value", arg1: "value", arg1: "value")
-    }
-    """,
+        {
+            field(arg1: "value", arg1: "value", arg1: "value")
+        }
+        """,
         ['Duplicate argument "arg1"', 'Duplicate argument "arg1"'],
-        [(36, 49), (51, 64)],
+        [[(27, 40)], [(42, 55)]],
     )
 
 
@@ -172,10 +154,10 @@ def test_duplicate_directive_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive(arg1: "value", arg1: "value")
-    }
-    """,
+        {
+            field @directive(arg1: "value", arg1: "value")
+        }
+        """,
         ['Duplicate argument "arg1"'],
     )
 
@@ -185,9 +167,9 @@ def test_many_duplicate_directive_arguments(schema):
         UniqueArgumentNamesChecker,
         schema,
         """
-    {
-        field @directive(arg1: "value", arg1: "value", arg1: "value")
-    }
-    """,
+        {
+            field @directive(arg1: "value", arg1: "value", arg1: "value")
+        }
+        """,
         ['Duplicate argument "arg1"', 'Duplicate argument "arg1"'],
     )

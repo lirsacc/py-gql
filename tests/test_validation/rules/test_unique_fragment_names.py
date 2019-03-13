@@ -17,10 +17,10 @@ def test_no_fragments(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    {
-        field
-    }
-    """,
+        {
+            field
+        }
+        """,
     )
 
 
@@ -29,14 +29,14 @@ def test_one_fragment(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    {
-        ...fragA
-    }
+        {
+            ...fragA
+        }
 
-    fragment fragA on Type {
-        field
-    }
-    """,
+        fragment fragA on Type {
+            field
+        }
+        """,
     )
 
 
@@ -45,21 +45,21 @@ def test_many_fragments(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    {
-        ...fragA
-        ...fragB
-        ...fragC
-    }
-    fragment fragA on Type {
-        fieldA
-    }
-    fragment fragB on Type {
-        fieldB
-    }
-    fragment fragC on Type {
-        fieldC
-    }
-    """,
+        {
+            ...fragA
+            ...fragB
+            ...fragC
+        }
+        fragment fragA on Type {
+            fieldA
+        }
+        fragment fragB on Type {
+            fieldB
+        }
+        fragment fragC on Type {
+            fieldC
+        }
+        """,
     )
 
 
@@ -68,15 +68,15 @@ def test_inline_fragments_are_always_unique(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    {
-        ...on Type {
-            fieldA
+        {
+            ...on Type {
+                fieldA
+            }
+            ...on Type {
+                fieldB
+            }
         }
-        ...on Type {
-            fieldB
-        }
-    }
-    """,
+        """,
     )
 
 
@@ -85,13 +85,13 @@ def test_fragment_and_operation_named_the_same(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    query Foo {
-        ...Foo
-    }
-    fragment Foo on Type {
-        field
-    }
-    """,
+        query Foo {
+            ...Foo
+        }
+        fragment Foo on Type {
+            field
+        }
+        """,
     )
 
 
@@ -100,16 +100,16 @@ def test_fragments_named_the_same(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    {
-        ...fragA
-    }
-    fragment fragA on Type {
-        fieldA
-    }
-    fragment fragA on Type {
-        fieldB
-    }
-    """,
+        {
+            ...fragA
+        }
+        fragment fragA on Type {
+            fieldA
+        }
+        fragment fragA on Type {
+            fieldB
+        }
+        """,
         ['There can only be one fragment named "fragA"'],
     )
 
@@ -119,12 +119,12 @@ def test_fragments_named_the_same_without_being_referenced(schema):
         UniqueFragmentNamesChecker,
         schema,
         """
-    fragment fragA on Type {
-        fieldA
-    }
-    fragment fragA on Type {
-        fieldB
-    }
-    """,
+        fragment fragA on Type {
+            fieldA
+        }
+        fragment fragA on Type {
+            fieldB
+        }
+        """,
         ['There can only be one fragment named "fragA"'],
     )

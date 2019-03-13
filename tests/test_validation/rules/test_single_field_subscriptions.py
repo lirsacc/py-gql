@@ -17,9 +17,10 @@ def test_valid_subscription(schema):
         SingleFieldSubscriptionsChecker,
         schema,
         """
-    subscription ImportantEmails {
-        importantEmails
-    }""",
+        subscription ImportantEmails {
+            importantEmails
+        }
+        """,
     )
 
 
@@ -28,10 +29,11 @@ def test_fails_with_more_than_one_root_field(schema):
         SingleFieldSubscriptionsChecker,
         schema,
         """
-    subscription ImportantEmails {
-        importantEmails
-        notImportantEmails
-    }""",
+        subscription ImportantEmails {
+            importantEmails
+            notImportantEmails
+        }
+        """,
         [
             'Subscription "ImportantEmails" must select only one '
             "top level field."
@@ -44,11 +46,11 @@ def test_fails_with_more_than_one_root_field_including_introspection(schema):
         SingleFieldSubscriptionsChecker,
         schema,
         """
-    subscription ImportantEmails {
-        importantEmails
-        __typename
-    }
-    """,
+        subscription ImportantEmails {
+            importantEmails
+            __typename
+        }
+        """,
         [
             'Subscription "ImportantEmails" must select only one '
             "top level field."
@@ -61,12 +63,12 @@ def test_fails_with_many_more_than_one_root_field(schema):
         SingleFieldSubscriptionsChecker,
         schema,
         """
-    subscription ImportantEmails {
-        importantEmails
-        notImportantEmails
-        spamEmails
+        subscription ImportantEmails {
+            importantEmails
+            notImportantEmails
+            spamEmails
         }
-    """,
+        """,
         [
             'Subscription "ImportantEmails" must select only one '
             "top level field."
@@ -79,10 +81,10 @@ def test_fails_with_more_than_one_root_field_in_anonymous_subscriptions(schema):
         SingleFieldSubscriptionsChecker,
         schema,
         """
-    subscription {
-        importantEmails
-        notImportantEmails
-    }
-    """,
+        subscription {
+            importantEmails
+            notImportantEmails
+        }
+        """,
         ["Subscription must select only one " "top level field."],
     )

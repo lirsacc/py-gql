@@ -112,7 +112,7 @@ def test_same_aliases_with_different_field_targets(schema):
             "different fields. Use different aliases on the fields to fetch "
             "both if this was intentional."
         ],
-        [[(76, 86), (99, 113)]],
+        [[(59, 69), (74, 88)]],
     )
 
 
@@ -148,7 +148,7 @@ def test_alias_masking_direct_field_access(schema):
             "fields. Use different aliases on the fields to fetch both if this "
             "was intentional."
         ],
-        [[(69, 83), (96, 100)]],
+        [[(52, 66), (71, 75)]],
     )
 
 
@@ -243,7 +243,7 @@ def test_encounters_conflict_in_fragments(schema):
             'Field(s) "x" conflict because "a" and "b" are different fields. Use '
             "different aliases on the fields to fetch both if this was intentional."
         ],
-        [[(96, 100), (152, 156)]],
+        [[(47, 51), (79, 83)]],
     )
 
 
@@ -286,9 +286,9 @@ def test_reports_each_conflict_once(schema):
             "intentional.",
         ],
         [
-            [(302, 306), (358, 362)],
-            [(232, 236), (302, 306)],
-            [(232, 236), (358, 362)],
+            [(165, 169), (197, 201)],
+            [(127, 131), (165, 169)],
+            [(127, 131), (197, 201)],
         ],
     )
 
@@ -312,7 +312,7 @@ def test_deep_conflict(schema):
             '("a" and "b" are different fields). Use different aliases '
             "on the fields to fetch both if this was intentional."
         ],
-        [[(23, 65), (47, 51), (79, 121), (103, 107)]],
+        [[(6, 32), (22, 26), (38, 64), (54, 58)]],
     )
 
 
@@ -338,7 +338,7 @@ def test_deep_conflict_with_multiple_issues(schema):
             '("c" and "d" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(23, 86), (47, 51), (68, 72), (100, 163), (124, 128), (145, 149)]],
+        [[(6, 45), (22, 26), (35, 39), (51, 90), (67, 71), (80, 84)]],
     )
 
 
@@ -366,7 +366,7 @@ def test_very_deep_conflict(schema):
             "Use different aliases on the fields to fetch both if this was "
             "intentional."
         ],
-        [[(23, 115), (47, 101), (79, 83), (129, 221), (153, 207), (185, 189)]],
+        [[(6, 66), (22, 60), (46, 50), (72, 132), (88, 126), (112, 116)]],
     )
 
 
@@ -396,7 +396,7 @@ def test_reports_deep_conflict_to_nearest_common_ancestor(schema):
             '("a" and "b" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(47, 101), (79, 83), (118, 172), (150, 154)]],
+        [[(22, 60), (46, 50), (69, 107), (93, 97)]],
     )
 
 
@@ -434,7 +434,7 @@ def test_reports_deep_conflict_to_nearest_common_ancestor_in_fragments(schema):
             '("a" and "b" are different fields). Use different aliases on the '
             "fields to fetch both if this was intentional."
         ],
-        [[(197, 253), (231, 235), (270, 326), (304, 308)]],
+        [[(108, 148), (134, 138), (157, 197), (183, 187)]],
     )
 
 
@@ -619,7 +619,7 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
             '("scalar" and "unrelatedField" are different fields). Use different '
             "aliases on the fields to fetch both if this was intentional."
         ],
-        [[(697, 748), (761, 812), (867, 873), (928, 950)]],
+        [[(456, 491), (496, 531), (562, 568), (599, 621)]],
     )
 
 
@@ -646,7 +646,7 @@ def test_disallows_differing_return_type_nullability_despite_no_overlap(
             "String! and String. Use different aliases on the fields to fetch "
             "both if this was intentional."
         ],
-        [[(96, 102), (176, 182)]],
+        [[(63, 69), (119, 125)]],
     )
 
 
