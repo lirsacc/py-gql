@@ -52,74 +52,75 @@ class Token(object):
 
 
 class ConstToken(Token):
-    __const__ = ""
+    value = ""
 
     def __init__(self, start: int, end: int):
-        super().__init__(start, end, self.__const__)
+        self.start = start
+        self.end = end
 
 
 class SOF(ConstToken):
-    __const__ = "<SOF>"
+    value = "<SOF>"
 
 
 class EOF(ConstToken):
-    __const__ = "<EOF>"
+    value = "<EOF>"
 
 
 class ExclamationMark(ConstToken):
-    __const__ = "!"
+    value = "!"
 
 
 class Dollar(ConstToken):
-    __const__ = "$"
+    value = "$"
 
 
 class ParenOpen(ConstToken):
-    __const__ = "("
+    value = "("
 
 
 class ParenClose(ConstToken):
-    __const__ = ")"
+    value = ")"
 
 
 class BracketOpen(ConstToken):
-    __const__ = "["
+    value = "["
 
 
 class BracketClose(ConstToken):
-    __const__ = "]"
+    value = "]"
 
 
 class CurlyOpen(ConstToken):
-    __const__ = "{"
+    value = "{"
 
 
 class CurlyClose(ConstToken):
-    __const__ = "}"
+    value = "}"
 
 
 class Colon(ConstToken):
-    __const__ = ":"
+    value = ":"
 
 
 class Equals(ConstToken):
-    __const__ = "="
+    value = "="
 
 
 class At(ConstToken):
-    __const__ = "@"
+    value = "@"
 
 
 class Pipe(ConstToken):
-    __const__ = "|"
+    value = "|"
 
 
 class Ampersand(ConstToken):
-    __const__ = "&"
+    value = "&"
 
 
 class Ellip(ConstToken):
-    __const__ = "..."
+    value = "..."
 
 
 class Integer(Token):

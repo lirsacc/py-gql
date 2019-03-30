@@ -20,7 +20,7 @@ def assert_node_equal(ref, expected):
     # import json
     # print(json.dumps(_ast.node_to_dict(ref), sort_keys=True, indent=4))
     # print(json.dumps(_ast.node_to_dict(expected), sort_keys=True, indent=4))
-    assert _ast.node_to_dict(ref) == _ast.node_to_dict(expected)
+    assert _ast.node_to_dict(expected) == _ast.node_to_dict(ref)
 
 
 # A few syntactic sugar helpers
@@ -729,64 +729,6 @@ def test_directive_with_incorrect_locations_fails():
 
     assert exc_info.value.position == 33
     assert exc_info.value.message == "Unexpected Name INCORRECT_LOCATION"
-
-
-class TestAllowLegacySdlEmptyFieldsOption(object):
-    def test_support_type_with_empty_fields(self):
-        body = "type Hello { }"
-
-        with pytest.raises(UnexpectedToken) as exc_info:
-            parse(body)
-
-        assert exc_info.value.position == 13
-        assert exc_info.value.message == 'Expected Name but found "}"'
-
-        assert_node_equal(
-            parse(body, allow_legacy_sdl_empty_fields=True),
-            _doc(
-                (0, 14),
-                [
-                    _ast.ObjectTypeDefinition(
-                        loc=(0, 14), name=_name((5, 10), "Hello")
-                    )
-                ],
-            ),
-        )
-
-
-class TestAllowLegacySdlImplementsInterfacesOption(object):
-    def test_it_works(self):
-        body = "type Hello implements Wo rld { field: String }"
-
-        with pytest.raises(UnexpectedToken) as exc_info:
-            parse(body)
-
-        assert exc_info.value.position == 25
-        assert exc_info.value.message == 'Unexpected "rld"'
-
-        assert_node_equal(
-            parse(body, allow_legacy_sdl_implements_interfaces=True),
-            _doc(
-                (0, 46),
-                [
-                    _ast.ObjectTypeDefinition(
-                        loc=(0, 46),
-                        name=_name((5, 10), "Hello"),
-                        interfaces=[
-                            _type((22, 24), "Wo"),
-                            _type((25, 28), "rld"),
-                        ],
-                        fields=[
-                            _field(
-                                (31, 44),
-                                _name((31, 36), "field"),
-                                _type((38, 44), "String"),
-                            )
-                        ],
-                    )
-                ],
-            ),
-        )
 
 
 def test_it_parses_kitchen_sink(fixture_file):

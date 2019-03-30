@@ -11,7 +11,6 @@
 
 from typing import Iterator, List, Optional, Union, cast
 
-from . import token
 from .._string_utils import ensure_unicode, parse_block_string
 from ..exc import (
     GraphQLSyntaxError,
@@ -20,6 +19,30 @@ from ..exc import (
     NonTerminatedString,
     UnexpectedCharacter,
     UnexpectedEOF,
+)
+from .token import (
+    EOF,
+    SOF,
+    Ampersand,
+    At,
+    BlockString,
+    BracketClose,
+    BracketOpen,
+    Colon,
+    CurlyClose,
+    CurlyOpen,
+    Dollar,
+    Ellip,
+    Equals,
+    ExclamationMark,
+    Float,
+    Integer,
+    Name,
+    ParenClose,
+    ParenOpen,
+    Pipe,
+    String,
+    Token,
 )
 
 EOL_CHARS = frozenset([0x000A, 0x000D])  # "\n"  # "\r"
@@ -30,21 +53,21 @@ IGNORED_CHARS = (
 )
 
 SYMBOLS = {
-    cls.__const__: cls
+    cls.value: cls
     for cls in (
-        token.ExclamationMark,
-        token.Dollar,
-        token.ParenOpen,
-        token.ParenClose,
-        token.BracketOpen,
-        token.BracketClose,
-        token.CurlyOpen,
-        token.CurlyClose,
-        token.Colon,
-        token.Equals,
-        token.At,
-        token.Pipe,
-        token.Ampersand,
+        ExclamationMark,
+        Dollar,
+        ParenOpen,
+        ParenClose,
+        BracketOpen,
+        BracketClose,
+        CurlyOpen,
+        CurlyClose,
+        Colon,
+        Equals,
+        At,
+        Pipe,
+        Ampersand,
     )
 }
 
@@ -71,7 +94,7 @@ def _unexpected(
         )
 
 
-class Lexer(Iterator[token.Token]):
+class Lexer(Iterator[Token]):
     """ Iterable GraphQL language lexer / tokenizer.
 
     This class is not typically exposed through the parser but can be used
@@ -104,9 +127,6 @@ class Lexer(Iterator[token.Token]):
             return self._source[self._position]
         except IndexError:
             return None
-
-    def _range(self, start: int = 0, end: int = 1) -> str:
-        return self._source[self._position + start : self._position + end]
 
     def _read_over_whitespace(self):
         """ Advance lexer over all ignored characters. """
@@ -141,7 +161,7 @@ class Lexer(Iterator[token.Token]):
 
         self._position = pos
 
-    def _read_ellipsis(self) -> token.Ellip:
+    def _read_ellipsis(self) -> Ellip:
         """ Advance lexer over an ellipsis token (...).
         """
         start = self._position
@@ -152,9 +172,9 @@ class Lexer(Iterator[token.Token]):
                 raise _unexpected(
                     ".", cast(str, char), self._position, self._source
                 )
-        return token.Ellip(start, self._position)
+        return Ellip(start, self._position)
 
-    def _read_string(self) -> token.String:
+    def _read_string(self) -> String:
         """ Advance lexer over a quoted string.
         """
         start = self._position
@@ -171,7 +191,7 @@ class Lexer(Iterator[token.Token]):
 
             if char == '"':
                 value = "".join(acc)
-                return token.String(start, self._position, value)
+                return String(start, self._position, value)
             elif char == "\\":
                 acc.append(self._read_escape_sequence())
             elif code == 0x000A or code == 0x000D:  # \n or \r
@@ -183,7 +203,7 @@ class Lexer(Iterator[token.Token]):
 
         raise NonTerminatedString("", self._position, self._source)
 
-    def _read_block_string(self) -> token.BlockString:
+    def _read_block_string(self) -> BlockString:
         """ Advance lexer over a triple quoted block string.
         """
         start = self._position
@@ -198,15 +218,15 @@ class Lexer(Iterator[token.Token]):
 
             code = ord(char)
 
-            if self._range(0, 3) == '"""':
+            if self._source[self._position : self._position + 3] == '"""':
                 self._position += 3
                 value = parse_block_string("".join(acc))
-                return token.BlockString(start, self._position, value)
+                return BlockString(start, self._position, value)
 
             self._position += 1
 
             if char == "\\":
-                if self._range(0, 3) == '"""':
+                if self._source[self._position : self._position + 3] == '"""':
                     for _ in range(3):
                         acc.append(cast(str, self._peek()))
                         self._position += 1
@@ -268,7 +288,7 @@ class Lexer(Iterator[token.Token]):
                 "\\u%s" % escape, start - 1, self._source
             )
 
-    def _read_number(self) -> Union[token.Integer, token.Float]:
+    def _read_number(self) -> Union[Integer, Float]:
         """ Advance lexer over a number
         """
         start = self._position
@@ -301,9 +321,7 @@ class Lexer(Iterator[token.Token]):
         end = self._position
         value = self._source[start:end]
         return (
-            token.Float(start, end, value)
-            if is_float
-            else token.Integer(start, end, value)
+            Float(start, end, value) if is_float else Integer(start, end, value)
         )
 
     def _read_over_integer(self):
@@ -339,17 +357,16 @@ class Lexer(Iterator[token.Token]):
             )
 
         while True:
-            char = self._peek()
             if char is not None and 0x0030 <= ord(char) <= 0x0039:
                 self._position += 1
+                char = self._peek()
             else:
                 break
 
-    def _read_name(self) -> token.Name:
+    def _read_name(self) -> Name:
         """ Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
         """
         start = self._position
-        char = self._peek()
         while True:
             char = self._peek()
             if char is None:
@@ -366,15 +383,14 @@ class Lexer(Iterator[token.Token]):
             else:
                 break
 
-        end = self._position
-        value = self._source[start:end]
-        return token.Name(start, end, value)
+        value = self._source[start : self._position]
+        return Name(start, self._position, value)
 
-    def __iter__(self) -> Iterator[token.Token]:
+    def __iter__(self) -> Iterator[Token]:
         return self
 
-    def __next__(self) -> token.Token:
-        """ Advance lexer and return the next :class:`py_gql.lang.token.Token`
+    def __next__(self) -> Token:
+        """ Advance lexer and return the next :class:`py_gql.lang.Token`
         instance.
 
         Raises:
@@ -388,14 +404,14 @@ class Lexer(Iterator[token.Token]):
 
         if not self._started:
             self._started = True
-            return token.SOF(0, 0)
+            return SOF(0, 0)
 
         self._read_over_whitespace()
         char = self._peek()
 
         if char is None:
             self._done = True
-            return token.EOF(self._position, self._position)
+            return EOF(self._position, self._position)
 
         code = ord(char)
 
@@ -409,7 +425,7 @@ class Lexer(Iterator[token.Token]):
             return SYMBOLS[char](start, self._position)
         elif char == ".":
             return self._read_ellipsis()
-        elif self._range(0, 3) == '"""':
+        elif self._source[self._position : self._position + 3] == '"""':
             return self._read_block_string()
         elif char == '"':
             return self._read_string()

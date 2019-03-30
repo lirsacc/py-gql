@@ -15,11 +15,35 @@ from typing import (
     cast,
 )
 
-from . import ast as _ast, token as _token
+from . import ast as _ast
 from ..exc import GraphQLSyntaxError, UnexpectedEOF, UnexpectedToken
 from .lexer import Lexer
+from .token import (
+    EOF,
+    SOF,
+    Ampersand,
+    At,
+    BlockString,
+    BracketClose,
+    BracketOpen,
+    Colon,
+    CurlyClose,
+    CurlyOpen,
+    Dollar,
+    Ellip,
+    Equals,
+    ExclamationMark,
+    Float,
+    Integer,
+    Name,
+    ParenClose,
+    ParenOpen,
+    Pipe,
+    String,
+    Token,
+)
 
-DIRECTIVE_LOCATIONS = (
+DIRECTIVE_LOCATIONS = frozenset([
     "QUERY",
     "MUTATION",
     "SUBSCRIPTION",
@@ -39,18 +63,18 @@ DIRECTIVE_LOCATIONS = (
     "ENUM_VALUE",
     "INPUT_OBJECT",
     "INPUT_FIELD_DEFINITION",
-)
+])
 
 
-EXECUTABLE_DEFINITIONS_KEYWORDS = (
+EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset([
     "query",
     "mutation",
     "subscription",
     "fragment",
-)
+])
 
 
-SCHEMA_DEFINITIONS_KEYWORDS = (
+SCHEMA_DEFINITIONS_KEYWORDS = frozenset([
     "schema",
     "scalar",
     "type",
@@ -59,27 +83,24 @@ SCHEMA_DEFINITIONS_KEYWORDS = (
     "enum",
     "input",
     "directive",
-)
+])
 
-OPERATION_TYPES_KEYWORDS = ("query", "mutation", "subscription")
+OPERATION_TYPES_KEYWORDS = frozenset(["query", "mutation", "subscription"])
 
-Kind = Type[_token.Token]
+Kind = Type[Token]
 K = TypeVar("K", bound=Kind)
 N = TypeVar("N", bound=_ast.Node)
+LocCallable = Callable[[Token], Optional[Tuple[int, int]]]
 
 
 def _unexpected(
-    msg_or_token: Union[str, _token.Token], position: int, source: str
+    msg_or_token: Union[str, Token], position: int, source: str
 ) -> GraphQLSyntaxError:
-    if isinstance(msg_or_token, _token.Token):
-        if isinstance(msg_or_token, _token.EOF):
+    if isinstance(msg_or_token, Token):
+        if isinstance(msg_or_token, EOF):
             return UnexpectedEOF(position, source)
         msg_or_token = 'Unexpected "%s"' % msg_or_token
     return UnexpectedToken(msg_or_token, position, source)
-
-
-def _is(token: Any, kind: Kind) -> bool:
-    return token.__class__ is kind
 
 
 def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
@@ -114,9 +135,9 @@ def parse_value(
         :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
-    parser.expect(_token.SOF)
+    parser.expect(SOF)
     value = parser.parse_value_literal(False)
-    parser.expect(_token.EOF)
+    parser.expect(EOF)
     return value
 
 
@@ -135,9 +156,9 @@ def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
         :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
     """
     parser = Parser(source, **kwargs)
-    parser.expect(_token.SOF)
+    parser.expect(SOF)
     value = parser.parse_type_reference()
-    parser.expect(_token.EOF)
+    parser.expect(EOF)
     return value
 
 
@@ -161,24 +182,6 @@ class Parser(object):
             By default, the parser will accept schema definition nodes, when
             only executing GraphQL queries setting this to ``False`` can save
             operations and remove the need for some later validation.
-
-        allow_legacy_sdl_empty_fields (bool):
-            If enabled, the parser will parse empty fields sets in the Schema
-            Definition Language. Otherwise, the parser will follow the current
-            specification.
-
-            Warning:
-                This option is provided to ease adoption of the final SDL
-                specification and will be removed in a future major release.
-
-        allow_legacy_sdl_implements_interfaces (bool):
-            If enabled, the parser will parse implemented interfaces with no
-            ``&`` character between each interface. Otherwise, the parser will
-            follow the current specification.
-
-            Warning:
-                This option is provided to ease adoption of the final SDL
-                specification and will be removed in a future major release.
 
         experimental_fragment_variables (bool):
             If enabled, the parser will understand and parse variable
@@ -206,8 +209,6 @@ class Parser(object):
         "_source",
         "_loc",
         "_allow_type_system",
-        "_allow_legacy_sdl_empty_fields",
-        "_allow_legacy_sdl_implements_interfaces",
         "_experimental_fragment_variables",
         "_buffer",
         "_last",
@@ -218,46 +219,42 @@ class Parser(object):
         source: Union[str, bytes],
         no_location: bool = False,
         allow_type_system: bool = True,
-        allow_legacy_sdl_empty_fields: bool = False,
-        allow_legacy_sdl_implements_interfaces: bool = False,
         experimental_fragment_variables: bool = False,
     ):
         self._lexer = Lexer(source)
         self._source = self._lexer._source
 
         self._allow_type_system = allow_type_system
-        self._allow_legacy_sdl_empty_fields = allow_legacy_sdl_empty_fields
-        self._allow_legacy_sdl_implements_interfaces = (
-            allow_legacy_sdl_implements_interfaces
-        )
         self._experimental_fragment_variables = experimental_fragment_variables
 
-        _Loc = Callable[[_token.Token], Optional[Tuple[int, int]]]
         if no_location:
-            self._loc = lambda _: None  # type: _Loc
+            self._loc = lambda _: None  # type: LocCallable
         else:
             self._loc = lambda start: (
                 start.start,
                 self._last.end,
-            )  # type: _Loc
+            )  # type: LocCallable
 
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead
         # semantics and can only be consumed once.
         # TODO: Do we need dequeue here or can we go with a list?
-        self._buffer = collections.deque()  # type: Deque[_token.Token]
+        self._buffer = collections.deque()  # type: Deque[Token]
 
-    def _advance_window(self):
+    def _advance_window(self, by=1):
         """ Advance the parsing window by one element.
         Raise ``py_gql.exc.UnexpectedEOF`` error when trying to advance past
         EOF when parsing window is empty. """
-        try:
-            self._buffer.appendleft(next(self._lexer))
-        except StopIteration:
-            if len(self._buffer) == 0:
-                raise UnexpectedEOF(self._lexer._len, self._lexer._source)
+        c = 0
+        while c < by:
+            try:
+                self._buffer.appendleft(next(self._lexer))
+                c += 1
+            except StopIteration:
+                if len(self._buffer) == 0:
+                    raise UnexpectedEOF(self._lexer._len, self._lexer._source)
 
-    def peek(self, count: int = 1) -> _token.Token:
+    def peek(self, count: int = 1) -> Token:
         """ Look at a token ahead of the current position without advancing the
         parsing position.
 
@@ -268,12 +265,13 @@ class Parser(object):
             :class:`~py_gql.exc.UnexpectedEOF`:
                 if there is not enough tokens left in the lexer.
         """
-        for _ in range(count - len(self._buffer)):
-            self._advance_window()
+        delta = count - len(self._buffer)
+        if delta:
+            self._advance_window(by=delta)
 
         return self._buffer[-count]
 
-    def advance(self) -> _token.Token:
+    def advance(self) -> Token:
         """ Move parsing window forward and return the next token.
 
         Raises:
@@ -286,7 +284,7 @@ class Parser(object):
         self._last = self._buffer.pop()
         return self._last
 
-    def expect(self, kind: Kind) -> _token.Token:
+    def expect(self, kind: Kind) -> Token:
         """ Advance the parser and check that the next token is of the
         given token class otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
@@ -295,7 +293,7 @@ class Parser(object):
                 :class:`py_gql.lang.token.Token`
         """
         next_token = self.peek()
-        if _is(next_token, kind):
+        if next_token.__class__ is kind:
             return self.advance()
 
         raise _unexpected(
@@ -304,7 +302,7 @@ class Parser(object):
             self._lexer._source,
         )
 
-    def expect_keyword(self, keyword: str) -> _token.Name:
+    def expect_keyword(self, keyword: str) -> Name:
         """ Advance the parser and check that the next token is a Name with
         the given value otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
@@ -312,8 +310,8 @@ class Parser(object):
             keyword (str): Expected keyword
         """
         next_token = self.peek()
-        if _is(next_token, _token.Name) and next_token.value == keyword:
-            return cast(_token.Name, self.advance())
+        if next_token.__class__ is Name and next_token.value == keyword:
+            return cast(Name, self.advance())
 
         raise _unexpected(
             'Expected "%s" but found "%s"' % (keyword, next_token),
@@ -330,7 +328,7 @@ class Parser(object):
             kind: Token kind to read over. Must be a subclass of
                 :class:`py_gql.lang.token.Token`
         """
-        if _is(self.peek(), kind):
+        if self.peek().__class__ is kind:
             self.advance()
             return True
         return False
@@ -421,11 +419,11 @@ class Parser(object):
         """ Document : Definition+
         """
         start = self.peek()
-        self.expect(_token.SOF)
+        self.expect(SOF)
         definitions = []
         while True:
             definitions.append(self.parse_definition())
-            if self.skip(_token.EOF):
+            if self.skip(EOF):
                 break
 
         return _ast.Document(
@@ -439,7 +437,7 @@ class Parser(object):
         was set to ``False``.
         """
         start = self.peek()
-        if _is(start, _token.Name):
+        if start.__class__ is Name:
             if start.value in EXECUTABLE_DEFINITIONS_KEYWORDS:
                 return self.parse_executable_definition()
             elif self._allow_type_system:
@@ -447,10 +445,10 @@ class Parser(object):
                     return self.parse_type_system_definition()
                 elif start.value == "extend":
                     return self.parse_type_system_extension()
-        elif _is(start, _token.CurlyOpen):
+        elif start.__class__ is CurlyOpen:
             return self.parse_executable_definition()
         elif self._allow_type_system and (
-            _is(start, _token.String) or _is(start, _token.BlockString)
+            start.__class__ is String or start.__class__ is BlockString
         ):
             return self.parse_type_system_definition()
 
@@ -459,7 +457,7 @@ class Parser(object):
     def parse_name(self) -> _ast.Name:
         """ Convert a name lex token into a name parse node.
         """
-        token = self.expect(_token.Name)
+        token = self.expect(Name)
         return _ast.Name(
             value=token.value, loc=self._loc(token), source=self._source
         )
@@ -468,12 +466,12 @@ class Parser(object):
         """ ExecutableDefinition : OperationDefinition | FragmentDefinition
         """
         start = self.peek()
-        if _is(start, _token.Name):
+        if start.__class__ is Name:
             if start.value in OPERATION_TYPES_KEYWORDS:
                 return self.parse_operation_definition()
             elif start.value == "fragment":
                 return self.parse_fragment_definition()
-        elif _is(start, _token.CurlyOpen):
+        elif start.__class__ is CurlyOpen:
             return self.parse_operation_definition()
         raise _unexpected(start, start.start, self._lexer._source)
 
@@ -482,7 +480,7 @@ class Parser(object):
         | OperationType Name? VariableDefinitions? Directives? SelectionSet
         """
         start = self.peek()
-        if _is(start, _token.CurlyOpen):
+        if start.__class__ is CurlyOpen:
             return _ast.OperationDefinition(
                 operation="query",
                 name=None,
@@ -495,7 +493,7 @@ class Parser(object):
 
         return _ast.OperationDefinition(
             operation=self.parse_operation_type(),
-            name=self.parse_name() if _is(self.peek(), _token.Name) else None,
+            name=self.parse_name() if self.peek().__class__ is Name else None,
             variable_definitions=self.parse_variable_definitions(),
             directives=self.parse_directives(False),
             selection_set=self.parse_selection_set(),
@@ -505,7 +503,7 @@ class Parser(object):
     def parse_operation_type(self) -> str:
         """ OperationType : one of "query" "mutation" "subscription"
         """
-        token = self.expect(_token.Name)
+        token = self.expect(Name)
         if token.value in ("query", "mutation", "subscription"):
             return token.value
         raise _unexpected(token, token.start, self._lexer._source)
@@ -516,11 +514,11 @@ class Parser(object):
         Returns:
             List[py_gql.lang.ast.VariableDefinition]:
         """
-        if _is(self.peek(), _token.ParenOpen):
+        if self.peek().__class__ is ParenOpen:
             return self.many(
-                _token.ParenOpen,
+                ParenOpen,
                 self.parse_variable_definition,
-                _token.ParenClose,
+                ParenClose,
             )
         return []
 
@@ -532,11 +530,11 @@ class Parser(object):
             variable=self.parse_variable(),
             type=cast(
                 _ast.Type,
-                self.expect(_token.Colon) and self.parse_type_reference(),
+                self.expect(Colon) and self.parse_type_reference(),
             ),
             default_value=(
                 cast(_ast.Value, self.parse_value_literal(True))
-                if self.skip(_token.Equals)
+                if self.skip(Equals)
                 else None
             ),
             loc=self._loc(start),
@@ -547,7 +545,7 @@ class Parser(object):
         """ Variable : $ Name
         """
         start = self.peek()
-        self.expect(_token.Dollar)
+        self.expect(Dollar)
         return _ast.Variable(
             name=self.parse_name(), loc=self._loc(start), source=self._source
         )
@@ -558,7 +556,7 @@ class Parser(object):
         start = self.peek()
         return _ast.SelectionSet(
             selections=self.many(
-                _token.CurlyOpen, self.parse_selection, _token.CurlyClose
+                CurlyOpen, self.parse_selection, CurlyClose
             ),
             loc=self._loc(start),
             source=self._source,
@@ -567,7 +565,7 @@ class Parser(object):
     def parse_selection(self) -> _ast.Selection:
         """ Selection : Field | FragmentSpread | InlineFragment
         """
-        if _is(self.peek(), _token.Ellip):
+        if self.peek().__class__ is Ellip:
             return self.parse_fragment()
         return self.parse_field()
 
@@ -578,7 +576,7 @@ class Parser(object):
         """
         start = self.peek()
         name_or_alias = self.parse_name()
-        if self.skip(_token.Colon):
+        if self.skip(Colon):
             alias = name_or_alias  # type: Optional[_ast.Name]
             name = self.parse_name()  # type: _ast.Name
         else:
@@ -591,7 +589,7 @@ class Parser(object):
             directives=self.parse_directives(False),
             selection_set=(
                 self.parse_selection_set()
-                if _is(self.peek(), _token.CurlyOpen)
+                if self.peek().__class__ is CurlyOpen
                 else None
             ),
             loc=self._loc(start),
@@ -604,11 +602,11 @@ class Parser(object):
         Args:
             const: Whether or not to parse the Const variant
         """
-        if _is(self.peek(), _token.ParenOpen):
+        if self.peek().__class__ is ParenOpen:
             return self.many(
-                _token.ParenOpen,
+                ParenOpen,
                 ft.partial(self.parse_argument, const),
-                _token.ParenClose,
+                ParenClose,
             )
         return []
 
@@ -623,7 +621,7 @@ class Parser(object):
             name=self.parse_name(),
             value=cast(
                 Union[_ast.Value, _ast.Variable],
-                self.expect(_token.Colon) and self.parse_value_literal(const),
+                self.expect(Colon) and self.parse_value_literal(const),
             ),
             loc=self._loc(start),
             source=self._source,
@@ -636,10 +634,10 @@ class Parser(object):
         - InlineFragment : ... TypeCondition? Directives? SelectionSet
         """
         start = self.peek()
-        self.expect(_token.Ellip)
+        self.expect(Ellip)
 
         lead = self.peek()
-        if _is(lead, _token.Name) and lead.value != "on":
+        if lead.__class__ is Name and lead.value != "on":
             return _ast.FragmentSpread(
                 name=self.parse_fragment_name(),
                 directives=self.parse_directives(False),
@@ -710,23 +708,23 @@ class Parser(object):
         kind = type(token)
         value = token.value
 
-        if kind == _token.BracketOpen:
+        if kind == BracketOpen:
             return self.parse_list(const)
-        elif kind == _token.CurlyOpen:
+        elif kind == CurlyOpen:
             return self.parse_object(const)
-        elif kind == _token.Integer:
+        elif kind == Integer:
             self.advance()
             return _ast.IntValue(
                 value=value, loc=self._loc(token), source=self._source
             )
-        elif kind == _token.Float:
+        elif kind == Float:
             self.advance()
             return _ast.FloatValue(
                 value=value, loc=self._loc(token), source=self._source
             )
-        elif kind in (_token.String, _token.BlockString):
+        elif kind in (String, BlockString):
             return self.parse_string_literal()
-        elif kind == _token.Name:
+        elif kind == Name:
             if value in ("true", "false"):
                 self.advance()
                 return _ast.BooleanValue(
@@ -742,7 +740,7 @@ class Parser(object):
                 return _ast.EnumValue(
                     value=value, loc=self._loc(token), source=self._source
                 )
-        elif kind == _token.Dollar and not const:
+        elif kind == Dollar and not const:
             return self.parse_variable()
         raise _unexpected(token, token.start, self._lexer._source)
 
@@ -751,7 +749,7 @@ class Parser(object):
 
         return _ast.StringValue(
             value=token.value,
-            block=_is(token, _token.BlockString),
+            block=token.__class__ is BlockString,
             loc=self._loc(token),
             source=self._source,
         )
@@ -765,9 +763,9 @@ class Parser(object):
         start = self.peek()
         return _ast.ListValue(
             values=self.any_(
-                _token.BracketOpen,
+                BracketOpen,
                 ft.partial(self.parse_value_literal, const),
-                _token.BracketClose,
+                BracketClose,
             ),
             loc=self._loc(start),
             source=self._source,
@@ -779,9 +777,9 @@ class Parser(object):
         Args:
             const: Whether or not to parse the Const variant
         """
-        start = self.expect(_token.CurlyOpen)
+        start = self.expect(CurlyOpen)
         fields = []
-        while not self.skip(_token.CurlyClose):
+        while not self.skip(CurlyClose):
             fields.append(self.parse_object_field(const))
         return _ast.ObjectValue(
             fields=fields, loc=self._loc(start), source=self._source
@@ -801,7 +799,7 @@ class Parser(object):
             name=self.parse_name(),
             value=cast(
                 _ast.Value,
-                self.expect(_token.Colon) and self.parse_value_literal(const),
+                self.expect(Colon) and self.parse_value_literal(const),
             ),
             loc=self._loc(start),
             source=self._source,
@@ -814,7 +812,7 @@ class Parser(object):
             const: Whether or not to parse the Const variant
         """
         directives = []
-        while _is(self.peek(), _token.At):
+        while self.peek().__class__ is At:
             directives.append(self.parse_directive(const))
         return directives
 
@@ -824,7 +822,7 @@ class Parser(object):
         Args:
             const: Whether or not to parse the Const variant
         """
-        start = self.expect(_token.At)
+        start = self.expect(At)
         return _ast.Directive(
             name=self.parse_name(),
             arguments=self.parse_arguments(const),
@@ -837,16 +835,16 @@ class Parser(object):
         """
         start = self.peek()
 
-        if self.skip(_token.BracketOpen):
+        if self.skip(BracketOpen):
             inner_type = self.parse_type_reference()
-            self.expect(_token.BracketClose)
+            self.expect(BracketClose)
             type_ = _ast.ListType(
                 type=inner_type, loc=self._loc(start), source=self._source
             )  # type: Union[_ast.ListType, _ast.NamedType]
         else:
             type_ = self.parse_named_type()
 
-        if self.skip(_token.ExclamationMark):
+        if self.skip(ExclamationMark):
             return _ast.NonNullType(
                 type=type_, loc=self._loc(start), source=self._source
             )
@@ -872,11 +870,14 @@ class Parser(object):
         next_ = self.peek()
         keyword = (
             self.peek(2)
-            if _is(next_, _token.String) or _is(next_, _token.BlockString)
+            if (
+                next_.__class__ is String
+                or next_.__class__ is BlockString
+            )
             else next_
         )
 
-        if type(keyword) == _token.Name:
+        if type(keyword) == Name:
             if keyword.value == "schema":
                 return self.parse_schema_definition()
             elif keyword.value == "scalar":
@@ -902,7 +903,10 @@ class Parser(object):
         next_ = self.peek()
         return (
             self.parse_string_literal()
-            if _is(next_, _token.String) or _is(next_, _token.BlockString)
+            if (
+                next_.__class__ is String
+                or next_.__class__ is BlockString
+            )
             else None
         )
 
@@ -914,9 +918,9 @@ class Parser(object):
         return _ast.SchemaDefinition(
             directives=self.parse_directives(True),
             operation_types=self.many(
-                _token.CurlyOpen,
+                CurlyOpen,
                 self.parse_operation_type_definition,
-                _token.CurlyClose,
+                CurlyClose,
             ),
             loc=self._loc(start),
             source=self._source,
@@ -927,7 +931,7 @@ class Parser(object):
         """
         start = self.peek()
         operation = self.parse_operation_type()
-        self.expect(_token.Colon)
+        self.expect(Colon)
         return _ast.OperationTypeDefinition(
             operation=operation,
             type=self.parse_named_type(),
@@ -974,29 +978,19 @@ class Parser(object):
         types = []
         if token.value == "implements":
             self.advance()
-            self.skip(_token.Ampersand)
+            self.skip(Ampersand)
             while True:
                 types.append(self.parse_named_type())
-                if not (
-                    self.skip(_token.Ampersand)
-                    or (
-                        self._allow_legacy_sdl_implements_interfaces
-                        and _is(self.peek(), _token.Name)
-                    )
-                ):
+                if not self.skip(Ampersand):
                     break
         return types
 
     def parse_fields_definition(self) -> List[_ast.FieldDefinition]:
         """ FieldsDefinition : { FieldDefinition+ }
         """
-        if _is(self.peek(), _token.CurlyOpen):
-            if self._allow_legacy_sdl_empty_fields:
-                func = self.any_
-            else:
-                func = self.many
-            return func(
-                _token.CurlyOpen, self.parse_field_definition, _token.CurlyClose
+        if self.peek().__class__ is CurlyOpen:
+            return self.many(
+                CurlyOpen, self.parse_field_definition, CurlyClose
             )
         return []
 
@@ -1007,7 +1001,7 @@ class Parser(object):
         start = self.peek()
         desc, name = self.parse_description(), self.parse_name()
         args = self.parse_argument_definitions()
-        self.expect(_token.Colon)
+        self.expect(Colon)
         return _ast.FieldDefinition(
             description=desc,
             name=name,
@@ -1023,11 +1017,11 @@ class Parser(object):
         """
         return (
             self.many(
-                _token.ParenOpen,
+                ParenOpen,
                 self.parse_input_value_definition,
-                _token.ParenClose,
+                ParenClose,
             )
-            if _is(self.peek(), _token.ParenOpen)
+            if self.peek().__class__ is ParenOpen
             else []
         )
 
@@ -1037,14 +1031,14 @@ class Parser(object):
         """
         start = self.peek()
         desc, name = self.parse_description(), self.parse_name()
-        self.expect(_token.Colon)
+        self.expect(Colon)
         return _ast.InputValueDefinition(
             description=desc,
             name=name,
             type=self.parse_type_reference(),
             default_value=(
                 cast(_ast.Value, self.parse_value_literal(True))
-                if self.skip(_token.Equals)
+                if self.skip(Equals)
                 else None
             ),
             directives=self.parse_directives(True),
@@ -1087,8 +1081,8 @@ class Parser(object):
     def parse_union_member_types(self) -> List[_ast.NamedType]:
         """ UnionMemberTypes : = `|`? NamedType | UnionMemberTypes | NamedType
         """
-        if self.skip(_token.Equals):
-            return self.delimited_list(_token.Pipe, self.parse_named_type)
+        if self.skip(Equals):
+            return self.delimited_list(Pipe, self.parse_named_type)
         return []
 
     def parse_enum_type_definition(self) -> _ast.EnumTypeDefinition:
@@ -1112,11 +1106,11 @@ class Parser(object):
         """
         return (
             self.many(
-                _token.CurlyOpen,
+                CurlyOpen,
                 self.parse_enum_value_definition,
-                _token.CurlyClose,
+                CurlyClose,
             )
-            if _is(self.peek(), _token.CurlyOpen)
+            if self.peek().__class__ is CurlyOpen
             else []
         )
 
@@ -1157,11 +1151,11 @@ class Parser(object):
         """
         return (
             self.many(
-                _token.CurlyOpen,
+                CurlyOpen,
                 self.parse_input_value_definition,
-                _token.CurlyClose,
+                CurlyClose,
             )
-            if _is(self.peek(), _token.CurlyOpen)
+            if self.peek().__class__ is CurlyOpen
             else []
         )
 
@@ -1173,7 +1167,7 @@ class Parser(object):
         InputObjectTypeDefinition
         """
         keyword = self.peek(2)
-        if _is(keyword, _token.Name):
+        if keyword.__class__ is Name:
             if keyword.value == "schema":
                 return self.parse_schema_extension()
             elif keyword.value == "scalar":
@@ -1199,11 +1193,11 @@ class Parser(object):
         self.expect_keyword("extend")
         self.expect_keyword("schema")
         directives = self.parse_directives(True)
-        if _is(self.peek(), _token.CurlyOpen):
+        if self.peek().__class__ is CurlyOpen:
             operation_types = self.many(
-                _token.CurlyOpen,
+                CurlyOpen,
                 self.parse_operation_type_definition,
-                _token.CurlyClose,
+                CurlyClose,
             )
         else:
             operation_types = []
@@ -1356,7 +1350,7 @@ class Parser(object):
         start = self.peek()
         desc = self.parse_description()
         self.expect_keyword("directive")
-        self.expect(_token.At)
+        self.expect(At)
         name = self.parse_name()
         args = self.parse_argument_definitions()
         self.expect_keyword("on")
@@ -1373,7 +1367,7 @@ class Parser(object):
         """ DirectiveLocations : \
         `|`? DirectiveLocation `|` DirectiveLocations `|` DirectiveLocation
         """
-        return self.delimited_list(_token.Pipe, self.parse_directive_location)
+        return self.delimited_list(Pipe, self.parse_directive_location)
 
     def parse_directive_location(self) -> _ast.Name:
         """ DirectiveLocation : ExecutableDirectiveLocation \
