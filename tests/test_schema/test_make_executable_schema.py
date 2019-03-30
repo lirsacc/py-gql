@@ -858,8 +858,8 @@ def test_inject_resolvers():
 
     assert (
         schema.query_type
-        and schema.query_type.fields[0].resolve
-        and schema.query_type.fields[0].resolve() == "foo"
+        and schema.query_type.fields[0].resolver
+        and schema.query_type.fields[0].resolver() == "foo"
     )
 
 
@@ -879,8 +879,8 @@ def test_inject_resolvers_as_flat_map():
 
     assert (
         schema.query_type
-        and schema.query_type.fields[0].resolve
-        and schema.query_type.fields[0].resolve() == "foo"
+        and schema.query_type.fields[0].resolver
+        and schema.query_type.fields[0].resolver() == "foo"
     )
 
 
@@ -896,8 +896,8 @@ def test_inject_resolvers_as_callable():
 
     assert (
         schema.query_type
-        and schema.query_type.fields[0].resolve
-        and schema.query_type.fields[0].resolve() == "foo"
+        and schema.query_type.fields[0].resolver
+        and schema.query_type.fields[0].resolver() == "foo"
     )
 
 

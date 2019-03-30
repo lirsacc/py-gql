@@ -35,7 +35,7 @@ async def run_test(
         "DataType",
         [
             Field("test", test_type),
-            Field("nest", lambda: data_type, resolve=lambda *_: data),
+            Field("nest", lambda: data_type, resolver=lambda *_: data),
         ],
     )  # type: ObjectType
     schema = Schema(data_type)

@@ -228,7 +228,7 @@ class SchemaDirective(SchemaVisitor):
                 args=field_definition.args,
                 description=field_definition.description,
                 deprecation_reason=field_definition.deprecation_reason,
-                resolve=lambda *a, **kw: field_definition.resolve(*a, **kw).upper(),
+                resolver=lambda *a, **kw: field_definition.resolver(*a, **kw).upper(),
                 node=field_definition.node,
             )
 

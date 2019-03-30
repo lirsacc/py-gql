@@ -61,7 +61,7 @@ def _inspect(name):
 
 
 _field = lambda name, argType, **kw: Field(
-    name, String, [Argument("input", argType, **kw)], resolve=_inspect("input")
+    name, String, [Argument("input", argType, **kw)], resolver=_inspect("input")
 )
 
 TestType = ObjectType(
@@ -774,7 +774,7 @@ class TestNonNullArguments(object):
                     "withNonNullArg",
                     String,
                     args=[Argument("cannotBeNull", NonNullType(String))],
-                    resolve=lambda *_, **args: json.dumps(
+                    resolver=lambda *_, **args: json.dumps(
                         args.get("cannotBeNull", "NOT PROVIDED")
                     ),
                 )

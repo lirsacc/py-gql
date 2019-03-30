@@ -27,7 +27,7 @@ from py_gql.utilities import default_resolver
 
 
 def wrap_resolver(field_def, func):
-    source_resolver = field_def.resolve or default_resolver
+    source_resolver = field_def.resolver or default_resolver
 
     @ft.wraps(source_resolver)
     def wrapped(parent_value, context, info, **args):
@@ -42,7 +42,7 @@ def wrap_resolver(field_def, func):
         description=field_def.description,
         deprecation_reason=field_def.deprecation_reason,
         args=field_def.arguments,
-        resolve=wrapped,
+        resolver=wrapped,
         node=field_def.node,
     )
 
@@ -167,7 +167,7 @@ def test_object_modifier_and_field_modifier():
                 name=object_definition.name,
                 description=object_definition.description,
                 fields=(
-                    [Field(self.name, String, resolve=self.resolve)]
+                    [Field(self.name, String, resolver=self.resolve)]
                     + object_definition.fields
                 ),
                 interfaces=object_definition.interfaces,

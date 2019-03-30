@@ -71,7 +71,7 @@ async def test_ObjectType_is_type_of_for_interface_runtime_inference(
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],
@@ -119,7 +119,7 @@ async def test_ObjectType_is_type_of_for_union_runtime_inference(executor_cls):
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],
@@ -182,7 +182,7 @@ async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                         Human("Jon"),
@@ -244,7 +244,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                         Human("Jon"),
@@ -302,7 +302,7 @@ async def test_type_resolution_supports_strings(executor_cls):
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],
@@ -362,7 +362,7 @@ async def test_type_resolution_supports_object_attribute(executor_cls):
                 Field(
                     "pets",
                     ListType(PetType),
-                    resolve=lambda *_: [
+                    resolver=lambda *_: [
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],

@@ -410,7 +410,7 @@ class TypesBuilder(object):
             description=field_def.description,
             deprecation_reason=field_def.deprecation_reason,
             args=[self._extend_argument(a) for a in field_def.arguments],
-            resolve=field_def.resolve,
+            resolver=field_def.resolver,
             node=field_def.node,
         )
 

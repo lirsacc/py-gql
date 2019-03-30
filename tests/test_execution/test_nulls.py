@@ -172,9 +172,9 @@ async def test_nulls_out_errored_subtrees(raiser, executor_cls):
                 Field(
                     "resolver_error",
                     String,
-                    resolve=raiser(ResolverError, "resolver_error"),
+                    resolver=raiser(ResolverError, "resolver_error"),
                 ),
-                Field("resolver", String, resolve=lambda *_: "resolver"),
+                Field("resolver", String, resolver=lambda *_: "resolver"),
             ],
         )
     )

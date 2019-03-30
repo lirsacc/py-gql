@@ -86,7 +86,7 @@ def _null_resolver(*_a, **_kw):
 def test_Schema_is_possible_type_is_accurate():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
         ),
         directives=[Dir],
     )
@@ -96,7 +96,7 @@ def test_Schema_is_possible_type_is_accurate():
 def test_Schema_includes_input_types_only_used_in_directives():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
         ),
         directives=[Dir],
     )
@@ -107,7 +107,7 @@ def test_Schema_includes_input_types_only_used_in_directives():
 def test_Schema_get_type_raises_on_unknown_type():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
         ),
         directives=[Dir],
     )
@@ -118,7 +118,7 @@ def test_Schema_get_type_raises_on_unknown_type():
 def test_Schema_get_type_does_not_raise_on_unknown_type_with_default():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolve=_null_resolver)]
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
         ),
         directives=[Dir],
     )

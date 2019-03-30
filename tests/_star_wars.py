@@ -181,7 +181,7 @@ Human = ObjectType(
                 "The friends of the human, or an empty list if they have "
                 "none."
             ),
-            resolve=lambda human, *r, **k: get_friends(human),
+            resolver=lambda human, *r, **k: get_friends(human),
         ),
         Field(
             "appearsIn",
@@ -194,7 +194,7 @@ Human = ObjectType(
             description=(
                 "Where are they from and how they came to be who they are."
             ),
-            resolve=resolve_secret_backstory,
+            resolver=resolve_secret_backstory,
         ),
         Field(
             "homePlanet",
@@ -218,7 +218,7 @@ Droid = ObjectType(
                 "The friends of the droid, or an empty list if they have "
                 "none."
             ),
-            resolve=lambda droid, *r, **k: get_friends(droid),
+            resolver=lambda droid, *r, **k: get_friends(droid),
         ),
         Field(
             "appearsIn",
@@ -231,7 +231,7 @@ Droid = ObjectType(
             description=(
                 "Where are they from and how they came to be who they are."
             ),
-            resolve=resolve_secret_backstory,
+            resolver=resolve_secret_backstory,
         ),
         Field(
             "primaryFunction",
@@ -260,7 +260,7 @@ Query = ObjectType(
                     ),
                 )
             ],
-            resolve=lambda *_, **args: get_hero(args.get("episode")),
+            resolver=lambda *_, **args: get_hero(args.get("episode")),
         ),
         Field(
             "human",
@@ -270,7 +270,7 @@ Query = ObjectType(
                     "id", NonNullType(String), description="Id of the human"
                 )
             ],
-            resolve=lambda *_, **args: get_human(args.get("id")),
+            resolver=lambda *_, **args: get_human(args.get("id")),
         ),
         Field(
             "droid",
@@ -280,7 +280,7 @@ Query = ObjectType(
                     "id", NonNullType(String), description="Id of the droid"
                 )
             ],
-            resolve=lambda *_, **args: get_droid(args.get("id")),
+            resolver=lambda *_, **args: get_droid(args.get("id")),
         ),
     ],
 )

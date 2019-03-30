@@ -679,7 +679,7 @@ class Field(object):
         deprecation_reason:
             If set, the field will be marked as deprecated and include this as
             the reason
-        resolve:
+        resolver:
             Resolver function. If not set, :func:`py_gql.utilities.default_resolver`
             will be used during execution
         node: Source node used when building type from the SDL
@@ -689,7 +689,7 @@ class Field(object):
         description: Field description
         deprecation_reason:
         deprecated:
-        resolve: Resolver function
+        resolver: Resolver function
         node: Source node used when building type from the SDL
     """
 
@@ -700,16 +700,16 @@ class Field(object):
         args: Optional[LazyIter[Argument]] = None,
         description: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
-        resolve: Optional[Callable[..., Any]] = None,
+        resolver: Optional[Callable[..., Any]] = None,
         node: Optional[_ast.FieldDefinition] = None,
     ):
-        assert resolve is None or callable(resolve)
+        assert resolver is None or callable(resolver)
 
         self.name = name
         self.description = description
         self.deprecated = bool(deprecation_reason)
         self.deprecation_reason = deprecation_reason
-        self.resolve = resolve
+        self.resolver = resolver
         self._source_args = args
         self._args = None  # type: Optional[List[Argument]]
         self.node = node

@@ -37,7 +37,7 @@ __Schema__ = ObjectType(
             description="A list of all types supported by this server.",
             # Sort as the output should not be determined by the way the schema
             # is built and this is the most logical order.
-            resolve=lambda schema, *_: list(
+            resolver=lambda schema, *_: list(
                 sorted(schema.types.values(), key=lambda t: t.name)
             ),
         ),
@@ -45,7 +45,7 @@ __Schema__ = ObjectType(
             "queryType",
             NonNullType(__Type__),
             description="The type that query operations will be rooted at.",
-            resolve=lambda schema, *_: schema.query_type,
+            resolver=lambda schema, *_: schema.query_type,
         ),
         Field(
             "mutationType",
@@ -54,7 +54,7 @@ __Schema__ = ObjectType(
                 "If this server supports mutation, the type that mutation "
                 "operations will be rooted at."
             ),
-            resolve=lambda schema, *_: schema.mutation_type,
+            resolver=lambda schema, *_: schema.mutation_type,
         ),
         Field(
             "subscriptionType",
@@ -63,13 +63,13 @@ __Schema__ = ObjectType(
                 "If this server supports subscription, the type that "
                 "subscription operations will be rooted at."
             ),
-            resolve=lambda schema, *_: schema.subscription_type,
+            resolver=lambda schema, *_: schema.subscription_type,
         ),
         Field(
             "directives",
             NonNullType(ListType(NonNullType(__Directive__))),
             description="A list of all directives supported by this server.",
-            resolve=lambda schema, *_: list(
+            resolver=lambda schema, *_: list(
                 sorted(schema.directives.values(), key=lambda d: d.name)
             ),
         ),
@@ -97,7 +97,7 @@ __Directive__ = ObjectType(
         Field(
             "args",
             NonNullType(ListType(NonNullType(__InputValue__))),
-            resolve=lambda r, *_, **__: r.arguments,
+            resolver=lambda r, *_, **__: r.arguments,
         ),
     ],
 )  # type: ObjectType
@@ -214,14 +214,14 @@ __Type__ = ObjectType(
         "at runtime. List and NonNull types compose other types."
     ),
     fields=lambda: [
-        Field("kind", NonNullType(__TypeKind__), resolve=_resolve_type_kind),
+        Field("kind", NonNullType(__TypeKind__), resolver=_resolve_type_kind),
         Field("name", String),
         Field("description", String),
         Field(
             "fields",
             ListType(NonNullType(__Field__)),
             args=[Argument("includeDeprecated", Boolean, default_value=False)],
-            resolve=lambda type_, *_, **args: (
+            resolver=lambda type_, *_, **args: (
                 [
                     f
                     for f in type_.fields
@@ -234,14 +234,14 @@ __Type__ = ObjectType(
         Field(
             "interfaces",
             ListType(NonNullType(__Type__)),
-            resolve=lambda type_, *_: (
+            resolver=lambda type_, *_: (
                 type_.interfaces if isinstance(type_, ObjectType) else None
             ),
         ),
         Field(
             "possibleTypes",
             ListType(NonNullType(__Type__)),
-            resolve=lambda type_, _, info, **__: (
+            resolver=lambda type_, _, info, **__: (
                 list(
                     sorted(
                         info.schema.get_possible_types(type_),
@@ -256,7 +256,7 @@ __Type__ = ObjectType(
             "enumValues",
             ListType(NonNullType(__EnumValue__)),
             args=[Argument("includeDeprecated", Boolean, default_value=False)],
-            resolve=lambda type_, *_, **args: (
+            resolver=lambda type_, *_, **args: (
                 [
                     ev
                     for ev in type_.values
@@ -269,7 +269,7 @@ __Type__ = ObjectType(
         Field(
             "inputFields",
             ListType(NonNullType(__InputValue__)),
-            resolve=lambda type_, *_: (
+            resolver=lambda type_, *_: (
                 [f for f in type_.fields]
                 if isinstance(type_, InputObjectType)
                 else None
@@ -278,7 +278,7 @@ __Type__ = ObjectType(
         Field(
             "ofType",
             __Type__,
-            resolve=lambda type_, *_: (
+            resolver=lambda type_, *_: (
                 type_.type
                 if isinstance(type_, (ListType, NonNullType))
                 else None
@@ -301,12 +301,12 @@ __EnumValue__ = ObjectType(
         Field(
             "isDeprecated",
             NonNullType(Boolean),
-            resolve=lambda ev, *_: ev.deprecated,
+            resolver=lambda ev, *_: ev.deprecated,
         ),
         Field(
             "deprecationReason",
             String,
-            resolve=lambda ev, *_: ev.deprecation_reason,
+            resolver=lambda ev, *_: ev.deprecation_reason,
         ),
     ],
 )  # type: ObjectType
@@ -345,7 +345,7 @@ __InputValue__ = ObjectType(
                 "A GraphQL-formatted string representing the "
                 "default value for this input value."
             ),
-            resolve=lambda iv, *_: _format_default_value(iv),
+            resolver=lambda iv, *_: _format_default_value(iv),
         ),
     ],
 )  # type: ObjectType
@@ -364,18 +364,18 @@ __Field__ = ObjectType(
         Field(
             "args",
             NonNullType(ListType(NonNullType(__InputValue__))),
-            resolve=lambda field, *_: (field.arguments or []),
+            resolver=lambda field, *_: (field.arguments or []),
         ),
         Field("type", NonNullType(__Type__)),
         Field(
             "isDeprecated",
             NonNullType(Boolean),
-            resolve=lambda field, *_: field.deprecated,
+            resolver=lambda field, *_: field.deprecated,
         ),
         Field(
             "deprecationReason",
             String,
-            resolve=lambda field, *_: field.deprecation_reason,
+            resolver=lambda field, *_: field.deprecation_reason,
         ),
     ],
 )  # type: ObjectType
@@ -453,7 +453,7 @@ schema_field = Field(
     "__schema",
     NonNullType(__Schema__),
     description="Access the current type schema of this server.",
-    resolve=lambda p, c, info: info.schema,
+    resolver=lambda p, c, info: info.schema,
 )
 
 type_field = Field(
@@ -461,7 +461,9 @@ type_field = Field(
     __Type__,
     description="Request the type information of a single type.",
     args=[Argument("name", NonNullType(String))],
-    resolve=lambda p, c, info, **args: info.schema.get_type(args["name"], None),
+    resolver=lambda p, c, info, **args: info.schema.get_type(
+        args["name"], None
+    ),
 )
 
 
@@ -469,7 +471,7 @@ type_name_field = Field(
     "__typename",
     NonNullType(String),
     description="The name of the current Object type at runtime.",
-    resolve=lambda p, c, info: info.parent_type.name,
+    resolver=lambda p, c, info: info.parent_type.name,
 )
 
 

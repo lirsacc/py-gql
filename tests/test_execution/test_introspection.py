@@ -1256,7 +1256,7 @@ def test_intropsection_on_input_object():
                 "field",
                 String,
                 [Argument("complex", test_input)],
-                resolve=lambda _, args, *__: json.dumps(args.get("complex")),
+                resolver=lambda _, args, *__: json.dumps(args.get("complex")),
             )
         ],
     )

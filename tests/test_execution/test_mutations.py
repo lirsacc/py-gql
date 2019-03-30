@@ -46,7 +46,7 @@ schema = Schema(
                 "incrementTheNumber",
                 number_holder,
                 args=[Argument("steps", Int)],
-                resolve=lambda obj, *_, **args: obj.incrementTheNumber(
+                resolver=lambda obj, *_, **args: obj.incrementTheNumber(
                     args["steps"]
                 ),
             ),
@@ -54,7 +54,7 @@ schema = Schema(
                 "changeTheNumber",
                 number_holder,
                 args=[Argument("newNumber", Int)],
-                resolve=lambda obj, *_, **args: (
+                resolver=lambda obj, *_, **args: (
                     obj.changeTheNumber(args["newNumber"])
                 ),
             ),
@@ -62,7 +62,7 @@ schema = Schema(
                 "failToChangeTheNumber",
                 number_holder,
                 args=[Argument("newNumber", Int)],
-                resolve=lambda obj, *_, **args: (
+                resolver=lambda obj, *_, **args: (
                     obj.failToChangeTheNumber(args["newNumber"])
                 ),
             ),

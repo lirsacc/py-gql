@@ -409,7 +409,7 @@ class Executor(object):
         path: ResponsePath,
     ) -> MaybeAwaitable[Any]:
         resolver = self.get_field_resolver(
-            field_definition.resolve or default_resolver
+            field_definition.resolver or default_resolver
         )
         node = nodes[0]
         info = ResolveInfo(
@@ -730,7 +730,7 @@ class AsyncExecutor(Executor):
         path: ResponsePath,
     ) -> Any:
         resolver = self.get_field_resolver(
-            field_definition.resolve or default_resolver
+            field_definition.resolver or default_resolver
         )
         node = nodes[0]
         info = ResolveInfo(

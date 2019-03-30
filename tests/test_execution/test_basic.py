@@ -142,7 +142,7 @@ async def test_uses_mutation_schema_for_mutation_operation(
     subscription = mocker.Mock(return_value="foo")
 
     def _f(resolver):
-        return Field("test", String, resolve=resolver)
+        return Field("test", String, resolver=resolver)
 
     schema = Schema(
         query_type=ObjectType("Query", [_f(query)]),
@@ -166,7 +166,7 @@ async def test_forwarded_resolver_arguments(mocker, executor_cls):
     context = mocker.Mock()
     root = mocker.Mock()
 
-    field = Field("test", String, [Argument("arg", String)], resolve=resolver)
+    field = Field("test", String, [Argument("arg", String)], resolver=resolver)
     query_type = ObjectType("Test", [field])
     doc = parse("query ($var: String) { result: test(arg: $var) }")
     schema = Schema(query_type)
@@ -201,10 +201,10 @@ async def test_merge_of_parallel_fragments(executor_cls):
     T = ObjectType(
         "Type",
         [
-            Field("a", String, resolve=lambda *_: "Apple"),
-            Field("b", String, resolve=lambda *_: "Banana"),
-            Field("c", String, resolve=lambda *_: "Cherry"),
-            Field("deep", lambda: T, resolve=lambda *_: dict()),
+            Field("a", String, resolver=lambda *_: "Apple"),
+            Field("b", String, resolver=lambda *_: "Banana"),
+            Field("c", String, resolver=lambda *_: "Cherry"),
+            Field("deep", lambda: T, resolver=lambda *_: dict()),
         ],
     )  # type: ObjectType
 
@@ -245,12 +245,12 @@ async def test_full_response_path_is_included_on_error(raiser, executor_cls):
     A = ObjectType(
         "A",
         [
-            Field("nullableA", lambda: A, resolve=lambda *_: {}),
-            Field("nonNullA", lambda: NonNullType(A), resolve=lambda *_: {}),
+            Field("nullableA", lambda: A, resolver=lambda *_: {}),
+            Field("nonNullA", lambda: NonNullType(A), resolver=lambda *_: {}),
             Field(
                 "raises",
                 lambda: NonNullType(String),
-                resolve=raiser(ResolverError, "Catch me if you can"),
+                resolver=raiser(ResolverError, "Catch me if you can"),
             ),
         ],
     )  # type: ObjectType
@@ -258,7 +258,7 @@ async def test_full_response_path_is_included_on_error(raiser, executor_cls):
     await assert_execution(
         Schema(
             ObjectType(
-                "query", [Field("nullableA", lambda: A, resolve=lambda *_: {})]
+                "query", [Field("nullableA", lambda: A, resolver=lambda *_: {})]
             )
         ),
         """
@@ -373,12 +373,12 @@ BlogQuery = ObjectType(
             "article",
             BlogArticle,
             [Argument("id", ID)],
-            resolve=lambda *_, **args: _resolve_article(args["id"]),
+            resolver=lambda *_, **args: _resolve_article(args["id"]),
         ),
         Field(
             "feed",
             ListType(BlogArticle),
-            resolve=lambda *_: [_resolve_article(i) for i in range(1, 11)],
+            resolver=lambda *_: [_resolve_article(i) for i in range(1, 11)],
         ),
     ],
 )

@@ -381,7 +381,7 @@ def _assign_resolvers(types: List[GraphQLType], resolvers: ResolverMap) -> None:
     for type_ in types:
         if isinstance(type_, _types.ObjectType):
             for field in type_.fields:
-                field.resolve = infer(type_, field) or field.resolve
+                field.resolver = infer(type_, field) or field.resolver
 
 
 def _document_ast(document: Union[str, _ast.Document]) -> _ast.Document:
