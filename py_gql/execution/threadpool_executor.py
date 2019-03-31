@@ -139,6 +139,7 @@ class ThreadPoolExecutor(Executor):
                     def cb(f):
                         try:
                             r = f.result()
+                        # pylint: disable = broad-except
                         except Exception as err:
                             final.set_exception(err)
                         else:
@@ -253,6 +254,7 @@ def unwrap_future(maybe_future):
                 r = f.result()
             except CancelledError:
                 outer.cancel()
+            # pylint: disable = broad-except
             except Exception as err:
                 outer.set_exception(err)
             else:
@@ -306,6 +308,7 @@ def gather(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
 
         try:
             d.result()
+        # pylint: disable = broad-except
         except Exception as err:
             outer.set_exception(err)
             return
@@ -352,6 +355,7 @@ def chain(
                 res = map_result(f.result())
             except CancelledError:
                 target.cancel()
+            # pylint: disable = broad-except
             except Exception as err:
                 if or_else is not None:
                     exc_type, cb = or_else
@@ -368,6 +372,7 @@ def chain(
     else:
         try:
             res = map_result(source)
+        # pylint: disable = broad-except
         except Exception as err:
             if or_else is not None:
                 exc_type, cb = or_else

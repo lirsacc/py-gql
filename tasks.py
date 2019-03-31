@@ -100,13 +100,13 @@ def test(
         )
 
 
-@invoke.task(aliases=["lint.flake8"], iterable=["files"])
+@invoke.task(iterable=["files"])
 def flake8(ctx, files=None):
     files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run("flake8 %s" % files, echo=True)
 
 
-@invoke.task(aliases=["lint.pylint"], iterable=["files"])
+@invoke.task(iterable=["files"])
 def pylint(ctx, files=None):
     files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run(
@@ -115,36 +115,14 @@ def pylint(ctx, files=None):
     )
 
 
-@invoke.task(aliases=["lint.mypy", "typecheck"], iterable=["files"])
+@invoke.task(aliases=["typecheck"], iterable=["files"])
 def mypy(ctx, files=None):
     files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run("mypy %s" % files, echo=True)
 
 
-@invoke.task(iterable=["files"])
-def lint(ctx, files=None):
-    """ Run all available linters """
-    linters = [
-        task
-        for task in ns.tasks.values()
-        if any(alias.startswith("lint.") for alias in task.aliases)
-    ]
-    failures = []
-
-    for linter in linters:
-        try:
-            linter(ctx, files=files)
-        except invoke.UnexpectedExit:
-            failures.append(linter.__name__)
-
-    if failures:
-        raise invoke.exceptions.Exit(
-            "Linter(s) %s failed" % ", ".join(failures)
-        )
-
-
 @invoke.task(aliases=["format"], iterable=["files"])
-def fmt(ctx, files=None):
+def fmt(ctx, check=False, files=None):
     """ Run formatters """
     files = (
         "%s/**/*.py tests/**/*.py examples/**/*.py" % PACKAGE
@@ -153,10 +131,23 @@ def fmt(ctx, files=None):
     )
 
     with ctx.cd(ROOT):
-        ctx.run(_join(["isort", files]), echo=True)
+        ctx.run(
+            _join(["isort", "--check-only" if check else None, files]),
+            echo=True,
+        )
         # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
         # support.
-        ctx.run(_join(["black", "--line-length=80", files]), echo=True)
+        ctx.run(
+            _join(
+                [
+                    "black",
+                    "--check" if check else None,
+                    "--line-length=80",
+                    files,
+                ]
+            ),
+            echo=True,
+        )
 
 
 @invoke.task

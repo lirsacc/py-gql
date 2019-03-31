@@ -9,8 +9,8 @@ from ..lang import ast as _ast
 from ..schema import Schema
 from ..utilities import coerce_variable_values
 from .async_executor import AsyncExecutor  # noqa: F401
-from .threadpool_executor import ThreadPoolExecutor  # noqa: F401
 from .executor import Executor  # noqa: F401
+from .threadpool_executor import ThreadPoolExecutor  # noqa: F401
 from .wrappers import (  # noqa: F401
     GraphQLExtension,
     GraphQLResult,

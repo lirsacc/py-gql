@@ -43,8 +43,6 @@ def _evaluate_lazy_iter(entries: Optional[LazyIter[T]]) -> List[T]:
         return []
     elif isinstance(_entries, (list, tuple)):
         return [lazy(entry) for entry in _entries]
-    # elif isinstance(_entries, dict):
-    #     return [lazy(entry) for entry in _entries.values()]
     raise TypeError("Expected list or dict of items")
 
 

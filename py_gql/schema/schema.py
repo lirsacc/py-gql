@@ -359,8 +359,8 @@ class Schema(object):
             typename, fieldname = fieldpath.split(".")[:2]
         except ValueError:
             raise ValueError(
-                'Invalid field path "%s". Field path must of the form "Typename.Fieldname"'
-                % fieldpath
+                'Invalid field path "%s". Field path must of the form '
+                '"Typename.Fieldname"' % fieldpath
             )
 
         object_type = self.get_type(typename)
