@@ -43,45 +43,45 @@ Boolean = ScalarType(
 # Spec says -2^31 to 2^31... use floats to get larger numbers.
 MAX_INT = 2147483647
 MIN_INT = -2147483648
-EXPONENT_RE = re.compile(r"1e\d+")
+INVALID_INT = "Int cannot represent non integer value: %s"
+INVALID_NUMERIC = "Int cannot represent non 32-bit signed integer: %s"
 
 
-def coerce_int(maybe_int: str) -> int:
+def coerce_int(maybe_int: Any) -> int:
     """ Spec compliant int conversion. """
-    if maybe_int == "":
-        raise ValueError(
-            "Int cannot represent non 32-bit signed integer: (empty string)"
-        )
 
-    if maybe_int is None:
-        raise ValueError("Int cannot represent non 32-bit signed integer: None")
-
-    if isinstance(maybe_int, str):
-        try:
-            if EXPONENT_RE.match(maybe_int):
-                numeric = int(float(maybe_int))
-            else:
-                numeric = int(maybe_int, 10)
-        except ValueError:
-            raise ValueError(
-                "Int cannot represent non-integer value: %s" % maybe_int
-            )
-    else:
+    if isinstance(maybe_int, int):
+        numeric = maybe_int
+    elif isinstance(maybe_int, float):
         numeric = int(maybe_int)
         if numeric != maybe_int:
-            raise ValueError(
-                "Int cannot represent non-integer value: %s" % maybe_int
-            )
+            raise ValueError(INVALID_INT % maybe_int)
+    elif maybe_int is None:
+        raise ValueError(INVALID_INT % "None")
+    elif isinstance(maybe_int, str):
+        if not maybe_int:
+            raise ValueError(INVALID_INT % "(empty string)")
+        try:
+            numeric = int(maybe_int, 10)
+        except ValueError:
+            try:
+                float_value = float(maybe_int)
+                if float_value.is_integer():
+                    numeric = int(float_value)
+                else:
+                    raise ValueError(INVALID_NUMERIC % maybe_int)
+            except (OverflowError, ValueError):
+                raise ValueError(INVALID_INT % maybe_int)
+    else:
+        raise ValueError(INVALID_INT, repr(maybe_int))
 
     if not (MIN_INT < numeric < MAX_INT):
-        raise ValueError(
-            "Int cannot represent non 32-bit signed integer: %s" % maybe_int
-        )
+        raise ValueError(INVALID_NUMERIC % maybe_int)
 
     return numeric
 
 
-def coerce_float(maybe_float: str) -> float:
+def coerce_float(maybe_float: Any) -> float:
     """ Spec compliant float conversion. """
     if maybe_float == "":
         raise ValueError(
@@ -89,6 +89,7 @@ def coerce_float(maybe_float: str) -> float:
         )
     if maybe_float is None:
         raise ValueError("Float cannot represent non numeric value: None")
+
     try:
         return float(maybe_float)
     except ValueError:

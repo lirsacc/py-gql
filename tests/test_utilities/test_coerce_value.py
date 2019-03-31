@@ -57,23 +57,20 @@ def test_Int_from_null_value():
 
 def test_Int_raises_for_empty_value():
     _test(
-        "",
-        Int,
-        None,
-        "Int cannot represent non 32-bit signed integer: (empty string)",
+        "", Int, None, "Int cannot represent non integer value: (empty string)"
     )
 
 
 def test_Int_raises_for_float_input():
-    _test("1.5", Int, None, "Int cannot represent non-integer value: 1.5")
+    _test("1.5", Int, None, "Int cannot represent non integer value: 1.5")
 
 
 def test_Int_raises_for_char_input():
-    _test("c", Int, None, "Int cannot represent non-integer value: c")
+    _test("c", Int, None, "Int cannot represent non integer value: c")
 
 
 def test_Int_raises_for_string_input():
-    _test("meow", Int, None, "Int cannot represent non-integer value: meow")
+    _test("meow", Int, None, "Int cannot represent non integer value: meow")
 
 
 def test_Float_for_int_input():
@@ -140,7 +137,7 @@ def test_InputObject_raises_for_invalid_field():
         {"foo": "abc"},
         Input,
         None,
-        "Int cannot represent non-integer value: abc at value.foo",
+        "Int cannot represent non integer value: abc at value.foo",
     )
 
 
@@ -175,7 +172,7 @@ def test_ListType_raises_for_invalid_item():
         [1, "abc", "3"],
         ListType(Int),
         None,
-        "Int cannot represent non-integer value: abc at value[1]",
+        "Int cannot represent non integer value: abc at value[1]",
     )
 
 
@@ -184,8 +181,8 @@ def test_ListType_raises_for_invalid_items():
         [1, "abc", "def"],
         ListType(Int),
         None,
-        "Int cannot represent non-integer value: abc at value[1],\n"
-        "Int cannot represent non-integer value: def at value[2]",
+        "Int cannot represent non integer value: abc at value[1],\n"
+        "Int cannot represent non integer value: def at value[2]",
     )
 
 
@@ -194,7 +191,7 @@ def test_nested_error():
         [{"foo": "abc"}],
         ListType(Input),
         None,
-        "Int cannot represent non-integer value: abc at value[0].foo",
+        "Int cannot represent non integer value: abc at value[0].foo",
     )
 
 

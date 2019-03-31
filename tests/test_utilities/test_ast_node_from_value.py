@@ -53,7 +53,7 @@ CustomScalar = ScalarType(
         (
             123.5,
             Int,
-            ValueError("Int cannot represent non-integer value: 123.5"),
+            ValueError("Int cannot represent non integer value: 123.5"),
         ),
         (
             1e40,
