@@ -20,23 +20,6 @@ def _join(cmd):
 
 
 @invoke.task
-def deps(ctx, upgrade=False):
-    """ Install development dependencies """
-    with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                [
-                    "pip",
-                    "install",
-                    "--upgrade" if upgrade else None,
-                    "-r dev-requirements.txt",
-                ]
-            ),
-            echo=True,
-        )
-
-
-@invoke.task
 def clean(ctx):
     """ Remove test and compilation artifacts """
     with ctx.cd(ROOT):
