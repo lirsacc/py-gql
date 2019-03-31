@@ -11,8 +11,8 @@ Note:
 import functools as ft
 from typing import Callable, Iterable, TypeVar, Union
 
-from . import ast as _ast
 from ..exc import GraphQLError
+from . import ast as _ast
 
 __all__ = (
     "SkipNode",

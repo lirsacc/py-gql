@@ -15,8 +15,8 @@ from typing import (
     cast,
 )
 
-from . import ast as _ast
 from ..exc import GraphQLSyntaxError, UnexpectedEOF, UnexpectedToken
+from . import ast as _ast
 from .lexer import Lexer
 from .token import (
     EOF,
@@ -43,47 +43,48 @@ from .token import (
     Token,
 )
 
-DIRECTIVE_LOCATIONS = frozenset([
-    "QUERY",
-    "MUTATION",
-    "SUBSCRIPTION",
-    "FIELD",
-    "FRAGMENT_DEFINITION",
-    "FRAGMENT_SPREAD",
-    "INLINE_FRAGMENT",
-    # Type System Definitions
-    "SCHEMA",
-    "SCALAR",
-    "OBJECT",
-    "FIELD_DEFINITION",
-    "ARGUMENT_DEFINITION",
-    "INTERFACE",
-    "UNION",
-    "ENUM",
-    "ENUM_VALUE",
-    "INPUT_OBJECT",
-    "INPUT_FIELD_DEFINITION",
-])
+DIRECTIVE_LOCATIONS = frozenset(
+    [
+        "QUERY",
+        "MUTATION",
+        "SUBSCRIPTION",
+        "FIELD",
+        "FRAGMENT_DEFINITION",
+        "FRAGMENT_SPREAD",
+        "INLINE_FRAGMENT",
+        # Type System Definitions
+        "SCHEMA",
+        "SCALAR",
+        "OBJECT",
+        "FIELD_DEFINITION",
+        "ARGUMENT_DEFINITION",
+        "INTERFACE",
+        "UNION",
+        "ENUM",
+        "ENUM_VALUE",
+        "INPUT_OBJECT",
+        "INPUT_FIELD_DEFINITION",
+    ]
+)
 
 
-EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset([
-    "query",
-    "mutation",
-    "subscription",
-    "fragment",
-])
+EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset(
+    ["query", "mutation", "subscription", "fragment"]
+)
 
 
-SCHEMA_DEFINITIONS_KEYWORDS = frozenset([
-    "schema",
-    "scalar",
-    "type",
-    "interface",
-    "union",
-    "enum",
-    "input",
-    "directive",
-])
+SCHEMA_DEFINITIONS_KEYWORDS = frozenset(
+    [
+        "schema",
+        "scalar",
+        "type",
+        "interface",
+        "union",
+        "enum",
+        "input",
+        "directive",
+    ]
+)
 
 OPERATION_TYPES_KEYWORDS = frozenset(["query", "mutation", "subscription"])
 
@@ -516,9 +517,7 @@ class Parser(object):
         """
         if self.peek().__class__ is ParenOpen:
             return self.many(
-                ParenOpen,
-                self.parse_variable_definition,
-                ParenClose,
+                ParenOpen, self.parse_variable_definition, ParenClose
             )
         return []
 
@@ -529,8 +528,7 @@ class Parser(object):
         return _ast.VariableDefinition(
             variable=self.parse_variable(),
             type=cast(
-                _ast.Type,
-                self.expect(Colon) and self.parse_type_reference(),
+                _ast.Type, self.expect(Colon) and self.parse_type_reference()
             ),
             default_value=(
                 cast(_ast.Value, self.parse_value_literal(True))
@@ -555,9 +553,7 @@ class Parser(object):
         """
         start = self.peek()
         return _ast.SelectionSet(
-            selections=self.many(
-                CurlyOpen, self.parse_selection, CurlyClose
-            ),
+            selections=self.many(CurlyOpen, self.parse_selection, CurlyClose),
             loc=self._loc(start),
             source=self._source,
         )
@@ -604,9 +600,7 @@ class Parser(object):
         """
         if self.peek().__class__ is ParenOpen:
             return self.many(
-                ParenOpen,
-                ft.partial(self.parse_argument, const),
-                ParenClose,
+                ParenOpen, ft.partial(self.parse_argument, const), ParenClose
             )
         return []
 
@@ -870,10 +864,7 @@ class Parser(object):
         next_ = self.peek()
         keyword = (
             self.peek(2)
-            if (
-                next_.__class__ is String
-                or next_.__class__ is BlockString
-            )
+            if (next_.__class__ is String or next_.__class__ is BlockString)
             else next_
         )
 
@@ -903,10 +894,7 @@ class Parser(object):
         next_ = self.peek()
         return (
             self.parse_string_literal()
-            if (
-                next_.__class__ is String
-                or next_.__class__ is BlockString
-            )
+            if (next_.__class__ is String or next_.__class__ is BlockString)
             else None
         )
 
@@ -918,9 +906,7 @@ class Parser(object):
         return _ast.SchemaDefinition(
             directives=self.parse_directives(True),
             operation_types=self.many(
-                CurlyOpen,
-                self.parse_operation_type_definition,
-                CurlyClose,
+                CurlyOpen, self.parse_operation_type_definition, CurlyClose
             ),
             loc=self._loc(start),
             source=self._source,
@@ -989,9 +975,7 @@ class Parser(object):
         """ FieldsDefinition : { FieldDefinition+ }
         """
         if self.peek().__class__ is CurlyOpen:
-            return self.many(
-                CurlyOpen, self.parse_field_definition, CurlyClose
-            )
+            return self.many(CurlyOpen, self.parse_field_definition, CurlyClose)
         return []
 
     def parse_field_definition(self) -> _ast.FieldDefinition:
@@ -1016,11 +1000,7 @@ class Parser(object):
         """ ArgumentsDefinition : ( InputValueDefinition+ )
         """
         return (
-            self.many(
-                ParenOpen,
-                self.parse_input_value_definition,
-                ParenClose,
-            )
+            self.many(ParenOpen, self.parse_input_value_definition, ParenClose)
             if self.peek().__class__ is ParenOpen
             else []
         )
@@ -1105,11 +1085,7 @@ class Parser(object):
         """ EnumValuesDefinition : { EnumValueDefinition+ }
         """
         return (
-            self.many(
-                CurlyOpen,
-                self.parse_enum_value_definition,
-                CurlyClose,
-            )
+            self.many(CurlyOpen, self.parse_enum_value_definition, CurlyClose)
             if self.peek().__class__ is CurlyOpen
             else []
         )
@@ -1150,11 +1126,7 @@ class Parser(object):
         """ InputFieldsDefinition : { InputValueDefinition+ }
         """
         return (
-            self.many(
-                CurlyOpen,
-                self.parse_input_value_definition,
-                CurlyClose,
-            )
+            self.many(CurlyOpen, self.parse_input_value_definition, CurlyClose)
             if self.peek().__class__ is CurlyOpen
             else []
         )
@@ -1195,9 +1167,7 @@ class Parser(object):
         directives = self.parse_directives(True)
         if self.peek().__class__ is CurlyOpen:
             operation_types = self.many(
-                CurlyOpen,
-                self.parse_operation_type_definition,
-                CurlyClose,
+                CurlyOpen, self.parse_operation_type_definition, CurlyClose
             )
         else:
             operation_types = []

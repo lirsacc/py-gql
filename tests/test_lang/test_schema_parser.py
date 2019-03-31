@@ -736,6 +736,11 @@ def test_it_parses_kitchen_sink(fixture_file):
     assert parse(fixture_file("schema-kitchen-sink.graphql"), no_location=True)
 
 
+def test_it_parses_github_schema(fixture_file):
+    # assert doesn't raise
+    assert parse(fixture_file("github-schema.graphql"), no_location=True)
+
+
 def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(
     fixture_file
 ):
