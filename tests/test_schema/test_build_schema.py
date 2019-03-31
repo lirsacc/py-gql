@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Dict
-
 import pytest
 
 from py_gql import graphql_sync
@@ -840,65 +838,6 @@ def test_inject_custom_types():
         additional_types=[UUID],
     )
     assert schema.types["UUID"] is UUID
-
-
-def test_inject_resolvers():
-    resolvers = {
-        "Query": {"foo": lambda *_: "foo"}
-    }  # type: Dict[str, Dict[str, Callable[..., Any]]]
-
-    schema = build_schema(
-        """
-        type Query {
-            foo: String
-        }
-        """,
-        resolvers=resolvers,
-    )
-
-    assert (
-        schema.query_type
-        and schema.query_type.fields[0].resolver
-        and schema.query_type.fields[0].resolver() == "foo"
-    )
-
-
-def test_inject_resolvers_as_flat_map():
-    resolvers = {
-        "Query.foo": lambda *_: "foo"
-    }  # type: Dict[str, Callable[..., Any]]
-
-    schema = build_schema(
-        """
-        type Query {
-            foo: String
-        }
-        """,
-        resolvers=resolvers,
-    )
-
-    assert (
-        schema.query_type
-        and schema.query_type.fields[0].resolver
-        and schema.query_type.fields[0].resolver() == "foo"
-    )
-
-
-def test_inject_resolvers_as_callable():
-    schema = build_schema(
-        """
-        type Query {
-            foo: String
-        }
-        """,
-        resolvers=lambda t, f: (lambda *_: "foo"),
-    )
-
-    assert (
-        schema.query_type
-        and schema.query_type.fields[0].resolver
-        and schema.query_type.fields[0].resolver() == "foo"
-    )
 
 
 def test_build_schema_from_ast_ignores_extensions():

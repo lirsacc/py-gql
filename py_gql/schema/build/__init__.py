@@ -6,24 +6,11 @@ supported and provide with a language agnostic way of defining schemas. The
 """
 
 import collections
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
-from ..._utils import nested_key
 from ...exc import ExtensionError, SDLError
 from ...lang import ast as _ast, parse
-from .. import types as _types
-from ..schema import GraphQLType, NamedType, ObjectType, Schema
+from ..schema import NamedType, ObjectType, Schema
 from .type_builder import TypesBuilder
 from .visitors import (
     HealSchemaVisitor,
@@ -32,22 +19,16 @@ from .visitors import (
 )
 
 __all__ = (
-    "build_schema_from_ast",
-    "extend_schema",
     "build_schema",
+    "extend_schema",
+    "build_schema_from_ast",
     "SchemaDirective",
 )
-
-ResolverMap = Union[
-    Mapping[str, Callable[..., Any]],
-    Mapping[str, Mapping[str, Callable[..., Any]]],
-    Callable[[str, str], Callable[..., Any]],
-]
 
 
 def build_schema(
     document: Union[_ast.Document, str],
-    resolvers: Optional[ResolverMap] = None,
+    *,
     additional_types: Optional[List[NamedType]] = None,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None,
     assume_valid: bool = False,
@@ -62,12 +43,6 @@ def build_schema(
 
     Args:
         document (Union[str, py_gql.lang.ast.Document]): SDL document
-
-        resolvers: Field resolvers
-            If a `dict` is provided, this looks for the resolver at key
-            `{type_name}.{field_name}`. If a callable is provided, this calls
-            it with the `{type_name}.{field_name}` argument and use the return
-            value if it is itself a callable.
 
         additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
@@ -92,19 +67,13 @@ def build_schema(
         py_gql.exc.SDLError:
     """
     ast = _document_ast(document)
-    schema = build_schema_from_ast(
-        ast, resolvers=resolvers, additional_types=additional_types
-    )
+    schema = build_schema_from_ast(ast, additional_types=additional_types)
 
     if not assume_valid:
         schema.validate()
 
     schema = extend_schema(
-        schema,
-        ast,
-        resolvers=resolvers,
-        additional_types=additional_types,
-        strict=False,
+        schema, ast, additional_types=additional_types, strict=False
     )
 
     if not assume_valid:
@@ -126,7 +95,7 @@ def build_schema(
 
 def build_schema_from_ast(
     document: Union[_ast.Document, str],
-    resolvers: Optional[ResolverMap] = None,
+    *,
     additional_types: Optional[List[NamedType]] = None,
 ) -> Schema:
     """ Build an executable schema from an SDL-based schema definition ignoring
@@ -134,12 +103,6 @@ def build_schema_from_ast(
 
     Args:
         document: SDL document
-
-        resolvers: Field resolvers
-            If a `dict` is provided, this looks for the resolver at key
-            `{type_name}.{field_name}`. If a callable is provided, this calls
-            it with the `{type_name}.{field_name}` argument and use the return
-            value if it is itself a callable.
 
         additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
@@ -175,9 +138,6 @@ def build_schema_from_ast(
 
     types = [builder.build_type(type_def) for type_def in type_defs.values()]
 
-    if resolvers is not None:
-        _assign_resolvers(types, resolvers)
-
     if schema_def is None:
         operations = {
             t.name.lower(): t
@@ -211,7 +171,7 @@ def build_schema_from_ast(
 def extend_schema(
     schema: Schema,
     document: Union[_ast.Document, str],
-    resolvers: Optional[ResolverMap] = None,
+    *,
     additional_types: Optional[List[NamedType]] = None,
     strict: bool = True,
 ) -> Schema:
@@ -226,12 +186,6 @@ def extend_schema(
         schema (py_gql.schema.Schema): Executable schema
 
         document (Union[str, _ast.Document]): SDL document
-
-        resolvers (Union[dict, callable]): Field resolvers
-            If a `dict` is provided, this looks for the resolver at key
-            `{type_name}.{field_name}`. If a callable is provided, this calls
-            it with the `{type_name}.{field_name}` argument and use the return
-            value if it is itself a callable.
 
         additional_types (List[py_gql.schema.Type]): User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
@@ -292,9 +246,6 @@ def extend_schema(
         for t in type_defs.values()
         if t.name.value not in schema.types
     ]
-
-    if resolvers:
-        _assign_resolvers(types, resolvers)
 
     def _extend_or(maybe_type):
         return builder.extend_type(maybe_type) if maybe_type else None
@@ -359,29 +310,6 @@ def _collect_definitions(
             directives[name] = node
 
     return schema_definition, types, directives
-
-
-def _assign_resolvers(types: List[GraphQLType], resolvers: ResolverMap) -> None:
-
-    if callable(resolvers):
-        infer = lambda parent, field: resolvers(parent.name, field.name)
-    elif isinstance(resolvers, dict):
-        infer = lambda parent, field: (
-            cast(Dict[str, Any], resolvers).get(
-                "%s.%s" % (parent.name, field.name), None
-            )
-            or nested_key(
-                cast(Dict[str, Any], resolvers),
-                parent.name,
-                field.name,
-                default=None,
-            )
-        )
-
-    for type_ in types:
-        if isinstance(type_, _types.ObjectType):
-            for field in type_.fields:
-                field.resolver = infer(type_, field) or field.resolver
 
 
 def _document_ast(document: Union[str, _ast.Document]) -> _ast.Document:

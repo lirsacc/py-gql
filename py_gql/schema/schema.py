@@ -3,7 +3,7 @@
 
 import itertools as it
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
@@ -341,6 +341,59 @@ class Schema(object):
         All arguments are forwarded to :cls:`SchemaPrinter`.
         """
         return SchemaPrinter(**kwargs)(self)
+
+    def assign_resolver(
+        self,
+        fieldpath: str,
+        func: Callable[..., Any],
+        allow_override: bool = False,
+    ) -> None:
+        """ Register a resolver against a type in the schema
+
+        Warning:
+            This will update the type inline and as such is expected to be used
+            after having used `py_gql.build_schema`.
+        """
+
+        try:
+            typename, fieldname = fieldpath.split(".")[:2]
+        except ValueError:
+            raise ValueError(
+                'Invalid field path "%s". Field path must of the form "Typename.Fieldname"'
+                % fieldpath
+            )
+
+        object_type = self.get_type(typename)
+
+        if not isinstance(object_type, ObjectType):
+            raise ValueError(
+                'Expected "%s" to be ObjectTye but got %s.'
+                % (typename, object_type.__class__.__name__)
+            )
+
+        try:
+            field = object_type.field_map[fieldname]
+        except KeyError:
+            raise ValueError(
+                'Unknown field "%s" for type "%s".' % (fieldname, typename)
+            )
+        else:
+            if (not allow_override) and field.resolver is not None:
+                raise ValueError(
+                    'Field "%s" of type "%s" already has a resolver.'
+                    % (fieldname, typename)
+                )
+
+            field.resolver = func or field.resolver
+
+    def resolver(self, fieldpath):
+        """ Decorator version of `assign_resolver`. """
+
+        def decorator(func):
+            self.assign_resolver(fieldpath, func)
+            return func
+
+        return decorator
 
 
 def _build_type_map(

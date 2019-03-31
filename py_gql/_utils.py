@@ -10,7 +10,6 @@ from typing import (
     Hashable,
     Iterable,
     Iterator,
-    Mapping,
     MutableMapping,
     Optional,
     Set,
@@ -173,38 +172,6 @@ def is_iterable(value: Any, strings: bool = True) -> bool:
         return False
     else:
         return strings or not isinstance(value, (str, bytes))
-
-
-def nested_key(
-    obj: Mapping[str, Any], *keys: str, default: Any = _MISSING
-) -> Any:
-    """ Safely extract nested key from dicts and lists.
-
-    >>> source = {'foo': {'bar': [{}, {}, {'baz': 42}]}}
-
-    >>> nested_key(source, 'foo', 'bar', 2, 'baz')
-    42
-
-    >>> nested_key(source, 'foo', 'bar', 10, 'baz')
-    Traceback (most recent call last):
-        ...
-    IndexError: list index out of range
-
-    >>> nested_key(source, 'foo', 'bar', 10, 'baz', default=None) is None
-    True
-
-    >>> nested_key(source, 'foo', 'baz', default=None) is None
-    True
-
-    """
-    for key in keys:
-        try:
-            obj = obj[key]
-        except (KeyError, IndexError):
-            if default is _MISSING:
-                raise
-            return default
-    return obj
 
 
 if sys.version < "3.6":  # noqa: C901
