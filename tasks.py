@@ -50,6 +50,22 @@ def clean(ctx):
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
+@invoke.task()
+def benchmark(ctx,):
+    ctx.run(
+        _join(
+            [
+                "py.test",
+                "--benchmark-only",
+                "--benchmark-group-by=fullname",
+                "tests/benchmarks",
+            ]
+        ),
+        echo=True,
+        pty=True,
+    )
+
+
 @invoke.task(iterable=["files", "ignore"])
 def test(
     ctx,

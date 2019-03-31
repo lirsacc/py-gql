@@ -865,3 +865,7 @@ def test_build_schema_from_ast_ignores_extensions():
             """
         )
     )
+
+
+def test_build_github_schema(fixture_file):
+    assert build_schema(fixture_file("github-schema.graphql")).is_valid
