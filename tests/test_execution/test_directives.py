@@ -3,7 +3,7 @@
 
 import pytest
 
-from py_gql.execution import SyncExecutor
+from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
     Argument,
@@ -141,7 +141,7 @@ async def test_custom_directive_on_field(mocker):
     )
     resolver = mocker.Mock(return_value=42)
 
-    SyncExecutor.execute_request(
+    execute(
         Schema(test_type, directives=[CustomDirective]),
         parse('{ a @custom(a: "foo", b: 42) }'),
         initial_value={"a": resolver},

@@ -65,7 +65,6 @@ def test_simple_field_modifier():
                 schema_directives={"upper": UppercaseDirective},
             ),
             "{ foo }",
-            {},
             root={"foo": "lowerCase"},
         ).response()
         == {"data": {"foo": "LOWERCASE"}}
@@ -135,7 +134,6 @@ def test_field_modifier_using_arguments():
                 schema_directives={"power": PowerDirective},
             ),
             "{ foo, bar }",
-            {},
             root={"foo": 2, "bar": 2},
         ).response()
         == {"data": {"foo": 4, "bar": 8}}
@@ -381,7 +379,6 @@ def test_input_values():
     assert graphql_sync(
         schema,
         '{ foo (foo: "abcdef") }',
-        {},
         root={"foo": lambda *_, **args: args["foo"]},
     ).response() == {
         "errors": [
@@ -399,21 +396,18 @@ def test_input_values():
     assert graphql_sync(
         schema,
         '{ foo (foo: "abcd") }',
-        {},
         root={"foo": lambda *_, **args: args["foo"]},
     ).response() == {"data": {"foo": "abcd"}}
 
     assert graphql_sync(
         schema,
         '{ foo (bar: {baz: "abcd"}) }',
-        {},
         root={"foo": lambda *_, **args: args["bar"]["baz"]},
     ).response() == {"data": {"foo": "abcd"}}
 
     assert graphql_sync(
         schema,
         '{ foo (bar: {baz: "a"}) }',
-        {},
         root={"foo": lambda *_, **args: args["bar"]["baz"]},
     ).response() == {
         "errors": [

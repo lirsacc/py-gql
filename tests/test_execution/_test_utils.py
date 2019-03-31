@@ -2,13 +2,14 @@
 """ """
 
 import pprint
+from concurrent.futures import Future
 from inspect import isawaitable
 from typing import Any, List, Optional, Tuple, Type, Union
 
 import pytest
 
 from py_gql._string_utils import dedent, stringify_path
-from py_gql.execution import Executor, GraphQLResult, SyncExecutor
+from py_gql.execution import GraphQLResult, execute
 from py_gql.lang import parse
 from py_gql.lang.ast import Document
 from py_gql.schema import Field, GraphQLType, ObjectType, Schema
@@ -85,12 +86,12 @@ def assert_sync_execution(
 
     if expected_exc is not None:
         with pytest.raises(expected_exc) as exc_info:
-            SyncExecutor.execute_request(schema, doc, **kwargs)
+            execute(schema, doc, **kwargs)
 
         if expected_msg:
             assert str(exc_info.value) == expected_msg
     else:
-        result = SyncExecutor.execute_request(schema, doc, **kwargs)
+        result = execute(schema, doc, **kwargs)
         assert not isawaitable(result) and isinstance(result, GraphQLResult)
         assert_result_match(result, expected_data, expected_errors)
 
@@ -101,7 +102,6 @@ async def assert_execution(
     expected_data: Any = None,
     expected_errors: Optional[List[ExpectedError]] = None,
     expected_exc: Optional[ExpectedExcDef] = None,
-    executor_cls: Type[Executor] = SyncExecutor,
     **kwargs: Any
 ) -> None:
     if isinstance(expected_exc, tuple):
@@ -110,11 +110,11 @@ async def assert_execution(
         expected_exc, expected_msg = expected_exc, None
 
     async def _execute():
-        result = executor_cls.execute_request(
-            schema, ensure_document(doc), **kwargs
-        )
+        result = execute(schema, ensure_document(doc), **kwargs)
         if isawaitable(result):
-            return await result  # type: ignore
+            return await result
+        elif isinstance(result, Future):
+            return result.result(timeout=2)
         return result
 
     if expected_exc is not None:

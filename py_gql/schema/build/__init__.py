@@ -19,10 +19,10 @@ from typing import (
     cast,
 )
 
-from .. import types as _types
 from ..._utils import nested_key
 from ...exc import ExtensionError, SDLError
 from ...lang import ast as _ast, parse
+from .. import types as _types
 from ..schema import GraphQLType, NamedType, ObjectType, Schema
 from .type_builder import TypesBuilder
 from .visitors import (

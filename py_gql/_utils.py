@@ -3,18 +3,13 @@
 
 import collections
 import sys
-from asyncio import gather
-from inspect import isawaitable
 from typing import (
     AbstractSet,
     Any,
-    Awaitable,
     Callable,
-    Dict,
     Hashable,
     Iterable,
     Iterator,
-    List,
     Mapping,
     MutableMapping,
     Optional,
@@ -23,7 +18,6 @@ from typing import (
     TypeVar,
     Union,
     ValuesView,
-    cast,
 )
 
 T = TypeVar("T")
@@ -31,7 +25,6 @@ G = TypeVar("G")
 H = TypeVar("H", bound=Hashable)
 
 Lazy = Union[T, Callable[[], T]]
-MaybeAwaitable = Union[Awaitable[T], T]
 
 
 def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
@@ -212,122 +205,6 @@ def nested_key(
                 raise
             return default
     return obj
-
-
-def deferred_apply(
-    value: MaybeAwaitable[T], func: Callable[[T], G]
-) -> MaybeAwaitable[G]:
-    """ Apply a transformation to a value which can be deferred or not.
-
-    If the value is deferred (respectively not deferred) the result of this
-    function is deferred (respectively not deferred).
-    """
-    if isawaitable(value):
-
-        async def deferred() -> G:
-            return func(await cast(Awaitable[T], value))
-
-        return deferred()
-    return func(cast(T, value))
-
-
-def deferred_list(
-    source: Iterable[MaybeAwaitable[T]]
-) -> MaybeAwaitable[List[T]]:
-    """ Transform an iterator of deferred values into a deferred iterator.
-
-    If no value in the source iterator is deferred, the result is not deferred,
-    while if any value is deferred then the result is deferred.
-    """
-    deferred = []  # type: List[int]
-    results = []  # type: List[MaybeAwaitable[T]]
-
-    for index, value in enumerate(source):
-        if isawaitable(value):
-            deferred.append(index)
-        results.append(value)
-
-    if not deferred:
-        return cast(List[T], results)
-
-    async def deferred_result() -> List[T]:
-        awaited = await gather(
-            *(cast(Awaitable[T], results[index]) for index in deferred)
-        )
-        for index, result in zip(deferred, awaited):
-            results[index] = result
-        return cast(List[T], results)
-
-    return deferred_result()
-
-
-def deferred_dict(
-    source: Iterable[Tuple[str, MaybeAwaitable[T]]]
-) -> MaybeAwaitable[Dict[str, T]]:
-    """ Transform an iterator of keys and deferred values into a deferred dict.
-
-    If no value in the source iterator is deferred, the result is not deferred,
-    while if any value is deferred then the result is deferred.
-    """
-    deferred = []  # type: List[str]
-    target = {}  # type: Dict[str, MaybeAwaitable[T]]
-
-    for key, value in source:
-        if isawaitable(value):
-            deferred.append(key)
-        target[key] = value
-
-    if not deferred:
-        return cast(Dict[str, T], target)
-
-    async def deferred_result() -> Dict[str, T]:
-        awaited = await gather(
-            *(cast(Awaitable[T], target[key]) for key in deferred)
-        )
-        for key, result in zip(deferred, awaited):
-            target[key] = result
-
-        return cast(Dict[str, T], target)
-
-    return deferred_result()
-
-
-async def ensure_deferred(value: MaybeAwaitable[T]) -> T:
-    return (
-        (await cast(Awaitable[T], value))
-        if isawaitable(value)
-        else cast(T, value)
-    )
-
-
-def deferred_serial(
-    steps: List[Callable[[], MaybeAwaitable[T]]]
-) -> MaybeAwaitable[List[T]]:
-    """ Runs a series of function in a serial manner, unwrapping coroutines
-    along the way. """
-    steps = list(steps)[::-1]
-    results = []  # type: List[T]
-
-    def _next() -> MaybeAwaitable[List[T]]:
-        try:
-            result = steps.pop()()
-        except IndexError:
-            return results
-        else:
-            if isawaitable(result):
-
-                async def deferred() -> List[T]:
-                    inner = await cast(Awaitable[T], result)
-                    results.append(inner)
-                    return await ensure_deferred(_next())
-
-                return deferred()
-
-            else:
-                results.append(cast(T, result))
-                return _next()
-
-    return _next()
 
 
 if sys.version < "3.6":  # noqa: C901

@@ -1,43 +1,33 @@
 # -*- coding: utf-8 -*-
 """ """
 
-from inspect import isawaitable
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    cast,
-)
+from typing import Any, Callable, List, Mapping, Optional, Sequence, Type, cast
 
-from ._utils import MaybeAwaitable
 from .exc import (
     ExecutionError,
     GraphQLResponseError,
     GraphQLSyntaxError,
     VariablesCoercionError,
 )
-from .execution import AsyncExecutor, Executor, GraphQLResult, SyncExecutor
+from .execution import AsyncExecutor, Executor, GraphQLResult, execute
+from .execution.async_executor import unwrap_coro
 from .lang import parse
 from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
 
 
 def _graphql(
-    executor_cls: Type[Executor],
     schema: Schema,
     document: str,
+    *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-) -> MaybeAwaitable[GraphQLResult]:
+    executor_cls: Optional[Type[Executor]] = None
+) -> Any:
     """ Main GraphQL entrypoint encapsulating query processing from start to
     finish.
 
@@ -71,6 +61,12 @@ def _graphql(
 
     Returns:
         Execution result.
+
+    Warning:
+        The returned value will depend on the executor class. They ususually
+        return a type wrapping the `GraphQLResult` object such as
+        `Awaitable[GraphQLResult]`. You can refer to `graphql` or `graphql_sync`
+        for example usage.
     """
     schema.validate()
 
@@ -85,7 +81,7 @@ def _graphql(
                 )
             )
 
-        result = executor_cls.execute_request(
+        return execute(
             schema,
             ast,
             operation_name=operation_name,
@@ -93,19 +89,8 @@ def _graphql(
             initial_value=root,
             context_value=context,
             middlewares=middlewares,
+            executor_cls=executor_cls,
         )
-
-        if isawaitable(result):
-
-            async def deferred() -> GraphQLResult:
-                try:
-                    return await cast(Awaitable[GraphQLResult], result)
-                except ExecutionError as err:
-                    return GraphQLResult(data=None, errors=[err])
-
-            return deferred()
-        else:
-            return result
     except GraphQLSyntaxError as err:
         return GraphQLResult(errors=[err])
     except VariablesCoercionError as err:
@@ -117,43 +102,49 @@ def _graphql(
 async def graphql(
     schema: Schema,
     document: str,
+    *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None
 ) -> GraphQLResult:
-    return await cast(
-        Awaitable[GraphQLResult],
-        _graphql(
-            AsyncExecutor,
-            schema,
-            document,
-            variables=variables,
-            operation_name=operation_name,
-            root=root,
-            validators=validators,
-            context=context,
-            middlewares=middlewares,
-        ),
-    )
+    try:
+        return cast(
+            GraphQLResult,
+            await unwrap_coro(
+                _graphql(
+                    schema,
+                    document,
+                    variables=variables,
+                    operation_name=operation_name,
+                    root=root,
+                    validators=validators,
+                    context=context,
+                    middlewares=middlewares,
+                    executor_cls=AsyncExecutor,
+                )
+            ),
+        )
+    except ExecutionError as err:
+        return GraphQLResult(data=None, errors=[err])
 
 
 def graphql_sync(
     schema: Schema,
     document: str,
+    *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None
 ) -> GraphQLResult:
     return cast(
         GraphQLResult,
         _graphql(
-            SyncExecutor,
             schema,
             document,
             variables=variables,

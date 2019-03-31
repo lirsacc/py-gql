@@ -6,7 +6,7 @@ from inspect import isawaitable
 import pytest
 
 from py_gql.exc import ExecutionError, ResolverError
-from py_gql.execution import SyncExecutor
+from py_gql.execution import execute
 from py_gql.lang import parse
 from py_gql.schema import (
     ID,
@@ -467,9 +467,7 @@ async def test_executes_library_query_correctly_without_validation(
 async def test_result_is_ordered_according_to_query():
     """ check that deep iteration order of keys in result corresponds to order
     of appearance in query accounting for fragment use """
-    data, _ = SyncExecutor.execute_request(  # type: ignore
-        _LIBRARY_SCHEMA, parse(_LIBRARY_QUERY)
-    )
+    data, _ = execute(_LIBRARY_SCHEMA, parse(_LIBRARY_QUERY))
 
     def _extract_keys_in_order(d):
         if not isinstance(d, dict):

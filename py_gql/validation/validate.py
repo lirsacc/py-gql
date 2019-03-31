@@ -4,12 +4,12 @@
 from itertools import chain
 from typing import List, Optional, Sequence, Type
 
-from . import rules as _rules
 from ..exc import ValidationError
 from ..lang import ast as _ast
 from ..lang.visitor import ParrallelVisitor, visit
 from ..schema import Schema
 from ..utilities import TypeInfoVisitor
+from . import rules as _rules
 from .visitors import ValidationVisitor
 
 SPECIFIED_RULES = (
