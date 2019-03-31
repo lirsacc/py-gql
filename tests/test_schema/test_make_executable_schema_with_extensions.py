@@ -7,12 +7,12 @@ from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import UUID, Field, ObjectType, String
-from py_gql.schema.build import SchemaDirective, make_executable_schema
+from py_gql.schema.build import SchemaDirective, build_schema
 
 
 def test_object_type_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Object
@@ -62,7 +62,7 @@ def test_object_type_extension():
 
 def test_injected_object_type_extension():
     Foo = ObjectType("Foo", [Field("one", String)])
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         type Query {
             foo: Foo
@@ -92,7 +92,7 @@ def test_injected_object_type_extension():
 
 def test_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -107,7 +107,7 @@ def test_object_type_extension_duplicate_field():
 
 def test_object_type_extension_already_implemented_interface():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo: String }
             interface IFace1 { one: String }
@@ -123,7 +123,7 @@ def test_object_type_extension_already_implemented_interface():
 
 def test_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo: String }
             type Object { one: String }
@@ -141,7 +141,7 @@ def test_object_type_extension_bad_extension():
 
 def test_interface_type_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: IFace
@@ -173,7 +173,7 @@ def test_interface_type_extension():
 
 def test_interface_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -188,7 +188,7 @@ def test_interface_type_extension_duplicate_field():
 
 def test_interface_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo: IFace }
             interface IFace { one: String }
@@ -206,7 +206,7 @@ def test_interface_type_extension_bad_extension():
 
 def test_enum_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -242,7 +242,7 @@ def test_enum_extension():
 
 def test_enum_extension_duplicate_value():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -268,7 +268,7 @@ def test_enum_extension_duplicate_value():
 
 def test_enum_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -295,7 +295,7 @@ def test_enum_extension_bad_extension():
 
 def test_input_object_type_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo(in: Foo): String
@@ -327,7 +327,7 @@ def test_input_object_type_extension():
 
 def test_input_object_type_extension_duplicate_field():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -342,7 +342,7 @@ def test_input_object_type_extension_duplicate_field():
 
 def test_input_object_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query { foo(in: Foo): String }
             input Foo { one: Int }
@@ -360,7 +360,7 @@ def test_input_object_type_extension_bad_extension():
 
 def test_union_type_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -401,7 +401,7 @@ def test_union_type_extension():
 
 def test_union_type_extension_duplicate_type():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -431,7 +431,7 @@ def test_union_type_extension_duplicate_type():
 
 def test_union_type_extension_bad_extension():
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: Foo
@@ -467,7 +467,7 @@ def test_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @protected on SCALAR
 
@@ -510,7 +510,7 @@ def test_injected_scalar_type_extension():
         def visit_scalar(self, scalar_type):
             return scalar_type
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @protected on SCALAR
 
@@ -552,7 +552,7 @@ def test_injected_scalar_type_extension():
 
 
 def test_does_not_extend_specified_scalar():
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @protected on SCALAR
 
@@ -568,7 +568,7 @@ def test_does_not_extend_specified_scalar():
 
 
 def test_schema_extension():
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         type Query { a: Boolean }
 
@@ -587,7 +587,7 @@ def test_schema_extension():
 
 
 def test_schema_extension_directive():
-    make_executable_schema(
+    build_schema(
         """
         directive @onSchema on SCHEMA
 
@@ -605,7 +605,7 @@ def test_schema_extension_directive():
 
 def test_mixed_definition_and_extension():
     assert (
-        make_executable_schema(
+        build_schema(
             """
             type Query { _noop: Int }
 

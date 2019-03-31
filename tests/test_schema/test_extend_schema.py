@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Tests for extend schema from a pre-built schema. """
 # This file only test some cases that are not exercised when testing
-# make_executable_schema as well as adds some lower level assertions.
+# build_schema as well as adds some lower level assertions.
 
 from typing import cast
 

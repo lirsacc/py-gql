@@ -34,7 +34,7 @@ from .visitors import (
 __all__ = (
     "build_schema_from_ast",
     "extend_schema",
-    "make_executable_schema",
+    "build_schema",
     "SchemaDirective",
 )
 
@@ -45,7 +45,7 @@ ResolverMap = Union[
 ]
 
 
-def make_executable_schema(
+def build_schema(
     document: Union[_ast.Document, str],
     resolvers: Optional[ResolverMap] = None,
     additional_types: Optional[List[NamedType]] = None,

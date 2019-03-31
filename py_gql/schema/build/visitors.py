@@ -210,7 +210,7 @@ class SchemaVisitor(object):
 # the name of the directive.
 class SchemaDirective(SchemaVisitor):
     """ @directive implementation for use alongside
-    :func:`py_gql.schema.build.make_executable_schema`.
+    :func:`py_gql.schema.build.build_schema`.
 
     You need to subclass this in order to define your own custom directives.
     For example a directive that modifies the field resolver to always
@@ -233,7 +233,7 @@ class SchemaDirective(SchemaVisitor):
             )
 
         # Use it as follows
-        schema = make_executable_schema(
+        schema = build_schema(
             '''
             directive @upper on FIELD_DEFINITION
 

@@ -22,7 +22,7 @@ from py_gql.schema import (
     ScalarType,
     String,
 )
-from py_gql.schema.build import SchemaDirective, make_executable_schema
+from py_gql.schema.build import SchemaDirective, build_schema
 from py_gql.utilities import default_resolver
 
 
@@ -54,7 +54,7 @@ def test_simple_field_modifier():
 
     assert (
         graphql_sync(
-            make_executable_schema(
+            build_schema(
                 """
                 directive @upper on FIELD_DEFINITION
 
@@ -78,7 +78,7 @@ def test_directive_on_wrong_location():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             directive @upper on FIELD_DEFINITION
 
@@ -96,7 +96,7 @@ def test_directive_on_wrong_location():
 
 
 def test_ignores_unknown_directive_implementation():
-    make_executable_schema(
+    build_schema(
         """
         directive @upper on FIELD_DEFINITION
 
@@ -125,7 +125,7 @@ def test_field_modifier_using_arguments():
 
     assert (
         graphql_sync(
-            make_executable_schema(
+            build_schema(
                 """
                 type Query {
                     foo: Int @power
@@ -175,7 +175,7 @@ def test_object_modifier_and_field_modifier():
                 nodes=object_definition.nodes,
             )
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @uid (name: String! = "uid", source: [String]!) on OBJECT
         directive @upper on FIELD_DEFINITION
@@ -233,7 +233,7 @@ def test_missing_definition():
         pass
 
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             type Query {
                 foo: String @upper
@@ -272,7 +272,7 @@ def test_multiple_directives_applied_in_order():
 
     assert (
         graphql_sync(
-            make_executable_schema(
+            build_schema(
                 """
                 type Query {
                     foo: Int @power @plus_one
@@ -350,7 +350,7 @@ def test_input_values():
             )
             return field
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         type Query {
             foo (
@@ -444,7 +444,7 @@ def test_enum_value_directive():
                 deprecation_reason=enum_value.deprecation_reason,
             )
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @cssColor on ENUM_VALUE
 
@@ -482,7 +482,7 @@ def test_enum_type_directive():
                 nodes=enum.nodes,
             )
 
-    schema = make_executable_schema(
+    schema = build_schema(
         """
         directive @generated on ENUM
 
@@ -524,7 +524,7 @@ def test_schema_extension_duplicate_directive():
             pass
 
     with pytest.raises(SDLError) as exc_info:
-        make_executable_schema(
+        build_schema(
             """
             directive @onSchema on SCHEMA
 

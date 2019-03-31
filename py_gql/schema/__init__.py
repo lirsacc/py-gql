@@ -56,7 +56,7 @@ from .directives import (
 )
 
 from .build import (
-    make_executable_schema,
+    build_schema,
     build_schema_from_ast,
     extend_schema,
     SchemaDirective,
