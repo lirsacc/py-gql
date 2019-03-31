@@ -141,8 +141,9 @@ def fmt(ctx, check=False, files=None):
             _join(
                 [
                     "black",
-                    "--check" if check else None,
                     "--line-length=80",
+                    "--target-version=py35",
+                    "--check" if check else None,
                     files,
                 ]
             ),

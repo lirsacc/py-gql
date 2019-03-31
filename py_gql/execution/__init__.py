@@ -43,7 +43,7 @@ def execute(
     context_value: Optional[Any] = None,
     middlewares: Optional[Sequence[Resolver]] = None,
     executor_cls: Optional[TExecutorCls] = None,
-    executor_args: Optional[Mapping[str, Any]] = None
+    executor_args: Optional[Mapping[str, Any]] = None,
 ) -> Any:
     operation = get_operation(document, operation_name)
 
@@ -68,7 +68,7 @@ def execute(
         coerced_variables,
         context_value,
         middlewares or [],
-        **(executor_args or {})
+        **(executor_args or {}),
     )
 
     if operation.operation == "query":
