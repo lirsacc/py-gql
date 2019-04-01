@@ -23,8 +23,8 @@ pylint ~= 2.2
 mypy
 
 recommonmark ~= 0.4
-sphinx ~= 1.7
-sphinx_rtd_theme ~= 0.4
+sphinx ~= 1.8
+alabaster ~= 0.7
 
 wheel
 setuptools

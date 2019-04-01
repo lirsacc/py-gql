@@ -1,0 +1,37 @@
+[
+  {
+    "type": "Droid",
+    "id": 2000,
+    "name": "C-3PO"
+  },
+  {
+    "type": "Droid",
+    "id": 2001,
+    "name": "R2-D2"
+  },
+  {
+    "type": "Human",
+    "id": 1000,
+    "name": "Luke Skywalker"
+  },
+  {
+    "type": "Human",
+    "id": 1001,
+    "name": "Darth Vader"
+  },
+  {
+    "type": "Human",
+    "id": 1002,
+    "name": "Han Solo"
+  },
+  {
+    "type": "Human",
+    "id": 1003,
+    "name": "Leia Organa"
+  },
+  {
+    "type": "Human",
+    "id": 1004,
+    "name": "Wilhuff Tarkin"
+  }
+]

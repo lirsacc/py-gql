@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-""" Visitors are the basic abstraction used to traverse a GraphQL AST.
+"""
+Visitors are the basic abstraction used to traverse a GraphQL AST.
 
-Note:
+Warning:
     While the concept is similar to the one used in the reference implementation,
     this doesn't support editing the ast, tracking of the visitor path or
     providing shared context. You can refer to :mod:`py_gql.validation` for
@@ -19,7 +20,7 @@ __all__ = (
     "Visitor",
     "visit",
     "DispatchingVisitor",
-    "ParrallelVisitor",
+    "ParallelVisitor",
 )
 
 
@@ -27,29 +28,47 @@ N = TypeVar("N", bound=_ast.Node)
 
 
 class SkipNode(GraphQLError):
+    """
+    Raise this to short-circuit traversal and ignore the node and all its
+    children.
+    """
+
     def __init__(self):
         super().__init__("")
 
 
 class Visitor(object):
-    """ Visitor base class. """
+    """
+    Visitor base class.
+    """
 
     def enter(self, node: _ast.Node) -> None:
-        """ Function called when entering a node.
+        """
+        Function called when entering a node.
 
         Raising :class:`SkipNode` in this function will lead to ignoring the
         current node and all it's descendants. as well as prevent running
         :meth:`leave`.
+
+        Args:
+            node:
         """
+        raise NotImplementedError()
 
     def leave(self, node: _ast.Node) -> None:
-        """ Function called when leaving a node. Will not be called if
-        :class:`SkipNode` was raised in `enter`.
         """
+        Function called when leaving a node. Will not be called if
+        :class:`SkipNode` was raised in `enter`.
+
+        Args:
+            node:
+        """
+        raise NotImplementedError()
 
 
 def visit(visitor: Visitor, ast_root: _ast.Document) -> None:
-    """ Visit a GraphQL parse tree.
+    """
+    Visit a GraphQL parse tree.
 
     All side effects and results of traversal should be contained in the
     visitor instance.
@@ -65,7 +84,8 @@ def visit(visitor: Visitor, ast_root: _ast.Document) -> None:
 def _visiting(
     func: Callable[[Visitor, N], None]
 ) -> Callable[[Visitor, N], None]:
-    """ Wrap a function to call the provided visitor ``enter`` / ``leave``
+    """
+    Wrap a function to call the provided visitor ``enter`` / ``leave``
     functions before / after processing a node.
     """
 
@@ -88,7 +108,9 @@ def _visiting(
 def _many(
     fn: Callable[[Visitor, N], None], visitor: Visitor, nodes: Iterable[N]
 ) -> None:
-    """ Run a visiting procedure on multiple nodes """
+    """
+    Run a visiting procedure on multiple nodes.
+    """
     if nodes:
         for node in nodes:
             fn(visitor, node)
@@ -343,189 +365,190 @@ def _visit_directive_definition(
 
 
 class DispatchingVisitor(Visitor):
-    """ Base class for specialised visitors.
+    """
+    Base class for specialised visitors.
 
     You should subclass this and implement methods named ``enter_*`` and
     ``leave_*`` where ``*`` represents the node class to be handled.
     For instance to process :class:`py_gql.lang.ast.FloatValue` nodes,
     implement ``enter_float_value``.
 
-    Default behaviour is noop for all classes.
+    Default behaviour is noop for all token types.
     """
 
-    def enter(self, node):  # noqa: C901
+    def enter(self, node: _ast.Node) -> None:  # noqa: C901
         kind = type(node)
         if kind is _ast.Document:
-            self.enter_document(node)
+            self.enter_document(node)  # type: ignore
         elif kind is _ast.OperationDefinition:
-            self.enter_operation_definition(node)
+            self.enter_operation_definition(node)  # type: ignore
         elif kind is _ast.FragmentDefinition:
-            self.enter_fragment_definition(node)
+            self.enter_fragment_definition(node)  # type: ignore
         elif kind is _ast.VariableDefinition:
-            self.enter_variable_definition(node)
+            self.enter_variable_definition(node)  # type: ignore
         elif kind is _ast.Directive:
-            self.enter_directive(node)
+            self.enter_directive(node)  # type: ignore
         elif kind is _ast.Argument:
-            self.enter_argument(node)
+            self.enter_argument(node)  # type: ignore
         elif kind is _ast.SelectionSet:
-            self.enter_selection_set(node)
+            self.enter_selection_set(node)  # type: ignore
         elif kind is _ast.Field:
-            self.enter_field(node)
+            self.enter_field(node)  # type: ignore
         elif kind is _ast.FragmentSpread:
-            self.enter_fragment_spread(node)
+            self.enter_fragment_spread(node)  # type: ignore
         elif kind is _ast.InlineFragment:
-            self.enter_inline_fragment(node)
+            self.enter_inline_fragment(node)  # type: ignore
         elif kind is _ast.NullValue:
-            self.enter_null_value(node)
+            self.enter_null_value(node)  # type: ignore
         elif kind is _ast.IntValue:
-            self.enter_int_value(node)
+            self.enter_int_value(node)  # type: ignore
         elif kind is _ast.FloatValue:
-            self.enter_float_value(node)
+            self.enter_float_value(node)  # type: ignore
         elif kind is _ast.StringValue:
-            self.enter_string_value(node)
+            self.enter_string_value(node)  # type: ignore
         elif kind is _ast.BooleanValue:
-            self.enter_boolean_value(node)
+            self.enter_boolean_value(node)  # type: ignore
         elif kind is _ast.EnumValue:
-            self.enter_enum_value(node)
+            self.enter_enum_value(node)  # type: ignore
         elif kind is _ast.Variable:
-            self.enter_variable(node)
+            self.enter_variable(node)  # type: ignore
         elif kind is _ast.ListValue:
-            self.enter_list_value(node)
+            self.enter_list_value(node)  # type: ignore
         elif kind is _ast.ObjectValue:
-            self.enter_object_value(node)
+            self.enter_object_value(node)  # type: ignore
         elif kind is _ast.ObjectField:
-            self.enter_object_field(node)
+            self.enter_object_field(node)  # type: ignore
         elif kind is _ast.NamedType:
-            self.enter_named_type(node)
+            self.enter_named_type(node)  # type: ignore
         elif kind is _ast.ListType:
-            self.enter_list_type(node)
+            self.enter_list_type(node)  # type: ignore
         elif kind is _ast.NonNullType:
-            self.enter_non_null_type(node)
+            self.enter_non_null_type(node)  # type: ignore
         elif kind is _ast.SchemaDefinition:
-            self.enter_schema_definition(node)
+            self.enter_schema_definition(node)  # type: ignore
         elif kind is _ast.OperationTypeDefinition:
-            self.enter_operation_type_definition(node)
+            self.enter_operation_type_definition(node)  # type: ignore
         elif kind is _ast.ScalarTypeDefinition:
-            self.enter_scalar_type_definition(node)
+            self.enter_scalar_type_definition(node)  # type: ignore
         elif kind is _ast.ObjectTypeDefinition:
-            self.enter_object_type_definition(node)
+            self.enter_object_type_definition(node)  # type: ignore
         elif kind is _ast.FieldDefinition:
-            self.enter_field_definition(node)
+            self.enter_field_definition(node)  # type: ignore
         elif kind is _ast.InputValueDefinition:
-            self.enter_input_value_definition(node)
+            self.enter_input_value_definition(node)  # type: ignore
         elif kind is _ast.InterfaceTypeDefinition:
-            self.enter_interface_type_definition(node)
+            self.enter_interface_type_definition(node)  # type: ignore
         elif kind is _ast.UnionTypeDefinition:
-            self.enter_union_type_definition(node)
+            self.enter_union_type_definition(node)  # type: ignore
         elif kind is _ast.EnumTypeDefinition:
-            self.enter_enum_type_definition(node)
+            self.enter_enum_type_definition(node)  # type: ignore
         elif kind is _ast.EnumValueDefinition:
-            self.enter_enum_value_definition(node)
+            self.enter_enum_value_definition(node)  # type: ignore
         elif kind is _ast.InputObjectTypeDefinition:
-            self.enter_input_object_type_definition(node)
+            self.enter_input_object_type_definition(node)  # type: ignore
         elif kind is _ast.SchemaExtension:
-            self.enter_schema_extension(node)
+            self.enter_schema_extension(node)  # type: ignore
         elif kind is _ast.ScalarTypeExtension:
-            self.enter_scalar_type_extension(node)
+            self.enter_scalar_type_extension(node)  # type: ignore
         elif kind is _ast.ObjectTypeExtension:
-            self.enter_object_type_extension(node)
+            self.enter_object_type_extension(node)  # type: ignore
         elif kind is _ast.InterfaceTypeExtension:
-            self.enter_interface_type_extension(node)
+            self.enter_interface_type_extension(node)  # type: ignore
         elif kind is _ast.UnionTypeExtension:
-            self.enter_union_type_extension(node)
+            self.enter_union_type_extension(node)  # type: ignore
         elif kind is _ast.EnumTypeExtension:
-            self.enter_enum_type_extension(node)
+            self.enter_enum_type_extension(node)  # type: ignore
         elif kind is _ast.InputObjectTypeExtension:
-            self.enter_input_object_type_extension(node)
+            self.enter_input_object_type_extension(node)  # type: ignore
         elif kind is _ast.DirectiveDefinition:
-            self.enter_directive_definition(node)
+            self.enter_directive_definition(node)  # type: ignore
 
-    def leave(self, node):  # noqa: C901
+    def leave(self, node: _ast.Node) -> None:  # noqa: C901
         kind = type(node)
         if kind is _ast.Document:
-            self.leave_document(node)
+            self.leave_document(node)  # type: ignore
         elif kind is _ast.OperationDefinition:
-            self.leave_operation_definition(node)
+            self.leave_operation_definition(node)  # type: ignore
         elif kind is _ast.FragmentDefinition:
-            self.leave_fragment_definition(node)
+            self.leave_fragment_definition(node)  # type: ignore
         elif kind is _ast.VariableDefinition:
-            self.leave_variable_definition(node)
+            self.leave_variable_definition(node)  # type: ignore
         elif kind is _ast.Directive:
-            self.leave_directive(node)
+            self.leave_directive(node)  # type: ignore
         elif kind is _ast.Argument:
-            self.leave_argument(node)
+            self.leave_argument(node)  # type: ignore
         elif kind is _ast.SelectionSet:
-            self.leave_selection_set(node)
+            self.leave_selection_set(node)  # type: ignore
         elif kind is _ast.Field:
-            self.leave_field(node)
+            self.leave_field(node)  # type: ignore
         elif kind is _ast.FragmentSpread:
-            self.leave_fragment_spread(node)
+            self.leave_fragment_spread(node)  # type: ignore
         elif kind is _ast.InlineFragment:
-            self.leave_inline_fragment(node)
+            self.leave_inline_fragment(node)  # type: ignore
         elif kind is _ast.NullValue:
-            self.leave_null_value(node)
+            self.leave_null_value(node)  # type: ignore
         elif kind is _ast.IntValue:
-            self.leave_int_value(node)
+            self.leave_int_value(node)  # type: ignore
         elif kind is _ast.FloatValue:
-            self.leave_float_value(node)
+            self.leave_float_value(node)  # type: ignore
         elif kind is _ast.StringValue:
-            self.leave_string_value(node)
+            self.leave_string_value(node)  # type: ignore
         elif kind is _ast.BooleanValue:
-            self.leave_boolean_value(node)
+            self.leave_boolean_value(node)  # type: ignore
         elif kind is _ast.EnumValue:
-            self.leave_enum_value(node)
+            self.leave_enum_value(node)  # type: ignore
         elif kind is _ast.Variable:
-            self.leave_variable(node)
+            self.leave_variable(node)  # type: ignore
         elif kind is _ast.ListValue:
-            self.leave_list_value(node)
+            self.leave_list_value(node)  # type: ignore
         elif kind is _ast.ObjectValue:
-            self.leave_object_value(node)
+            self.leave_object_value(node)  # type: ignore
         elif kind is _ast.ObjectField:
-            self.leave_object_field(node)
+            self.leave_object_field(node)  # type: ignore
         elif kind is _ast.NamedType:
-            self.leave_named_type(node)
+            self.leave_named_type(node)  # type: ignore
         elif kind is _ast.ListType:
-            self.leave_list_type(node)
+            self.leave_list_type(node)  # type: ignore
         elif kind is _ast.NonNullType:
-            self.leave_non_null_type(node)
+            self.leave_non_null_type(node)  # type: ignore
         elif kind is _ast.SchemaDefinition:
-            self.leave_schema_definition(node)
+            self.leave_schema_definition(node)  # type: ignore
         elif kind is _ast.OperationTypeDefinition:
-            self.leave_operation_type_definition(node)
+            self.leave_operation_type_definition(node)  # type: ignore
         elif kind is _ast.ScalarTypeDefinition:
-            self.leave_scalar_type_definition(node)
+            self.leave_scalar_type_definition(node)  # type: ignore
         elif kind is _ast.ObjectTypeDefinition:
-            self.leave_object_type_definition(node)
+            self.leave_object_type_definition(node)  # type: ignore
         elif kind is _ast.FieldDefinition:
-            self.leave_field_definition(node)
+            self.leave_field_definition(node)  # type: ignore
         elif kind is _ast.InputValueDefinition:
-            self.leave_input_value_definition(node)
+            self.leave_input_value_definition(node)  # type: ignore
         elif kind is _ast.InterfaceTypeDefinition:
-            self.leave_interface_type_definition(node)
+            self.leave_interface_type_definition(node)  # type: ignore
         elif kind is _ast.UnionTypeDefinition:
-            self.leave_union_type_definition(node)
+            self.leave_union_type_definition(node)  # type: ignore
         elif kind is _ast.EnumTypeDefinition:
-            self.leave_enum_type_definition(node)
+            self.leave_enum_type_definition(node)  # type: ignore
         elif kind is _ast.EnumValueDefinition:
-            self.leave_enum_value_definition(node)
+            self.leave_enum_value_definition(node)  # type: ignore
         elif kind is _ast.InputObjectTypeDefinition:
-            self.leave_input_object_type_definition(node)
+            self.leave_input_object_type_definition(node)  # type: ignore
         elif kind is _ast.SchemaExtension:
-            self.leave_schema_extension(node)
+            self.leave_schema_extension(node)  # type: ignore
         elif kind is _ast.ScalarTypeExtension:
-            self.leave_scalar_type_extension(node)
+            self.leave_scalar_type_extension(node)  # type: ignore
         elif kind is _ast.ObjectTypeExtension:
-            self.leave_object_type_extension(node)
+            self.leave_object_type_extension(node)  # type: ignore
         elif kind is _ast.InterfaceTypeExtension:
-            self.leave_interface_type_extension(node)
+            self.leave_interface_type_extension(node)  # type: ignore
         elif kind is _ast.UnionTypeExtension:
-            self.leave_union_type_extension(node)
+            self.leave_union_type_extension(node)  # type: ignore
         elif kind is _ast.EnumTypeExtension:
-            self.leave_enum_type_extension(node)
+            self.leave_enum_type_extension(node)  # type: ignore
         elif kind is _ast.InputObjectTypeExtension:
-            self.leave_input_object_type_extension(node)
+            self.leave_input_object_type_extension(node)  # type: ignore
         elif kind is _ast.DirectiveDefinition:
-            self.leave_directive_definition(node)
+            self.leave_directive_definition(node)  # type: ignore
 
     def _default_handler(self, node):
         pass
@@ -815,24 +838,28 @@ class DispatchingVisitor(Visitor):
         pass
 
 
-class ParrallelVisitor(Visitor):
-    """ Abstraction to run multiple visitor instances as one.
+class ParallelVisitor(Visitor):
+    """
+    Abstraction to run multiple visitor instances as one.
 
-    - All visitors are run in the order they are defined
+    - All visitors are run in the order they are defined.
     - raising :class:`SkipNode` in one of them will prevent any later visitor
-      to run
+      to run.
 
     Args:
-        *visitors: List of visitors to run
+        *visitors: List of visitors to run.
+
+    Attributes:
+        visitors (List[Visitor]): Children visitors.
     """
 
     def __init__(self, *visitors: Visitor):
         self.visitors = tuple(visitors)
 
-    def enter(self, node):
+    def enter(self, node: _ast.Node) -> None:
         for v in self.visitors:
             v.enter(node)
 
-    def leave(self, node):
+    def leave(self, node: _ast.Node) -> None:
         for v in self.visitors[::-1]:
             v.leave(node)

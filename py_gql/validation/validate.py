@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence, Type
 
 from ..exc import ValidationError
 from ..lang import ast as _ast
-from ..lang.visitor import ParrallelVisitor, visit
+from ..lang.visitor import ParallelVisitor, visit
 from ..schema import Schema
 from ..utilities import TypeInfoVisitor
 from . import rules as _rules
@@ -107,7 +107,7 @@ def validate_ast(
 
     # Type info NEEDS to be first to be accurately used inside other validators
     # so when a validator enters node the type stack has already been updated.
-    validator = ParrallelVisitor(type_info, *validator_instances)
+    validator = ParallelVisitor(type_info, *validator_instances)
 
     visit(validator, ast_root)
     return ValidationResult(

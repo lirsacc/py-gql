@@ -1,0 +1,53 @@
+$ http --json POST :5000/graphql query='{ hero { id name type } }'
+HTTP/1.0 200 OK
+...
+
+{
+    "data": {
+        "hero": {
+            "id": 2000,
+            "name": "C-3PO",
+            "type": "Droid"
+        }
+    }
+}
+
+$ http --json POST :5000/graphql query='{ character(id: 10) { name } }'
+HTTP/1.0 200 OK
+...
+
+{
+    "data": {
+        "character": null
+    }
+}
+
+$ http --json POST :5000/graphql query='{ character(id: 1000) { name } }'
+HTTP/1.0 200 OK
+...
+
+{
+    "data": {
+        "character": {
+            "name": "Luke Skywalker"
+        }
+    }
+}
+
+$ http --json POST :5000/graphql query='{ character(id: 1000) }'
+HTTP/1.0 200 OK
+...
+
+{
+    "errors": [
+        {
+            "locations": [
+                {
+                    "column": 3,
+                    "line": 1
+                }
+            ],
+            "message": "Field \"character\" of type \"Person\" must have a subselection"
+        }
+    ]
+}

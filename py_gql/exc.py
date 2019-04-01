@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-""" All exceptions for this library are defined in the :mod:`py_gql.exc`
-module. """
+"""
+This module implements all the relevant exceptions for this library.
+"""
 # pylint: disable = too-many-ancestors
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence
@@ -15,7 +16,10 @@ from .lang import ast as _ast
 
 
 class GraphQLError(Exception):
-    """ Base GraphQL exception from which all other inherit. """
+    """
+    Base GraphQL exception from which all other inherit. You should prefer
+    using one of its subclasses most of the time.
+    """
 
     def __init__(self, message: str):
         super().__init__(message)
@@ -26,15 +30,29 @@ class GraphQLError(Exception):
 
 
 class GraphQLResponseError(GraphQLError):
-    """ Implementors of this are suitable for usage in GraphQL responses and
-    exposing to end users. """
+    """
+    Implementors of this are suitable for usage in GraphQL responses and
+    exposing to end users.
+
+    See `the relevant part of the spec
+    <https://graphql.github.io/graphql-spec/June2018/#sec-Errors>`_ for more
+    information on response errors.
+    """
 
     def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the exception to a dictionnary that can be serialized to
+        JSON and exposed in a GraphQL response.
+
+        Returns:
+            JSON serializable representation of the error.
+        """
         raise NotImplementedError()
 
 
 class GraphQLSyntaxError(GraphQLResponseError):
-    """ The GraphQL document is invalid.
+    """
+    Syntax error while parsing a GraphQL document (query or schema definition).
 
     Args:
         message: Explanatory message
@@ -42,12 +60,12 @@ class GraphQLSyntaxError(GraphQLResponseError):
         source: Source string from which the syntax error originated
 
     Attributes:
-        message: Explanatory message
-        position: 0-indexed position locating the syntax error
-        source: Source string from which the syntax error originated
+        message (str): Explanatory message
+        position (int): 0-indexed position locating the syntax error
+        source (str): Source string from which the syntax error originated
     """
 
-    def __init__(self, message: str, position: int, source: Optional[str]):
+    def __init__(self, message: str, position: int, source: str):
         super().__init__(message)
         self.source = source
         self.position = position
@@ -55,8 +73,10 @@ class GraphQLSyntaxError(GraphQLResponseError):
 
     @property
     def highlighted(self) -> str:
-        """ str: Message followed by a view of the source document pointing at
-        the exact location of the error. """
+        """
+        str: Message followed by a view of the source document pointing at
+        the exact location of the error.
+        """
         if self._highlighted is not None:
             return self._highlighted
 
@@ -71,13 +91,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
     def __str__(self) -> str:
         return self.highlighted
 
-    def to_dict(self):
-        """ Convert the exception to a dictionnary that can be serialized to
-        JSON and exposed in a graphql response.
-
-        Returns:
-            dict: Dict representation of the error.
-        """
+    def to_dict(self) -> Dict[str, Any]:
         line, col = index_to_loc(self.source, self.position)
         return {
             "message": str(self),
@@ -100,7 +114,7 @@ class UnexpectedEOF(GraphQLSyntaxError):
         source: Source string from which the syntax error originated
     """
 
-    def __init__(self, position: int, source: Optional[str]):
+    def __init__(self, position: int, source: str):
         super().__init__("Unexpected <EOF>", position, source)
 
 
@@ -117,18 +131,20 @@ class UnexpectedToken(GraphQLSyntaxError):
 
 
 class GraphQLLocatedError(GraphQLResponseError):
-    """ Error that can be traced back to specific position(s) in the source
-    document.
+    """
+    Response error that can be traced back to specific position(s) and
+    parse node(s) in the source document.
 
     Args:
         message: Explanatory message
-        nodes: Node or nodes relevant to the exception
+        nodes: Nodes relevant to the exception
         path: Location of the error during execution
 
     Attributes:
-        message: Explanatory message
-        nodes: Node or nodes relevant to the exception
-        path: Location of the error during execution
+        message (str): Explanatory message
+        nodes (List[py_gql.lang.ast.Node]): Nodes relevant to the exception
+        path (Optional[Sequence[Union[int, str]]]):
+            Location of the error during execution
     """
 
     def __init__(
@@ -145,12 +161,6 @@ class GraphQLLocatedError(GraphQLResponseError):
         return self.message
 
     def to_dict(self) -> Dict[str, Any]:
-        """ Convert the exception to a dictionnary that can be serialized to
-        JSON and exposed in a graphql response.
-
-        Returns:
-            dict: Dict representation of the error.
-        """
         kv = (
             ("message", str(self)),
             (
@@ -202,22 +212,17 @@ class ValidationError(GraphQLLocatedError):
 
 
 class ExecutionError(GraphQLResponseError):
-    """ Error that prevented execution.
+    """
+    Error that prevented execution of a query.
 
     Args:
         message: Explanatory message
 
     Attributes:
-        message: Explanatory message
+        message (str): Explanatory message
     """
 
     def to_dict(self) -> Dict[str, Any]:
-        """ Convert the exception to a dictionnary that can be serialized to
-        JSON and exposed in a graphql response.
-
-        Returns:
-            dict: Dict representation of the error.
-        """
         return {"message": str(self)}
 
 
@@ -226,13 +231,14 @@ class VariableCoercionError(GraphQLLocatedError):
 
 
 class VariablesCoercionError(GraphQLError):
-    """ Collection of multiple :class:`VariableCoercionError`.
+    """
+    Collection of multiple :class:`VariableCoercionError`.
 
     Args:
         errors: Wrapped errors
 
     Attributes:
-        errors: Wrapped errors
+        errors (Sequence[VariableCoercionError]): Wrapped errors
     """
 
     def __init__(self, errors: Sequence[VariableCoercionError]):
@@ -257,13 +263,14 @@ class CoercionError(GraphQLLocatedError):
 
 
 class MultiCoercionError(CoercionError):
-    """ Collection of multiple :class:`CoercionError`.
+    """
+    Collection of multiple :class:`CoercionError`.
 
     Args:
         errors: Wrapped errors
 
     Attributes:
-        errors: Wrapped errors
+        errors (Sequence[CoercionError]): Wrapped errors
     """
 
     def __init__(self, errors: Sequence[CoercionError]):
@@ -277,10 +284,13 @@ class MultiCoercionError(CoercionError):
 
 
 class ResolverError(GraphQLLocatedError):
-    """ Raised when an expected error happens during field resolution.
+    """
+    Raised when an expected error happens during field resolution.
 
     Subclass or raise this exception directly for use in your own
-    resolvers in order for them to report errors instead of crashing execution.
+    resolvers in order for them to report errors instead of crashing the
+    query execution.
+
     If your exception exposes an ``extensions`` attribute it will be included
     in the serialized version without the need to override :meth:`to_dict`.
 
@@ -291,10 +301,11 @@ class ResolverError(GraphQLLocatedError):
         extensions: Error extensions
 
     Attributes:
-        message: Explanatory message
+        message (str): Explanatory message
         nodes (List[py_gql.lang.ast.Node]): Node or nodes relevant to the exception
-        path (list): Location of the error during execution
-        extensions (Optional[dict]): Error extensions
+        path (Optional[Sequence[Union[int, str]]]):
+            Location of the error during execution
+        extensions (Optional[Mapping[str, Any]]): Error extensions
 
     """
 
@@ -309,12 +320,6 @@ class ResolverError(GraphQLLocatedError):
         self.extensions = extensions
 
     def to_dict(self) -> Dict[str, Any]:
-        """ Convert the exception to a dictionnary that can be serialized to
-        JSON and exposed in a graphql response.
-
-        Returns:
-            dict: Dict representation of the error.
-        """
         dict_ = super().to_dict()
         if self.extensions:
             dict_["extensions"] = dict(self.extensions)
@@ -322,14 +327,20 @@ class ResolverError(GraphQLLocatedError):
 
 
 class SDLError(GraphQLLocatedError):
-    """ Error that occured when parsing and / or applying a schema definition
-    document (SDL). """
+    """
+    Error that occured when parsing and / or applying a schema definition
+    document (SDL).
+    """
 
 
 class ExtensionError(SDLError):
-    """ Error that occured when applying a schema or type extension node
-    to an existing schema. """
+    """
+    Error that occured when applying a schema or type extension node
+    to an existing schema.
+    """
 
 
 class SchemaDirectiveError(SDLError):
-    pass
+    """
+    Error that occured when applying schema directives.
+    """

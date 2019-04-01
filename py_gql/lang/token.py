@@ -16,12 +16,12 @@ class Token(object):
     Attributes:
         start (int): Starting position for this token (0-indexed)
         end (int): End position for this token (0-indexed)
-        value (Optional[str]): Characters making up this token
+        value (str): Characters making up this token
 
     Args:
         start (int): Starting position for this token (0-indexed)
         end (int): End position for this token (0-indexed)
-        value (Optional[str]): Characters making up this token
+        value (str): Characters making up this token
     """
 
     __slots__ = "start", "end", "value"
@@ -52,6 +52,10 @@ class Token(object):
 
 
 class ConstToken(Token):
+    """
+    Encode tokens with contants values. Should not be used directly.
+    """
+
     value = ""
 
     # pylint: disable = super-init-not-called

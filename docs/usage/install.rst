@@ -3,20 +3,19 @@
 Installation
 ============
 
-**Python Versions**: CPython 2.7, 3.5+
+**Python Versions**: py_gql supports CPython 3.5 and newer.
 
-**Platforms**: Unix/Posix, MacOS X
+**Platforms**: Unix/Posix, MacOS X.
 
-**Dependencies**:
-    - `six <https://pypi.org/project/six/>`_
-    - `futures <https://github.com/agronholm/pythonfutures>`_
-
+**Dependencies**: py_gql has no direct dependency.
 
 Installing from PyPI
 --------------------
 
-A source distribution and universal wheel are available on PyPI. Installing
-should be as simple as
+A source distribution and universal wheel are available on
+`PyPI <https://pypi.org/project/py-gql/>`_.
+
+Installing should be as simple as:
 
 .. code::
 
@@ -32,11 +31,11 @@ Cython
 
 The default pip install should install the universal wheel, however for some
 extra performance in production py-gql's ``setup.py`` can detect the presence
-of `Cython <http://cython.org/>`_.  and compile (i.e. cythonize) its own code
+of `Cython <http://cython.org/>`_ and compile (i.e. cythonize) its own code
 with the system’s default C compiler. This provides significant performance
 improvents almost for free.
 
-To make sure you benefit from this, run:
+To benefit from this, run:
 
 .. code::
 
@@ -58,11 +57,13 @@ To make sure you benefit from this, run:
 Installing from source
 ----------------------
 
-py-gql's source code is hosted on `Github <https://github.com/lirsacc/py-gql>`_,
-you can install from source after either cloning locally or downloading a tarball:
+py-gql's source code is hosted on `Github <https://github.com/lirsacc/py-gql>`_.
+
+You can install the development from source after either cloning locally:
 
 .. code::
 
+    git clone git@github.com:lirsacc/py-gql.git py_gql
     cd py-gql
     pip install -e .
 

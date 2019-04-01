@@ -105,7 +105,8 @@ def _unexpected(
 
 
 def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
-    """ Parse a string as a GraphQL Document.
+    """
+    Parse a string as a GraphQL Document.
 
     Args:
         source (Union[str, bytes]): source document
@@ -120,7 +121,8 @@ def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
 def parse_value(
     source: Union[str, bytes], **kwargs: Any
 ) -> Union[_ast.Variable, _ast.Value]:
-    """ Parse a string as a single GraphQL value.
+    """
+    Parse a string as a single GraphQL value.
 
     This is useful within tools that operate upon GraphQL values (eg. ``[42]``)
     directly and in isolation of complete GraphQL documents. Consider providing
@@ -143,7 +145,8 @@ def parse_value(
 
 
 def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
-    """ Parse a string as a single GraphQL type.
+    """
+    Parse a string as a single GraphQL type.
 
     This is useful within tools that operate upon GraphQL types (eg. ``[Int!]``)
     directly and in isolation of complete GraphQL documents such as when
@@ -164,7 +167,8 @@ def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
 
 
 class Parser(object):
-    """ GraphQL syntax parser.
+    """
+    GraphQL syntax parser.
 
     Call :meth:`parse_document` to parse a GraphQL document.
 
@@ -242,8 +246,9 @@ class Parser(object):
         # TODO: Do we need dequeue here or can we go with a list?
         self._buffer = collections.deque()  # type: Deque[Token]
 
-    def _advance_window(self, by=1):
-        """ Advance the parsing window by one element.
+    def _advance_window(self, by: int = 1) -> None:
+        """
+        Advance the parsing window by one element.
         Raise ``py_gql.exc.UnexpectedEOF`` error when trying to advance past
         EOF when parsing window is empty. """
         c = 0
@@ -256,7 +261,8 @@ class Parser(object):
                     raise UnexpectedEOF(self._lexer._len, self._lexer._source)
 
     def peek(self, count: int = 1) -> Token:
-        """ Look at a token ahead of the current position without advancing the
+        """
+        Look at a token ahead of the current position without advancing the
         parsing position.
 
         Args:
@@ -273,7 +279,8 @@ class Parser(object):
         return self._buffer[-count]
 
     def advance(self) -> Token:
-        """ Move parsing window forward and return the next token.
+        """
+        Move parsing window forward and return the next token.
 
         Raises:
             :class:`~py_gql.exc.UnexpectedEOF`:
@@ -286,7 +293,8 @@ class Parser(object):
         return self._last
 
     def expect(self, kind: Kind) -> Token:
-        """ Advance the parser and check that the next token is of the
+        """
+        Advance the parser and check that the next token is of the
         given token class otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
         Args:
@@ -304,7 +312,8 @@ class Parser(object):
         )
 
     def expect_keyword(self, keyword: str) -> Name:
-        """ Advance the parser and check that the next token is a Name with
+        """
+        Advance the parser and check that the next token is a Name with
         the given value otherwise raises :class:`~py_gql.exc.UnexpectedToken`.
 
         Args:
@@ -321,7 +330,8 @@ class Parser(object):
         )
 
     def skip(self, kind: Kind) -> bool:
-        """ If the next token is of the given kind, return ``True`` after
+        """
+        If the next token is of the given kind, return ``True`` after
         advancing the parser. Otherwise, do not change the parser state and
         return ``False``.
 
@@ -337,7 +347,8 @@ class Parser(object):
     def many(
         self, open_kind: Kind, parse_fn: Callable[[], N], close_kind: Kind
     ) -> List[N]:
-        """ Return a non-empty list of parse nodes, determined by
+        """
+        Return a non-empty list of parse nodes, determined by
         ``parse_fn`` which are surrounded by ``open_kind`` and ``close_kind`` tokens.
         Advances the parser to the next lex token after the closing token.
 
@@ -346,7 +357,7 @@ class Parser(object):
                 :class:`py_gql.lang.token.Token`
 
             parse_fn (callable): Function to call for every item, should be a
-                method of the :class:`Parser` instance
+                method of the :class:`Parser` instance.
 
             close_kind: Closing token kind. Must be a subclass of
                 :class:`py_gql.lang.token.Token`
@@ -366,7 +377,8 @@ class Parser(object):
     def any_(
         self, open_kind: Kind, parse_fn: Callable[[], N], close_kind: Kind
     ) -> List[N]:
-        """ Return a non-empty list of parse nodes, determined by
+        """
+        Return a non-empty list of parse nodes, determined by
         ``parse_fn`` which are surrounded by ``open_kind`` and ``close_kind`` tokens.
         Advances the parser to the next lex token after the closing token.
 
@@ -375,7 +387,7 @@ class Parser(object):
                 :class:`py_gql.lang.token.Token`
 
             parse_fn (callable): Function to call for every item, should be a
-                method of the :class:`Parser` instance
+                method of the :class:`Parser` instance.
 
             close_kind: Closing token kind. Must be a subclass of
                 :class:`py_gql.lang.token.Token`
@@ -393,7 +405,8 @@ class Parser(object):
     def delimited_list(
         self, delimiter: Kind, parse_fn: Callable[[], N]
     ) -> List[N]:
-        """ Return a non-empty list of parse nodes determined by ``parse_fn`` and
+        """
+        Return a non-empty list of parse nodes determined by ``parse_fn`` and
         separated by a delimiter token of type ``delimiter`` Advances the parser to
         the next lex token after the last token.
 
@@ -402,7 +415,7 @@ class Parser(object):
                 :class:`py_gql.lang.token.Token`
 
             parse_fn (callable): Function to call for every item, should be a
-                method of the :class:`Parser` instance
+                method of the :class:`Parser` instance.
 
         Raises:
             :class:`~py_gql.exc.UnexpectedToken`:
@@ -417,7 +430,8 @@ class Parser(object):
         return items
 
     def parse_document(self) -> _ast.Document:
-        """ Document : Definition+
+        """
+        Document : Definition+
         """
         start = self.peek()
         self.expect(SOF)
@@ -432,7 +446,8 @@ class Parser(object):
         )
 
     def parse_definition(self) -> _ast.Definition:
-        """ Definition : ExecutableDefinition | TypeSystemDefinition
+        """
+        Definition : ExecutableDefinition | TypeSystemDefinition
 
         Ignores type system definitions if ``allow_type_system``
         was set to ``False``.
@@ -456,7 +471,8 @@ class Parser(object):
         raise _unexpected(start, start.start, self._lexer._source)
 
     def parse_name(self) -> _ast.Name:
-        """ Convert a name lex token into a name parse node.
+        """
+        Convert a name lex token into a name parse node.
         """
         token = self.expect(Name)
         return _ast.Name(
@@ -464,7 +480,8 @@ class Parser(object):
         )
 
     def parse_executable_definition(self) -> _ast.ExecutableDefinition:
-        """ ExecutableDefinition : OperationDefinition | FragmentDefinition
+        """
+        ExecutableDefinition : OperationDefinition | FragmentDefinition
         """
         start = self.peek()
         if start.__class__ is Name:
@@ -477,7 +494,8 @@ class Parser(object):
         raise _unexpected(start, start.start, self._lexer._source)
 
     def parse_operation_definition(self) -> _ast.OperationDefinition:
-        """ OperationDefinition : SelectionSet
+        """
+        OperationDefinition : SelectionSet
         | OperationType Name? VariableDefinitions? Directives? SelectionSet
         """
         start = self.peek()
@@ -502,7 +520,8 @@ class Parser(object):
         )
 
     def parse_operation_type(self) -> str:
-        """ OperationType : one of "query" "mutation" "subscription"
+        """
+        OperationType : one of "query" "mutation" "subscription"
         """
         token = self.expect(Name)
         if token.value in ("query", "mutation", "subscription"):
@@ -510,7 +529,8 @@ class Parser(object):
         raise _unexpected(token, token.start, self._lexer._source)
 
     def parse_variable_definitions(self) -> List[_ast.VariableDefinition]:
-        """ VariableDefinitions : ( VariableDefinition+ )
+        """
+        VariableDefinitions : ( VariableDefinition+ )
 
         Returns:
             List[py_gql.lang.ast.VariableDefinition]:
@@ -522,7 +542,8 @@ class Parser(object):
         return []
 
     def parse_variable_definition(self) -> _ast.VariableDefinition:
-        """ VariableDefinition : Variable : Type DefaultValue?
+        """
+        VariableDefinition : Variable : Type DefaultValue?
         """
         start = self.peek()
         return _ast.VariableDefinition(
@@ -540,7 +561,8 @@ class Parser(object):
         )
 
     def parse_variable(self) -> _ast.Variable:
-        """ Variable : $ Name
+        """
+        Variable : $ Name
         """
         start = self.peek()
         self.expect(Dollar)
@@ -549,7 +571,8 @@ class Parser(object):
         )
 
     def parse_selection_set(self) -> _ast.SelectionSet:
-        """ SelectionSet : { Selection+ }
+        """
+        SelectionSet : { Selection+ }
         """
         start = self.peek()
         return _ast.SelectionSet(
@@ -559,14 +582,16 @@ class Parser(object):
         )
 
     def parse_selection(self) -> _ast.Selection:
-        """ Selection : Field | FragmentSpread | InlineFragment
+        """
+        Selection : Field | FragmentSpread | InlineFragment
         """
         if self.peek().__class__ is Ellip:
             return self.parse_fragment()
         return self.parse_field()
 
     def parse_field(self) -> _ast.Field:
-        """ Field : Alias? Name Arguments? Directives? SelectionSet?
+        """
+        Field : Alias? Name Arguments? Directives? SelectionSet?
 
         - Alias : Name :
         """
@@ -593,7 +618,8 @@ class Parser(object):
         )
 
     def parse_arguments(self, const: bool = False) -> List[_ast.Argument]:
-        """ Arguments[Const] : ( Argument[?Const]+ )
+        """
+        Arguments[Const] : ( Argument[?Const]+ )
 
         Args:
             const: Whether or not to parse the Const variant
@@ -605,7 +631,8 @@ class Parser(object):
         return []
 
     def parse_argument(self, const: bool = False) -> _ast.Argument:
-        """ Argument[Const] : Name : Value[?Const]
+        """
+        Argument[Const] : Name : Value[?Const]
 
         Args:
             const: Whether or not to parse the Const variant
@@ -622,7 +649,8 @@ class Parser(object):
         )
 
     def parse_fragment(self) -> Union[_ast.InlineFragment, _ast.FragmentSpread]:
-        """ FragmeSpread | InlineFragment
+        """
+        FragmeSpread | InlineFragment
 
         - FragmentSpread : ... FragmentName Directives?
         - InlineFragment : ... TypeCondition? Directives? SelectionSet
@@ -652,7 +680,8 @@ class Parser(object):
         )
 
     def parse_fragment_definition(self) -> _ast.FragmentDefinition:
-        """ FragmentDefinition : \
+        """
+        FragmentDefinition : \
         fragment FragmentName on TypeCondition Directives? SelectionSet
 
         - TypeCondition : NamedType
@@ -677,7 +706,8 @@ class Parser(object):
         )
 
     def parse_fragment_name(self) -> _ast.Name:
-        """ FragmentName : Name but not "on"
+        """
+        FragmentName : Name but not "on"
         """
         token = self.peek()
         if token.value == "on":
@@ -687,7 +717,8 @@ class Parser(object):
     def parse_value_literal(
         self, const: bool = False
     ) -> Union[_ast.Value, _ast.Variable]:
-        """ Value[Const] : [~Const]Variable | IntValue | FloatValue | StringValue \
+        """
+        Value[Const] : [~Const]Variable | IntValue | FloatValue | StringValue \
         | BooleanValue | NullValue | EnumValue \
         | ListValue[?Const] | ObjectValue[?Const]
 
@@ -749,7 +780,8 @@ class Parser(object):
         )
 
     def parse_list(self, const: bool = False) -> _ast.ListValue:
-        """ ListValue[Const] : [ ] | [ Value[?Const]+ ]
+        """
+        ListValue[Const] : [ ] | [ Value[?Const]+ ]
 
         Args:
             const: Whether or not to parse the Const variant
@@ -766,7 +798,8 @@ class Parser(object):
         )
 
     def parse_object(self, const: bool = False) -> _ast.ObjectValue:
-        """ ObjectValue[Const] { } | { ObjectField[?Const]+ }
+        """
+        ObjectValue[Const] { } | { ObjectField[?Const]+ }
 
         Args:
             const: Whether or not to parse the Const variant
@@ -780,7 +813,8 @@ class Parser(object):
         )
 
     def parse_object_field(self, const: bool = False) -> _ast.ObjectField:
-        """ ObjectField[Const] : Name : Value[?Const]
+        """
+        ObjectField[Const] : Name : Value[?Const]
 
         Args:
             const: Whether or not to parse the Const variant
@@ -800,7 +834,8 @@ class Parser(object):
         )
 
     def parse_directives(self, const: bool = False) -> List[_ast.Directive]:
-        """ Directives[Const] : Directive[?Const]+
+        """
+        Directives[Const] : Directive[?Const]+
 
         Args:
             const: Whether or not to parse the Const variant
@@ -811,7 +846,8 @@ class Parser(object):
         return directives
 
     def parse_directive(self, const: bool = False) -> _ast.Directive:
-        """ Directive[Const] : @ Name Arguments[?Const]?
+        """
+        Directive[Const] : @ Name Arguments[?Const]?
 
         Args:
             const: Whether or not to parse the Const variant
@@ -825,7 +861,8 @@ class Parser(object):
         )
 
     def parse_type_reference(self) -> _ast.Type:
-        """ Type : NamedType | ListType | NonNullType
+        """
+        Type : NamedType | ListType | NonNullType
         """
         start = self.peek()
 
@@ -846,7 +883,8 @@ class Parser(object):
         return type_
 
     def parse_named_type(self) -> _ast.NamedType:
-        """ NamedType : Name
+        """
+        NamedType : Name
         """
         start = self.peek()
         return _ast.NamedType(
@@ -854,7 +892,8 @@ class Parser(object):
         )
 
     def parse_type_system_definition(self) -> _ast.TypeSystemDefinition:
-        """ TypeSystemDefinition : SchemaDefinition | TypeDefinition | TypeExtension \
+        """
+        TypeSystemDefinition : SchemaDefinition | TypeDefinition | TypeExtension \
         | DirectiveDefinition
 
         - TypeDefinition : ScalarTypeDefinition | ObjectTypeDefinition \
@@ -889,7 +928,8 @@ class Parser(object):
         raise _unexpected(keyword, keyword.start, self._lexer._source)
 
     def parse_description(self) -> Optional[_ast.StringValue]:
-        """ Description : StringValue
+        """
+        Description : StringValue
         """
         next_ = self.peek()
         return (
@@ -899,7 +939,8 @@ class Parser(object):
         )
 
     def parse_schema_definition(self) -> _ast.SchemaDefinition:
-        """ SchemaDefinition : schema Directives[Const]? { OperationTypeDefinition+ }
+        """
+        SchemaDefinition : schema Directives[Const]? { OperationTypeDefinition+ }
         """
         start = self.peek()
         self.expect_keyword("schema")
@@ -913,7 +954,8 @@ class Parser(object):
         )
 
     def parse_operation_type_definition(self) -> _ast.OperationTypeDefinition:
-        """ OperationTypeDefinition : OperationType : NamedType
+        """
+        OperationTypeDefinition : OperationType : NamedType
         """
         start = self.peek()
         operation = self.parse_operation_type()
@@ -926,7 +968,8 @@ class Parser(object):
         )
 
     def parse_scalar_type_definition(self) -> _ast.ScalarTypeDefinition:
-        """ ScalarTypeDefinition : Description? scalar Name Directives[Const]?
+        """
+        ScalarTypeDefinition : Description? scalar Name Directives[Const]?
         """
         start = self.peek()
         desc = self.parse_description()
@@ -940,7 +983,8 @@ class Parser(object):
         )
 
     def parse_object_type_definition(self) -> _ast.ObjectTypeDefinition:
-        """ ObjectTypeDefinition : Description? type Name ImplementsInterfaces? \
+        """
+        ObjectTypeDefinition : Description? type Name ImplementsInterfaces? \
         Directives[Const]? FieldsDefinition?
         """
         start = self.peek()
@@ -957,7 +1001,8 @@ class Parser(object):
         )
 
     def parse_implements_interfaces(self) -> List[_ast.NamedType]:
-        """ ImplementsInterfaces : implements `&`? NamedType \
+        """
+        ImplementsInterfaces : implements `&`? NamedType \
         | ImplementsInterfaces & NamedType
         """
         token = self.peek()
@@ -972,14 +1017,16 @@ class Parser(object):
         return types
 
     def parse_fields_definition(self) -> List[_ast.FieldDefinition]:
-        """ FieldsDefinition : { FieldDefinition+ }
+        """
+        FieldsDefinition : { FieldDefinition+ }
         """
         if self.peek().__class__ is CurlyOpen:
             return self.many(CurlyOpen, self.parse_field_definition, CurlyClose)
         return []
 
     def parse_field_definition(self) -> _ast.FieldDefinition:
-        """ FieldDefinition : \
+        """
+        FieldDefinition : \
         Description? Name ArgumentsDefinition? : Type Directives[Const]?
         """
         start = self.peek()
@@ -997,7 +1044,8 @@ class Parser(object):
         )
 
     def parse_argument_definitions(self) -> List[_ast.InputValueDefinition]:
-        """ ArgumentsDefinition : ( InputValueDefinition+ )
+        """
+        ArgumentsDefinition : ( InputValueDefinition+ )
         """
         return (
             self.many(ParenOpen, self.parse_input_value_definition, ParenClose)
@@ -1006,7 +1054,8 @@ class Parser(object):
         )
 
     def parse_input_value_definition(self) -> _ast.InputValueDefinition:
-        """ InputValueDefinition : \
+        """
+        InputValueDefinition : \
         Description? Name : Type DefaultValue? Directives[Const]?
         """
         start = self.peek()
@@ -1027,7 +1076,8 @@ class Parser(object):
         )
 
     def parse_interface_type_definition(self) -> _ast.InterfaceTypeDefinition:
-        """ InterfaceTypeDefinition : \
+        """
+        InterfaceTypeDefinition : \
         Description? interface Name Directives[Const]? FieldsDefinition?
         """
         start = self.peek()
@@ -1043,7 +1093,8 @@ class Parser(object):
         )
 
     def parse_union_type_definition(self) -> _ast.UnionTypeDefinition:
-        """ UnionTypeDefinition : \
+        """
+        UnionTypeDefinition : \
         Description? union Name Directives[Const]? UnionMemberTypes?
         """
         start = self.peek()
@@ -1059,14 +1110,16 @@ class Parser(object):
         )
 
     def parse_union_member_types(self) -> List[_ast.NamedType]:
-        """ UnionMemberTypes : = `|`? NamedType | UnionMemberTypes | NamedType
+        """
+        UnionMemberTypes : = `|`? NamedType | UnionMemberTypes | NamedType
         """
         if self.skip(Equals):
             return self.delimited_list(Pipe, self.parse_named_type)
         return []
 
     def parse_enum_type_definition(self) -> _ast.EnumTypeDefinition:
-        """ EnumTypeDefinition : \
+        """
+        EnumTypeDefinition : \
         Description? enum Name Directives[Const]? EnumValuesDefinition?
         """
         start = self.peek()
@@ -1082,7 +1135,8 @@ class Parser(object):
         )
 
     def parse_enum_values_definition(self) -> List[_ast.EnumValueDefinition]:
-        """ EnumValuesDefinition : { EnumValueDefinition+ }
+        """
+        EnumValuesDefinition : { EnumValueDefinition+ }
         """
         return (
             self.many(CurlyOpen, self.parse_enum_value_definition, CurlyClose)
@@ -1091,7 +1145,8 @@ class Parser(object):
         )
 
     def parse_enum_value_definition(self) -> _ast.EnumValueDefinition:
-        """ EnumValueDefinition : Description? EnumValue Directives[Const]?
+        """
+        EnumValueDefinition : Description? EnumValue Directives[Const]?
 
         - EnumValue : Name
         """
@@ -1107,7 +1162,8 @@ class Parser(object):
     def parse_input_object_type_definition(
         self
     ) -> _ast.InputObjectTypeDefinition:
-        """ InputObjectTypeDefinition : \
+        """
+        InputObjectTypeDefinition : \
         Description? input Name Directives[Const]? InputFieldsDefinition?
         """
         start = self.peek()
@@ -1123,7 +1179,8 @@ class Parser(object):
         )
 
     def parse_input_fields_definition(self) -> List[_ast.InputValueDefinition]:
-        """ InputFieldsDefinition : { InputValueDefinition+ }
+        """
+        InputFieldsDefinition : { InputValueDefinition+ }
         """
         return (
             self.many(CurlyOpen, self.parse_input_value_definition, CurlyClose)
@@ -1132,7 +1189,8 @@ class Parser(object):
         )
 
     def parse_type_system_extension(self) -> _ast.TypeSystemExtension:
-        """ TypeSystemExtension : SchemaExtension | TypeExtension
+        """
+        TypeSystemExtension : SchemaExtension | TypeExtension
 
         - TypeExtension : ScalarTypeExtension | ObjectTypeExtension | \
         InterfaceTypeExtension | UnionTypeExtension | EnumTypeExtension | \
@@ -1158,7 +1216,8 @@ class Parser(object):
         raise _unexpected(keyword, keyword.start, self._lexer._source)
 
     def parse_schema_extension(self) -> _ast.SchemaExtension:
-        """ SchemaExtension : extend schema Directives[Const] \
+        """
+        SchemaExtension : extend schema Directives[Const] \
         { [OperationTypeDefinition] } | extend schema Directives[Const]
         """
         start = self.peek()
@@ -1179,7 +1238,8 @@ class Parser(object):
         )
 
     def parse_scalar_type_extension(self) -> _ast.ScalarTypeExtension:
-        """ ScalarTypeExtension : extend scalar Name Directives[Const]
+        """
+        ScalarTypeExtension : extend scalar Name Directives[Const]
         """
         start = self.peek()
         self.expect_keyword("extend")
@@ -1196,7 +1256,8 @@ class Parser(object):
         )
 
     def parse_object_type_extension(self) -> _ast.ObjectTypeExtension:
-        """ ObjectTypeExtension : \
+        """
+        ObjectTypeExtension : \
         extend type Name ImplementsInterfaces? Directives[Const]? FieldsDefinition \
         | extend type Name ImplementsInterfaces? Directives[Const] \
         | extend type Name ImplementsInterfaces
@@ -1221,7 +1282,8 @@ class Parser(object):
         )
 
     def parse_interface_type_extension(self) -> _ast.InterfaceTypeExtension:
-        """ InterfaceTypeExtension : \
+        """
+        InterfaceTypeExtension : \
         extend interface Name Directives[Const]? FieldsDefinition \
         | extend interface Name Directives[Const]
         """
@@ -1244,7 +1306,8 @@ class Parser(object):
         )
 
     def parse_union_type_extension(self) -> _ast.UnionTypeExtension:
-        """ UnionTypeExtension : \
+        """
+        UnionTypeExtension : \
         | extend union Name Directives[Const]? UnionMemberTypes \
         | extend union Name Directives[Const]
         """
@@ -1267,7 +1330,8 @@ class Parser(object):
         )
 
     def parse_enum_type_extension(self) -> _ast.EnumTypeExtension:
-        """ EnumTypeExtension : \
+        """
+        EnumTypeExtension : \
         extend enum Name Directives[Const]? EnumValuesDefinition \
         | extend enum Name Directives[Const]
         """
@@ -1292,7 +1356,8 @@ class Parser(object):
     def parse_input_object_type_extension(
         self
     ) -> _ast.InputObjectTypeExtension:
-        """ InputObjectTypeExtension : \
+        """
+        InputObjectTypeExtension : \
         extend input Name Directives[Const]? InputFieldsDefinition \
         | extend input Name Directives[Const]
         """
@@ -1314,7 +1379,8 @@ class Parser(object):
         )
 
     def parse_directive_definition(self) -> _ast.DirectiveDefinition:
-        """ DirectiveDefinition : Description? directive @ Name \
+        """
+        DirectiveDefinition : Description? directive @ Name \
         ArgumentsDefinition? on DirectiveLocations
         """
         start = self.peek()
@@ -1334,13 +1400,15 @@ class Parser(object):
         )
 
     def parse_directive_locations(self) -> List[_ast.Name]:
-        """ DirectiveLocations : \
+        """
+        DirectiveLocations : \
         `|`? DirectiveLocation `|` DirectiveLocations `|` DirectiveLocation
         """
         return self.delimited_list(Pipe, self.parse_directive_location)
 
     def parse_directive_location(self) -> _ast.Name:
-        """ DirectiveLocation : ExecutableDirectiveLocation \
+        """
+        DirectiveLocation : ExecutableDirectiveLocation \
         | TypeSystemDirectiveLocation
 
         - ExecutableDirectiveLocation : one of QUERY MUTATION SUBSCRIPTION FIELD \

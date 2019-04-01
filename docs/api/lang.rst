@@ -1,5 +1,5 @@
-Language utilities
-==================
+Working with the GraphQL language
+=================================
 
 .. module: py_gql.lang
 

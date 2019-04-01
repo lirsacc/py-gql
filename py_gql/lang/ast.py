@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" GraphQL AST representations corresponding to the `GraphQL language elements`_.
+"""
+GraphQL AST representations corresponding to the `GraphQL language elements`_.
 
  .. _GraphQL language elements:
    http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
@@ -21,7 +22,8 @@ from typing import (
 
 
 class Node(object):
-    """ Base AST node.
+    """
+    Base AST node.
 
     - All subclasses should implement ``__slots__`` so ``__eq__`` and
       ``__repr__``, ``__copy__``, ``__deepcopy__`` and :meth:`to_dict` can work.
@@ -68,7 +70,8 @@ class Node(object):
         )
 
     def to_dict(self):
-        """ Convert the current node to a JSON serializable ``dict`` using
+        """
+        Convert the current node to a JSON serializable ``dict`` using
         :func:`node_to_dict`.
 
         Returns:
@@ -941,7 +944,8 @@ def _node_to_dict(node):
 
 
 def node_to_dict(node: Node) -> Dict[str, Any]:
-    """ Recrusively convert a ``py_gql.lang.ast.Node`` instance to a dict.
+    """
+    Recrusively convert a ``py_gql.lang.ast.Node`` instance to a dict.
 
     This is mostly useful for testing and when you need to convert nodes to JSON
     such as interop with other languages, printing and serialisation.
@@ -950,7 +954,7 @@ def node_to_dict(node: Node) -> Dict[str, Any]:
     corresponding to the node class while primitive values are left as is.
     Lists are converted per-element.
 
-    Argss:
+    Args:
         node (any): A :class:`Node` instance or any node attribute
 
     Returns:

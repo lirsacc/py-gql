@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Iterable interface for the GraphQL Language lexer. """
+"""
+Iterable interface for the GraphQL Language lexer.
+"""
 
 # [TODO] Review the various `Lexer.read_*` methods as the use of `peek` and
 # `advance` is fairly inconsistent from tweaking the code around to make the
@@ -95,7 +97,8 @@ def _unexpected(
 
 
 class Lexer(Iterator[Token]):
-    """ Iterable GraphQL language lexer / tokenizer.
+    """
+    Iterable GraphQL language lexer / tokenizer.
 
     This class is not typically exposed through the parser but can be used
     independently to build custom parsers.
@@ -129,7 +132,9 @@ class Lexer(Iterator[Token]):
             return None
 
     def _read_over_whitespace(self):
-        """ Advance lexer over all ignored characters. """
+        """
+        Advance lexer over all ignored characters.
+        """
         pos = self._position
         while True:
             try:
@@ -162,7 +167,8 @@ class Lexer(Iterator[Token]):
         self._position = pos
 
     def _read_ellipsis(self) -> Ellip:
-        """ Advance lexer over an ellipsis token (...).
+        """
+        Advance lexer over an ellipsis token (...).
         """
         start = self._position
         for _ in range(3):
@@ -175,7 +181,8 @@ class Lexer(Iterator[Token]):
         return Ellip(start, self._position)
 
     def _read_string(self) -> String:
-        """ Advance lexer over a quoted string.
+        """
+        Advance lexer over a quoted string.
         """
         start = self._position
         self._position += 1
@@ -204,7 +211,8 @@ class Lexer(Iterator[Token]):
         raise NonTerminatedString("", self._position, self._source)
 
     def _read_block_string(self) -> BlockString:
-        """ Advance lexer over a triple quoted block string.
+        """
+        Advance lexer over a triple quoted block string.
         """
         start = self._position
         self._position += 3
@@ -240,7 +248,8 @@ class Lexer(Iterator[Token]):
         raise NonTerminatedString("", self._position, self._source)
 
     def _read_escape_sequence(self) -> str:
-        """ Advance lexer over an escape character
+        """
+        Advance lexer over an escape character.
 
         Returns: Escaped character value
         """
@@ -261,7 +270,8 @@ class Lexer(Iterator[Token]):
             )
 
     def _read_escaped_unicode(self) -> str:
-        """ Advance lexer over a unicode character
+        """
+        Advance lexer over a unicode character.
 
         Returns: Escaped character value
         """
@@ -289,7 +299,8 @@ class Lexer(Iterator[Token]):
             )
 
     def _read_number(self) -> Union[Integer, Float]:
-        """ Advance lexer over a number
+        """
+        Advance lexer over a number.
         """
         start = self._position
         is_float = False
@@ -325,7 +336,9 @@ class Lexer(Iterator[Token]):
         )
 
     def _read_over_integer(self):
-        """ Advance lexer over an integer """
+        """
+        Advance lexer over an integer.
+        """
         char = self._peek()
         if char is None:
             raise UnexpectedEOF(self._position, self._source)
@@ -345,7 +358,9 @@ class Lexer(Iterator[Token]):
             self._read_over_digits()
 
     def _read_over_digits(self):
-        """ Advance lexer over a sequence of digits """
+        """
+        Advance lexer over a sequence of digits.
+        """
         char = self._peek()
         if char is None:
             raise UnexpectedEOF(self._position, self._source)
@@ -364,7 +379,8 @@ class Lexer(Iterator[Token]):
                 break
 
     def _read_name(self) -> Name:
-        """ Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
+        """
+        Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
         """
         start = self._position
         while True:
@@ -390,7 +406,8 @@ class Lexer(Iterator[Token]):
         return self
 
     def __next__(self) -> Token:
-        """ Advance lexer and return the next :class:`py_gql.lang.Token`
+        """
+        Advance lexer and return the next :class:`py_gql.lang.Token`
         instance.
 
         Raises:

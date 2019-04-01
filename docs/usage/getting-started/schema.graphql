@@ -1,0 +1,16 @@
+enum CharacterType {
+    Human,
+    Droid,
+}
+
+type Query {
+    hero: Person!,
+    characters: [Person]!,
+    character(id: Int!): Person,
+}
+
+type Person {
+    id: Int!,
+    name: String,
+    type: CharacterType,
+}

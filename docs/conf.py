@@ -21,9 +21,11 @@
 import imp
 import os
 
+about = imp.load_source("about", os.path.join("..", "py_gql", "__version__.py"))
+
+
 # -- Project information -----------------------------------------------------
 
-about = imp.load_source("about", os.path.join("..", "py_gql", "__version__.py"))
 
 project = about.__title__
 copyright = about.__copyright__
@@ -37,21 +39,19 @@ release = about.__version__
 
 # -- General configuration ---------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.ifconfig",
-    # "sphinx.ext.viewcode",
+    "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,26 +88,44 @@ pygments_style = "sphinx"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "alabaster"
+
+html_context = {
+    "project_links": [
+        ("PyPI releases", "https://pypi.org/project/py-gql/"),
+        ("Source Code", "https://github.com/lirsacc/py_gql/"),
+        ("Issue Tracker", "https://github.com/lirsacc/py_gql/issues/"),
+    ]
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 
+FONT = "IBM Plex Sans"
+CODE_FONT = "IBM Plex Mono"
+HEADING_FONT = FONT
+
 html_theme_options = {
     "canonical_url": "",
     "analytics_id": "",
-    "logo_only": False,
-    "display_version": True,
-    "prev_next_buttons_location": "bottom",
-    "style_external_links": True,
-    # Toc options
-    "collapse_navigation": True,
-    "sticky_navigation": True,
-    "navigation_depth": 4,
-    "includehidden": True,
-    "titles_only": False,
+    "github_user": "lirsacc",
+    "github_repo": "py-gql",
+    "fixed_sidebar": True,
+    "codecov_button": False,
+    "github_banner": False,
+    "github_button": False,
+    "sidebar_collapse": True,
+    "show_relbars": False,
+    "font_family": FONT,
+    "caption_font_family": FONT,
+    "head_font_family": HEADING_FONT,
+    "code_font_family": CODE_FONT,
+    "description": about.__description__,
+    "show_related": True,
+    # "page_width": "1200px",
+    # "sidebar_width": "300px",
 }
 
 
@@ -124,83 +142,24 @@ html_theme_options = {
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {
-#     "**": [
-#         "about.html",
-#         "sidebarlinks.html",
-#         "navigation.html",
-#         "relations.html",
-#         "searchbox.html",
-#     ]
-# }
-
-
-# -- Options for HTMLHelp output ---------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = "py-gqldoc"
-
-
-# -- Options for LaTeX output ------------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
+html_sidebars = {
+    "**": [
+        "about.html",
+        "sidebarlinks.html",
+        "navigation.html",
+        "relations.html",
+        "sourcelink.html",
+        "searchbox.html",
+    ]
 }
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "py-gql.tex",
-        "py-gql Documentation",
-        "Charles Lirsac",
-        "manual",
-    )
-]
-
-
-# -- Options for manual page output ------------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "py-gql", "py-gql Documentation", [author], 1)]
-
-
-# -- Options for Texinfo output ----------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "py-gql",
-        "py-gql Documentation",
-        author,
-        "py-gql",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
 
 
 # -- Extension configuration -------------------------------------------------
 
 autodoc_member_order = "bysource"
 autoclass_content = "both"
+
+intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 
 # -- Options for todo extension ----------------------------------------------
 
