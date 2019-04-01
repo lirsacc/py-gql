@@ -59,11 +59,12 @@ def test(
     files=None,
     junit=False,
     ignore=None,
+    parallel=False,
 ):
     """ Run test suite (using: py.test)
 
     You should be able to run pytest directly but this provides some useful
-    shortcuts.
+    shortcuts and defaults.
     """
 
     ignore = ignore or []
@@ -86,6 +87,7 @@ def test(
                     "--junit-xml junit.xml" if junit else None,
                     "-vvl --full-trace" if verbose else "-q",
                     "-k %s" % grep if grep else None,
+                    "-n auto" if parallel else None,
                     (
                         " ".join("--ignore %s" % i for i in ignore)
                         if ignore
