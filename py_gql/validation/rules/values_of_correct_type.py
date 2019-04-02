@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 from typing import Optional, Union
 
@@ -20,8 +18,10 @@ from ..visitors import ValidationVisitor
 
 
 class ValuesOfCorrectTypeChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all value literals are of the type
-    expected at their position. """
+    """
+    A GraphQL document is only valid if all value literals are of the type
+    expected at their position.
+    """
 
     # WARN: This check ignores cases where the input type is not known, which
     # should be caught by other validators.

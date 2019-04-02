@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Validation of GraphQL (query) documents.
+"""
+Validation of GraphQL (query) documents.
 
 Note:
     This module is only concerned with validating query documents, not SDL

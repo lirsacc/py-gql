@@ -2,7 +2,7 @@
 """ """
 
 from itertools import chain
-from typing import List, Optional, Sequence, Type
+from typing import Iterator, List, Optional, Sequence, Type
 
 from ..exc import ValidationError
 from ..lang import ast as _ast
@@ -43,10 +43,10 @@ SPECIFIED_RULES = (
 
 
 class ValidationResult:
-    """ Encode validation result by wrapping a collection of
-    :class:`~py_gql.exc.ValidationError`.
-
-    Instances are falsy when they contain at least one error.
+    """
+    Encode validation result by wrapping a collection of
+    :class:`~py_gql.exc.ValidationError`. Instances are iterable and falsy
+    when they contain at least one error.
     """
 
     def __init__(self, errors: Optional[List[ValidationError]]):
@@ -55,16 +55,18 @@ class ValidationResult:
     def __bool__(self):
         return not self.errors
 
+    def __iter__(self) -> Iterator[ValidationError]:
+        return iter(self.errors)
+
 
 def validate_ast(
     schema: Schema,
     ast_root: _ast.Document,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
 ) -> ValidationResult:
-    """ Check that an ast is a valid GraphQL query document.
-
-    Runs a parse tree through a list of
-    :class:`~py_gql.validation.ValidationVisitor` given a
+    """
+    Check that an ast is a valid GraphQL query document by running the parse
+    tree through a list of :class:`~py_gql.validation.ValidationVisitor` given a
     :class:`~py_gql.schema.Schema` instance.
 
     Warning:

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 from typing import (
     Any,
@@ -298,13 +296,13 @@ class Executor:
             )
         return self._argument_values[cache_key]
 
-    # REVIEW: This seems to involved, I'd rather have one single way to do this
-    # at the cose of diverging from the various methods seen in graphql-js.
+    # REVIEW: This seems too involved, I'd rather have one single way to do this
+    # at the cost of diverging from the various methods seen in graphql-js.
     def resolve_type(
         self, value: Any, t: Union[InterfaceType, UnionType]
     ) -> Optional[ObjectType]:
         if t.resolve_type is not None:
-            maybe_type = t.resolve_type(value, self.context_value, self.schema)
+            maybe_type = t.resolve_type(value)
             if isinstance(maybe_type, str):
                 return self.schema.get_type(maybe_type, None)  # type: ignore
             else:
@@ -321,7 +319,7 @@ class Executor:
             possible_types = self.schema.get_possible_types(t)
             for pt in possible_types:
                 if pt.is_type_of is not None:
-                    if pt.is_type_of(value, self.context_value, self.schema):
+                    if pt.is_type_of(value):
                         return pt
             return None
 

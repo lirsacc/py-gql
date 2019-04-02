@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 # REVIEW: This is likely suboptimal and create too many wrapping Future
 # instances.

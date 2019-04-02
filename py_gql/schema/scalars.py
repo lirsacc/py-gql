@@ -210,7 +210,8 @@ UUID = ScalarType(
 
 
 class RegexType(ScalarType[str]):
-    """ Types to validate regex patterns.
+    """
+    Scalar typeclass to validate regex patterns.
 
     Args:
         name: Type name
@@ -218,26 +219,26 @@ class RegexType(ScalarType[str]):
         description: Type description
 
     Attributes:
-        name: Type name
-        description: Type description
+        name (str): Type name
+        description (str): Type description
     """
 
     def __init__(self, name, regex, description=None):
 
         if isinstance(regex, str):
-            self.regex = re.compile(regex)
+            self._regex = re.compile(regex)
         else:
-            self.regex = regex
+            self._regex = regex
 
         if description is None:
-            description = "String matching pattern /%s/" % self.regex.pattern
+            description = "String matching pattern /%s/" % self._regex.pattern
 
         def _parse(value: Any) -> str:
             string_value = _serialize_string(value)
-            if not self.regex.match(string_value):
+            if not self._regex.match(string_value):
                 raise ValueError(
                     '"%s" does not match pattern "%s"'
-                    % (string_value, self.regex.pattern)
+                    % (string_value, self._regex.pattern)
                 )
             return string_value
 

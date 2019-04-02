@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 The :mod:`py_gql.schema` module exposes all the necessary classes and
-functions to programatically creating, validating and inspecting GraphQL
+functions for programatically creating, validating and inspecting GraphQL
 schemas against which you can execute queries.
 """
-
-# TODO: Encode as much of the rules a validate_schema in the type system
 
 # isort:skip_file
 # flake8: noqa
@@ -29,6 +27,7 @@ from .types import (
     is_output_type,
     LeafTypes,
     ListType,
+    NamedType,
     NonNullType,
     nullable_type,
     ObjectType,

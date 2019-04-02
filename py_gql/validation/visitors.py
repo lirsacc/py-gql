@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 from typing import List, Mapping, Optional, Sequence, TypeVar
 
@@ -25,12 +23,15 @@ class ValidationVisitor(DispatchingVisitor):
 
     Args:
         schema: Schema to validate against (for known types, directives, etc.).
-        type_info:
+        type_info: Type information collector provided by
+            `~py_gql.validation.validate`.
 
     Attributes:
-        schema: Schema to validate against (for known types, directives, etc.).
-        type_info:
-        errors:
+        schema (py_gql.schema.Schema): Schema to validate against
+            (for known types, directives, etc.).
+        type_info (TypeInfoVisitor): Type information collector provided by
+            `~py_gql.validation.validate`.
+        errors (List[ValidationError]): Collected errors.
     """
 
     def __init__(self, schema: Schema, type_info: TypeInfoVisitor):
@@ -53,14 +54,9 @@ class ValidationVisitor(DispatchingVisitor):
 
 
 class VariablesCollector(ValidationVisitor):
-    """ Custom validation visitor which tracks all variable definitions and
+    """
+    Custom validation visitor which tracks all variable definitions and
     usage across the document.
-
-    This replaces ``getRecursiveVariableUsages`` and ``getVariableUsages``
-    from the ref implementation and allows to work with variables without
-    eagerly visitng subtrees.
-
-    Most validation must happen in :meth:`leave_document` though.
     """
 
     def __init__(self, schema, type_info):

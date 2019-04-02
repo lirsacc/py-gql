@@ -152,7 +152,7 @@ async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value, *_, **__):
+    def _resolve_pet_type(value):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
@@ -218,7 +218,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value, *_, **__):
+    def _resolve_pet_type(value):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
@@ -276,7 +276,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
 
 
 async def test_type_resolution_supports_strings(executor_cls):
-    def _resolve_pet_type(value, *_, **__):
+    def _resolve_pet_type(value):
         return type(value).__name__
 
     PetType = InterfaceType(
@@ -404,7 +404,7 @@ CatType = ObjectType(
 )
 
 
-def _resolve_pet_type(value, *_a, **_kw):
+def _resolve_pet_type(value):
     if isinstance(value, Dog):
         return DogType
     elif isinstance(value, Cat):

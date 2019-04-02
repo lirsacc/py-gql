@@ -1,106 +1,76 @@
-Schema Definition
-=================
+Defining GraphQL Schemas
+========================
 
 .. module: py_gql.schema
 
 .. automodule:: py_gql.schema
 
-The schema object
------------------
+The schema class
+----------------
 
 .. autoclass:: Schema
+    :members:
 
 Defining Types
 --------------
 
-Types are defined as instances of :class:`~py_gql.schema.Type` and its subclasses.
+Types are defined as instances of :class:`~py_gql.schema.GraphQLType` and its
+subclasses.
 
-.. autoclass:: Type
+.. autoclass:: GraphQLType
 
-.. warning::
-    Named types must be unique across a single :class:`~py_gql.schema.Schema`
-    instance.
-
-.. note::
-    Argument singatures including the `Lazy[]` tag indicate that the value
-    can either be of the specified type or a callable returning the specified
-    type. For lists it can also be a mixed list of callables and non callables.
-
-    This is here to make supporting definition of cylcic types easier.
-
-    For instance to define the GraphQL type:
-
-    .. code-block:: graphql
-
-        type MyCyclicObject {
-            self: MyCyclicObject
-        }
-
-    you could interchangeably write any of:
-
-    .. code-block:: python
-
-        MyCyclicObject = ObjectType('MyCyclicObject', [Field('self', lambda: MyCyclicObject)])
-
-        MyCyclicObject = ObjectType('MyCyclicObject', [lambda: Field('self', MyCyclicObject)])
-
-        MyCyclicObject = ObjectType('MyCyclicObject', lambda: [Field('self', MyCyclicObject)])
-
-
-.. autoclass:: WrappingType
+.. autoclass:: NamedType
+    :members:
 
 .. autoclass:: NonNullType
+    :members:
 
 .. autoclass:: ListType
+    :members:
 
 .. autoclass:: Argument
+    :members:
 
 .. autoclass:: Field
+    :members:
 
 .. autoclass:: ObjectType
+    :members:
 
 .. autoclass:: InterfaceType
+    :members:
 
 .. autoclass:: UnionType
-
-.. autoclass:: EnumValue
-
-.. autoclass:: EnumType
-
-.. autoclass:: ScalarType
+    :members:
 
 .. autoclass:: InputField
+    :members:
 
 .. autoclass:: InputObjectType
+    :members:
 
-.. autoclass:: Directive
+.. autoclass:: EnumValue
+    :members:
 
-.. autofunction:: unwrap_type
-
-.. autofunction:: nullable_type
-
-.. autofunction:: is_input_type
-
-.. autofunction:: is_output_type
-
-.. autofunction:: is_leaf_type
-
-.. autofunction:: is_composite_type
-
-.. autofunction:: is_abstract_type
-
+.. autoclass:: EnumType
+    :members:
 
 Scalar Types
 ~~~~~~~~~~~~
 
-Scalar types are instances of :class:`~py_gql.schema.ScalarType`, refer to the
-class documentation to learn how to define them.
+.. autoclass:: ScalarType
+    :members:
 
 Specified scalar types
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The following types are part of the specification and should always be available
-in any compliant GraphQL server.
+in any compliant GraphQL server (although they may not be used).
+
+.. autoattribute:: py_gql.schema.Boolean
+    :annotation:
+
+    The `Boolean` scalar type represents ``true`` or ``false``.
 
 .. autoattribute:: py_gql.schema.Int
     :annotation:
@@ -131,21 +101,31 @@ in any compliant GraphQL server.
     as `"4"`) or integer (such as `4`) input value will be accepted as
     an ID.
 
-Custom scalar types
-^^^^^^^^^^^^^^^^^^^
+.. autoattribute:: py_gql.schema.SPECIFIED_SCALAR_TYPES
+    :annotation:
+
+    Tuple of all specified scalar types.
+
+Extra scalar types
+^^^^^^^^^^^^^^^^^^
 
 The following types and classes are provided for convenience as they are
-quite common. They will not always be present in GraphQL servers.
+quite common. They will not always be present in GraphQL servers and need to be
+included manually when using `py_gql.build_schema`.
 
 .. autoattribute:: py_gql.schema.UUID
     :annotation:
 
     The UUID scalar type represents a UUID as specified in :rfc:`4122`.
 
-.. autoclass:: py_gql.schema.RegexType
+.. autoclass:: RegexType
+    :members:
 
 Directives
 ~~~~~~~~~~
+
+.. autoclass:: Directive
+    :members:
 
 The following :class:`py_gql.schema.Directive` instances are part of
 the specification and should always be available in any compliant GraphQL
@@ -171,9 +151,7 @@ server.
     similar data.
     Formatted in `Markdown <https://daringfireball.net/projects/markdown/>`_.
 
+.. autoattribute:: py_gql.schema.SPECIFIED_DIRECTIVES
+    :annotation:
 
-Building a schema from a GraphQL document
------------------------------------------
-
-.. automodule:: py_gql.schema.build
-    :members:
+    Tuple of all specified directives.

@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
-""" Validation rules defined in `this section
+"""
+Validation rules defined in `this section
 <http://facebook.github.io/graphql/June2018/#sec-Validation>`_ of the
-specification. """
+specification.
+
+These rules are **all** used by default when calling
+`~py_gql.validation.validate` and accessible together as
+`~py_gql.validatin.SPECIFIED_RULES`.
+"""
 
 from collections import defaultdict
 from typing import Dict, List, Set, Tuple
@@ -59,7 +65,8 @@ __all__ = (
 
 
 class ExecutableDefinitionsChecker(ValidationVisitor):
-    """ A GraphQL document is only valid for execution if all definitions
+    """
+    A GraphQL document is only valid for execution if all definitions
     are either operation or fragment definitions.
 
     Unnecessary if parser was run with ``allow_type_system=False``.
@@ -80,8 +87,10 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
 
 
 class UniqueOperationNameChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all defined operations have
-    unique names. """
+    """
+    A GraphQL document is only valid if all defined operations have
+    unique names.
+    """
 
     def __init__(self, schema, type_info):
         super(UniqueOperationNameChecker, self).__init__(schema, type_info)
@@ -96,9 +105,11 @@ class UniqueOperationNameChecker(ValidationVisitor):
 
 
 class LoneAnonymousOperationChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if when it contains an anonymous
+    """
+    A GraphQL document is only valid if when it contains an anonymous
     operation (the query short-hand) that it contains only that one
-    operation definition. """
+    operation definition.
+    """
 
     def enter_document(self, node):
         operation_definitions = [
@@ -117,8 +128,10 @@ class LoneAnonymousOperationChecker(ValidationVisitor):
 
 
 class SingleFieldSubscriptionsChecker(ValidationVisitor):
-    """ A GraphQL subscription is valid only if it contains a single
-    root field. """
+    """
+    A GraphQL subscription is valid only if it contains a single
+    root field.
+    """
 
     def enter_operation_definition(self, node):
         if node.operation == "subscription":
@@ -134,9 +147,11 @@ class SingleFieldSubscriptionsChecker(ValidationVisitor):
 
 
 class KnownTypeNamesChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if referenced types (specifically
+    """
+    A GraphQL document is only valid if referenced types (specifically
     variable definitions and fragment conditions) are defined by the
-    type schema. """
+    type schema.
+    """
 
     def _skip(self, _):
         raise SkipNode()
@@ -159,9 +174,11 @@ class KnownTypeNamesChecker(ValidationVisitor):
 
 
 class FragmentsOnCompositeTypesChecker(ValidationVisitor):
-    """ Fragments use a type condition to determine if they apply, since
+    """
+    Fragments use a type condition to determine if they apply, since
     fragments can only be spread into a composite type (object, interface, or
-    union), the type condition must also be a composite type. """
+    union), the type condition must also be a composite type.
+    """
 
     def enter_inline_fragment(self, node):
         if node.type_condition:
@@ -186,8 +203,10 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
 
 
 class VariablesAreInputTypesChecker(ValidationVisitor):
-    """ A GraphQL operation is only valid if all the variables it defines are of
-    input types (scalar, enum, or input object). """
+    """
+    A GraphQL operation is only valid if all the variables it defines are of
+    input types (scalar, enum, or input object).
+    """
 
     def enter_variable_definition(self, node):
         try:
@@ -202,8 +221,10 @@ class VariablesAreInputTypesChecker(ValidationVisitor):
 
 
 class ScalarLeafsChecker(ValidationVisitor):
-    """ A GraphQL document is valid only if all leaf fields (fields without
-    sub selections) are of scalar or enum types. """
+    """
+    A GraphQL document is valid only if all leaf fields (fields without
+    sub selections) are of scalar or enum types.
+    """
 
     def enter_field(self, node):
         type_ = self.type_info.type
@@ -224,8 +245,10 @@ class ScalarLeafsChecker(ValidationVisitor):
 
 
 class FieldsOnCorrectTypeChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all fields selected are defined by
-    the parent type, or are an allowed meta field such as __typename. """
+    """
+    A GraphQL document is only valid if all fields selected are defined by
+    the parent type, or are an allowed meta field such as __typename.
+    """
 
     def enter_field(self, node):
         if self.type_info.parent_type is None:
@@ -280,8 +303,10 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
 
 
 class UniqueFragmentNamesChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all defined fragments have unique
-    names. """
+    """
+    A GraphQL document is only valid if all defined fragments have unique
+    names.
+    """
 
     def __init__(self, schema, type_info):
         super(UniqueFragmentNamesChecker, self).__init__(schema, type_info)
@@ -297,8 +322,10 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
 
 
 class KnownFragmentNamesChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all `...Fragment` fragment spreads
-    refer to fragments defined in the same document. """
+    """
+    A GraphQL document is only valid if all `...Fragment` fragment spreads
+    refer to fragments defined in the same document.
+    """
 
     def __init__(self, schema, type_info):
         super(KnownFragmentNamesChecker, self).__init__(schema, type_info)
@@ -319,9 +346,11 @@ class KnownFragmentNamesChecker(ValidationVisitor):
 
 
 class NoUnusedFragmentsChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all fragment definitions are spread
+    """
+    A GraphQL document is only valid if all fragment definitions are spread
     within operations, or spread within other fragments spread within
-    operations. """
+    operations.
+    """
 
     def __init__(self, schema, type_info):
         super(NoUnusedFragmentsChecker, self).__init__(schema, type_info)
@@ -342,9 +371,11 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
 
 
 class PossibleFragmentSpreadsChecker(ValidationVisitor):
-    """ A fragment spread is only valid if the type condition could ever
+    """
+    A fragment spread is only valid if the type condition could ever
     possibly be true: if there is a non-empty intersection of the possible
-    parent types, and possible types which pass the type condition. """
+    parent types, and possible types which pass the type condition.
+    """
 
     def __init__(self, schema, type_info):
         super(PossibleFragmentSpreadsChecker, self).__init__(schema, type_info)
@@ -396,7 +427,8 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
 
 
 class NoFragmentCyclesChecker(ValidationVisitor):
-    """ A GraphQL Document is only valid if fragment definitions are not cyclic.
+    """
+    A GraphQL Document is only valid if fragment definitions are not cyclic.
     """
 
     def __init__(self, schema, type_info):
@@ -465,8 +497,10 @@ class NoFragmentCyclesChecker(ValidationVisitor):
 
 
 class UniqueVariableNamesChecker(ValidationVisitor):
-    """ A GraphQL operation is only valid if all its variables are uniquely
-    named. """
+    """
+    A GraphQL operation is only valid if all its variables are uniquely
+    named.
+    """
 
     def enter_operation_definition(self, _node):
         self._variables = set()  # type: Set[str]
@@ -482,8 +516,10 @@ class UniqueVariableNamesChecker(ValidationVisitor):
 
 
 class NoUndefinedVariablesChecker(VariablesCollector):
-    """ A GraphQL operation is only valid if all variables encountered, both
-    directly and via fragment spreads, are defined by that operation. """
+    """
+    A GraphQL operation is only valid if all variables encountered, both
+    directly and via fragment spreads, are defined by that operation.
+    """
 
     def leave_document(self, node):
         super(NoUndefinedVariablesChecker, self).leave_document(node)
@@ -517,8 +553,10 @@ class NoUndefinedVariablesChecker(VariablesCollector):
 
 
 class NoUnusedVariablesChecker(VariablesCollector):
-    """ A GraphQL operation is only valid if all variables defined by an
-    operation are used, either directly or within a spread fragment. """
+    """
+    A GraphQL operation is only valid if all variables defined by an
+    operation are used, either directly or within a spread fragment.
+    """
 
     def leave_document(self, node):
         super(NoUnusedVariablesChecker, self).leave_document(node)
@@ -542,8 +580,10 @@ class NoUnusedVariablesChecker(VariablesCollector):
 
 
 class KnownDirectivesChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all `@directives` are known by the
-    schema and legally positioned. """
+    """
+    A GraphQL document is only valid if all `@directives` are known by the
+    schema and legally positioned.
+    """
 
     def __init__(self, schema, type_info):
         super(KnownDirectivesChecker, self).__init__(schema, type_info)
@@ -655,8 +695,10 @@ class KnownDirectivesChecker(ValidationVisitor):
 
 
 class UniqueDirectivesPerLocationChecker(ValidationVisitor):
-    """ A GraphQL document is only valid if all directives at a given location
-    are uniquely named. """
+    """
+    A GraphQL document is only valid if all directives at a given location
+    are uniquely named.
+    """
 
     def _validate_unique_directive_names(self, node):
         seen = set()  # type: Set[str]
@@ -675,8 +717,10 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
 
 
 class KnownArgumentNamesChecker(ValidationVisitor):
-    """ A GraphQL field / directive is only valid if all supplied arguments
-    are defined by that field / directive. """
+    """
+    A GraphQL field / directive is only valid if all supplied arguments
+    are defined by that field / directive.
+    """
 
     def enter_field(self, node):
         field_def = self.type_info.field
@@ -736,8 +780,10 @@ class KnownArgumentNamesChecker(ValidationVisitor):
 
 
 class UniqueArgumentNamesChecker(ValidationVisitor):
-    """ A GraphQL field or directive is only valid if all supplied arguments
-    are uniquely named. """
+    """
+    A GraphQL field or directive is only valid if all supplied arguments
+    are uniquely named.
+    """
 
     def _check_duplicate_args(self, node):
         argnames = set()  # type: Set[str]
@@ -752,8 +798,10 @@ class UniqueArgumentNamesChecker(ValidationVisitor):
 
 
 class ProvidedRequiredArgumentsChecker(ValidationVisitor):
-    """ A field or directive is only valid if all required (non-null without a
-    default value) ) field arguments have been provided. """
+    """
+    A field or directive is only valid if all required (non-null without a
+    default value) ) field arguments have been provided.
+    """
 
     def _missing_args(self, arg_defs, node):
         node_args = set((arg.name.value for arg in node.arguments))
@@ -785,7 +833,8 @@ class ProvidedRequiredArgumentsChecker(ValidationVisitor):
 
 
 class VariablesInAllowedPositionChecker(VariablesCollector):
-    """ Variables passed to field arguments conform to type """
+    """
+    Variables passed to field arguments conform to type """
 
     def iter_op_variables(self, op):
         for usage in self._op_variables[op].items():
@@ -847,7 +896,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
 
 
 class UniqueInputFieldNamesChecker(ValidationVisitor):
-    """ A GraphQL input object value is only valid if all supplied fields are
+    """
+    A GraphQL input object value is only valid if all supplied fields are
     uniquely named.
     """
 

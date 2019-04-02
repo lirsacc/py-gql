@@ -29,6 +29,8 @@ if False:  # Fix import cycles of types needed for Mypy checking
 
 class SchemaPrinter:
     """
+    Encode schema serialisation as a valid SDL document.
+
     Args:
         indent: Indent character or number of spaces
 
@@ -54,6 +56,7 @@ class SchemaPrinter:
         indent: Union[str, int] = 4,
         include_descriptions: bool = True,
         include_introspection: bool = False,
+        # TODO: Can this be dropped?
         use_legacy_comment_descriptions: bool = False,
     ):
         self.include_descriptions = include_descriptions

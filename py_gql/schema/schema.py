@@ -26,13 +26,12 @@ from .types import (
 )
 from .validation import validate_schema
 
-_UNSET_NAMED_TYPE = NamedType()
-
 
 class Schema:
     """ A GraphQL schema definition.
 
-    This is the main container for a GraphQL schema and its related types.
+    A GraphQL schema definition. This is the main container for a GraphQL
+    schema and its related types.
 
     Args:
         query_type: The root query type for the schema
@@ -51,25 +50,33 @@ class Schema:
             the schema from a GraphQL (SDL) document.
 
     Attributes:
-        query_type: The root query type for the schema (required)
+        query_type (Optional[ObjectType]):
+            The root query type for the schema (required).
 
-        mutation_type: The root mutation type for the schema (optional)
+        mutation_type (Optional[ObjectType]):
+            The root mutation type for the schema (optional).
 
-        subscription_type: The root subscription type for the schema (optional)
+        subscription_type (Optional[ObjectType]):
+            The root subscription type for the schema (optional).
 
-        node: AST node for the schema if applicable, i.e. when creating the
-            schema from a GraphQL (SDL) document.
+        nodes (List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]):
+            AST node for the schema if applicable, i.e. when creating the schema
+            from a GraphQL (SDL) document.
 
-        type_map: Mapping ``type name -> Type instance`` of all types used in
-            the schema, including directives.
+        type_map (Dict[str, GraphQLType]):
+            Mapping ``type name -> Type instance`` of all types used in the
+            schema, including directives.
 
-        types: Mapping ``type name -> Type instance`` of all types used in the
+        types (Dict[str, GraphQLType]):
+            Mapping ``type name -> Type instance`` of all types used in the
             schema, excluding directives.
 
-        directives: Mapping ``directive name -> Directive instance`` of all
-            directives used in the schema.
+        directives (Dict[str, py_gql.schema.Directive]):
+            Mapping ``directive name -> Directive instance`` of all directives
+            used in the schema.
 
-        implementations: Mapping of ``interface name -> [implementing object types]``.
+        implementations (Dict[str, ObjectType]):
+            Mapping of ``interface name -> [implementing object types]``.
     """
 
     def __init__(
@@ -153,7 +160,7 @@ class Schema:
         self._is_valid = None
 
     def validate(self):
-        """ Check that the schema is valid and cache the result.
+        """ Check that the schema is valid.
 
         Raises:
             :class:`~py_gql.exc.SchemaError` if the schema is invalid.
@@ -162,6 +169,10 @@ class Schema:
 
     @property
     def is_valid(self) -> bool:
+        """
+        bool: Whether this schema is valid or not. This property calls
+        :meth:`validate` in the background and caches the result.
+        """
         if self._is_valid is None:
             try:
                 self.validate()
@@ -172,9 +183,10 @@ class Schema:
         return self._is_valid
 
     def get_type(
-        self, name: str, default: NamedType = _UNSET_NAMED_TYPE
-    ) -> GraphQLType:
-        """ Get a type by name.
+        self, name: str, default: Optional[NamedType] = None
+    ) -> NamedType:
+        """
+        Get a type by name.
 
         Args:
             name: Requested type name
@@ -191,21 +203,24 @@ class Schema:
         try:
             return self.types[name]
         except KeyError:
-            if default is not _UNSET_NAMED_TYPE:
+            if default is not None:
                 return default
             raise UnknownType(name)
 
     def has_type(self, name: str) -> bool:
+        """
+        Check if the schema contains a type with the given name.
+        """
         try:
             self.types[name]
+            return True
         except KeyError:
             return False
-        else:
-            return True
 
     def get_type_from_literal(self, ast_node: _ast.Type) -> GraphQLType:
-        """ Given an AST node describing a type, return a
-        corresponding :class:`py_gql.schema.Type` instance.
+        """
+        Given an AST node describing a type, return a corresponding
+        :class:`py_gql.schema.Type` instance.
 
         For example, if provided the parsed AST node for ``[User]``,
         a :class:`py_gql.schema.ListType` instance will be returned, containing
@@ -236,7 +251,8 @@ class Schema:
     def get_possible_types(
         self, abstract_type: Union[UnionType, InterfaceType]
     ) -> List[ObjectType]:
-        """ Get the possible implementations of an abstract type.
+        """
+        Get the possible implementations of an abstract type.
 
         Args:
             type_: Abstract type to check.
@@ -260,7 +276,8 @@ class Schema:
     def is_possible_type(
         self, abstract_type: Union[UnionType, InterfaceType], type_: GraphQLType
     ) -> bool:
-        """ Check that ``type_`` is a possible realization of ``abstract_type``.
+        """
+        Check that ``type_`` is a possible realization of ``abstract_type``.
 
         Returns: ``True`` if ``type_`` is valid for ``abstract_type``
         """
@@ -269,7 +286,8 @@ class Schema:
         return type_ in self.get_possible_types(abstract_type)
 
     def is_subtype(self, type_, super_type):
-        """ Provided a type and a super type, return true if the first type is
+        """
+        Provided a type and a super type, return true if the first type is
         either equal or a subset of the second super type (covariant).
 
         Args:
@@ -303,7 +321,8 @@ class Schema:
         )
 
     def types_overlap(self, rhs: GraphQLType, lhs: GraphQLType) -> bool:
-        """ Provided two composite types, determine if they "overlap". Two
+        """
+        Provided two composite types, determine if they "overlap". Two
         composite types overlap when the Sets of possible concrete types for
         each intersect.
 
@@ -335,12 +354,39 @@ class Schema:
             )
         )
 
-    def to_string(self, **kwargs: Any) -> str:
-        """ Format the schema as an SDL string.
-
-        All arguments are forwarded to :cls:`SchemaPrinter`.
+    def to_string(
+        self,
+        indent: Union[str, int] = 4,
+        include_descriptions: bool = True,
+        include_introspection: bool = False,
+        use_legacy_comment_descriptions: bool = False,
+    ) -> str:
         """
-        return SchemaPrinter(**kwargs)(self)
+        Format the schema as an SDL string.
+
+        Args:
+            indent:
+                Indent character or number of spaces
+
+            include_descriptions:
+                If ``True`` include descriptions in the output
+
+            use_legacy_comment_descriptions:
+                Control how descriptions are formatted.
+
+                Set to ``True`` for the old standard (use comments) which will be
+                compatible with most GraphQL parsers while the default settings is
+                to use block strings and is part of the most recent specification.
+
+            include_introspection:
+                If ``True``, include introspection types in the output
+        """
+        return SchemaPrinter(
+            indent=indent,
+            include_descriptions=include_descriptions,
+            include_introspection=include_introspection,
+            use_legacy_comment_descriptions=use_legacy_comment_descriptions,
+        )(self)
 
     def assign_resolver(
         self,
@@ -348,7 +394,19 @@ class Schema:
         func: Callable[..., Any],
         allow_override: bool = False,
     ) -> None:
-        """ Register a resolver against a type in the schema
+        """
+        Register a resolver against a type in the schema.
+
+        Args:
+            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+            func: The resolver function.
+            allow_override:
+                By default this function will raise :py:class:`ValueError` if
+                the field already has a resolver defined. Set this to ``True``
+                to allow overriding.
+
+        Raises:
+            :py:class:`ValueError`:
 
         Warning:
             This will update the type inline and as such is expected to be used
@@ -360,7 +418,7 @@ class Schema:
         except ValueError:
             raise ValueError(
                 'Invalid field path "%s". Field path must of the form '
-                '"Typename.Fieldname"' % fieldpath
+                '"{Typename}.{Fieldname}"' % fieldpath
             )
 
         object_type = self.get_type(typename)
@@ -387,7 +445,20 @@ class Schema:
             field.resolver = func or field.resolver
 
     def resolver(self, fieldpath):
-        """ Decorator version of `assign_resolver`. """
+        """
+        Decorator version of :meth:`assign_resolver`.
+
+        .. code-block:: python
+
+            schema = ...
+
+            @schema.resolver("Query.foo")
+            def resolve_foo(obj, ctx, info):
+                return "foo"
+
+        Args:
+            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+        """
 
         def decorator(func):
             self.assign_resolver(fieldpath, func)
@@ -400,7 +471,8 @@ def _build_type_map(
     *types: Sequence[GraphQLType],
     _type_map: Optional[Dict[str, GraphQLType]] = None,
 ) -> Dict[str, GraphQLType]:
-    """ Recursively build a mapping name <> Type from a list of types to include
+    """
+    Recursively build a mapping name <> Type from a list of types to include
     all referenced types.
 
     Warning:

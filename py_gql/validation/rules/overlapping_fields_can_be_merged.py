@@ -44,7 +44,8 @@ class Context:
 
 
 def _permutations(lst: Sequence[T]) -> Iterator[Tuple[T, T]]:
-    """ Symmetric permutations of a list
+    """
+    Symmetric permutations of a list
 
     >>> list(_permutations([1, 2, 3]))
     [(1, 2), (1, 3), (2, 3)]
@@ -55,7 +56,8 @@ def _permutations(lst: Sequence[T]) -> Iterator[Tuple[T, T]]:
 
 
 def _cross(iter_1: Sequence[T], iter_2: Sequence[G]) -> Iterator[Tuple[T, G]]:
-    """ Cross product of 2 sequences
+    """
+    Cross product of 2 sequences
 
     >>> list(_cross([1, 2, 3], [4, 5, 6]))
     [(1, 4), (1, 5), (1, 6), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6)]
@@ -69,6 +71,8 @@ def _at(
     lst: Sequence[T], index: int, default: Optional[T] = None
 ) -> Optional[T]:
     """
+    Safely extract value from a list at a given index.
+
     >>> _at([], 0) is None
     True
     >>> _at([1], 2) is None
@@ -88,9 +92,11 @@ def _type_from_ast(schema, node):
 
 
 class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
-    """ A selection set is only valid if all fields (including spreading any
+    """
+    A selection set is only valid if all fields (including spreading any
     fragments) either correspond to distinct response names or can be merged
-    without ambiguity. """
+    without ambiguity.
+    """
 
     def __init__(self, schema, type_info):
         super(OverlappingFieldsCanBeMergedChecker, self).__init__(
@@ -125,7 +131,8 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
 def find_conflicts_within_selection_set(
     ctx: Context, selection_set: _ast.SelectionSet, parent_type: GraphQLType
 ) -> List[Conflict]:
-    """ Find all conflicts found "within" a selection set, including those found
+    """
+    Find all conflicts found "within" a selection set, including those found
     via spreading in fragments. Called when visiting each SelectionSet in the
     GraphQL Document.
 
@@ -224,9 +231,11 @@ def _fields_and_fragments(
     parent_type: Optional[GraphQLType],
     selection_set: _ast.SelectionSet,
 ) -> FieldsAndFragments:
-    """ Given a selection set, return the collection of fields (a mapping
+    """
+    Given a selection set, return the collection of fields (a mapping
     of response name to field nodes and definitions) as well as a list of
-    fragment names referenced via fragment spreads. """
+    fragment names referenced via fragment spreads.
+    """
     cached = ctx.fields_and_fragments.get(selection_set)
     if cached is not None:
         return cached
@@ -246,9 +255,11 @@ def _fields_and_fragments(
 def _referenced_fields_and_fragments(
     ctx: Context, fragment: _ast.FragmentDefinition
 ) -> FieldsAndFragments:
-    """ Given a fragment definition, return the represented collection of
+    """
+    Given a fragment definition, return the represented collection of
     fields as well as a list of nested fragment names referenced via
-    fragment spreads. """
+    fragment spreads.
+    """
     cached = ctx.fields_and_fragments.get(fragment.selection_set)
     if cached is not None:
         return cached
@@ -317,7 +328,9 @@ def _collect_fields_and_fragments(
 
 
 def _conflicts_within(ctx: Context, field_map: FieldMap) -> Iterator[Conflict]:
-    """ Collect all Conflicts "within" one collection of fields. """
+    """
+    Collect all Conflicts "within" one collection of fields.
+    """
     for response_name, fields in field_map.items():
         # This compares every field in the list to every other field in this
         # list (except to itself). If the list only has one item, nothing
@@ -340,11 +353,13 @@ def _conflicts_between(
     field_map_1: FieldMap,
     field_map_2: FieldMap,
 ) -> Iterator[Conflict]:
-    """ Collect all Conflicts between two collections of fields. This is
+    """
+    Collect all Conflicts between two collections of fields. This is
     similar to, but different from the `collectConflictsWithin` function above.
     This check assumes that `collectConflictsWithin` has already been called
     on each provided collection of fields. This is true because this
-    validator traverses each individual selection set. """
+    validator traverses each individual selection set.
+    """
     for response_name, fields_1 in field_map_1.items():
         fields_2 = field_map_2.get(response_name)
         if fields_2 is None:
@@ -370,8 +385,10 @@ def _conflicts_between_fields_and_fragment(
     fragment_name: str,
     compared_fragments: Set[str],
 ) -> Iterator[Conflict]:
-    """ Collect all conflicts found between a set of fields and a fragment
-    reference including via spreading in any nested fragments. """
+    """
+    Collect all conflicts found between a set of fields and a fragment
+    reference including via spreading in any nested fragments.
+    """
     # Memoize so a fragment is not compared for conflicts more than once.
     if fragment_name in compared_fragments:
         return
@@ -411,8 +428,10 @@ def _conflicts_between_fragments(
     fragment_1: Optional[str],
     fragment_2: Optional[str],
 ) -> Iterator[Conflict]:
-    """ Collect all conflicts found between two fragments, including via
-    spreading in any nested fragments. """
+    """
+    Collect all conflicts found between two fragments, including via
+    spreading in any nested fragments.
+    """
     if (not fragment_1) or (not fragment_2) or fragment_1 == fragment_2:
         return
 
@@ -462,7 +481,8 @@ def _find_conflict(
     field_1: FieldDef,
     field_2: FieldDef,
 ) -> Optional[Conflict]:
-    """ Determines if there is a conflict between two particular fields,
+    """
+    Determines if there is a conflict between two particular fields,
     including comparing their sub-fields.
     """
     parent_1, node_1, def_1 = field_1
@@ -544,9 +564,11 @@ def _conflicts_between_subselections(
     parent_type_2: Optional[GraphQLType],
     node_2: _ast.SelectionSet,
 ) -> Iterator[Conflict]:
-    """ Find all conflicts found between two selection sets, including those
+    """
+    Find all conflicts found between two selection sets, including those
     found via spreading in fragments. Called when determining if conflicts
-    exist between the sub-fields of two overlapping fields. """
+    exist between the sub-fields of two overlapping fields.
+    """
 
     field_map_1, fragments_1 = _fields_and_fragments(ctx, parent_type_1, node_1)
     field_map_2, fragments_2 = _fields_and_fragments(ctx, parent_type_2, node_2)
@@ -586,7 +608,8 @@ def _conflicts_between_subselections(
 def _same_arguments(
     args_1: List[_ast.Argument], args_2: List[_ast.Argument]
 ) -> bool:
-    """ Given two lists of arguments, check all arguments have the same name
+    """
+    Given two lists of arguments, check all arguments have the same name
     and values with no extra / missing argument.
     """
     if len(args_1) != len(args_2):
@@ -608,10 +631,12 @@ def _same_arguments(
 
 
 def _types_conflict(type_1: GraphQLType, type_2: GraphQLType) -> bool:
-    """ Two types conflict if both types could not apply to a value
+    """
+    Two types conflict if both types could not apply to a value
     simultaneously. Composite types are ignored as their individual field
     types will be compared later recursively. However List and Non-Null types
-    must match. """
+    must match.
+    """
     if isinstance(type_1, WrappingType) or isinstance(type_2, WrappingType):
         return type(type_1) != type(type_2) or _types_conflict(
             type_1.type, type_2.type  # type: ignore

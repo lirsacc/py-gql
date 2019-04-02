@@ -115,16 +115,6 @@ def test_Schema_get_type_raises_on_unknown_type():
         schema.get_type("UnknownType")
 
 
-def test_Schema_get_type_does_not_raise_on_unknown_type_with_default():
-    schema = Schema(
-        ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
-        ),
-        directives=[Dir],
-    )
-    assert schema.get_type("UnknownType", None) is None  # type: ignore
-
-
 def test_Schema_includes_nested_input_objects_in_the_map():
     NestedInputObject = InputObjectType(
         "NestedInputObject", [InputField("value", String)]

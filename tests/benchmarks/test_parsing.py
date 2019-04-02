@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 from py_gql.lang import parse
 from py_gql.utilities import introspection_query
