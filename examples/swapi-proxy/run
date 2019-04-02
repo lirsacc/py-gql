@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-FLASK_APP=server.py python -m flask run --reload

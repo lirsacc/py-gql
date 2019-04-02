@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-adev runserver -p 5000 --app-factory init server.py

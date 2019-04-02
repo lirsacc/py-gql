@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
+""" Minimal getting started example with Flask.
+
+To run this, make sure Flask and py_gql are installed and run:
+
+    FLASK_APP=getting-started.py flask run
 """
 
 import json

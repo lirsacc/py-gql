@@ -9,9 +9,9 @@ import re
 import requests
 
 import swapi
+from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.execution import _concurrency
-from py_gql.schema.build import make_executable_schema
+from py_gql.execution.threadpool_executor import gather as gather_futures
 
 
 def swapi_caller(func):
@@ -22,11 +22,11 @@ def swapi_caller(func):
         except requests.exceptions.HTTPError as err:
             raise ResolverError(
                 "Cannot reach SWAPI",
-                extensions=[
-                    ("msg", str(err)),
-                    ("code", err.response.status_code),
-                    ("url", err.request.url),
-                ],
+                extensions={
+                    "msg": str(err),
+                    "code": err.response.status_code,
+                    "url": err.request.url,
+                },
             )
 
     return wrapper
@@ -34,27 +34,25 @@ def swapi_caller(func):
 
 def single_resource_resolver(resource):
     @swapi_caller
-    def resolve(obj, args, ctx, info):
-        return swapi.fetch_one(resource, args["id"])
+    def resolve(*_, id):
+        return swapi.fetch_one(resource, id)
 
     return resolve
 
 
 def nested_single_resource_resolver(key, resource):
     @swapi_caller
-    def resolve(obj, args, ctx, info):
+    def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
-        return info.executor.submit(
-            swapi.fetch_one, resource, int(obj[key].split("/")[-2])
-        )
+        return swapi.fetch_one(resource, int(obj[key].split("/")[-2]))
 
     return resolve
 
 
 def resource_resolver(resource):
     @swapi_caller
-    def resolve(obj, args, ctx, info):
+    def resolve(obj, ctx, info, **args):
         return swapi.fetch_many(resource, search=args.get("search"))
 
     return resolve
@@ -62,12 +60,15 @@ def resource_resolver(resource):
 
 def nested_list_resolver(key, resource):
     @swapi_caller
-    def resolve(obj, args, ctx, info):
+    def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
-        return _concurrency.gather(
-            [info.executor.submit(swapi.fetch_one, resource, id) for id in ids]
+        return gather_futures(
+            [
+                ctx["global_executor"].submit(swapi.fetch_one, resource, id)
+                for id in ids
+            ]
         )
 
     return resolve
@@ -136,5 +137,11 @@ RESOLVERS = {
     },
 }
 
+
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
-    schema = make_executable_schema(f.read(), resolvers=RESOLVERS)
+    SCHEMA = build_schema(f.read())
+
+
+for typename, field_resolvers in RESOLVERS.items():
+    for fieldname, resolver in field_resolvers.items():
+        SCHEMA.assign_resolver("%s.%s" % (typename, fieldname), resolver)

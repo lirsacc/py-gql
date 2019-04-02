@@ -16,7 +16,7 @@ from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
 
 
-def _graphql(
+def do_graphql(
     schema: Schema,
     document: str,
     *,
@@ -27,6 +27,7 @@ def _graphql(
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     executor_cls: Optional[Type[Executor]] = None,
+    executor_args: Optional[Mapping[str, Any]] = None,
 ) -> Any:
     """ Main GraphQL entrypoint encapsulating query processing from start to
     finish.
@@ -90,6 +91,7 @@ def _graphql(
             context_value=context,
             middlewares=middlewares,
             executor_cls=executor_cls,
+            executor_args=executor_args,
         )
     except GraphQLSyntaxError as err:
         return GraphQLResult(errors=[err])
@@ -114,7 +116,7 @@ async def graphql(
         return cast(
             GraphQLResult,
             await unwrap_coro(
-                _graphql(
+                do_graphql(
                     schema,
                     document,
                     variables=variables,
@@ -144,7 +146,7 @@ def graphql_sync(
 ) -> GraphQLResult:
     return cast(
         GraphQLResult,
-        _graphql(
+        do_graphql(
             schema,
             document,
             variables=variables,

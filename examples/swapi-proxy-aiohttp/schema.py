@@ -8,9 +8,10 @@ import os
 import re
 
 import aiohttp
+
 import swapi
+from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.schema.build import make_executable_schema
 
 
 def swapi_caller(func):
@@ -33,7 +34,7 @@ def swapi_caller(func):
 
 def single_resource_resolver(resource):
     @swapi_caller
-    async def resolve(obj, args, ctx, info):
+    async def resolve(obj, ctx, info, **args):
         return await swapi.fetch_one(resource, args["id"])
 
     return resolve
@@ -41,7 +42,7 @@ def single_resource_resolver(resource):
 
 def nested_single_resource_resolver(key, resource):
     @swapi_caller
-    async def resolve(obj, args, ctx, info):
+    async def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
         return await swapi.fetch_one(resource, int(obj[key].split("/")[-2]))
@@ -51,7 +52,7 @@ def nested_single_resource_resolver(key, resource):
 
 def resource_resolver(resource):
     @swapi_caller
-    async def resolve(obj, args, ctx, info):
+    async def resolve(obj, ctx, info, **args):
         return await swapi.fetch_many(resource, search=args.get("search"))
 
     return resolve
@@ -59,7 +60,7 @@ def resource_resolver(resource):
 
 def nested_list_resolver(key, resource):
     @swapi_caller
-    async def resolve(obj, args, ctx, info):
+    async def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
@@ -134,4 +135,9 @@ RESOLVERS = {
 }
 
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
-    schema = make_executable_schema(f.read(), resolvers=RESOLVERS)
+    SCHEMA = build_schema(f.read())
+
+
+for typename, field_resolvers in RESOLVERS.items():
+    for fieldname, resolver in field_resolvers.items():
+        SCHEMA.assign_resolver("%s.%s" % (typename, fieldname), resolver)

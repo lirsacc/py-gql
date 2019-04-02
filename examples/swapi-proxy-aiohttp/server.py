@@ -4,11 +4,11 @@ import json
 import os
 
 from aiohttp import web
-from py_gql.asyncio import AsyncIOExecutor, graphql
-from py_gql.utilities.tracers import ApolloTracer
-from schema import schema
 
-SCHEMA_SDL = schema.to_string()
+from py_gql import graphql
+from schema import SCHEMA
+
+SCHEMA_SDL = SCHEMA.to_string()
 
 with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
     GRAPHIQL_HTML = f.read()
@@ -21,19 +21,12 @@ async def sdl(request):
 async def graphql_handler(request):
     data = await request.json()
 
-    tracer = ApolloTracer()
-
-    with AsyncIOExecutor() as executor:
-        result = await graphql(
-            schema,
-            data["query"],
-            data.get("variables", {}),
-            data.get("operation_name"),
-            executor=executor,
-            tracer=tracer,
-        )
-
-    result.add_extension(tracer)
+    result = await graphql(
+        SCHEMA,
+        data["query"],
+        variables=data.get("variables", {}),
+        operation_name=data.get("operation_name"),
+    )
 
     return web.Response(
         text=json.dumps(result.response()), content_type="application/json"

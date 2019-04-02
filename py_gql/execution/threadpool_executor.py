@@ -45,7 +45,6 @@ MaybeFuture = Union["Future[T]", T]
 class ThreadPoolExecutor(Executor):
     @staticmethod
     def map_value(value, func):
-        print("MAP_VALUD", value)
         return chain(value, func)
 
     __slots__ = (
@@ -66,10 +65,13 @@ class ThreadPoolExecutor(Executor):
     )
 
     def __init__(
-        self, *args: Any, max_workers: Optional[int] = None, **kwargs: Any
+        self,
+        *args: Any,
+        inner_executor: Optional[_ThreadPoolExecutor] = None,
+        **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
-        self._inner = _ThreadPoolExecutor(max_workers=max_workers)
+        self._inner = inner_executor or _ThreadPoolExecutor()
 
     def execute_fields(
         self,
@@ -93,8 +95,6 @@ class ThreadPoolExecutor(Executor):
                     parent_type, root, field_def, nodes, field_path
                 )
             )
-
-            print("RESOLVED FIELD (P)", field_path, resolved)
 
             keys.append(key)
             pending.append(resolved)
@@ -181,7 +181,6 @@ class ThreadPoolExecutor(Executor):
             resolved = resolver(
                 parent_value, self.context_value, info, **coerced_args
             )
-            print("RF", path, resolved)
         except (CoercionError, ResolverError) as err:
             self.add_error(err, path, node)
             return None
@@ -196,7 +195,7 @@ class ThreadPoolExecutor(Executor):
                 lambda value: self.complete_value(
                     field_definition.type, nodes, path, value
                 ),
-                or_else=((CoercionError, ResolverError), on_error),
+                or_else=(ResolverError, on_error),
             )
 
     def complete_value(
