@@ -23,7 +23,7 @@ from .._utils import flatten
 from ..exc import SDLError
 from ..lang import ast as _ast
 from ..utilities import coerce_argument_values
-from .directives import SPECIFIED_DIRECTIVES
+from .directives import SPECIFIED_DIRECTIVES, DeprecatedDirective
 from .fix_type_references import fix_type_references
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
@@ -281,3 +281,29 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             if field is None:
                 return None
         return super().visit_input_field(field)
+
+
+class DeprecatedSchemaDirective(SchemaDirective):
+    """ Implementation of the ``@deprecated`` schema directive. """
+
+    definition = DeprecatedDirective
+
+    def visist_field(self, field: Field) -> Field:
+        return Field(
+            field.name,
+            type_=field.type,
+            args=field.arguments,
+            description=field.description,
+            deprecation_reason=self.args["reason"],
+            resolver=field.resolver,
+            node=field.node,
+        )
+
+    def visist_enum_value(self, enum_value: EnumValue) -> EnumValue:
+        return EnumValue(
+            enum_value.name,
+            enum_value.value,
+            description=enum_value.description,
+            deprecation_reason=self.args["reason"],
+            node=enum_value.node,
+        )

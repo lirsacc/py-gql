@@ -60,6 +60,10 @@ from .schema_from_ast import (
     build_schema_ignoring_extensions,
     extend_schema,
 )
-from .schema_directives import apply_schema_directives, SchemaDirective
+from .schema_directives import (
+    apply_schema_directives,
+    SchemaDirective,
+    DeprecatedSchemaDirective,
+)
 from .schema_visitor import SchemaVisitor
 from .schema import Schema
