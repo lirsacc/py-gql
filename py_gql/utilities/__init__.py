@@ -28,7 +28,7 @@ __all__ = (
     "default_resolver",
     "directive_arguments",
     "introspection_query",
+    "TypeInfoVisitor",
     "untyped_value_from_ast",
     "value_from_ast",
-    "TypeInfoVisitor",
 )

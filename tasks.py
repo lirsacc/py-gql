@@ -35,6 +35,7 @@ def clean(ctx):
 
 @invoke.task()
 def benchmark(ctx,):
+    """ Run benchmarks. """
     ctx.run(
         _join(
             [
@@ -125,15 +126,21 @@ def mypy(ctx, files=None):
 @invoke.task(aliases=["format"], iterable=["files"])
 def fmt(ctx, check=False, files=None):
     """ Run formatters """
-    files = (
-        "%s/**/*.py tests/**/*.py examples/**/*.py" % PACKAGE
-        if not files
-        else " ".join(files)
-    )
 
     with ctx.cd(ROOT):
         ctx.run(
-            _join(["isort", "--check-only" if check else None, files]),
+            _join(
+                [
+                    "isort",
+                    "--check-only" if check else None,
+                    (
+                        "%s/**/*.py tests/**/*.py examples/**/*.py setup.py tasks.py"
+                        % PACKAGE
+                        if not files
+                        else " ".join(files)
+                    ),
+                ]
+            ),
             echo=True,
         )
         # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
@@ -145,7 +152,11 @@ def fmt(ctx, check=False, files=None):
                     "--line-length=80",
                     "--target-version=py35",
                     "--check" if check else None,
-                    files,
+                    (
+                        "%s tests examples setup.py tasks.py" % PACKAGE
+                        if not files
+                        else " ".join(files)
+                    ),
                 ]
             ),
             echo=True,

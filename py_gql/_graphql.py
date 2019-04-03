@@ -26,7 +26,7 @@ def _graphql(
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    executor_cls: Optional[Type[Executor]] = None
+    executor_cls: Optional[Type[Executor]] = None,
 ) -> Any:
     """ Main GraphQL entrypoint encapsulating query processing from start to
     finish.
@@ -108,7 +108,7 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
 ) -> GraphQLResult:
     try:
         return cast(
@@ -140,7 +140,7 @@ def graphql_sync(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
 ) -> GraphQLResult:
     return cast(
         GraphQLResult,

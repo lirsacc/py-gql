@@ -113,6 +113,6 @@ def test_list_of_dicts_two_fields(benchmark):
 
 
 def test_introspection_query(benchmark, fixture_file):
-    schema = py_gql.build_schema(fixture_file("github-schema.graphql"))
+    github_schema = py_gql.build_schema(fixture_file("github-schema.graphql"))
     query = py_gql.utilities.introspection_query()
-    benchmark(py_gql.graphql_sync, schema, query)
+    benchmark(py_gql.graphql_sync, github_schema, query)
