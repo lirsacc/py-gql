@@ -1,9 +1,9 @@
 # Dependencies related to testing.
 
-pytest ~= 4.2.0
+pytest ~= 4.4
 
-pytest-asyncio ~= 0.10.0
+pytest-asyncio ~= 0.10
 pytest-benchmark ~= 3.2
-pytest-cov ~= 2.6.1
-pytest-mock ~= 1.10.0
+pytest-cov ~= 2.6
+pytest-mock ~= 1.10
 pytest-xdist ~=  1.27
