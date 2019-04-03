@@ -508,13 +508,6 @@ class ASTTypeBuilder:
 
         return res
 
-    @property
-    def type_map(self) -> Dict[str, GraphQLType]:
-        m = {}
-        m.update(self._cache)
-        m.update(self._extended_cache)
-        return m
-
     def build_type(
         self, type_node: Union[_ast.Type, _ast.TypeDefinition]
     ) -> GraphQLType:

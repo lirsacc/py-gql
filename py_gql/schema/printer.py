@@ -119,9 +119,7 @@ class SchemaPrinter:
             depth: Level of indentation
             first_in_block:
         """
-        if not self.include_descriptions or not getattr(
-            definition, "description"
-        ):
+        if not self.include_descriptions or not definition.description:
             return ""
 
         indent = self.indent * depth

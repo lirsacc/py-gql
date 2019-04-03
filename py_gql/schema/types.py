@@ -1136,7 +1136,8 @@ class Directive(NamedType):
     """
     Directive definition
 
-    `Directives <https://graphql.github.io/graphql-spec/June2018/#sec-Type-System.Directives>`_
+    `Directives
+    <https://graphql.github.io/graphql-spec/June2018/#sec-Type-System.Directives>`_
     are used by the GraphQL runtime as a way of modifying execution behavior.
     Type system creators will usually not create these directly.
 
