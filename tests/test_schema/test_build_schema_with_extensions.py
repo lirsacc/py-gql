@@ -6,8 +6,14 @@ from py_gql._string_utils import dedent
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
-from py_gql.schema import UUID, Field, ObjectType, String
-from py_gql.schema.build import SchemaDirective, build_schema
+from py_gql.schema import (
+    UUID,
+    Field,
+    ObjectType,
+    SchemaDirective,
+    String,
+    build_schema,
+)
 
 
 def test_object_type_extension():

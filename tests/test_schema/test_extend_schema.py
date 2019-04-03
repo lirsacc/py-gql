@@ -19,8 +19,8 @@ from py_gql.schema import (
     Int,
     ObjectType,
     Schema,
+    extend_schema,
 )
-from py_gql.schema.build import extend_schema
 
 BASE_SCHEMA = Schema(ObjectType("Query", [Field("foo", Int)]))
 

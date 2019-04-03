@@ -40,7 +40,18 @@ def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
     return maybe_callable
 
 
-_MISSING = object()
+def map_and_filter(
+    func: Callable[[T], Optional[T]], iterator: Iterable[T]
+) -> Iterator[T]:
+    """ Map an  iterable filtering out None.
+
+    >>> list(map_and_filter(lambda x: None if x % 2 else x, range(10)))
+    [0, 2, 4, 6, 8]
+    """
+    for entry in iterator:
+        mapped = func(entry)
+        if mapped is not None:
+            yield mapped
 
 
 def deduplicate(

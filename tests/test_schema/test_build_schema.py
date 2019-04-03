@@ -10,7 +10,7 @@ from py_gql.schema import (
     SPECIFIED_DIRECTIVES,
     UUID,
     build_schema,
-    build_schema_from_ast,
+    build_schema_ignoring_extensions,
 )
 
 
@@ -840,9 +840,9 @@ def test_inject_custom_types():
     assert schema.types["UUID"] is UUID
 
 
-def test_build_schema_from_ast_ignores_extensions():
+def test_build_schema_ignoring_extensions_ignores_extensions():
     assert (
-        build_schema_from_ast(
+        build_schema_ignoring_extensions(
             """
             type Query {
                 one: Int

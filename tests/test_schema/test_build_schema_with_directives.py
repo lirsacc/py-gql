@@ -20,9 +20,10 @@ from py_gql.schema import (
     NonNullType,
     ObjectType,
     ScalarType,
+    SchemaDirective,
     String,
+    build_schema,
 )
-from py_gql.schema.build import SchemaDirective, build_schema
 from py_gql.utilities import default_resolver
 
 
