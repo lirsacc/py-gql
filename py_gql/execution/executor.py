@@ -59,7 +59,7 @@ T = TypeVar("T")
 G = TypeVar("G")
 
 
-class Executor(object):
+class Executor:
     """
     Default executor class (synchronous).
     """

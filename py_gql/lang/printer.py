@@ -6,7 +6,7 @@ from typing import Iterable, Optional, Union
 from . import ast as _ast
 
 
-class ASTPrinter(object):
+class ASTPrinter:
     """ String formatter for ast node.
 
     Args:

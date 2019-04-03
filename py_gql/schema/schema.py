@@ -29,7 +29,7 @@ from .validation import validate_schema
 _UNSET_NAMED_TYPE = NamedType()
 
 
-class Schema(object):
+class Schema:
     """ A GraphQL schema definition.
 
     This is the main container for a GraphQL schema and its related types.

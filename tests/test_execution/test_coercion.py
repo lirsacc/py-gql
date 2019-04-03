@@ -765,7 +765,7 @@ async def test_argument_default_value_when_argument_cannot_be_coerced():
     )
 
 
-class TestNonNullArguments(object):
+class TestNonNullArguments:
     schema_with_null_args = Schema(
         ObjectType(
             "Query",

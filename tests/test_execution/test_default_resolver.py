@@ -15,7 +15,7 @@ def test_looks_up_key():
 
 
 def test_looks_up_attribute():
-    class TestObject(object):
+    class TestObject:
         def __init__(self, value):
             self.test = value
 
@@ -28,7 +28,7 @@ def test_looks_up_attribute():
 
 
 def test_evaluates_methods():
-    class Adder(object):
+    class Adder:
         def __init__(self, value):
             self._num = value
 

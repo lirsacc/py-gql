@@ -15,7 +15,7 @@ ResponsePath = List[Union[str, int]]
 GroupedFields = Dict[str, List[_ast.Field]]
 
 
-class ResolveInfo(object):
+class ResolveInfo:
     __slots__ = (
         "field_definition",
         "path",
@@ -45,7 +45,7 @@ class ResolveInfo(object):
         self.nodes = nodes
 
 
-class GraphQLExtension(object):
+class GraphQLExtension:
     """ Encode a GraphQL response extension.
 
     Use in conjonction with :meth:`GraphQLResult.add_extension` to encode the
@@ -68,7 +68,7 @@ class GraphQLExtension(object):
         raise NotImplementedError()
 
 
-class GraphQLResult(object):
+class GraphQLResult:
     """ Wrapper encoding the behaviour described in the `Response
     <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
     specification.

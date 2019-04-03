@@ -21,24 +21,24 @@ from ._test_utils import assert_execution
 pytestmark = pytest.mark.asyncio
 
 
-class Dog(object):
+class Dog:
     def __init__(self, name, woofs):
         self.name = name
         self.woofs = woofs
 
 
-class Cat(object):
+class Cat:
     def __init__(self, name, meows):
         self.name = name
         self.meows = meows
 
 
-class Human(object):
+class Human:
     def __init__(self, name):
         self.name = name
 
 
-class Person(object):
+class Person:
     def __init__(self, name, pets, friends):
         self.name = name
         self.pets = pets
@@ -341,14 +341,14 @@ async def test_type_resolution_supports_object_attribute(executor_cls):
         interfaces=[PetType],
     )
 
-    class Dog(object):
+    class Dog:
         __typename__ = "Dog"
 
         def __init__(self, name, woofs):
             self.name = name
             self.woofs = woofs
 
-    class Cat(object):
+    class Cat:
         __typename__ = "Cat"
 
         def __init__(self, name, meows):

@@ -206,7 +206,7 @@ async def test_generator_middleware(executor_cls, starwars_schema):
 async def test_class_middleware(executor_cls, starwars_schema):
     log = []
 
-    class PathCollectorAsync(object):
+    class PathCollectorAsync:
         def __call__(self, next_, root, context, info, **argsrgs):
             log.append("> %s" % stringify_path(info.path))
             yield next_(root, context, info, **argsrgs)

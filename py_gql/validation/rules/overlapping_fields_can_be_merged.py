@@ -29,7 +29,7 @@ FieldsAndFragments = Tuple[FieldMap, List[str]]
 Conflict = Tuple[str, str, Sequence[_ast.Node]]
 
 
-class Context(object):
+class Context:
     def __init__(
         self,
         schema: Schema,

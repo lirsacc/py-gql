@@ -76,7 +76,7 @@ def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:
     )
 
 
-class SchemaVisitor(object):
+class SchemaVisitor:
     """ Base class to encode schema traversal and inline modifications.
 
     Subclass and override the ``visit_*`` methods to implement custom behaviour.

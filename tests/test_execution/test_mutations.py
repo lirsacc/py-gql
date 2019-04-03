@@ -12,14 +12,14 @@ from ._test_utils import assert_execution
 pytestmark = pytest.mark.asyncio
 
 
-class NumberHolder(object):
+class NumberHolder:
     __slots__ = "theNumber"
 
     def __init__(self, original):
         self.theNumber = original
 
 
-class Root(object):
+class Root:
     def __init__(self, original):
         self.numberHolder = NumberHolder(original)
 

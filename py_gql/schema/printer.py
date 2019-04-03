@@ -27,7 +27,7 @@ if False:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 
 
-class SchemaPrinter(object):
+class SchemaPrinter:
     """
     Args:
         indent: Indent character or number of spaces

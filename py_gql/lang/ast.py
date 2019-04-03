@@ -21,7 +21,7 @@ from typing import (
 )
 
 
-class Node(object):
+class Node:
     """
     Base AST node.
 
@@ -110,7 +110,7 @@ class Type(Node):
     pass
 
 
-class SupportDirectives(object):
+class SupportDirectives:
     directives = NotImplemented  # type: List["Directive"]
 
 
@@ -514,7 +514,7 @@ class Directive(Node):
         self.loc = loc
 
 
-class SupportDescription(object):
+class SupportDescription:
     description = NotImplemented  # type: Optional[StringValue]
 
 

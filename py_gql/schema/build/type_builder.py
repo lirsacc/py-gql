@@ -64,7 +64,7 @@ def _desc(node: _ast.SupportDescription) -> Optional[str]:
     return node.description.value if node.description else None
 
 
-class TypesBuilder(object):
+class TypesBuilder:
     """ Build and extend type definitions from AST nodes.
 
     Warning:

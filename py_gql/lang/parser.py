@@ -166,7 +166,7 @@ def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
     return value
 
 
-class Parser(object):
+class Parser:
     """
     GraphQL syntax parser.
 

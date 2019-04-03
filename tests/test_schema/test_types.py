@@ -124,7 +124,7 @@ def test_scalar_serialization_fail(type_, input_, err):
     assert str(exc_info.value) == err
 
 
-class TestUUID(object):
+class TestUUID:
     def test_parse_string(self):
         assert UUID.parse("c4da8450-ec7a-4d3b-9ade-18194daeb2d6") == uuid.UUID(
             "c4da8450-ec7a-4d3b-9ade-18194daeb2d6"
@@ -151,7 +151,7 @@ class TestUUID(object):
         assert str(exc_info.value) == "badly formed hexadecimal UUID string"
 
 
-class TestRegexType(object):
+class TestRegexType:
     def test_accepts_string(self):
         t = RegexType("RE", r"[a-z][a-z_]*")
         assert t.parse("a_b") == "a_b"

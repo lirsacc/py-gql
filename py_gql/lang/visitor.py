@@ -37,7 +37,7 @@ class SkipNode(GraphQLError):
         super().__init__("")
 
 
-class Visitor(object):
+class Visitor:
     """
     Visitor base class.
     """

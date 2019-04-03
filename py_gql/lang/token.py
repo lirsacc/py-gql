@@ -8,7 +8,7 @@ encoded as instances of :class:`Token`.
 from typing import Any
 
 
-class Token(object):
+class Token:
     """ Base token class.
 
     All token instances can be compared by simple equality.

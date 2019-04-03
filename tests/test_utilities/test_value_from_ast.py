@@ -18,7 +18,7 @@ from py_gql.schema.types import (
 from py_gql.utilities import untyped_value_from_ast, value_from_ast
 
 
-class TestUntyped(object):
+class TestUntyped:
     @pytest.mark.parametrize(
         "value,expected",
         [
@@ -111,7 +111,7 @@ TestInput = InputObjectType(
 )
 
 
-class TestTyped(object):
+class TestTyped:
     def _run_test_case(self, value, type_, expected, error, variables=None):
         if error is None:
             assert (

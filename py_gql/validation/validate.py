@@ -42,7 +42,7 @@ SPECIFIED_RULES = (
 )
 
 
-class ValidationResult(object):
+class ValidationResult:
     """ Encode validation result by wrapping a collection of
     :class:`~py_gql.exc.ValidationError`.
 

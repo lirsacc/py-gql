@@ -18,7 +18,7 @@ yields to the next step.
         logger.debug('end', info.path)
 
     # Class based middleware
-    class CollectFieldsMiddleware(object):
+    class CollectFieldsMiddleware:
         def __init__(self):
             self.fields = []
 

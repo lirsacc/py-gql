@@ -46,7 +46,7 @@ def _evaluate_lazy_iter(entries: Optional[LazyIter[T]]) -> List[T]:
     raise TypeError("Expected list or dict of items")
 
 
-class GraphQLType(object):
+class GraphQLType:
     """ Base type class, all types used in a :class:`py_gql.schema.Schema`
     should be instances of this (or a subclass). """
 
@@ -159,7 +159,7 @@ class ListType(GraphQLType):
         self._type = self._ltype = type_
 
 
-class InputField(object):
+class InputField:
     """ Member of an :class:`py_gql.schema.InputObjectType`
 
     Args:
@@ -295,7 +295,7 @@ class InputObjectType(NamedType):
 _EV = TypeVar("_EV", bound="EnumValue")
 
 
-class EnumValue(object):
+class EnumValue:
     """ Enum value definition.
 
     Args:
@@ -586,7 +586,7 @@ class ScalarType(Generic[T], NamedType):
             raise ScalarParsingError(str(err), [node]) from err
 
 
-class Argument(object):
+class Argument:
     """ Field or Directive argument definition.
 
     Warning:
@@ -666,7 +666,7 @@ class Argument(object):
         return "Argument(%s: %s at %d)" % (self.name, self.type, id(self))
 
 
-class Field(object):
+class Field:
     """ Member of an :class:`py_gql.schema.ObjectType`.
 
     Args:
