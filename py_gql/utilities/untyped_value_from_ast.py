@@ -9,12 +9,16 @@ def untyped_value_from_ast(
     node: Union[_ast.Value, _ast.Variable],
     variables: Optional[Dict[str, Any]] = None,
 ) -> Any:
-    """ Convert an ast value node into a valid python value without type
-    validation.
+    """
+    Convert an ast value node into a valid python value without type validation.
+
+    Warning:
+        No validation is done with regard to the variable values which are
+        assumed to have been validated before.
 
     Args:
         node: The value node
-        variables: Variables mapping (coerced)
+        variables: Variables mapping
 
     Returns:
         any: Extracted value

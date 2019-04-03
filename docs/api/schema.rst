@@ -137,14 +137,32 @@ server.
     Directs the server to include this field or fragment only when
     the ``if`` argument is true.
 
+    .. code-block:: graphql
+
+        directive @include(if: Boolean!)
+        on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+
 .. autoattribute:: py_gql.schema.SkipDirective
     :annotation:
+
+    .. code-block:: graphql
+
+        directive @skip(if: Boolean!)
+        on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 
     Directs the server to skip this field or fragment when the ``if``
     argument is true.
 
 .. autoattribute:: py_gql.schema.DeprecatedDirective
     :annotation:
+
+    .. code-block:: graphql
+
+        directive @deprecated(
+            reason: String = "No longer supported"
+        ) on FIELD_DEFINITION | ENUM_VALUE
 
     Explains why this element was deprecated, usually also
     including a suggestion for how to access supported
@@ -155,3 +173,26 @@ server.
     :annotation:
 
     Tuple of all specified directives.
+
+
+Building a schema from a schema definition file
+-----------------------------------------------
+
+.. autofunction:: py_gql.schema.build_schema
+
+.. autofunction:: py_gql.schema.build_schema_ignoring_extensions
+
+.. autofunction:: py_gql.schema.extend_schema
+
+.. autoclass:: SchemaDirective
+    :members:
+
+.. autofunction:: apply_schema_directives
+
+.. autoclass:: DeprecatedSchemaDirective
+
+Schema Visitor
+--------------
+
+.. autoclass:: SchemaVisitor
+    :members:

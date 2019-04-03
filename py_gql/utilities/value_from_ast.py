@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Utilities to extract Python values from an ast node. """
 
 from typing import Any, Dict, Mapping, Optional, Union
 
@@ -20,8 +19,9 @@ def value_from_ast(
     type_: GraphQLType,
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Any:
-    """ Convert an ast value node into a valid python value while validating
-    against a given type.
+    """
+    Convert an ast value node into a valid python value while validating against
+    a given type.
 
     Warning:
         No validation is done with regard to the variable values which are

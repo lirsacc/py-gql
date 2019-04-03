@@ -51,7 +51,7 @@ def wrap_resolver(field_def, func):
 
 def test_simple_field_modifier():
     class UppercaseDirective(SchemaDirective):
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     assert (
@@ -75,7 +75,7 @@ def test_simple_field_modifier():
 
 def test_directive_on_wrong_location():
     class UppercaseDirective(SchemaDirective):
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     with pytest.raises(SDLError) as exc_info:
@@ -121,7 +121,7 @@ def test_field_modifier_using_arguments():
         def __init__(self, args):
             self.exponent = args["exponent"]
 
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     assert (
@@ -144,7 +144,7 @@ def test_field_modifier_using_arguments():
 
 def test_object_modifier_and_field_modifier():
     class UppercaseDirective(SchemaDirective):
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     class UniqueID(SchemaDirective):
@@ -160,7 +160,7 @@ def test_object_modifier_and_field_modifier():
                 m.update(str(root.get(fieldname, "")).encode("utf8"))
             return m.hexdigest()
 
-        def visit_object(self, object_definition):
+        def on_object(self, object_definition):
             assert self.name not in object_definition.field_map
             assert all(s in object_definition.field_map for s in self.source)
             return ObjectType(
@@ -261,13 +261,13 @@ def test_multiple_directives_applied_in_order():
         def __init__(self, args):
             self.exponent = args["exponent"]
 
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     class PlusOneDirective(SchemaDirective):
         definition = Directive("plus_one", ["FIELD_DEFINITION"])
 
-        def visit_field(self, field_definition):
+        def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x + 1)
 
     assert (
@@ -338,13 +338,13 @@ def test_input_values():
             [Argument("min", Int, default_value=0), Argument("max", Int)],
         )
 
-        def visit_argument(self, arg):
+        def on_argument_definition(self, arg):
             arg.type = LimitedLengthScalarType.wrap(
                 arg.type, self.min, self.max
             )
             return arg
 
-        def visit_input_field(self, field):
+        def on_input_field_definition(self, field):
             field.type = LimitedLengthScalarType.wrap(
                 field.type, self.min, self.max
             )
@@ -432,7 +432,7 @@ def test_enum_value_directive():
     VALUES = {"RED": "#FF4136", "BLUE": "#0074D9", "GREEN": "#2ECC40"}
 
     class CSSColorDirective(SchemaDirective):
-        def visit_enum_value(self, enum_value):
+        def on_enum_value(self, enum_value):
             return EnumValue(
                 enum_value.name,
                 VALUES[enum_value.name],
@@ -470,7 +470,7 @@ def test_enum_type_directive():
     VALUES = [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
 
     class GeneratedEnum(SchemaDirective):
-        def visit_enum(self, enum):
+        def on_enum(self, enum):
             return EnumType(
                 enum.name,
                 VALUES,
@@ -516,7 +516,7 @@ def test_enum_type_directive():
 
 def test_schema_extension_duplicate_directive():
     class OnSchema(SchemaDirective):
-        def visit_schema(self, schema):
+        def on_schema(self, schema):
             pass
 
     with pytest.raises(SDLError) as exc_info:
@@ -544,35 +544,40 @@ def test_schema_extension_duplicate_directive():
 
 class TestDeprecatedSchemaDirective:
 
-    schema = build_schema(
-        """
-        type Query {
-            foo: Foo
-        }
+    sdl = """
+    type Query {
+        foo: Foo
+    }
 
-        type Foo {
-            a: Int
-            b: Int @deprecated
-            c: Bar
-        }
+    type Foo {
+        a: Int
+        b: Int @deprecated
+        c: Bar
+    }
 
-        enum Bar {
-            A
-            B @deprecated(reason: "I don't like b")
-            C
-        }
-        """,
-        schema_directives={"deprecated": DeprecatedSchemaDirective},
-    )
+    enum Bar {
+        A
+        B @deprecated(reason: "I don't like b")
+        C
+    }
+    """
 
     def test_marks_field_as_deprecated_with_default_reason(self):
-        foo_type = self.schema.get_type("Foo")
-        b_field = foo_type.field_map.get("b")
+        schema = build_schema(
+            self.sdl,
+            schema_directives={"deprecated": DeprecatedSchemaDirective},
+        )
+        foo_type = schema.get_type("Foo")
+        b_field = cast(ObjectType, foo_type).field_map["b"]
         assert b_field.deprecated
         assert b_field.deprecation_reason
 
     def test_marks_enum_value_as_deprecated_with_custom_reason(self):
-        bar_type = self.schema.get_type("Bar")
-        b_value = bar_type._values.get("B")
+        schema = build_schema(
+            self.sdl,
+            schema_directives={"deprecated": DeprecatedSchemaDirective},
+        )
+        bar_type = schema.get_type("Bar")
+        b_value = cast(EnumType, bar_type)._values["B"]
         assert b_value.deprecated
         assert b_value.deprecation_reason == "I don't like b"

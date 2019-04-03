@@ -24,13 +24,13 @@ class ValidationVisitor(DispatchingVisitor):
     Args:
         schema: Schema to validate against (for known types, directives, etc.).
         type_info: Type information collector provided by
-            `~py_gql.validation.validate`.
+            :func:`~py_gql.validation.validate`.
 
     Attributes:
         schema (py_gql.schema.Schema): Schema to validate against
             (for known types, directives, etc.).
         type_info (TypeInfoVisitor): Type information collector provided by
-            `~py_gql.validation.validate`.
+            :func:`~py_gql.validation.validate`.
         errors (List[ValidationError]): Collected errors.
     """
 

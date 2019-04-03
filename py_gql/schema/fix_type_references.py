@@ -31,39 +31,38 @@ class _HealSchemaVisitor(SchemaVisitor):
                 cast(NamedType, original).name, cast(NamedType, original)
             )
 
-    def visit_schema(self, schema: Schema) -> Schema:
-        return super().visit_schema(schema)
-
-    def visit_object(self, object_type: ObjectType) -> Optional[ObjectType]:
-        updated = super().visit_object(object_type)
+    def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+        updated = super().on_object(object_type)
         if updated is not None:
             updated.interfaces = [
                 cast(InterfaceType, self._healed(i)) for i in updated.interfaces
             ]
         return updated
 
-    def visit_field(self, field: Field) -> Optional[Field]:
-        updated = super().visit_field(field)
+    def on_field_definition(self, field: Field) -> Optional[Field]:
+        updated = super().on_field_definition(field)
         if updated is not None:
             updated.type = self._healed(updated.type)
         return updated
 
-    def visit_argument(self, argument: Argument) -> Optional[Argument]:
-        updated = super().visit_argument(argument)
+    def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
+        updated = super().on_argument_definition(argument)
         if updated is not None:
             updated.type = self._healed(updated.type)
         return updated
 
-    def visit_union(self, union: UnionType) -> Optional[UnionType]:
-        updated = super().visit_union(union)
+    def on_union(self, union: UnionType) -> Optional[UnionType]:
+        updated = super().on_union(union)
         if updated is not None:
             updated.types = [
                 cast(ObjectType, self._healed(i)) for i in updated.types
             ]
         return updated
 
-    def visit_input_field(self, field: InputField) -> Optional[InputField]:
-        updated = super().visit_input_field(field)
+    def on_input_field_definition(
+        self, field: InputField
+    ) -> Optional[InputField]:
+        updated = super().on_input_field_definition(field)
         if updated is not None:
             updated.type = self._healed(updated.type)
         return updated
@@ -78,4 +77,4 @@ def fix_type_references(schema: Schema) -> Schema:
     swapped out but not all of its forward references (e.g. arguments, fields,
     union, etc.) were.
     """
-    return _HealSchemaVisitor(schema).visit_schema(schema)
+    return _HealSchemaVisitor(schema).on_schema(schema)

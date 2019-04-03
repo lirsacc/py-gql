@@ -188,13 +188,16 @@ def coerce_argument_values(
     node: Union[_ast.Field, _ast.Directive],
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """ Prepare a dict of argument values given a field or directive
-    definition and a field or directive node.
+    """
+    Prepare a dict of argument values given a field or directive definition and
+    a field or directive node.
 
     Args:
-        definition: Field or Directive definition from which to extract argument
-            definitions.
-        node: AST node
+        definition:
+            Field or Directive definition from which to extract argument definitions.
+
+        node: Parse node
+
         variables: Coerced variable values
 
     Returns:
@@ -255,17 +258,20 @@ def directive_arguments(
     node: _ast.SupportDirectives,
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """ Extract directive argument given a field node and a directive
+    """
+    Extract directive argument given a field or directive node and a directive
     definition.
 
     Args:
         definition: Directive definition from which to extract arguments
-        node: Ast node
+
+        node: Parse node
+
         variables: Coerced variable values
 
     Returns:
-        Coerced directive arguments, ``None`` if the directive
-        is not present on the node.
+        Coerced directive arguments, ``None`` if the directive is not present
+        on the node.
 
     Raises:
         :class:`~py_gql.exc.CoercionError`:
@@ -288,7 +294,8 @@ def coerce_variable_values(  # noqa: C901
     operation: _ast.OperationDefinition,
     variables: Mapping[str, Any],
 ) -> Dict[str, Any]:
-    """ Prepares an object map of variable values of the correct type based on
+    """
+    Prepare an object map of variable values of the correct type based on
     the provided operation definition and arbitrary JSON input. If the input
     cannot be parsed to match the variable definitions, an ExecutionError will
     be thrown. The returned value is a plain dict since it is exposed to user
@@ -298,7 +305,9 @@ def coerce_variable_values(  # noqa: C901
 
     Args:
         schema: GraphQL Schema to consider
+
         operation: Operation definition containing the variable definitions
+
         variables: Provided raw variables
 
     Returns:

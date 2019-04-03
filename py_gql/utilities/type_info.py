@@ -61,7 +61,8 @@ def _get_field_def(schema, parent_type, field):
 # implementation which is compatible with our version of AST visitors
 # and it can most likley be improved.
 class TypeInfoVisitor(DispatchingVisitor):
-    """ Visitor that tracks current types while traversing a Document.
+    """
+    Visitor that tracks current types while traversing a Document.
 
     All tracked types are considered with regards to the provided schema,
     however unknown types and other unexpected errors will be downgraded to
@@ -73,6 +74,30 @@ class TypeInfoVisitor(DispatchingVisitor):
         :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs**
         to be the first one to visit the nodes in order for the information
         provided donwstream to be accurate.
+
+    Args:
+        schema: Reference schema to extract types from
+
+    Attributes:
+
+        typ (Optional[py_gql.schema.ObjectType]):
+            Current type if applicable
+
+        parent_typ (Optional[py_gql.schema.ObjectType]):
+            Current type if applicable_stack, 1)
+
+        input_typ (Optional[py_gql.schema.InputObjectType]):
+            Current input type if applicable (when visiting arguments)
+
+        parent_input_typ (Optional[py_gql.schema.InputObjectType]):
+            Current parent input type if applicable (when visiting input objects)
+
+        fiel (Optional[py_gql.schema.Field]):
+            Current field definition if applicable (when visiting object)
+
+        input_value_def (Optional[Union[py_gql.schema.Argument, \
+                py_gql.schema.InputField]]):
+            Current input value definition (e.g. arg def, input field) if applicable
     """
 
     __slots__ = (
@@ -87,7 +112,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         "enum_value",
     )
 
-    def __init__(self, schema, _get_field_def=None):
+    def __init__(self, schema):
         self._schema = schema
 
         self._type_stack = []  # type: OptList[ObjectType]
@@ -104,34 +129,26 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     @property
     def type(self) -> Optional[ObjectType]:
-        """ Current type if applicable """
         return _peek(self._type_stack)
 
     @property
     def parent_type(self) -> Optional[ObjectType]:
-        """ Current type if applicable """
         return _peek(self._parent_type_stack, 1)
 
     @property
     def input_type(self) -> Optional[InputObjectType]:
-        """ Current input type if applicable (when visiting arguments) """
         return _peek(self._input_type_stack, 1)
 
     @property
     def parent_input_type(self) -> Optional[InputObjectType]:
-        """ Current parent input type if applicable (when visiting input objects) """
         return _peek(self._input_type_stack, 2)
 
     @property
     def field(self) -> Optional[Field]:
-        """ Current field definition if applicable (when visiting object) """
         return _peek(self._field_stack)
 
     @property
     def input_value_def(self) -> Optional[Union[Argument, InputField]]:
-        """ Optional[Union[:class:`py_gql.schema.Argument`,
-        :class:`py_gql.schema.InputField`]]: Current input value definition
-        (e.g. arg def, input field) if applicable """
         return _peek(self._input_value_def_stack)
 
     def _get_field_def(self, node):

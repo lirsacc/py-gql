@@ -85,9 +85,12 @@ def build_schema(
             so users should not rely on type identity.
 
         schema_directives: Schema directive classes.
-            - Members must be subclasses of :class:`SchemaDirective`
-            - Members must define a non-null ``definition`` attribute or the
-            corresponding definition must be present in the document
+
+            Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
+            and must either  define a non-null ``definition`` attribute or the
+            corresponding definition must be present in the document.
+
+            See :func:`~py_gql.schema.apply_schema_directives` for more details.
 
         assume_valid: Do not validate intermediate schemas
 
@@ -113,7 +116,7 @@ def build_schema(
         schema.validate()
 
     if schema_directives:
-        schema = apply_schema_directives(schema, schema_directives, strict=True)
+        schema = apply_schema_directives(schema, schema_directives)
         if not assume_valid:
             schema.validate()
 
@@ -206,8 +209,7 @@ def extend_schema(
     types and directives + extending known types).
 
     Warning:
-
-        Specified types cannot be replace or extended.
+        Specified types (scalars, introspection) cannot be replace or extended.
 
     Args:
         schema (py_gql.schema.Schema): Executable schema

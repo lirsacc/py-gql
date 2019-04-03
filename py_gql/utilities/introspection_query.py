@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 
-def introspection_query(description=True):
-    """ Return a generic introspection query to be used by GraphQL clients.
+def introspection_query(description: bool = True) -> str:
+    """
+    Return a generic introspection query to be used by GraphQL clients.
 
     Args:
-        description (bool):
+        description:
             If ``True`` the query will require descriptions to be included.
 
     Returns:
-        str: Canonical intropsection query
+        Canonical intropsection query
     """
     return """
     query IntrospectionQuery {

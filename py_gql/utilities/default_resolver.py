@@ -32,12 +32,12 @@ def default_resolver(
 
     Args:
         root: Value of the resolved parent node
-        args: Coerced field arguments
         context: User provided context value
-        info: Resolution context
+        info (py_gql.execution.ResolveInfo): Resolution context
+        **args: Coerced field arguments
 
     Returns:
-        any: Resolved value
+        Resolved value
     """
     field_name = info.field_definition.name
     try:

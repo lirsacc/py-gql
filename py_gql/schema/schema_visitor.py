@@ -23,20 +23,32 @@ from .types import (
 _SPECIFIED_DIRECTIVE_NAMES = frozenset(d.name for d in SPECIFIED_DIRECTIVES)
 
 
-AT = TypeVar("AT", bound=type)
+TType = TypeVar("TType", bound=type)
 
 
 class SchemaVisitor(object):
-    """ Base class to encode schema traversal and inline modifications.
+    """
+    Base class encoding schema traversal and modifications.
 
-    Subclass and override the ``visit_*`` methods to implement custom behaviour.
-    All visitor methods *must* return the modified value; returning ``None``
-    will drop the respective values from their context, e.g. returning ``None``
-    from :meth:`visit_field` will result in the field being dropped from the
-    parent :class:`py_gql.schema.ObjectType`.
+    Subclass and override the ``on_*`` methods to implement custom behaviour.
+
+    All methods *must* return the modified value; returning ``None`` will drop
+    the respective values from their context, e.g. returning ``None`` from
+    :meth:`on_field` will result in the field being dropped from the parent
+    :class:`py_gql.schema.ObjectType`.
+
+    For most uses cases, do not forget to call the method from the parent class
+    as it ususally encodes how child elements such as field, enum values, etc.
+    are processed.
     """
 
-    def visit_schema(self, schema: Schema) -> Schema:
+    def on_schema(self, schema: Schema) -> Schema:
+        """
+        Process the whole schema. You **should not** override this in most cases.
+
+        Args:
+            schema: Original schema.
+        """
         updated_types = {}
 
         for type_name, original in schema.types.items():
@@ -44,21 +56,19 @@ class SchemaVisitor(object):
                 continue
 
             if isinstance(original, ObjectType):
-                updated = self.visit_object(
+                updated = self.on_object(
                     original
                 )  # type: Optional[GraphQLType]
             elif isinstance(original, InterfaceType):
-                updated = self.visit_interface(original)
+                updated = self.on_interface(original)
             elif isinstance(original, InputObjectType):
-                updated = self.visit_input_object(original)
+                updated = self.on_input_object(original)
             elif isinstance(original, ScalarType):
-                updated = self.visit_scalar(original)
+                updated = self.on_scalar(original)
             elif isinstance(original, UnionType):
-                updated = self.visit_union(original)
+                updated = self.on_union(original)
             elif isinstance(original, EnumType):
-                updated = self.visit_enum(original)
-            elif isinstance(original, Field):
-                updated = self.visit_field(original)
+                updated = self.on_enum(original)
             else:
                 raise TypeError(type(original))
 
@@ -82,61 +92,107 @@ class SchemaVisitor(object):
 
         return schema
 
-    def visit_scalar(self, scalar: ScalarType[AT]) -> Optional[ScalarType[AT]]:
-        return scalar
+    def on_scalar(
+        self, scalar_type: ScalarType[TType]
+    ) -> Optional[ScalarType[TType]]:
+        """
+        Args:
+            scalar: Original type.
+        """
+        return scalar_type
 
-    def visit_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+    def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
+        """
+        Args:
+            object_type: Original type.
+        """
         updated_fields = list(
-            map_and_filter(self.visit_field, object_type.fields)
+            map_and_filter(self.on_field_definition, object_type.fields)
         )
         if updated_fields != object_type.fields:
             object_type._fields = updated_fields
         return object_type
 
-    def visit_field(self, field: Field) -> Optional[Field]:
+    def on_field_definition(self, field: Field) -> Optional[Field]:
+        """
+        Args:
+            field: Original object field.
+        """
         updated_args = list(
-            map_and_filter(self.visit_argument, field.arguments)
+            map_and_filter(self.on_argument_definition, field.arguments)
         )
         if updated_args != field.arguments:
             field._args = updated_args
         return field
 
-    def visit_argument(self, argument: Argument) -> Optional[Argument]:
+    def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
+        """
+        Args:
+            field: Original argument.
+        """
         return argument
 
-    def visit_interface(
-        self, interface: InterfaceType
+    def on_interface(
+        self, interface_type: InterfaceType
     ) -> Optional[InterfaceType]:
+        """
+        Args:
+            interface_type: Original type.
+        """
         updated_fields = list(
-            map_and_filter(self.visit_field, interface.fields)
+            map_and_filter(self.on_field_definition, interface_type.fields)
         )
-        if updated_fields != interface.fields:
-            interface._fields = updated_fields
-        return interface
+        if updated_fields != interface_type.fields:
+            interface_type._fields = updated_fields
+        return interface_type
 
-    def visit_union(self, union: UnionType) -> Optional[UnionType]:
-        return union
+    def on_union(self, union_type: UnionType) -> Optional[UnionType]:
+        """
+        Args:
+            union_type: Original type.
+        """
+        return union_type
 
-    def visit_enum(self, enum: EnumType) -> Optional[EnumType]:
+    def on_enum(self, enum_type: EnumType) -> Optional[EnumType]:
+        """
+        Args:
+            enum_type: Original type.
+        """
         updated_values = list(
-            map_and_filter(self.visit_enum_value, enum.values)
+            map_and_filter(self.on_enum_value, enum_type.values)
         )
-        if updated_values != enum.values:
-            enum._set_values(updated_values)
-        return enum
+        if updated_values != enum_type.values:
+            enum_type._set_values(updated_values)
+        return enum_type
 
-    def visit_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
+    def on_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
+        """
+        Args:
+            enum_value: Original enum value.
+        """
         return enum_value
 
-    def visit_input_object(
-        self, input_object: InputObjectType
+    def on_input_object(
+        self, input_object_type: InputObjectType
     ) -> Optional[InputObjectType]:
+        """
+        Args:
+            input_object_type: Original type.
+        """
         updated_fields = list(
-            map_and_filter(self.visit_input_field, input_object.fields)
+            map_and_filter(
+                self.on_input_field_definition, input_object_type.fields
+            )
         )
-        if updated_fields != input_object.fields:
-            input_object._fields = updated_fields
-        return input_object
+        if updated_fields != input_object_type.fields:
+            input_object_type._fields = updated_fields
+        return input_object_type
 
-    def visit_input_field(self, field: InputField) -> Optional[InputField]:
+    def on_input_field_definition(
+        self, field: InputField
+    ) -> Optional[InputField]:
+        """
+        Args:
+            field: Original input object field.
+        """
         return field
