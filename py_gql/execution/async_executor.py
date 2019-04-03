@@ -52,14 +52,9 @@ class AsyncExecutor(Executor):
         keys = []
         pending = []
 
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue  # REVIEW: Should this happen at all? Raise?
-
-            field_path = path + [key]
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
             resolved = self.resolve_field(
-                parent_type, root, field_def, nodes, field_path
+                parent_type, root, field_def, nodes, path + [key]
             )
 
             keys.append(key)
@@ -77,11 +72,7 @@ class AsyncExecutor(Executor):
         args = []
         done = []  # type: List[Tuple[str, Any]]
 
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue  # REVIEW: Should this happen at all? Raise?
-
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
             # Needed because closures. Might be a better way to do this without
             # resorting to inlining deferred_serial.
             args.append((key, field_def, nodes, path + [key]))

@@ -82,15 +82,10 @@ class ThreadPoolExecutor(Executor):
         keys = []
         pending = []
 
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue  # REVIEW: Should this happen at all? Raise?
-
-            field_path = path + [key]
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
             resolved = unwrap_future(
                 self.resolve_field(
-                    parent_type, root, field_def, nodes, field_path
+                    parent_type, root, field_def, nodes, path + [key]
                 )
             )
 
@@ -114,11 +109,7 @@ class ThreadPoolExecutor(Executor):
         args = []
         done = []  # type: List[Tuple[str, Any]]
 
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue  # REVIEW: Should this happen at all? Raise?
-
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
             # Needed because closures. Might be a better way to do this without
             # resorting to inlining deferred_serial.
             args.append((key, field_def, nodes, path + [key]))
@@ -132,22 +123,18 @@ class ThreadPoolExecutor(Executor):
                 return final.set_result(dict(done))
             else:
                 resolved = self.resolve_field(parent_type, root, f, n, p)
-                if isinstance(resolved, Future):
 
-                    def cb(f):
-                        try:
-                            r = f.result()
-                        # pylint: disable = broad-except
-                        except Exception as err:
-                            final.set_exception(err)
-                        else:
-                            done.append((k, r))
-                            _next()
+                def cb(f):
+                    try:
+                        r = f.result()
+                    # pylint: disable = broad-except
+                    except Exception as err:
+                        final.set_exception(err)
+                    else:
+                        done.append((k, r))
+                        _next()
 
-                    unwrap_future(resolved).add_done_callback(cb)
-                else:
-                    done.append((k, resolved))
-                    _next()
+                unwrap_future(resolved).add_done_callback(cb)
 
         _next()
         return final

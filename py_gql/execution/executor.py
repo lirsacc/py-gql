@@ -131,9 +131,7 @@ class Executor:
                 self.add_error(child_err)
         else:
             if node:
-                if err.nodes and node not in err.nodes:
-                    err.nodes.append(node)
-                elif not err.nodes:
+                if not err.nodes:
                     err.nodes = [node]
             err.path = path if path is not None else err.path
         self._errors.append(err)
@@ -161,7 +159,7 @@ class Executor:
         object_type: ObjectType,
         fragment: Union[_ast.InlineFragment, _ast.FragmentDefinition],
     ) -> bool:
-        """ Determines if a fragment is applicable to the given type. """
+        """ Determine if a fragment is applicable to the given type. """
         type_condition = fragment.type_condition
         if not type_condition:
             return True
@@ -180,6 +178,7 @@ class Executor:
                     self._fragment_type_applies[cache_key] = True
                     return True
 
+            # TODO: Is this point technically possible given a valid document.
             self._fragment_type_applies[cache_key] = False
             return False
 
@@ -278,7 +277,9 @@ class Executor:
                 elif name == "__typename":
                     cache[key] = _introspection.type_name_field
                 else:
-                    cache[key] = parent_type.field_map.get(name, None)
+                    raise RuntimeError(
+                        "Invalid state: introspection type in the wrong position."
+                    )
             else:
                 cache[key] = parent_type.field_map.get(name, None)
 
@@ -366,6 +367,16 @@ class Executor:
             self._resolver_cache[base] = resolver
             return resolver
 
+    def _iterate_fields(
+        self, parent_type: ObjectType, fields: GroupedFields
+    ) -> Iterator[Tuple[str, Field, List[_ast.Field]]]:
+        for key, nodes in fields.items():
+            field_def = self.field_definition(parent_type, nodes[0].name.value)
+            if field_def is None:
+                continue
+
+            yield key, field_def, nodes
+
     def execute_fields(
         self,
         parent_type: ObjectType,
@@ -374,11 +385,7 @@ class Executor:
         fields: GroupedFields,
     ) -> Any:
         result = OrderedDict()  # type: Dict[str, Any]
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue  # REVIEW: Should this happen at all? Raise?
-
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
             result[key] = self.resolve_field(
                 parent_type, root, field_def, nodes, path + [key]
             )
@@ -427,7 +434,6 @@ class Executor:
             try:
                 return field_type.serialize(resolved_value)
             except ScalarSerializationError as err:
-                assert False
                 raise RuntimeError(
                     'Field "%s" cannot be serialized as "%s": %s'
                     % (stringify_path(path), field_type, err)
