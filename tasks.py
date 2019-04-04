@@ -37,6 +37,7 @@ def clean(ctx, include_cython_files=False):
                 echo=True,
             )
 
+
 @invoke.task()
 def benchmark(ctx,):
     """ Run benchmarks. """
@@ -108,13 +109,13 @@ def test(
 
 @invoke.task(iterable=["files"])
 def flake8(ctx, files=None):
-    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run("flake8 %s" % files, echo=True)
 
 
 @invoke.task(iterable=["files"])
 def pylint(ctx, files=None):
-    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run(
         "pylint --rcfile=.pylintrc --output-format=colorized -j 0 %s" % files,
         echo=True,
