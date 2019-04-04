@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" ported from graphql-js """
 
 import pytest
 

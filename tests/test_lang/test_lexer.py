@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Lexer tests.
-Ported from: https://github.com/graphql/graphql-js/blob/master/src/language/__tests__/lexer-test.js  # noqa: E501
-on revision 8d1ae25de444a9b544a1fdc98e138ae91b77057c.
-"""
+
 # Test naming is not very 'pythonic' as I tried to keep a close match with the
 # original ones for easy reference. Others were kept while they were specific
 # to the implementation and are kept as skipped.
