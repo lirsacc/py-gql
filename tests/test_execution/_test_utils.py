@@ -70,12 +70,14 @@ def ensure_document(doc: Union[Document, str]) -> Document:
 
 
 def assert_sync_execution(
+    # fmt: off
     schema: Schema,
     doc: Union[Document, str],
     expected_data: Any = None,
     expected_errors: Optional[List[ExpectedError]] = None,
     expected_exc: Optional[ExpectedExcDef] = None,
-    **kwargs: Any,
+    **kwargs: Any
+    # fmt: on
 ) -> None:
     doc = ensure_document(doc)
 
@@ -97,12 +99,14 @@ def assert_sync_execution(
 
 
 async def assert_execution(
+    # fmt: off
     schema: Schema,
     doc: Union[Document, str],
     expected_data: Any = None,
     expected_errors: Optional[List[ExpectedError]] = None,
     expected_exc: Optional[ExpectedExcDef] = None,
-    **kwargs: Any,
+    **kwargs: Any
+    # fmt: on
 ) -> None:
     if isinstance(expected_exc, tuple):
         expected_exc, expected_msg = expected_exc

@@ -85,13 +85,15 @@ class Executor:
     )
 
     def __init__(
+        # fmt: off
         self,
         schema: Schema,
         document: _ast.Document,
         variables: Dict[str, Any],
         context_value: Any,
         middlewares: Sequence[Resolver],
-        **_: Any,
+        **_: Any
+        # fmt: on
     ):
         self.schema = schema
         self.document = document

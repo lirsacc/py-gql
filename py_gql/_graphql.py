@@ -17,6 +17,7 @@ from .validation import ValidationVisitor, validate_ast
 
 
 def do_graphql(
+    # fmt: off
     schema: Schema,
     document: str,
     *,
@@ -27,7 +28,8 @@ def do_graphql(
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     executor_cls: Optional[Type[Executor]] = None,
-    executor_args: Optional[Mapping[str, Any]] = None,
+    executor_args: Optional[Mapping[str, Any]] = None
+    # fmt: on
 ) -> Any:
     """ Main GraphQL entrypoint encapsulating query processing from start to
     finish.
@@ -102,6 +104,7 @@ def do_graphql(
 
 
 async def graphql(
+    # fmt: off
     schema: Schema,
     document: str,
     *,
@@ -110,7 +113,8 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    # fmt: on
 ) -> GraphQLResult:
     try:
         return cast(
@@ -134,6 +138,7 @@ async def graphql(
 
 
 def graphql_sync(
+    # fmt: off
     schema: Schema,
     document: str,
     *,
@@ -142,7 +147,8 @@ def graphql_sync(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    # fmt: on
 ) -> GraphQLResult:
     return cast(
         GraphQLResult,

@@ -468,8 +468,10 @@ class Schema:
 
 
 def _build_type_map(
+    # fmt: off
     *types: Sequence[GraphQLType],
-    _type_map: Optional[Dict[str, GraphQLType]] = None,
+    _type_map: Optional[Dict[str, GraphQLType]] = None
+    # fmt: on
 ) -> Dict[str, GraphQLType]:
     """
     Recursively build a mapping name <> Type from a list of types to include

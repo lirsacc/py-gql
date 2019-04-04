@@ -32,6 +32,7 @@ TExecutorCls = TypeVar("TExecutorCls", bound=Type[Executor])
 
 
 def execute(
+    # fmt: off
     schema: Schema,
     document: _ast.Document,
     *,
@@ -41,7 +42,8 @@ def execute(
     context_value: Optional[Any] = None,
     middlewares: Optional[Sequence[Resolver]] = None,
     executor_cls: Optional[TExecutorCls] = None,
-    executor_args: Optional[Mapping[str, Any]] = None,
+    executor_args: Optional[Mapping[str, Any]] = None
+    # fmt: on
 ) -> Any:
     operation = get_operation(document, operation_name)
 
