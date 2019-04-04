@@ -31,7 +31,7 @@ SomeScalar = ScalarType(
     serialize=lambda a: None,
     parse=lambda a: None,
     parse_literal=lambda a, **k: None,
-)  # type: ScalarType[None]
+)  # type: ScalarType
 
 SomeObject = ObjectType("SomeObject", [Field("f", String)])
 

@@ -3,9 +3,7 @@
 import collections
 import functools as ft
 from typing import (
-    Any,
     Dict,
-    Iterator,
     List,
     Mapping,
     Optional,
@@ -47,12 +45,13 @@ T = TypeVar("T", bound=type)
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
 
 
-_DEFAULT_TYPES_MAP = {
-    t.name: t
-    for t in cast(
-        Iterator[NamedType], (SPECIFIED_SCALAR_TYPES + INTROPSPECTION_TYPES)
-    )
-}
+_DEFAULT_TYPES_MAP = {}  # type: Dict[str, NamedType]
+
+for t in SPECIFIED_SCALAR_TYPES:
+    _DEFAULT_TYPES_MAP[t.name] = t
+
+for t in INTROPSPECTION_TYPES:
+    _DEFAULT_TYPES_MAP[t.name] = t
 
 
 __all__ = ("build_schema", "extend_schema")
@@ -691,7 +690,7 @@ class ASTTypeBuilder:
 
     def _build_scalar_type(
         self, type_def: _ast.ScalarTypeDefinition
-    ) -> ScalarType[Any]:
+    ) -> ScalarType:
         return default_scalar(
             name=type_def.name.value,
             description=_desc(type_def),
@@ -908,7 +907,7 @@ class ASTTypeBuilder:
             nodes=input_object_type.nodes + extensions,  # type: ignore
         )
 
-    def _extend_scalar_type(self, scalar_type: ScalarType[T]) -> ScalarType[T]:
+    def _extend_scalar_type(self, scalar_type: ScalarType) -> ScalarType:
         name = scalar_type.name
         extensions = self._collect_extensions(name, _ast.ScalarTypeExtension)
 

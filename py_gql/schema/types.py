@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterable,
     List,
     Mapping,
@@ -30,7 +29,6 @@ from ..lang.parser import DIRECTIVE_LOCATIONS
 # staandardised under either of these.
 
 T = TypeVar("T")
-OT = TypeVar("OT", bound="ObjectType")
 
 _UNSET = object()
 
@@ -546,7 +544,7 @@ _ScalarValueNode = Union[
 
 
 # pylint: disable=unsubscriptable-object
-class ScalarType(Generic[T], NamedType):
+class ScalarType(NamedType):
     """
     Scalar Type Definition
 
@@ -611,9 +609,9 @@ class ScalarType(Generic[T], NamedType):
         self,
         name: str,
         serialize: Callable[[Any], Union[str, int, float, bool, None]],
-        parse: Callable[[Any], T],
+        parse: Callable[[Any], Any],
         parse_literal: Optional[
-            Callable[[_ScalarValueNode, Mapping[str, Any]], T]
+            Callable[[_ScalarValueNode, Mapping[str, Any]], Any]
         ] = None,
         description: Optional[str] = None,
         nodes: Optional[
@@ -650,7 +648,7 @@ class ScalarType(Generic[T], NamedType):
         except (ValueError, TypeError) as err:
             raise ScalarSerializationError(str(err)) from err
 
-    def parse(self, value: Any) -> T:
+    def parse(self, value: Any) -> Any:
         """
         Transform a GraphQL value in a valid Python value
 
@@ -672,7 +670,7 @@ class ScalarType(Generic[T], NamedType):
         self,
         node: _ScalarValueNode,
         variables: Optional[Mapping[str, Any]] = None,
-    ) -> T:
+    ) -> Any:
         """
         Transform an AST node in a valid Python value
 
@@ -935,7 +933,9 @@ class InterfaceType(NamedType):
         self,
         name: str,
         fields: LazyIter[Field],
-        resolve_type: Optional[Callable[[Any], Union[OT, str]]] = None,
+        resolve_type: Optional[
+            Callable[[Any], Union["ObjectType", str]]
+        ] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[
@@ -1104,7 +1104,7 @@ class UnionType(NamedType):
         self,
         name: str,
         types: LazyIter[ObjectType],
-        resolve_type: Optional[Callable[[Any], Union[OT, str]]] = None,
+        resolve_type: Optional[Callable[[Any], Union[ObjectType, str]]] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]

@@ -51,7 +51,7 @@ references:
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 pip install cython
                 pip install -v -e .
-                inv test -v --junit --no-bail
+                PY_IGNORE_IMPORTMISMATCH=1 inv test -v --junit --no-bail
 
     run-tests: &run-tests
         run:

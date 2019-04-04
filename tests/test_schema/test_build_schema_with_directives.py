@@ -292,10 +292,10 @@ def test_multiple_directives_applied_in_order():
 
 
 def test_input_values():
-    class LimitedLengthScalarType(ScalarType[str]):
+    class LimitedLengthScalarType(ScalarType):
         @classmethod
         def wrap(
-            cls, type_: ScalarType[str], *args: Any, **kwargs: Any
+            cls, type_: ScalarType, *args: Any, **kwargs: Any
         ) -> "LimitedLengthScalarType":
             if isinstance(type_, (NonNullType, ListType)):
                 return type(type_)(cls.wrap(type_.type, *args, **kwargs))

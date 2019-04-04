@@ -92,9 +92,7 @@ class SchemaVisitor(object):
 
         return schema
 
-    def on_scalar(
-        self, scalar_type: ScalarType[TType]
-    ) -> Optional[ScalarType[TType]]:
+    def on_scalar(self, scalar_type: ScalarType) -> Optional[ScalarType]:
         """
         Args:
             scalar: Original type.

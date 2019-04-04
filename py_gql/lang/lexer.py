@@ -96,7 +96,7 @@ def _unexpected(
         )
 
 
-class Lexer(Iterator[Token]):
+class Lexer:
     """
     Iterable GraphQL language lexer / tokenizer.
 

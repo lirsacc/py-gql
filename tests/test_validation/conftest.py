@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any
-
 import pytest
 
 from py_gql.schema import (
@@ -209,9 +207,7 @@ def schema():
         return str(value)
 
     InvalidScalar = ScalarType("Invalid", _stringify, _invalid, _invalid)
-    AnyScalar = ScalarType(
-        "Any", _stringify, lambda x: x
-    )  # type: ScalarType[Any]
+    AnyScalar = ScalarType("Any", _stringify, lambda x: x)  # type: ScalarType
 
     return Schema(
         ObjectType(

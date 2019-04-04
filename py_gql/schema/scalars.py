@@ -152,7 +152,7 @@ String = ScalarType(
     serialize=_serialize_string,
     parse=_parse_string,
     parse_literal=_coerce_string_node,
-)  # type: ScalarType[str]
+)  # type: ScalarType
 
 _coerce_id_node = _typed_coerce(str, _ast.StringValue, _ast.IntValue)
 
@@ -206,10 +206,10 @@ UUID = ScalarType(
     serialize=_serialize_uuid,
     parse=_parse_uuid,
     parse_literal=_coerce_uuid_node,
-)  # type: ScalarType[uuid.UUID]
+)
 
 
-class RegexType(ScalarType[str]):
+class RegexType(ScalarType):
     """
     Scalar typeclass to validate regex patterns.
 
@@ -263,7 +263,7 @@ def default_scalar(
     nodes: Optional[
         List[Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]]
     ] = None,
-) -> ScalarType[Any]:
+) -> ScalarType:
     """ Default noop scalar types used when generating scalars from schema
     definitions. """
     return ScalarType(

@@ -204,7 +204,7 @@ class SchemaPrinter:
 
         raise TypeError(type_)
 
-    def print_scalar_type(self, type_: ScalarType[Any]) -> str:
+    def print_scalar_type(self, type_: ScalarType) -> str:
         return "%sscalar %s" % (
             self.print_description(type_, 0, True),
             type_.name,

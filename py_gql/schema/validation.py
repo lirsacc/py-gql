@@ -28,7 +28,7 @@ if False:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 
 VALID_NAME_RE = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9]*$")
-RESERVED_NAMES = set(t.name for t in SPECIFIED_SCALAR_TYPES)  # type: ignore
+RESERVED_NAMES = set(t.name for t in SPECIFIED_SCALAR_TYPES)
 
 
 def validate_schema(schema: "Schema") -> bool:

@@ -178,9 +178,7 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             schema = sd.on_schema(schema)
         return super().on_schema(schema)
 
-    def on_scalar(
-        self, scalar: ScalarType[TType]
-    ) -> Optional[ScalarType[TType]]:
+    def on_scalar(self, scalar: ScalarType) -> Optional[ScalarType]:
         if scalar in SPECIFIED_SCALAR_TYPES:
             return scalar
 

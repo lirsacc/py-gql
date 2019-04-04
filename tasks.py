@@ -20,18 +20,22 @@ def _join(cmd):
 
 
 @invoke.task
-def clean(ctx):
+def clean(ctx, include_cython_files=False):
     """ Remove test and compilation artifacts """
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache|.mypy_cache)$" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|.mypy_cache)$" '
             "| xargs rm -rf",
             echo=True,
         )
-        ctx.run('find py_gql | grep -E "\\.c$" | xargs rm -rf', echo=True)
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
+        if include_cython_files:
+            ctx.run(
+                'find py_gql | grep -E "(\\.c|\\.so)$" | xargs rm -rf',
+                echo=True,
+            )
 
 @invoke.task()
 def benchmark(ctx,):
