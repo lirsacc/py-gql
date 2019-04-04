@@ -4,7 +4,6 @@ import os
 from concurrent import futures
 
 import flask
-
 from py_gql._graphql import do_graphql
 from py_gql.execution.threadpool_executor import ThreadPoolExecutor
 from schema import SCHEMA

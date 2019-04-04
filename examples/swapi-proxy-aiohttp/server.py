@@ -4,7 +4,6 @@ import json
 import os
 
 from aiohttp import web
-
 from py_gql import graphql
 from schema import SCHEMA
 
