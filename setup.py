@@ -44,7 +44,6 @@ def run_setup():
             "py_gql.validation.rules",
             "py_gql.utilities",
             "py_gql.schema",
-            "py_gql.schema.build",
             "py_gql.execution",
         ),
         classifiers=[

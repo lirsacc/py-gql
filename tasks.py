@@ -25,11 +25,11 @@ def clean(ctx):
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache|.mypy_cache)" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|\\.so|.pytest_cache|.mypy_cache)$" '
             "| xargs rm -rf",
             echo=True,
         )
-        ctx.run("rm -rf py_gql/**/*.c  py_gql/*.c", echo=True)
+        ctx.run('find py_gql | grep -E "\\.c$" | xargs rm -rf', echo=True)
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
 
@@ -131,8 +131,7 @@ def sort_imports(ctx, files=None):
                 [
                     "isort",
                     (
-                        "%s/**/*.py tests/**/*.py examples/**/*.py setup.py tasks.py"
-                        % PACKAGE
+                        "-rc %s tests examples setup.py tasks.py" % PACKAGE
                         if not files
                         else " ".join(files)
                     ),

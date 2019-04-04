@@ -43,6 +43,15 @@ references:
                 pip install -U -r dev-requirements.txt
                 pip install -e .
 
+    run-tests-cython: &run-tests-cython
+        run:
+            name: Reinstalling with Cython
+            command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                pip install cython
+                pip install -v -e .
+                inv test -v --junit --no-bail
+
     run-tests: &run-tests
         run:
             name: Run tests
@@ -182,6 +191,27 @@ jobs:
                   paths: workspace/test-results/python37
                   root: .
 
+    test-35-cython:
+        <<: *docker-python35
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-35
+            - *run-tests-cython
+
+    test-36-cython:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - *run-tests-cython
+
+    test-37-cython:
+        <<: *docker-python37
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-37
+            - *run-tests-cython
+
     collect-tests:
         <<: *docker-python37
         steps:
@@ -307,6 +337,10 @@ workflows:
             - flake8-37: { requires: ["deps-37"] }
             - typecheck-37: { requires: ["deps-37"] }
             - test-37: { requires: ["deps-37"] }
+
+            - test-35-cython: { requires: ["test-35"] }
+            - test-36-cython: { requires: ["test-36"] }
+            - test-37-cython: { requires: ["test-37"] }
 
             - check-format: { requires: ["deps-37"] }
 
