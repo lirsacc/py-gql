@@ -267,10 +267,10 @@ jobs:
             - *workspace
             - restore_cache: *cache-python-37
             - run:
-                name: Check file formats
-                command: |
-                    . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                    inv fmt --check
+                  name: Check file formats
+                  command: |
+                      . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                      inv black --check
 
     docs:
         <<: *docker-python37

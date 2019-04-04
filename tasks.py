@@ -123,16 +123,13 @@ def mypy(ctx, files=None):
     ctx.run("mypy %s" % files, echo=True)
 
 
-@invoke.task(aliases=["format"], iterable=["files"])
-def fmt(ctx, check=False, files=None):
-    """ Run formatters """
-
+@invoke.task(iterable=["files"])
+def sort_imports(ctx, files=None):
     with ctx.cd(ROOT):
         ctx.run(
             _join(
                 [
                     "isort",
-                    "--check-only" if check else None,
                     (
                         "%s/**/*.py tests/**/*.py examples/**/*.py setup.py tasks.py"
                         % PACKAGE
@@ -143,24 +140,36 @@ def fmt(ctx, check=False, files=None):
             ),
             echo=True,
         )
-        # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
-        # support.
-        ctx.run(
-            _join(
-                [
-                    "black",
-                    "--line-length=80",
-                    "--target-version=py35",
-                    "--check" if check else None,
-                    (
-                        "%s tests examples setup.py tasks.py" % PACKAGE
-                        if not files
-                        else " ".join(files)
-                    ),
-                ]
-            ),
-            echo=True,
-        )
+
+
+@invoke.task(iterable=["files"])
+def black(ctx, check=False, files=None):
+    # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
+    # support.
+    ctx.run(
+        _join(
+            [
+                "black",
+                "--line-length=80",
+                "--target-version=py35",
+                "--check" if check else None,
+                (
+                    "%s tests examples setup.py tasks.py" % PACKAGE
+                    if not files
+                    else " ".join(files)
+                ),
+            ]
+        ),
+        echo=True,
+    )
+
+
+@invoke.task(aliases=["format"], iterable=["files"])
+def fmt(ctx, check=False, files=None):
+    """ Run formatters """
+    with ctx.cd(ROOT):
+        sort_imports(ctx, files=files)
+        black(ctx, files=files)
 
 
 @invoke.task
