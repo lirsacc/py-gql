@@ -16,13 +16,13 @@ from py_gql.schema import UUID, Boolean, EnumType, Float, Int, RegexType, String
 
 
 def test_EnumType_rejects_duplicate_names():
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         EnumType("Enum", [("SOME_NAME", 1), ("SOME_NAME", 2)])
 
 
 @pytest.mark.parametrize("name", ["null", "true", "false"])
 def test_EnumValue_rejects_forbidden_name(name):
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         EnumType("Enum", [name])
 
 

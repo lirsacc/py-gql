@@ -77,7 +77,6 @@ def visit(visitor: Visitor, ast_root: _ast.Document) -> None:
         visitor (Visitor): Visitor instance
         ast_root (py_gql.lang.ast.Document): Parsed GraphQL document
     """
-    assert isinstance(ast_root, _ast.Document)
     _visit_document(visitor, ast_root)
 
 

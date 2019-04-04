@@ -77,9 +77,7 @@ def parse_block_string(
     lines = LINE_SEPARATOR.split(raw_string)
     common_indent = None
 
-    for i, line in enumerate(lines):
-        if i == 0:
-            continue
+    for line in lines[1:]:
         indent = leading_whitespace(line)
         if indent < len(line) and (
             common_indent is None or indent < common_indent
@@ -94,11 +92,13 @@ def parse_block_string(
             for i, line in enumerate(lines)
         ]
 
-    while strip_leading_newlines and lines and is_blank(lines[0]):
-        lines.pop(0)
+    if strip_leading_newlines:
+        while lines and is_blank(lines[0]):
+            lines.pop(0)
 
-    while strip_trailing_newlines and lines and is_blank(lines[-1]):
-        lines.pop()
+    if strip_trailing_newlines:
+        while lines and is_blank(lines[-1]):
+            lines.pop()
 
     return "\n".join(lines)
 

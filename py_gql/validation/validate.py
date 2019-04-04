@@ -96,11 +96,14 @@ def validate_ast(
 
     def instantiate_validator(cls_or_tuple, schema, type_info):
         if isinstance(cls_or_tuple, tuple):
-            cls, kw = cls_or_tuple
+            cls_, kw = cls_or_tuple
         else:
-            cls, kw = cls_or_tuple, {}
-        assert issubclass(cls, ValidationVisitor)
-        return cls(schema, type_info, **kw)
+            cls_, kw = cls_or_tuple, {}
+        if not issubclass(cls_, ValidationVisitor):
+            raise TypeError(
+                'Expected ValidationVisitor subclass but got "%r"' % cls_
+            )
+        return cls_(schema, type_info, **kw)
 
     validator_instances = [
         instantiate_validator(validator_, schema, type_info)

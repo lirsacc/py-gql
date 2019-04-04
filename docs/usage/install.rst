@@ -15,7 +15,7 @@ Installing from PyPI
 A source distribution and universal wheel are available on
 `PyPI <https://pypi.org/project/py-gql/>`_.
 
-Installing should be as simple as:
+To install, run:
 
 .. code::
 

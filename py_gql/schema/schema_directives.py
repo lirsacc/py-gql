@@ -129,7 +129,13 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
         directive_definitions = dict(directive_definitions)
 
         for directive_name, schema_directive in schema_directives.items():
-            assert issubclass(schema_directive, SchemaDirective)
+
+            if not issubclass(schema_directive, SchemaDirective):
+                raise TypeError(
+                    'Expected SchemaDirective subclass but got "%r"'
+                    % schema_directive
+                )
+
             if schema_directive.definition != NotImplemented:
                 directive_definitions[
                     directive_name

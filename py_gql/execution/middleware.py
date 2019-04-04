@@ -70,7 +70,8 @@ def apply_middlewares(
 
     tail = func
     for mw in reversed(middlewares):
-        assert callable(mw)
+        if not callable(mw):
+            raise TypeError("Middleware should be a callable")
 
         # Second part of this condition is for Pthon 3.5 where
         # `isgeneratorfunction` is true for async functions.

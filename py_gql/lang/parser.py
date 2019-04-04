@@ -733,23 +733,23 @@ class Parser:
         kind = type(token)
         value = token.value
 
-        if kind == BracketOpen:
+        if kind is BracketOpen:
             return self.parse_list(const)
-        elif kind == CurlyOpen:
+        elif kind is CurlyOpen:
             return self.parse_object(const)
-        elif kind == Integer:
+        elif kind is Integer:
             self.advance()
             return _ast.IntValue(
                 value=value, loc=self._loc(token), source=self._source
             )
-        elif kind == Float:
+        elif kind is Float:
             self.advance()
             return _ast.FloatValue(
                 value=value, loc=self._loc(token), source=self._source
             )
         elif kind in (String, BlockString):
             return self.parse_string_literal()
-        elif kind == Name:
+        elif kind is Name:
             if value in ("true", "false"):
                 self.advance()
                 return _ast.BooleanValue(
@@ -765,8 +765,9 @@ class Parser:
                 return _ast.EnumValue(
                     value=value, loc=self._loc(token), source=self._source
                 )
-        elif kind == Dollar and not const:
+        elif kind is Dollar and not const:
             return self.parse_variable()
+
         raise _unexpected(token, token.start, self._lexer._source)
 
     def parse_string_literal(self) -> _ast.StringValue:

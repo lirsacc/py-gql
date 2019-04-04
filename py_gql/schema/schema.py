@@ -211,11 +211,7 @@ class Schema:
         """
         Check if the schema contains a type with the given name.
         """
-        try:
-            self.types[name]
-            return True
-        except KeyError:
-            return False
+        return name in self.types
 
     def get_type_from_literal(self, ast_node: _ast.Type) -> GraphQLType:
         """

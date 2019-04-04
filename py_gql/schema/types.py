@@ -112,7 +112,9 @@ class NonNullType(GraphQLType):
     def __init__(
         self, type_: Lazy[GraphQLType], node: Optional[_ast.NonNullType] = None
     ):
-        assert not isinstance(type_, NonNullType)
+        if isinstance(type_, NonNullType):
+            raise ValueError("Cannot wrap NonNullType twice")
+
         self._ltype = type_
         self._type = None  # type: Optional[GraphQLType]
         self.node = node
@@ -383,6 +385,15 @@ class EnumValue:
             Source node used when building type from the SDL
     """
 
+    __slots__ = (
+        "deprecated",
+        "deprecation_reason",
+        "description",
+        "name",
+        "node",
+        "value",
+    )
+
     @classmethod
     def from_def(
         cls: Type[_EV],
@@ -415,7 +426,9 @@ class EnumValue:
         description: Optional[str] = None,
         node: Optional[_ast.EnumValueDefinition] = None,
     ):
-        assert name not in ("true", "false", "null")
+        if name in ("true", "false", "null"):
+            raise ValueError('Invalid name "%s" for enum value' % name)
+
         self.name = name
         self.value = value if value is not _UNSET else name
         self.description = description
@@ -491,9 +504,10 @@ class EnumType(NamedType):
 
         for v in values:
             v = EnumValue.from_def(v)
-            assert v.name not in self._values, (
-                "Duplicate enum value %s" % v.name
-            )
+
+            if v.name in self._values:
+                raise ValueError("Duplicate enum value %s" % v.name)
+
             self.values.append(v)
             self._reverse_values[v.value] = self._values[v.name] = v
 
@@ -620,11 +634,8 @@ class ScalarType(NamedType):
     ):
         self.name = name
         self.description = description
-        assert callable(serialize)
         self._serialize = serialize
-        assert callable(parse)
         self._parse = parse
-        assert parse_literal is None or callable(parse_literal)
         self._parse_literal = parse_literal
         self.nodes = (
             [] if nodes is None else nodes
@@ -845,8 +856,6 @@ class Field:
         resolver: Optional[Callable[..., Any]] = None,
         node: Optional[_ast.FieldDefinition] = None,
     ):
-        assert resolver is None or callable(resolver)
-
         self.name = name
         self.description = description
         self.deprecated = bool(deprecation_reason)
@@ -950,8 +959,6 @@ class InterfaceType(NamedType):
         self.nodes = (
             [] if nodes is None else nodes
         )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
-
-        assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
 
     @property
@@ -1033,7 +1040,6 @@ class ObjectType(NamedType):
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
 
-        assert is_type_of is None or callable(is_type_of)
         if isinstance(is_type_of, type):
             self.is_type_of = lambda v, *_, **__: isinstance(v, is_type_of)
         else:
@@ -1117,8 +1123,6 @@ class UnionType(NamedType):
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]
-
-        assert resolve_type is None or callable(resolve_type)
         self.resolve_type = resolve_type
 
     @property
@@ -1176,9 +1180,15 @@ class Directive(NamedType):
         description: Optional[str] = None,
         node: Optional[_ast.DirectiveDefinition] = None,
     ):
-        assert locations and all(
-            loc in DIRECTIVE_LOCATIONS for loc in locations
-        )
+        if not locations:
+            raise ValueError("Expected at least one location")
+
+        if any(l not in DIRECTIVE_LOCATIONS for l in locations):
+            raise ValueError(
+                "Locations must be one of %s but received %r"
+                % (DIRECTIVE_LOCATIONS, locations)
+            )
+
         self.name = name
         self.description = description
         self.locations = locations
