@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Optional, TypeVar, cast
+from typing import Optional, TypeVar
 
 from .._utils import map_and_filter
 from .directives import SPECIFIED_DIRECTIVES
@@ -8,20 +8,18 @@ from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
 from .types import (
     Argument,
+    Directive,
     EnumType,
     EnumValue,
     Field,
-    GraphQLType,
     InputField,
     InputObjectType,
     InterfaceType,
+    NamedType,
     ObjectType,
     ScalarType,
     UnionType,
 )
-
-_SPECIFIED_DIRECTIVE_NAMES = frozenset(d.name for d in SPECIFIED_DIRECTIVES)
-
 
 TType = TypeVar("TType", bound=type)
 
@@ -35,7 +33,8 @@ class SchemaVisitor(object):
     All methods *must* return the modified value; returning ``None`` will drop
     the respective values from their context, e.g. returning ``None`` from
     :meth:`on_field` will result in the field being dropped from the parent
-    :class:`py_gql.schema.ObjectType`.
+    :class:`py_gql.schema.ObjectType`. However, types and directives are
+    **never** from the schema, even if not in use anymore.
 
     For most uses cases, do not forget to call the method from the parent class
     as it ususally encodes how child elements such as field, enum values, etc.
@@ -49,46 +48,45 @@ class SchemaVisitor(object):
         Args:
             schema: Original schema.
         """
-        updated_types = {}
+        updated_types = []
+        updated_directives = []
 
-        for type_name, original in schema.types.items():
-            if type_name.startswith("__") or original in SPECIFIED_SCALAR_TYPES:
+        for original_type in schema.types.values():
+            if original_type.name.startswith("__"):
                 continue
 
-            if isinstance(original, ObjectType):
+            if isinstance(original_type, ObjectType):
                 updated = self.on_object(
-                    original
-                )  # type: Optional[GraphQLType]
-            elif isinstance(original, InterfaceType):
-                updated = self.on_interface(original)
-            elif isinstance(original, InputObjectType):
-                updated = self.on_input_object(original)
-            elif isinstance(original, ScalarType):
-                updated = self.on_scalar(original)
-            elif isinstance(original, UnionType):
-                updated = self.on_union(original)
-            elif isinstance(original, EnumType):
-                updated = self.on_enum(original)
+                    original_type
+                )  # type: Optional[NamedType]
+            elif isinstance(original_type, InterfaceType):
+                updated = self.on_interface(original_type)
+            elif isinstance(original_type, InputObjectType):
+                updated = self.on_input_object(original_type)
+            elif isinstance(original_type, ScalarType):
+                updated = self.on_scalar(original_type)
+            elif isinstance(original_type, UnionType):
+                updated = self.on_union(original_type)
+            elif isinstance(original_type, EnumType):
+                updated = self.on_enum(original_type)
             else:
-                raise TypeError(type(original))
+                raise TypeError(type(original_type))
 
-            if updated is not None and updated is not original:
-                updated_types[type_name] = updated
+            if updated is not None and updated is not original_type:
+                updated_types.append(updated)
 
-        if not updated_types:
+        for original_directive in schema.directives.values():
+            updated_directive = self.on_directive(original_directive)
+            if (
+                updated_directive is not None
+                and updated_directive is not original_directive
+            ):
+                updated_directives.append(updated_directive)
+
+        if not updated_types and not updated_directives:
             return schema
 
-        for k, v in updated_types.items():
-            schema.type_map[k] = v
-
-        def _get_or(t: Optional[ObjectType]) -> Optional[ObjectType]:
-            return cast(ObjectType, updated_types.get(t.name, t)) if t else None
-
-        schema.query_type = _get_or(schema.query_type)
-        schema.mutation_type = _get_or(schema.mutation_type)
-        schema.subscription_type = _get_or(schema.subscription_type)
-
-        schema._rebuild_caches()
+        schema._replace_types_and_directives(updated_types, updated_directives)
 
         return schema
 
@@ -97,6 +95,9 @@ class SchemaVisitor(object):
         Args:
             scalar: Original type.
         """
+        if scalar_type in SPECIFIED_SCALAR_TYPES:
+            return scalar_type
+
         return scalar_type
 
     def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
@@ -108,7 +109,7 @@ class SchemaVisitor(object):
             map_and_filter(self.on_field_definition, object_type.fields)
         )
         if updated_fields != object_type.fields:
-            object_type._fields = updated_fields
+            object_type.fields = updated_fields
         return object_type
 
     def on_field_definition(self, field: Field) -> Optional[Field]:
@@ -120,7 +121,7 @@ class SchemaVisitor(object):
             map_and_filter(self.on_argument_definition, field.arguments)
         )
         if updated_args != field.arguments:
-            field._args = updated_args
+            field.arguments = updated_args
         return field
 
     def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
@@ -141,7 +142,7 @@ class SchemaVisitor(object):
             map_and_filter(self.on_field_definition, interface_type.fields)
         )
         if updated_fields != interface_type.fields:
-            interface_type._fields = updated_fields
+            interface_type.fields = updated_fields
         return interface_type
 
     def on_union(self, union_type: UnionType) -> Optional[UnionType]:
@@ -183,7 +184,7 @@ class SchemaVisitor(object):
             )
         )
         if updated_fields != input_object_type.fields:
-            input_object_type._fields = updated_fields
+            input_object_type.fields = updated_fields
         return input_object_type
 
     def on_input_field_definition(
@@ -194,3 +195,22 @@ class SchemaVisitor(object):
             field: Original input object field.
         """
         return field
+
+    def on_directive(self, directive: Directive) -> Directive:
+        """
+        Note:
+            This does not correspond to a directive location but is necessary
+            to completely cover schema traversal.
+
+        Args:
+            directive: Original directive
+        """
+        if directive in SPECIFIED_DIRECTIVES:
+            return directive
+
+        updated_args = list(
+            map_and_filter(self.on_argument_definition, directive.arguments)
+        )
+        if updated_args != directive.arguments:
+            directive.arguments = updated_args
+        return directive

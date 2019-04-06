@@ -3,7 +3,17 @@
 
 import itertools as it
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
@@ -63,10 +73,6 @@ class Schema:
             AST node for the schema if applicable, i.e. when creating the schema
             from a GraphQL (SDL) document.
 
-        type_map (Dict[str, GraphQLType]):
-            Mapping ``type name -> Type instance`` of all types used in the
-            schema, including directives.
-
         types (Dict[str, GraphQLType]):
             Mapping ``type name -> Type instance`` of all types used in the
             schema, excluding directives.
@@ -78,6 +84,19 @@ class Schema:
         implementations (Dict[str, ObjectType]):
             Mapping of ``interface name -> [implementing object types]``.
     """
+
+    __slots__ = (
+        "query_type",
+        "mutation_type",
+        "subscription_type",
+        "nodes",
+        "_possible_types",
+        "_is_valid",
+        "_literal_types_cache",
+        "types",
+        "directives",
+        "implementations",
+    )
 
     def __init__(
         self,
@@ -94,37 +113,33 @@ class Schema:
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
 
-        self._types = [
-            x
-            for x in (query_type, mutation_type, subscription_type)
-            if x is not None
-        ]  # type: List[GraphQLType]
-        self._types.append(__Schema__)
         self.nodes = (
             nodes or []
         )  # type: List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
 
-        # NOTE: This is the notion of the specified types being always
-        # available. As a result of this line, intropection queries will always
-        # include thes types even if they are not actively used in the schema.
-        # I am not totally sure if this is the right behaviour and it may
-        # change in the future.
-        self._types.extend(list(SPECIFIED_SCALAR_TYPES))
+        _types = [
+            x
+            for x in (query_type, mutation_type, subscription_type)
+            if x is not None
+        ]  # type: List[GraphQLType]
+
+        _types.append(__Schema__)
+        _types.extend(list(SPECIFIED_SCALAR_TYPES))
 
         if types:
-            self._types.extend(types)
+            _types.extend(types)
 
-        self._directives = []  # type: List[Directive]
+        _directives = []  # type: List[Directive]
         if directives:
-            self._directives.extend(directives)
+            _directives.extend(directives)
 
         _directive_names = set(
-            d.name for d in self._directives if isinstance(d, Directive)
+            d.name for d in _directives if isinstance(d, Directive)
         )
 
         for d in SPECIFIED_DIRECTIVES:
             if d.name not in _directive_names:
-                self._directives.append(d)
+                _directives.append(d)
 
         self._possible_types = (
             {}
@@ -132,22 +147,10 @@ class Schema:
         self._is_valid = None  # type: Optional[bool]
         self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
-        self.type_map = _build_type_map(self._types, self._directives)
-        self._rebuild_caches()
+        self.types, self.directives = _build_type_maps(_types, _directives)
+        self._invalidate_and_rebuild_caches()
 
-    def _rebuild_caches(self):
-        self.types = {
-            name: t
-            for name, t in self.type_map.items()
-            if not isinstance(t, Directive)
-        }  # type: Dict[str, NamedType]
-
-        self.directives = {
-            name: t
-            for name, t in self.type_map.items()
-            if isinstance(t, Directive)
-        }
-
+    def _invalidate_and_rebuild_caches(self):
         self.implementations = defaultdict(
             list
         )  # type: Dict[str, List[ObjectType]]
@@ -159,38 +162,69 @@ class Schema:
 
         self._is_valid = None
 
+    def _replace_types_and_directives(
+        self,
+        types: Optional[Sequence[NamedType]] = None,
+        directives: Optional[Sequence[Directive]] = None,
+    ) -> None:
+        busted_cache = False
+
+        for new_type in types or ():
+            try:
+                original_type = self.types[new_type.name]
+            except KeyError:
+                pass
+            else:
+                if original_type in SPECIFIED_SCALAR_TYPES:
+                    raise SchemaError(
+                        "Cannot replace specified type %s" % original_type
+                    )
+                if type(original_type) != type(new_type):
+                    raise SchemaError(
+                        "Cannot replace type %r with a different kind of type %r."
+                        % (original_type, new_type)
+                    )
+
+            busted_cache = new_type != original_type
+            self.types[new_type.name] = new_type
+
+        for new_directive in directives or ():
+            try:
+                original_directive = self.directives[new_directive.name]
+            except KeyError:
+                pass
+            else:
+                if original_directive in SPECIFIED_DIRECTIVES:
+                    raise SchemaError(
+                        "Cannot replace specified directive %s"
+                        % original_directive
+                    )
+
+            self.directives[new_directive.name] = new_directive
+
+        if busted_cache:
+            # Circular import
+            from .fix_type_references import fix_type_references
+
+            self._invalidate_and_rebuild_caches()
+            fix_type_references(self)
+
     def validate(self):
         """ Check that the schema is valid.
 
         Raises:
             :class:`~py_gql.exc.SchemaError` if the schema is invalid.
         """
-        validate_schema(self)
-
-    @property
-    def is_valid(self) -> bool:
-        """
-        bool: Whether this schema is valid or not. This property calls
-        :meth:`validate` in the background and caches the result.
-        """
         if self._is_valid is None:
-            try:
-                self.validate()
-            except SchemaError:
-                self._is_valid = False
-            else:
-                self._is_valid = True
-        return self._is_valid
+            validate_schema(self)
+            self._is_valid = True
 
-    def get_type(
-        self, name: str, default: Optional[NamedType] = None
-    ) -> NamedType:
+    def get_type(self, name: str) -> NamedType:
         """
         Get a type by name.
 
         Args:
             name: Requested type name
-            default: If set, will be returned in case there is no matching type
 
         Returns:
             py_gql.schema.Type: Type instance
@@ -203,8 +237,6 @@ class Schema:
         try:
             return self.types[name]
         except KeyError:
-            if default is not None:
-                return default
             raise UnknownType(name)
 
     def has_type(self, name: str) -> bool:
@@ -279,6 +311,7 @@ class Schema:
         """
         if not isinstance(type_, ObjectType):
             return False
+
         return type_ in self.get_possible_types(abstract_type)
 
     def is_subtype(self, type_, super_type):
@@ -463,12 +496,12 @@ class Schema:
         return decorator
 
 
-def _build_type_map(
+def _build_type_maps(
     # fmt: off
     *types: Sequence[GraphQLType],
-    _type_map: Optional[Dict[str, GraphQLType]] = None
+    _type_map: Optional[Dict[str, NamedType]] = None,
     # fmt: on
-) -> Dict[str, GraphQLType]:
+) -> Tuple[Dict[str, NamedType], Dict[str, Directive]]:
     """
     Recursively build a mapping name <> Type from a list of types to include
     all referenced types.
@@ -482,47 +515,55 @@ def _build_type_map(
     """
     type_map = (
         _type_map if _type_map is not None else {}
-    )  # type: Dict[str, GraphQLType]
+    )  # type: Dict[str, NamedType]
+
+    directive_map = {}  # type: Dict[str, Directive]
 
     for type_ in it.chain(*types):
         if not type_:
             continue
 
-        type_ = unwrap_type(type_)
-
-        if not isinstance(type_, NamedType):
-            raise SchemaError(
-                'Expected NamedType but got "%s" of type %s'
-                % (type_, type(type_))
-            )
-
-        name = type_.name
-        if name in type_map:
-            if type_ is not type_map[name]:
-                raise SchemaError('Duplicate type "%s"' % name)
-            continue
-
-        type_map[name] = type_
         child_types = []  # type: List[GraphQLType]
 
-        if isinstance(type_, UnionType):
-            child_types.extend(type_.types)
-
-        if isinstance(type_, ObjectType):
-            child_types.extend(type_.interfaces)
-
-        if isinstance(type_, (ObjectType, InterfaceType)):
-            for field in type_.fields:
-                child_types.append(field.type)
-                child_types.extend([arg.type for arg in field.arguments or []])
-
-        if isinstance(type_, InputObjectType):
-            for input_field in type_.fields:
-                child_types.append(input_field.type)
-
         if isinstance(type_, Directive):
+            # Directives cannot be referenced outside of the first call in the
+            # recursion.
             child_types.extend([arg.type for arg in type_.arguments or []])
+            directive_map[type_.name] = type_
+        else:
+            type_ = cast(NamedType, unwrap_type(type_))
 
-        type_map.update(_build_type_map(child_types, _type_map=type_map))
+            if not isinstance(type_, NamedType):
+                raise SchemaError(
+                    'Expected NamedType but got "%s" of type %s'
+                    % (type_, type(type_))
+                )
 
-    return type_map
+            name = type_.name
+            if name in type_map:
+                if type_ is not type_map[name]:
+                    raise SchemaError('Duplicate type "%s"' % name)
+                continue
+
+            type_map[name] = type_
+
+            if isinstance(type_, UnionType):
+                child_types.extend(type_.types)
+
+            if isinstance(type_, ObjectType):
+                child_types.extend(type_.interfaces)
+
+            if isinstance(type_, (ObjectType, InterfaceType)):
+                for field in type_.fields:
+                    child_types.append(field.type)
+                    child_types.extend(
+                        [arg.type for arg in field.arguments or []]
+                    )
+
+            if isinstance(type_, InputObjectType):
+                for input_field in type_.fields:
+                    child_types.append(input_field.type)
+
+        type_map.update(_build_type_maps(child_types, _type_map=type_map)[0])
+
+    return type_map, directive_map

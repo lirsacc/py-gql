@@ -461,9 +461,7 @@ type_field = Field(
     __Type__,
     description="Request the type information of a single type.",
     args=[Argument("name", NonNullType(String))],
-    resolver=lambda p, c, info, **args: info.schema.get_type(
-        args["name"], None
-    ),
+    resolver=lambda p, c, info, **args: info.schema.get_type(args["name"]),
 )
 
 

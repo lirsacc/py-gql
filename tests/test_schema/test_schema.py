@@ -93,6 +93,28 @@ def test_Schema_is_possible_type_is_accurate():
     assert not schema.is_possible_type(Interface, Implementing)
 
 
+def test_Schema_is_possible_handles_non_object_types():
+    schema = Schema(
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+        ),
+        directives=[Dir],
+    )
+    assert not schema.is_possible_type(Interface, Int)
+
+
+def test_Schema_is_possible_rejects_non_abstract_types():
+    schema = Schema(
+        ObjectType(
+            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+        ),
+        directives=[Dir],
+    )
+
+    with pytest.raises(TypeError):
+        schema.is_possible_type(Int, Implementing)  # type: ignore
+
+
 def test_Schema_includes_input_types_only_used_in_directives():
     schema = Schema(
         ObjectType(
@@ -187,3 +209,64 @@ def test_Schema_includes_introspection_types():
     assert schema.get_type("__InputValue") is not None
     assert schema.get_type("__Field") is not None
     assert schema.get_type("__TypeKind") is not None
+
+
+def test_assign_resolver_on_root_type():
+    schema = Schema(ObjectType("Query", [Field("author", BlogAuthor)]))
+    resolver = lambda *_, **__: None
+
+    schema.assign_resolver("Query.author", resolver)
+
+    assert schema.query_type.fields[0].resolver is resolver  # type: ignore
+
+
+def test_assign_resolver_on_child_type():
+    Object = ObjectType("Object", [Field("id", String)])
+    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+    resolver = lambda *_, **__: None
+
+    schema.assign_resolver("Object.id", resolver)
+
+    assert (
+        schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
+    )
+
+
+def test_assign_resolver_raises_on_unknown_type():
+    Object = ObjectType("Object", [Field("id", String)])
+    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+    resolver = lambda *_, **__: None
+
+    with pytest.raises(UnknownType):
+        schema.assign_resolver("Foo.id", resolver)
+
+
+def test_assign_resolver_raises_on_unknown_field():
+    Object = ObjectType("Object", [Field("id", String)])
+    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+    resolver = lambda *_, **__: None
+
+    with pytest.raises(ValueError):
+        schema.assign_resolver("Object.foo", resolver)
+
+
+def test_assign_resolver_raises_on_override_by_default():
+    resolver = lambda *_, **__: None
+    Object = ObjectType("Object", [Field("id", String, resolver=resolver)])
+    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+
+    with pytest.raises(ValueError):
+        schema.assign_resolver("Object.id", resolver)
+
+
+def test_assign_resolver_accepts_override_with_flag():
+    old_resolver = lambda *_, **__: None
+    Object = ObjectType("Object", [Field("id", String, resolver=old_resolver)])
+    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+
+    resolver = lambda *_, **__: None
+    schema.assign_resolver("Object.id", resolver, allow_override=True)
+
+    assert (
+        schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
+    )

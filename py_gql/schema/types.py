@@ -1136,7 +1136,7 @@ class UnionType(NamedType):
         self._types = self._source_types = types
 
 
-class Directive(NamedType):
+class Directive(GraphQLType):
     """
     Directive definition
 
@@ -1195,6 +1195,9 @@ class Directive(NamedType):
         self.arguments = args if args is not None else []
         self.argument_map = {arg.name: arg for arg in self.arguments}
         self.node = node
+
+
+# TODO: Types could be more specific.
 
 
 def is_input_type(type_: GraphQLType) -> bool:

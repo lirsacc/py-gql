@@ -82,9 +82,7 @@ def validate_ast(
 
         validators:
             List of validator classes (subclasses of
-            :class:`py_gql.validation.ValidationVisitor`) to use. Can also
-            contain tuples of the shape ``(cls, kw)`` where ``kw`` will be
-            passed to ``cls`` on instantiation.
+            :class:`py_gql.validation.ValidationVisitor`) to use.
             Defaults to :obj:`~py_gql.validation.SPECIFIED_RULES`.
 
     Returns:
@@ -94,16 +92,12 @@ def validate_ast(
     if validators is None:
         validators = SPECIFIED_RULES
 
-    def instantiate_validator(cls_or_tuple, schema, type_info):
-        if isinstance(cls_or_tuple, tuple):
-            cls_, kw = cls_or_tuple
-        else:
-            cls_, kw = cls_or_tuple, {}
+    def instantiate_validator(cls_, schema, type_info):
         if not issubclass(cls_, ValidationVisitor):
             raise TypeError(
                 'Expected ValidationVisitor subclass but got "%r"' % cls_
             )
-        return cls_(schema, type_info, **kw)
+        return cls_(schema, type_info)
 
     validator_instances = [
         instantiate_validator(validator_, schema, type_info)

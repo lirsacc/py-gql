@@ -62,8 +62,7 @@ def build_schema(
     document: Union[_ast.Document, str],
     *,
     additional_types: Optional[List[NamedType]] = None,
-    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None,
-    assume_valid: bool = False
+    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
     # fmt: on
 ) -> Schema:
     """ Build an executable schema from a GraphQL document.
@@ -93,8 +92,6 @@ def build_schema(
 
             See :func:`~py_gql.schema.apply_schema_directives` for more details.
 
-        assume_valid: Do not validate intermediate schemas
-
     Returns:
         Executable schema
 
@@ -106,20 +103,14 @@ def build_schema(
         ast, additional_types=additional_types
     )
 
-    if not assume_valid:
-        schema.validate()
-
     schema = extend_schema(
         schema, ast, additional_types=additional_types, strict=False
     )
 
-    if not assume_valid:
-        schema.validate()
-
     if schema_directives:
         schema = apply_schema_directives(schema, schema_directives)
-        if not assume_valid:
-            schema.validate()
+
+    schema.validate()
 
     return schema
 

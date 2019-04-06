@@ -307,17 +307,13 @@ class Executor:
         if t.resolve_type is not None:
             maybe_type = t.resolve_type(value)
             if isinstance(maybe_type, str):
-                return self.schema.get_type(maybe_type, None)  # type: ignore
+                return self.schema.get_type(maybe_type)  # type: ignore
             else:
                 return maybe_type
         elif isinstance(value, dict) and value.get("__typename__"):
-            return self.schema.get_type(  # type: ignore
-                value["__typename__"], None
-            )
+            return self.schema.get_type(value["__typename__"])  # type: ignore
         elif hasattr(value, "__typename__") and value.__typename__:
-            return self.schema.get_type(  # type: ignore
-                value.__typename__, None
-            )
+            return self.schema.get_type(value.__typename__)  # type: ignore
         else:
             possible_types = self.schema.get_possible_types(t)
             for pt in possible_types:

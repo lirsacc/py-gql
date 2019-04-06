@@ -24,7 +24,6 @@ from ..exc import SDLError
 from ..lang import ast as _ast
 from ..utilities import coerce_argument_values
 from .directives import DeprecatedDirective
-from .fix_type_references import fix_type_references
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
 from .schema_visitor import SchemaVisitor
@@ -112,11 +111,9 @@ def apply_schema_directives(
             must either be defined in the schema or the class implement the
             `definition` attribute.
     """
-    return fix_type_references(
-        _SchemaDirectivesApplicationVisitor(
-            schema.directives, schema_directives
-        ).on_schema(schema)
-    )
+    return _SchemaDirectivesApplicationVisitor(
+        schema.directives, schema_directives
+    ).on_schema(schema)
 
 
 class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
