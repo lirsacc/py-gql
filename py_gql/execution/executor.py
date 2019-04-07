@@ -43,11 +43,8 @@ from ..schema import (
     UnionType,
     introspection as _introspection,
 )
-from ..utilities import (
-    coerce_argument_values,
-    default_resolver,
-    directive_arguments,
-)
+from ..utilities import coerce_argument_values, directive_arguments
+from .default_resolver import default_resolver as _default_resolver
 from .middleware import apply_middlewares
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
@@ -82,6 +79,7 @@ class Executor:
         "_argument_values",
         "_resolver_cache",
         "_errors",
+        "_default_resolver",
     )
 
     def __init__(
@@ -92,6 +90,7 @@ class Executor:
         variables: Dict[str, Any],
         context_value: Any,
         middlewares: Sequence[Resolver],
+        default_resolver: Optional[Resolver] = None,
         **_: Any
         # fmt: on
     ):
@@ -106,6 +105,7 @@ class Executor:
         self.context_value = context_value
 
         self._middlewares = middlewares
+        self._default_resolver = default_resolver or _default_resolver
 
         self._errors = []  # type: List[GraphQLResponseError]
 
@@ -331,7 +331,7 @@ class Executor:
         path: ResponsePath,
     ) -> Any:
         resolver = self.get_field_resolver(
-            field_definition.resolver or default_resolver
+            field_definition.resolver or self._default_resolver
         )
         node = nodes[0]
         info = ResolveInfo(

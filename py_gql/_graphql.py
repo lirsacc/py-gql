@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" """
 
 from typing import Any, Callable, List, Mapping, Optional, Sequence, Type, cast
 
@@ -27,12 +26,14 @@ def do_graphql(
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    default_resolver: Optional[Callable[..., Any]] = None,
     executor_cls: Optional[Type[Executor]] = None,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
-    """ Main GraphQL entrypoint encapsulating query processing from start to
-    finish.
+    """
+    Main GraphQL entrypoint encapsulating query processing from start to
+    finish including parsing, validation, variable coercion and execution.
 
     Args:
         schema: Schema to execute the query against
@@ -59,6 +60,10 @@ def do_graphql(
             some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
 
         middlewares: List of middleware callable to use when resolving fields.
+
+        default_resolver: Alternative default resolver.
+            For field which do not specify a resolver, this will be used instead
+            of `py_gql.execution.default_resolver`.
 
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
@@ -99,6 +104,7 @@ def do_graphql(
             initial_value=root,
             context_value=context,
             middlewares=middlewares,
+            default_resolver=default_resolver,
             executor_cls=executor_cls,
             executor_args=executor_args,
         )
@@ -120,7 +126,8 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    default_resolver: Optional[Callable[..., Any]] = None
     # fmt: on
 ) -> GraphQLResult:
     """
@@ -142,6 +149,7 @@ async def graphql(
                     validators=validators,
                     context=context,
                     middlewares=middlewares,
+                    default_resolver=default_resolver,
                     executor_cls=AsyncExecutor,
                 )
             ),
@@ -160,7 +168,8 @@ def graphql_sync(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    default_resolver: Optional[Callable[..., Any]] = None
     # fmt: on
 ) -> GraphQLResult:
     """
@@ -177,5 +186,6 @@ def graphql_sync(
             validators=validators,
             context=context,
             middlewares=middlewares,
+            default_resolver=default_resolver,
         ),
     )

@@ -9,6 +9,7 @@ import pytest
 from py_gql import graphql_sync
 from py_gql._string_utils import dedent
 from py_gql.exc import ScalarParsingError, SDLError
+from py_gql.execution import default_resolver
 from py_gql.schema import (
     Argument,
     DeprecatedSchemaDirective,
@@ -25,7 +26,6 @@ from py_gql.schema import (
     String,
     build_schema,
 )
-from py_gql.utilities import default_resolver
 
 
 def wrap_resolver(field_def, func):

@@ -26,7 +26,6 @@ from typing import (
 from ..exc import CoercionError, ResolverError
 from ..lang import ast as _ast
 from ..schema import Field, GraphQLType, ObjectType
-from ..utilities import default_resolver
 from .executor import Executor
 from .middleware import apply_middlewares
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
@@ -150,7 +149,7 @@ class ThreadPoolExecutor(Executor):
         path: ResponsePath,
     ) -> Any:
         resolver = self.get_field_resolver(
-            field_definition.resolver or default_resolver
+            field_definition.resolver or self._default_resolver
         )
         node = nodes[0]
         info = ResolveInfo(

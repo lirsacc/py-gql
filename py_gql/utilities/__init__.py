@@ -12,7 +12,6 @@ from .coerce_value import (
     coerce_variable_values,
     directive_arguments,
 )
-from .default_resolver import default_resolver
 from .introspection_query import introspection_query
 from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
@@ -23,7 +22,6 @@ __all__ = (
     "coerce_argument_values",
     "coerce_value",
     "coerce_variable_values",
-    "default_resolver",
     "directive_arguments",
     "introspection_query",
     "TypeInfoVisitor",

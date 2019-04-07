@@ -2,13 +2,11 @@
 
 from typing import Any
 
-# pylint: disable=using-constant-test,unused-import
-if False:  # Fix import cycles of types needed for Mypy checking
-    from ..execution.wrappers import ResolveInfo
+from .wrappers import ResolveInfo
 
 
 def default_resolver(
-    root: Any, context: Any, info: "ResolveInfo", **args: Any
+    root: Any, context: Any, info: ResolveInfo, **args: Any
 ) -> Any:
     """ Default resolver used during query execution.
 
