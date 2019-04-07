@@ -21,20 +21,20 @@
 import imp
 import os
 
-about = imp.load_source("about", os.path.join("..", "py_gql", "__version__.py"))
+from py_gql import __version__
 
 
 # -- Project information -----------------------------------------------------
 
 
-project = about.__title__
-copyright = about.__copyright__
-author = about.__author__
+project = __version__.__title__
+copyright = __version__.__copyright__
+author = __version__.__author__
 
 # The short X.Y version
-version = about.__version__
+version = __version__.__version__
 # The full version, including alpha/beta/rc tags
-release = about.__version__
+release = __version__.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -112,7 +112,7 @@ html_theme_options = {
     "analytics_id": "",
     "github_user": "lirsacc",
     "github_repo": "py-gql",
-    "fixed_sidebar": True,
+    # "fixed_sidebar": True,
     "codecov_button": False,
     "github_banner": False,
     "github_button": False,
@@ -122,7 +122,7 @@ html_theme_options = {
     "caption_font_family": FONT,
     "head_font_family": HEADING_FONT,
     "code_font_family": CODE_FONT,
-    "description": about.__description__,
+    "description": __version__.__description__,
     "show_related": True,
     # "page_width": "1200px",
     # "sidebar_width": "300px",
@@ -158,6 +158,7 @@ html_sidebars = {
 
 autodoc_member_order = "bysource"
 autoclass_content = "both"
+set_type_checking_flag = False
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 

@@ -1,15 +1,18 @@
 .. _api:
 
-Developer Interface
-===================
+Reference
+=========
 
-.. module: py_gql
+This document describes the public interface of :mod:`py_gql`. It is (mostly)
+rendered automatically from the code.
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 4
 
+    root
     exc
     lang
     schema
     validation
+    execution
     utilities

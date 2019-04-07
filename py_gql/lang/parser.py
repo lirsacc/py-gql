@@ -109,11 +109,14 @@ def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
     Parse a string as a GraphQL Document.
 
     Args:
-        source (Union[str, bytes]): source document
+        source (Union[str, bytes]): source document.
         **kwargs: Remaining keyword arguments passed to :class:`Parser`
 
     Raises:
         :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+
+    Returns:
+        `py_gql.lang.ast.Document`: Parsed document.
     """
     return Parser(source, **kwargs).parse_document()
 

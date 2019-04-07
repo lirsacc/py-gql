@@ -15,9 +15,9 @@ from py_gql.lang.parser import parse
 # Comparing dicts will result in better assertion diffs from pytest.
 def assert_node_equal(ref, expected):
     # import json
-    # print(json.dumps(_ast.node_to_dict(ref), sort_keys=True, indent=4))
-    # print(json.dumps(_ast.node_to_dict(expected), sort_keys=True, indent=4))
-    assert _ast.node_to_dict(expected) == _ast.node_to_dict(ref)
+    # print(json.dumps(_ast._ast_to_json(ref), sort_keys=True, indent=4))
+    # print(json.dumps(_ast._ast_to_json(expected), sort_keys=True, indent=4))
+    assert _ast._ast_to_json(expected) == _ast._ast_to_json(ref)
 
 
 # A few syntactic sugar helpers

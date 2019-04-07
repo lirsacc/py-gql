@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from py_gql._string_utils import dedent
-from py_gql.lang import ASTPrinter, ast as _ast, parse, print_ast
+from py_gql.lang import ast as _ast, parse, print_ast
+from py_gql.lang.printer import ASTPrinter
 
 
 def test_minimal_ast():

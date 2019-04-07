@@ -24,12 +24,12 @@ _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 
 def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
     """
-    Infer an ast Node for a Python value given an input type.
+    Infer an input value ast Node from a Python value given an input type.
 
     Args:
         value: Any python value that can be transformed into a node
 
-        input_type: Input type to consider
+        input_type: Input type used to disambiguate between node types.
 
     Return:
         Inferred value node

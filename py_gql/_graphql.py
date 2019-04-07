@@ -35,8 +35,6 @@ def do_graphql(
     finish.
 
     Args:
-        executor: :class:`py_gql.execution.Executor` subclass to use.
-
         schema: Schema to execute the query against
 
         document: The query document
@@ -47,11 +45,7 @@ def do_graphql(
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
 
-        initial_value: Root resolution value passed to top-level resolver
-
-        validators: Custom validators.
-            Setting this will replace the defaults so if you just want to add
-            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
+        root: Root resolution value passed to top-level resolver
 
         context: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
@@ -60,7 +54,20 @@ def do_graphql(
             implementations and the executor class you use. Most thread safe
             data-structures should work.
 
-        middlewares: List of middleware callable to use when resolving fields
+        validators: Custom validators.
+            Setting this will replace the defaults so if you just want to add
+            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
+
+        middlewares: List of middleware callable to use when resolving fields.
+
+        executor_cls: Executor class to use.
+            **Must** be a subclass of `py_gql.execution.Executor`.
+
+            This defines how your resolvers are going to be executed and the
+            type of values you'll get out of this function. `executor_args` will
+            be passed on class instantiation as keyword arguments.
+
+        executor_args: Extra executor arguments.
 
     Returns:
         Execution result.
@@ -68,8 +75,8 @@ def do_graphql(
     Warning:
         The returned value will depend on the executor class. They ususually
         return a type wrapping the `GraphQLResult` object such as
-        `Awaitable[GraphQLResult]`. You can refer to `graphql` or `graphql_sync`
-        for example usage.
+        `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
+        `graphql_sync` for example usage.
     """
     schema.validate()
 
@@ -116,6 +123,12 @@ async def graphql(
     middlewares: Optional[Sequence[Callable[..., Any]]] = None
     # fmt: on
 ) -> GraphQLResult:
+    """
+    Same as `handle_graphql_request` but enforcing usage of AsyncIO.
+
+    Resolvers are expected to be async functions. Sync functions will be
+    executed in a thread.
+    """
     try:
         return cast(
             GraphQLResult,
@@ -150,6 +163,9 @@ def graphql_sync(
     middlewares: Optional[Sequence[Callable[..., Any]]] = None
     # fmt: on
 ) -> GraphQLResult:
+    """
+    Same as `handle_graphql_request` but enforcing usage of sync resolvers.
+    """
     return cast(
         GraphQLResult,
         do_graphql(

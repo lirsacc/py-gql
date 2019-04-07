@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module implements all the relevant exceptions for this library.
+This module implements all the exceptions relevant to `py_gql`.
 """
 # pylint: disable = too-many-ancestors
 
@@ -224,6 +224,10 @@ class ExecutionError(GraphQLResponseError):
 
     def to_dict(self) -> Dict[str, Any]:
         return {"message": str(self)}
+
+
+class InvalidOperationError(ExecutionError):
+    pass
 
 
 class VariableCoercionError(GraphQLLocatedError):

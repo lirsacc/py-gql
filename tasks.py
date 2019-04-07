@@ -177,15 +177,17 @@ def fmt(ctx, check=False, files=None):
 
 
 @invoke.task
-def docs(ctx, clean_=True, strict=False):
+def docs(ctx, clean_=True, strict=False, verbose=False):
     """ Generate documentation """
     with ctx.cd(os.path.join(ROOT, "docs")):
         if clean_:
             ctx.run("rm -rf _build", echo=True)
+
         ctx.run(
             _join(
                 [
                     "sphinx-build",
+                    "-v" if verbose else "",
                     "-W" if strict else None,
                     "-b html",
                     '"." "_build"',

@@ -591,6 +591,24 @@ def _block_string(value: str, indent: str, is_description: bool = False) -> str:
     )
 
 
-# Default AST formatter matching graphql-js's implementation
-# Useful when porting code / tests across.
-print_ast = ASTPrinter(indent=2, include_descriptions=True)
+def print_ast(
+    node: _ast.Node, indent: int = 2, include_descriptions: bool = True
+) -> str:
+    """ Converts an AST node into a valid GraphQL string, using a set of
+    reasonable formatting rules.
+
+    Args:
+        node (py_gql.lanf.ast.Node): Node to format.
+
+        indent (Union[str, int]): Indent character or number of spaces
+
+        include_descriptions (bool):
+            If ``True`` include descriptions as leading block strings in the
+            output. Only relevant for SDL nodes.
+
+    Returns:
+        str:
+    """
+    return ASTPrinter(indent=indent, include_descriptions=include_descriptions)(
+        node
+    )

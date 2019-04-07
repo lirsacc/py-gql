@@ -62,7 +62,8 @@ def _get_field_def(schema, parent_type, field):
 # and it can most likley be improved.
 class TypeInfoVisitor(DispatchingVisitor):
     """
-    Visitor that tracks current types while traversing a Document.
+    Utility visitor that recurisvely track the current types and field
+    definitions while traversing a Document.
 
     All tracked types are considered with regards to the provided schema,
     however unknown types and other unexpected errors will be downgraded to
@@ -71,16 +72,16 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     Warning:
         When using this alongside other visitors (such as when using
-        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **needs**
+        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **must**
         to be the first one to visit the nodes in order for the information
         provided donwstream to be accurate.
 
     Args:
-        schema: Reference schema to extract types from
+        schema (py_gql.schema.Schema): Reference schema to extract types from
 
     Attributes:
 
-        typ (Optional[py_gql.schema.ObjectType]):
+        type (Optional[py_gql.schema.ObjectType]):
             Current type if applicable
 
         parent_typ (Optional[py_gql.schema.ObjectType]):

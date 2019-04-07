@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-GraphQL AST representations corresponding to the `GraphQL language elements`_.
-
- .. _GraphQL language elements:
-   http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
+GraphQL AST representations corresponding to the `GraphQL language elements
+<http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language>`_.
 """
 # pylint: disable=redefined-builtin
 
@@ -24,10 +22,6 @@ from typing import (
 class Node:
     """
     Base AST node.
-
-    - All subclasses should implement ``__slots__`` so ``__eq__`` and
-      ``__repr__``, ``__copy__``, ``__deepcopy__`` and :meth:`to_dict` can work.
-    - The ``source`` attribute is ignored for comparisons and serialization.
     """
 
     __slots__ = ()
@@ -69,15 +63,26 @@ class Node:
             **{k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__}
         )
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the current node to a JSON serializable ``dict`` using
-        :func:`node_to_dict`.
+        Convert the current node and all of its children to a JSON serializable
+        format.
+
+        This is mostly useful for testing and when you need to convert nodes to
+        JSON such as interop with other languages, printing and serialisation.
+
+        The conversion rules are:
+
+        - Each `Node` subclass is converted to a dict of their own converted
+          attributes adding a ``__kind__`` key corresponding to the node's
+          classname.
+        - Primitive values (int, strings, etc.) are left as is.
+        - Lists are converted per-element.
 
         Returns:
-            dict: Converted value
+            Dict[str, Any]: Converted value
         """
-        return node_to_dict(self)
+        return cast(Dict[str, Any], _ast_to_json(self))
 
 
 class Name(Node):
@@ -928,36 +933,13 @@ class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
         self.description = description
 
 
-def _node_to_dict(node):
+def _ast_to_json(node):
     if isinstance(node, Node):
         return dict(
-            {
-                attr: _node_to_dict(getattr(node, attr))
-                for attr in node._props()
-            },
+            {attr: _ast_to_json(getattr(node, attr)) for attr in node._props()},
             __kind__=node.__class__.__name__,
         )
     elif isinstance(node, list):
-        return [_node_to_dict(v) for v in node]
+        return [_ast_to_json(v) for v in node]
     else:
         return node
-
-
-def node_to_dict(node: Node) -> Dict[str, Any]:
-    """
-    Recrusively convert a ``py_gql.lang.ast.Node`` instance to a dict.
-
-    This is mostly useful for testing and when you need to convert nodes to JSON
-    such as interop with other languages, printing and serialisation.
-
-    Nodes are converted based on their `__slots__` adding a `__kind__` key
-    corresponding to the node class while primitive values are left as is.
-    Lists are converted per-element.
-
-    Args:
-        node (any): A :class:`Node` instance or any node attribute
-
-    Returns:
-        Converted value
-    """
-    return cast(Dict[str, Any], _node_to_dict(node))

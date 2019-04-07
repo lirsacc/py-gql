@@ -1,5 +1,5 @@
-Defining GraphQL Schemas
-========================
+py_gql.schema
+=============
 
 .. module: py_gql.schema
 

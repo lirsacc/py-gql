@@ -5,8 +5,6 @@ can be useful if you are building custom GraphQL tooling on top of this
 library.
 """
 
-# flake8: noqa
-
 from .ast_node_from_value import ast_node_from_value
 from .coerce_value import (
     coerce_argument_values,

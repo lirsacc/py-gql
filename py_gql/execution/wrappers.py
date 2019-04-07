@@ -67,13 +67,18 @@ class GraphQLExtension:
 
 
 class GraphQLResult:
-    """ Wrapper encoding the behaviour described in the `Response
+    """
+    Wrapper encoding the behaviour described in the `Response
     <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
     specification.
 
     Args:
-        data: The data part of the response
-        errors: The errors part of the response
+        data (Optional[Dict[`str`, `Any`]]):
+            The data part of the response.
+
+        errors (Optional[Sequence[`GraphQLResponseError`]]):
+            The errors part of the response. All errors will be included in the
+            response using :meth:`~GraphQLResponseError.to_dict`.
     """
 
     __slots__ = ("data", "errors", "extensions", "_known_extensions")

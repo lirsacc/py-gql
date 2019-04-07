@@ -13,7 +13,7 @@ from py_gql.lang.parser import parse, parse_type, parse_value
 
 # Comparing dicts will result in better assertion diffs from pytest.
 def assert_node_equal(ref, expected):
-    assert _ast.node_to_dict(ref) == _ast.node_to_dict(expected)
+    assert _ast._ast_to_json(ref) == _ast._ast_to_json(expected)
 
 
 @pytest.mark.parametrize(
