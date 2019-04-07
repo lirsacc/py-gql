@@ -30,7 +30,9 @@ def get_operation(
     ]
 
     if not operations:
-        raise InvalidOperationError("Expected at least one operation definition")
+        raise InvalidOperationError(
+            "Expected at least one operation definition"
+        )
 
     if not operation_name:
         if len(operations) == 1:
@@ -44,4 +46,6 @@ def get_operation(
         if operation.name and operation.name.value == operation_name:
             return operation
 
-    raise InvalidOperationError('No operation "%s" in document' % operation_name)
+    raise InvalidOperationError(
+        'No operation "%s" in document' % operation_name
+    )

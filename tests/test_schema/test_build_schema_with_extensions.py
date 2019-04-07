@@ -7,8 +7,12 @@ from py_gql._utils import flatten
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
+    ID,
     UUID,
+    Boolean,
     Field,
+    Float,
+    Int,
     ObjectType,
     SchemaDirective,
     String,
@@ -567,10 +571,18 @@ def test_does_not_extend_specified_scalar():
         }
 
         extend scalar String @protected
+        extend scalar Int @protected
+        extend scalar ID @protected
+        extend scalar Boolean @protected
+        extend scalar Float @protected
         """
     )
 
     assert schema.get_type("String") is String
+    assert schema.get_type("Int") is Int
+    assert schema.get_type("ID") is ID
+    assert schema.get_type("Boolean") is Boolean
+    assert schema.get_type("Float") is Float
 
 
 def test_schema_extension():
