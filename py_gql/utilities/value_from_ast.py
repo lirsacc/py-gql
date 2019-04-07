@@ -4,7 +4,7 @@ from typing import Any, Dict, Mapping, Optional, Union
 
 from ..exc import InvalidValue, UnknownVariable
 from ..lang import ast as _ast
-from ..schema import (
+from ..schema.types import (
     EnumType,
     GraphQLType,
     InputObjectType,

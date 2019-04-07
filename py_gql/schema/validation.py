@@ -2,7 +2,7 @@
 """ Schema validation utility """
 
 import re
-from typing import Any, Set, Union, cast
+from typing import TYPE_CHECKING, Any, Set, Union, cast
 
 from ..exc import SchemaError
 from .introspection import is_introspection_type
@@ -23,8 +23,7 @@ from .types import (
     is_output_type,
 )
 
-# pylint: disable=using-constant-test,unused-import
-if False:  # Fix import cycles of types needed for Mypy checking
+if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 
 VALID_NAME_RE = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9]*$")

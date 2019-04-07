@@ -2,7 +2,7 @@
 """ Export schema as SDL. """
 
 import operator as op
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from .._string_utils import leading_whitespace, wrapped_lines
 from ..lang import print_ast
@@ -22,8 +22,7 @@ from .types import (
     UnionType,
 )
 
-# pylint: disable=using-constant-test,unused-import
-if False:  # Fix import cycles of types needed for Mypy checking
+if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 
 

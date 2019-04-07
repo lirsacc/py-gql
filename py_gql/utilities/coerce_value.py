@@ -2,7 +2,7 @@
 """ Utilities to validate Python values against a schema / types """
 
 import json
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from .._utils import find_one
 from ..exc import (
@@ -29,8 +29,7 @@ from ..schema import (
 )
 from .value_from_ast import value_from_ast
 
-# pylint: disable=using-constant-test,unused-import
-if False:  # Fix import cycles of types needed for Mypy checking
+if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
     from ..schema import Schema
 
 

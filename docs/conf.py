@@ -158,7 +158,7 @@ html_sidebars = {
 
 autodoc_member_order = "bysource"
 autoclass_content = "both"
-set_type_checking_flag = False
+set_type_checking_flag = True
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 

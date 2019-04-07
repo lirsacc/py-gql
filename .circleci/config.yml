@@ -313,7 +313,7 @@ jobs:
                       mkdir -p "$(pwd)/workspace/docs/"
                       results="$(pwd)/workspace/docs"
                       . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                      inv docs --strict
+                      inv docs
                       mv docs/_build/* "${results}"
             - store_artifacts: { path: workspace/docs, destination: . }
 
@@ -325,57 +325,57 @@ workflows:
             - checkout
 
             - deps-35:
-                requires:
-                    - checkout
+                  requires:
+                      - checkout
             - flake8-35:
-                requires:
-                    - deps-35
+                  requires:
+                      - deps-35
             - typecheck-35:
-                requires:
-                    - deps-35
+                  requires:
+                      - deps-35
             - test-35:
-                requires:
-                    - deps-35
+                  requires:
+                      - deps-35
 
             - deps-36:
-                requires:
-                    - checkout
+                  requires:
+                      - checkout
             - flake8-36:
-                requires:
-                    - deps-36
+                  requires:
+                      - deps-36
             - typecheck-36:
-                requires:
-                    - deps-36
+                  requires:
+                      - deps-36
             - test-36:
-                requires:
-                    - deps-36
+                  requires:
+                      - deps-36
 
             - deps-37:
-                requires:
-                    - checkout
+                  requires:
+                      - checkout
             - flake8-37:
-                requires:
-                    - deps-37
+                  requires:
+                      - deps-37
             - typecheck-37:
-                requires:
-                    - deps-37
+                  requires:
+                      - deps-37
             - test-37:
-                requires:
-                    - deps-37
+                  requires:
+                      - deps-37
 
             - test-35-cython:
-                requires:
-                    - test-35
+                  requires:
+                      - test-35
             - test-36-cython:
-                requires:
-                    - test-36
+                  requires:
+                      - test-36
             - test-37-cython:
-                requires:
-                    - test-37
+                  requires:
+                      - test-37
 
             - check-format:
-                requires:
-                    - deps-37
+                  requires:
+                      - deps-37
 
             - collect-tests:
                   requires:
