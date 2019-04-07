@@ -499,7 +499,7 @@ class Schema:
 def _build_type_maps(
     # fmt: off
     *types: Sequence[GraphQLType],
-    _type_map: Optional[Dict[str, NamedType]] = None,
+    _type_map: Optional[Dict[str, NamedType]] = None
     # fmt: on
 ) -> Tuple[Dict[str, NamedType], Dict[str, Directive]]:
     """
