@@ -78,11 +78,14 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
             if not isinstance(definition, _ast.ExecutableDefinition):
                 name = (
                     "schema"
-                    if isinstance(definition, _ast.SchemaDefinition)
+                    if isinstance(
+                        definition,
+                        (_ast.SchemaDefinition, _ast.SchemaExtension),
+                    )
                     else definition.name.value
                 )
                 self.add_error(
-                    'Definition "%s" is not executable' % name, [definition]
+                    "The %s definition is not executable." % name, [definition]
                 )
                 skip_doc = True
 
@@ -189,9 +192,9 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
             type_ = self.schema.get_type_from_literal(node.type_condition)
             if not is_composite_type(type_):
                 self.add_error(
-                    'Fragment type condition cannot be on non-composite type "%s"'
+                    'Fragment cannot condition on non composite type "%s".'
                     % type_.name,
-                    [node],
+                    [node.type_condition],
                 )
                 raise SkipNode()
 
@@ -199,9 +202,9 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
         type_ = self.schema.get_type_from_literal(node.type_condition)
         if not is_composite_type(type_):
             self.add_error(
-                'Fragment "%s" type condition cannot be on non-composite type "%s"'
+                'Fragment "%s" cannot condition on non composite type "%s".'
                 % (node.name.value, type_.name),
-                [node],
+                [node.type_condition],
             )
             raise SkipNode()
 
@@ -235,15 +238,16 @@ class ScalarLeafsChecker(ValidationVisitor):
 
         if is_leaf_type(unwrap_type(type_)) and node.selection_set:
             self.add_error(
-                'Field "%s" cannot have a selection as type "%s" has no fields'
+                'Field "%s" must not have a selection since type "%s" has no subfields.'
                 % (node.name.value, type_),
                 [node],
             )
 
         if is_composite_type(unwrap_type(type_)) and not node.selection_set:
             self.add_error(
-                'Field "%s" of type "%s" must have a subselection'
-                % (node.name.value, type_),
+                'Field "%s" of type "%s" must have a selection of subfields. '
+                'Did you mean "%s { ... }"?'
+                % (node.name.value, type_, node.name.value),
                 [node],
             )
 
@@ -268,7 +272,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
                 suggestions = infer_suggestions(node.name.value, fieldnames)
                 if suggestions:
                     self.add_error(
-                        'Cannot query field "%s" on type "%s", did you mean %s?'
+                        'Cannot query field "%s" on type "%s". Did you mean %s?'
                         % (
                             node.name.value,
                             self.type_info.parent_type.name,
@@ -278,7 +282,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
                     )
                 else:
                     self.add_error(
-                        'Cannot query field "%s" on type "%s"'
+                        'Cannot query field "%s" on type "%s".'
                         % (node.name.value, self.type_info.parent_type.name),
                         [node],
                     )
@@ -288,7 +292,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
                     [t.name for t in self.type_info.parent_type.types]
                 )
                 self.add_error(
-                    'Cannot query field "%s" on type "%s", did you mean to use '
+                    'Cannot query field "%s" on type "%s". Did you mean to use '
                     "an inline fragment on %s?"
                     % (
                         node.name.value,
@@ -613,6 +617,8 @@ class KnownDirectivesChecker(ValidationVisitor):
     leave_fragment_definition = _leave_ancestor
     enter_schema_definition = _enter_ancestor
     leave_schema_definition = _leave_ancestor
+    enter_schema_extension = _enter_ancestor
+    leave_schema_extension = _leave_ancestor
     enter_scalar_type_definition = _enter_ancestor
     leave_scalar_type_definition = _leave_ancestor
     enter_scalar_type_extension = _enter_ancestor
@@ -668,6 +674,7 @@ class KnownDirectivesChecker(ValidationVisitor):
             _ast.InlineFragment: "INLINE_FRAGMENT",
             _ast.FragmentDefinition: "FRAGMENT_DEFINITION",
             _ast.SchemaDefinition: "SCHEMA",
+            _ast.SchemaExtension: "SCHEMA",
             _ast.ScalarTypeDefinition: "SCALAR",
             _ast.ScalarTypeExtension: "SCALAR",
             _ast.ObjectTypeDefinition: "OBJECT",
@@ -688,12 +695,12 @@ class KnownDirectivesChecker(ValidationVisitor):
         name = node.name.value
         schema_directive = self.schema.directives.get(name)
         if schema_directive is None:
-            self.add_error('Unknown directive "@%s"' % name, [node])
+            self.add_error('Unknown directive "%s".' % name, [node])
         else:
             location = self._current_location()
             if location not in schema_directive.locations:
                 self.add_error(
-                    'Directive "@%s" may not be used on %s' % (name, location),
+                    'Directive "%s" may not be used on %s.' % (name, location),
                     [node],
                 )
 
@@ -736,7 +743,7 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                     suggestions = list(infer_suggestions(name, known))
                     if not suggestions:
                         self.add_error(
-                            'Unknown argument "%s" on field "%s" of type "%s"'
+                            'Unknown argument "%s" on field "%s" of type "%s".'
                             % (
                                 name,
                                 field_def.name,
@@ -746,8 +753,8 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                         )
                     else:
                         self.add_error(
-                            'Unknown argument "%s" on field "%s" of type "%s", '
-                            "did you mean %s?"
+                            'Unknown argument "%s" on field "%s" of type "%s". '
+                            "Did you mean %s?"
                             % (
                                 name,
                                 field_def.name,
@@ -767,13 +774,13 @@ class KnownArgumentNamesChecker(ValidationVisitor):
                     suggestions = infer_suggestions(name, known)
                     if not suggestions:
                         self.add_error(
-                            'Unknown argument "%s" on directive "@%s"'
+                            'Unknown argument "%s" on directive "@%s".'
                             % (name, directive_def.name),
                             [arg],
                         )
                     else:
                         self.add_error(
-                            'Unknown argument "%s" on directive "@%s", did you mean %s?'
+                            'Unknown argument "%s" on directive "@%s". Did you mean %s?'
                             % (
                                 name,
                                 directive_def.name,

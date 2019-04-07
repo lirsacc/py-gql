@@ -33,7 +33,10 @@ def test_object_type_missing_selection(schema):
             human
         }
         """,
-        ['Field "human" of type "Human" must have a subselection'],
+        [
+            'Field "human" of type "Human" must have a selection of subfields. '
+            'Did you mean "human { ... }"?'
+        ],
     )
 
 
@@ -46,7 +49,10 @@ def test_interface_type_missing_selection(schema):
             human { pets }
         }
         """,
-        ['Field "pets" of type "[Pet]" must have a subselection'],
+        [
+            'Field "pets" of type "[Pet]" must have a selection of subfields. '
+            'Did you mean "pets { ... }"?'
+        ],
     )
 
 
@@ -72,8 +78,8 @@ def test_scalar_selection_not_allowed_on_boolean(schema):
         }
         """,
         [
-            'Field "barks" cannot have a selection as type "Boolean" '
-            "has no fields"
+            'Field "barks" must not have a selection since type "Boolean" '
+            "has no subfields."
         ],
     )
 
@@ -88,8 +94,8 @@ def test_scalar_selection_not_allowed_on_enum(schema):
         }
         """,
         [
-            'Field "furColor" cannot have a selection as type "FurColor" '
-            "has no fields"
+            'Field "furColor" must not have a selection since type "FurColor" '
+            "has no subfields."
         ],
     )
 
@@ -104,8 +110,8 @@ def test_scalar_selection_not_allowed_with_args(schema):
         }
         """,
         [
-            'Field "doesKnowCommand" cannot have a selection as type "Boolean" '
-            "has no fields"
+            'Field "doesKnowCommand" must not have a selection since type '
+            '"Boolean" has no subfields.'
         ],
     )
 
@@ -120,8 +126,8 @@ def test_scalar_selection_not_allowed_with_directives(schema):
         }
         """,
         [
-            'Field "name" cannot have a selection as type "String" '
-            "has no fields"
+            'Field "name" must not have a selection since type "String" '
+            "has no subfields."
         ],
     )
 
@@ -136,7 +142,7 @@ def test_scalar_selection_not_allowed_with_directives_and_args(schema):
         }
         """,
         [
-            'Field "doesKnowCommand" cannot have a selection as type "Boolean" '
-            "has no fields"
+            'Field "doesKnowCommand" must not have a selection since type '
+            '"Boolean" has no subfields.'
         ],
     )

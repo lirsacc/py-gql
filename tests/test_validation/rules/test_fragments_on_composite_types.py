@@ -86,8 +86,8 @@ def test_scalar_is_invalid_fragment_type(schema):
         }
         """,
         [
-            'Fragment "scalarFragment" type condition cannot be on '
-            'non-composite type "Boolean"'
+            'Fragment "scalarFragment" cannot condition on non composite type '
+            '"Boolean".'
         ],
     )
 
@@ -102,8 +102,8 @@ def test_enum_is_invalid_fragment_type(schema):
         }
         """,
         [
-            'Fragment "scalarFragment" type condition cannot be on '
-            'non-composite type "FurColor"'
+            'Fragment "scalarFragment" cannot condition on non composite type '
+            '"FurColor".'
         ],
     )
 
@@ -118,8 +118,8 @@ def test_input_object_is_invalid_fragment_type(schema):
         }
         """,
         [
-            'Fragment "inputFragment" type condition cannot be on '
-            'non-composite type "ComplexInput"'
+            'Fragment "inputFragment" cannot condition on non composite type '
+            '"ComplexInput".'
         ],
     )
 
@@ -135,5 +135,5 @@ def test_scalar_is_invalid_inline_fragment_type(schema):
             }
         }
         """,
-        ['Fragment type condition cannot be on non-composite type "String"'],
+        ['Fragment cannot condition on non composite type "String".'],
     )

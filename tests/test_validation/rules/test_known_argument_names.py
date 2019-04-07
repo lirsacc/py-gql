@@ -108,7 +108,7 @@ def test_unknown_directive_args_are_invalid(schema):
             dog @skip(unless: true)
         }
         """,
-        ['Unknown argument "unless" on directive "@skip"'],
+        ['Unknown argument "unless" on directive "@skip".'],
         [(16, 28)],
     )
 
@@ -122,7 +122,7 @@ def test_misspelled_directive_args_are_reported(schema):
             dog @skip(iff: true)
         }
         """,
-        ['Unknown argument "iff" on directive "@skip", did you mean "if"?'],
+        ['Unknown argument "iff" on directive "@skip". Did you mean "if"?'],
         [(16, 25)],
     )
 
@@ -136,7 +136,9 @@ def test_invalid_arg_name(schema):
             doesKnowCommand(unknown: true)
         }
         """,
-        ['Unknown argument "unknown" on field "doesKnowCommand" of type "Dog"'],
+        [
+            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".'
+        ],
         [(53, 66)],
     )
 
@@ -152,7 +154,7 @@ def test_misspelled_arg_name_is_reported(schema):
         """,
         [
             'Unknown argument "dogcommand" on field "doesKnowCommand" of type '
-            '"Dog", did you mean "dogCommand"?'
+            '"Dog". Did you mean "dogCommand"?'
         ],
     )
 
@@ -167,8 +169,8 @@ def test_unknown_args_amongst_known_args(schema):
         }
         """,
         [
-            'Unknown argument "whoknows" on field "doesKnowCommand" of type "Dog"',
-            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog"',
+            'Unknown argument "whoknows" on field "doesKnowCommand" of type "Dog".',
+            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".',
         ],
     )
 
@@ -192,7 +194,7 @@ def test_unknown_args_deeply(schema):
         }
         """,
         [
-            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog"',
-            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog"',
+            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".',
+            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".',
         ],
     )

@@ -113,7 +113,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
             )
             if suggestions:
                 self.add_error(
-                    "Field %s is not defined by type %s, did you mean %s?"
+                    "Field %s is not defined by type %s. Did you mean %s?"
                     % (
                         node.name.value,
                         parent_type,

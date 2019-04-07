@@ -98,7 +98,7 @@ def test_correct_response_on_validation_errors(starwars_schema):
             },
             {
                 "locations": [{"column": 13, "line": 5}],
-                "message": 'Cannot query field "foo" on type "Character"',
+                "message": 'Cannot query field "foo" on type "Character".',
             },
             {"message": 'Unused fragment(s) "hero"'},
             {

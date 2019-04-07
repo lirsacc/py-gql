@@ -57,7 +57,7 @@ def test_with_unknown_directive(schema):
             }
         }
         """,
-        ['Unknown directive "@unknown"'],
+        ['Unknown directive "unknown".'],
         [[(10, 38)]],
     )
 
@@ -80,9 +80,9 @@ def test_with_many_unknown_directives(schema):
         }
         """,
         [
-            'Unknown directive "@unknown"',
-            'Unknown directive "@unknown"',
-            'Unknown directive "@unknown"',
+            'Unknown directive "unknown".',
+            'Unknown directive "unknown".',
+            'Unknown directive "unknown".',
         ],
         [[(10, 38)], [(70, 98)], [(127, 155)]],
     )
@@ -122,10 +122,10 @@ def test_with_misplaced_directives(schema):
         }
         """,
         [
-            'Directive "@include" may not be used on QUERY',
-            'Directive "@onQuery" may not be used on FIELD',
-            'Directive "@onQuery" may not be used on FRAGMENT_SPREAD',
-            'Directive "@onQuery" may not be used on MUTATION',
+            'Directive "include" may not be used on QUERY.',
+            'Directive "onQuery" may not be used on FIELD.',
+            'Directive "onQuery" may not be used on FRAGMENT_SPREAD.',
+            'Directive "onQuery" may not be used on MUTATION.',
         ],
         [[(10, 28)], [(40, 48)], [(61, 69)], [(86, 94)]],
     )
@@ -207,23 +207,23 @@ def test_with_misplaced_directives_within_schema_language(schema):
         }
         """,
         [
-            'Directive "@onInterface" may not be used on OBJECT',
-            'Directive "@onInputFieldDefinition" may not be used on '
-            "ARGUMENT_DEFINITION",
-            'Directive "@onInputFieldDefinition" may not be used on '
-            "FIELD_DEFINITION",
-            'Directive "@onEnum" may not be used on SCALAR',
-            'Directive "@onObject" may not be used on INTERFACE',
-            'Directive "@onInputFieldDefinition" may not be used on '
-            "ARGUMENT_DEFINITION",
-            'Directive "@onInputFieldDefinition" may not be used on '
-            "FIELD_DEFINITION",
-            'Directive "@onEnumValue" may not be used on UNION',
-            'Directive "@onScalar" may not be used on ENUM',
-            'Directive "@onUnion" may not be used on ENUM_VALUE',
-            'Directive "@onEnum" may not be used on INPUT_OBJECT',
-            'Directive "@onArgumentDefinition" may not be used on '
-            "INPUT_FIELD_DEFINITION",
-            'Directive "@onObject" may not be used on SCHEMA',
+            'Directive "onInterface" may not be used on OBJECT.',
+            'Directive "onInputFieldDefinition" may not be used on '
+            "ARGUMENT_DEFINITION.",
+            'Directive "onInputFieldDefinition" may not be used on '
+            "FIELD_DEFINITION.",
+            'Directive "onEnum" may not be used on SCALAR.',
+            'Directive "onObject" may not be used on INTERFACE.',
+            'Directive "onInputFieldDefinition" may not be used on '
+            "ARGUMENT_DEFINITION.",
+            'Directive "onInputFieldDefinition" may not be used on '
+            "FIELD_DEFINITION.",
+            'Directive "onEnumValue" may not be used on UNION.',
+            'Directive "onScalar" may not be used on ENUM.',
+            'Directive "onUnion" may not be used on ENUM_VALUE.',
+            'Directive "onEnum" may not be used on INPUT_OBJECT.',
+            'Directive "onArgumentDefinition" may not be used on '
+            "INPUT_FIELD_DEFINITION.",
+            'Directive "onObject" may not be used on SCHEMA.',
         ],
     )

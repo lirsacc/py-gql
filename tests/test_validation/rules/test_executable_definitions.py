@@ -65,8 +65,8 @@ def test_type_definition(schema):
         }
         """,
         [
-            'Definition "Cow" is not executable',
-            'Definition "Dog" is not executable',
+            "The Cow definition is not executable.",
+            "The Dog definition is not executable.",
         ],
     )
 
@@ -85,7 +85,7 @@ def test_schema_definition(schema):
         }
         """,
         [
-            'Definition "schema" is not executable',
-            'Definition "Query" is not executable',
+            "The schema definition is not executable.",
+            "The Query definition is not executable.",
         ],
     )

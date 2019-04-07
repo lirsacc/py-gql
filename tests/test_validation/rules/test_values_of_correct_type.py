@@ -844,8 +844,8 @@ def test_valid_input_object_value(schema, value):
             }
             """,
             [
-                "Field unknownField is not defined by type ComplexInput, "
-                'did you mean "nonNullField", "intField" or "booleanField"?'
+                "Field unknownField is not defined by type ComplexInput. "
+                'Did you mean "nonNullField", "intField" or "booleanField"?'
             ],
             [[(83, 104)]],
             id="Partial object, unknown field arg",
