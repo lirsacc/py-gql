@@ -73,6 +73,7 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
     """
 
     def enter_document(self, node):
+        skip_doc = False
         for definition in node.definitions:
             if not isinstance(definition, _ast.ExecutableDefinition):
                 name = (
@@ -83,7 +84,10 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
                 self.add_error(
                     'Definition "%s" is not executable' % name, [definition]
                 )
-                raise SkipNode()
+                skip_doc = True
+
+        if skip_doc:
+            raise SkipNode()
 
 
 class UniqueOperationNameChecker(ValidationVisitor):
