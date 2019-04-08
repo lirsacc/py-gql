@@ -5,7 +5,7 @@ app = flask.Flask(__name__)
 def graphql_route():
     data = flask.request.json
 
-    result = graphql_sync(
+    result = graphql_blocking(
         schema,
         data["query"],
         variables=data.get("variables", {}),

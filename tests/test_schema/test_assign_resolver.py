@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql import build_schema, graphql_sync
+from py_gql import build_schema, graphql_blocking
 
 SDL = """
 type Query {
@@ -15,7 +15,9 @@ type Query {
 def test_assign_resolver():
     schema = build_schema(SDL)
     schema.assign_resolver("Query.foo", lambda *_: "foo")
-    assert "foo" == graphql_sync(schema, "{ foo }").response()["data"]["foo"]
+    assert (
+        "foo" == graphql_blocking(schema, "{ foo }").response()["data"]["foo"]
+    )
 
 
 def test_resolver_decorator():
@@ -25,7 +27,9 @@ def test_resolver_decorator():
     def _resolve_foo(*_):
         return "foo"
 
-    assert "foo" == graphql_sync(schema, "{ foo }").response()["data"]["foo"]
+    assert (
+        "foo" == graphql_blocking(schema, "{ foo }").response()["data"]["foo"]
+    )
 
 
 def test_resolver_decorator_multiple_applications():
@@ -36,7 +40,7 @@ def test_resolver_decorator_multiple_applications():
     def _resolve_foo(*_):
         return "foo"
 
-    assert {"foo": "foo", "bar": "foo"} == graphql_sync(
+    assert {"foo": "foo", "bar": "foo"} == graphql_blocking(
         schema, "{ foo, bar }"
     ).response()["data"]
 

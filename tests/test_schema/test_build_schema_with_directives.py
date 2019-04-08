@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pytest
 
-from py_gql import graphql_sync
+from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.execution import default_resolver
@@ -55,7 +55,7 @@ def test_simple_field_modifier():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     assert (
-        graphql_sync(
+        graphql_blocking(
             build_schema(
                 """
                 directive @upper on FIELD_DEFINITION
@@ -125,7 +125,7 @@ def test_field_modifier_using_arguments():
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     assert (
-        graphql_sync(
+        graphql_blocking(
             build_schema(
                 """
                 type Query {
@@ -210,7 +210,7 @@ def test_object_modifier_and_field_modifier():
         """
     )
 
-    assert graphql_sync(
+    assert graphql_blocking(
         schema,
         "{ foo { uid, name, id } }",
         root={"foo": {"name": "some lower case name", "id": 42}},
@@ -271,7 +271,7 @@ def test_multiple_directives_applied_in_order():
             return wrap_resolver(field_definition, lambda x: x + 1)
 
     assert (
-        graphql_sync(
+        graphql_blocking(
             build_schema(
                 """
                 type Query {
@@ -378,7 +378,7 @@ def test_input_values():
         """
     )
 
-    assert graphql_sync(
+    assert graphql_blocking(
         schema,
         '{ foo (foo: "abcdef") }',
         root={"foo": lambda *_, **args: args["foo"]},
@@ -395,19 +395,19 @@ def test_input_values():
         ]
     }
 
-    assert graphql_sync(
+    assert graphql_blocking(
         schema,
         '{ foo (foo: "abcd") }',
         root={"foo": lambda *_, **args: args["foo"]},
     ).response() == {"data": {"foo": "abcd"}}
 
-    assert graphql_sync(
+    assert graphql_blocking(
         schema,
         '{ foo (bar: {baz: "abcd"}) }',
         root={"foo": lambda *_, **args: args["bar"]["baz"]},
     ).response() == {"data": {"foo": "abcd"}}
 
-    assert graphql_sync(
+    assert graphql_blocking(
         schema,
         '{ foo (bar: {baz: "a"}) }',
         root={"foo": lambda *_, **args: args["bar"]["baz"]},

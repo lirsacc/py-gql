@@ -9,7 +9,7 @@ To run this, make sure Flask and py_gql are installed and run:
 import json
 
 import flask
-from py_gql import build_schema, graphql_sync
+from py_gql import build_schema, graphql_blocking
 
 SDL = """
 enum CharacterType {
@@ -96,7 +96,7 @@ app = flask.Flask(__name__)
 def graphql_route():
     data = flask.request.json
 
-    result = graphql_sync(
+    result = graphql_blocking(
         schema,
         data["query"],
         variables=data.get("variables", {}),

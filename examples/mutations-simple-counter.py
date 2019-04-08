@@ -3,7 +3,7 @@
 Simple mutations example: incrementing and decrementing a global counter.
 """
 
-from py_gql import graphql_sync
+from py_gql import graphql_blocking
 from py_gql.schema.build import build_schema
 
 ROOT = {"counter": 0}
@@ -40,11 +40,11 @@ def dec(root, *_, amount):
 
 # 2. Execute queries against the schema
 
-assert graphql_sync(schema, "{ counter }", root=ROOT).response() == {
+assert graphql_blocking(schema, "{ counter }", root=ROOT).response() == {
     "data": {"counter": 0}
 }
 
-assert graphql_sync(schema, "{ counte }", root=ROOT).response() == {
+assert graphql_blocking(schema, "{ counte }", root=ROOT).response() == {
     "errors": [
         {
             "message": (
@@ -56,20 +56,20 @@ assert graphql_sync(schema, "{ counte }", root=ROOT).response() == {
     ]
 }
 
-assert graphql_sync(
+assert graphql_blocking(
     schema, "mutation { counter: increment }", root=ROOT
 ).response() == {"data": {"counter": 1}}
 
-assert graphql_sync(schema, "{ counter }", root=ROOT).response() == {
+assert graphql_blocking(schema, "{ counter }", root=ROOT).response() == {
     "data": {"counter": 1}
 }
 
-assert graphql_sync(
+assert graphql_blocking(
     schema, "mutation { counter: decrement(amount: 2) }", root=ROOT
 ).response() == {"data": {"counter": -1}}
 
 assert (
-    graphql_sync(
+    graphql_blocking(
         schema,
         """
         mutation ($value: Int!) {

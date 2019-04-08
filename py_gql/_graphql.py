@@ -78,7 +78,7 @@ def do_graphql(
         The returned value will depend on the executor class. They ususually
         return a type wrapping the `GraphQLResult` object such as
         `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
-        `graphql_sync` for example usage.
+        `graphql_blocking` for example usage.
     """
     schema.validate()
 
@@ -152,7 +152,7 @@ async def graphql(
         return GraphQLResult(data=None, errors=[err])
 
 
-def graphql_sync(
+def graphql_blocking(
     # fmt: off
     schema: Schema,
     document: str,

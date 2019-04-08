@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql import graphql_sync
+from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
 from py_gql.exc import SDLError
 from py_gql.lang import parse
@@ -30,7 +30,7 @@ def test_built_schema_is_executable():
             """
         )
     )
-    data, _ = graphql_sync(schema, "{ str }", root={"str": 123})
+    data, _ = graphql_blocking(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
 
 
@@ -42,7 +42,7 @@ def test_accepts_strings():
         }
         """
     )
-    data, _ = graphql_sync(schema, "{ str }", root={"str": 123})
+    data, _ = graphql_blocking(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
 
 
@@ -291,7 +291,7 @@ def test_executing_union_default_resolve_type():
         """
     )
 
-    data, _ = graphql_sync(
+    data, _ = graphql_blocking(
         schema,
         """
         {
@@ -339,7 +339,7 @@ def test_executing_interface_default_resolve_type():
         """
     )
 
-    data, _ = graphql_sync(
+    data, _ = graphql_blocking(
         schema,
         """
         {

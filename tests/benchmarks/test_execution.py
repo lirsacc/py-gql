@@ -71,46 +71,46 @@ def _resolve_list_of_floats(*_, **__):
 
 
 def test_list_of_ints(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_ints }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_ints }")
 
 
 def test_list_of_floats(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_floats }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_floats }")
 
 
 def test_list_of_strings(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_strings }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_strings }")
 
 
 def test_list_of_bools(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_bools }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_bools }")
 
 
 def test_list_of_int_ids(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_int_ids }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_int_ids }")
 
 
 def test_list_of_string_ids(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_string_ids }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_string_ids }")
 
 
 def test_list_of_objects_one_field(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_objects { x } }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_objects { x } }")
 
 
 def test_list_of_objects_two_fields(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_objects { x y } }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_objects { x y } }")
 
 
 def test_list_of_dicts_one_field(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_dicts { x } }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_dicts { x } }")
 
 
 def test_list_of_dicts_two_fields(benchmark):
-    benchmark(py_gql.graphql_sync, schema, "{ list_of_dicts { x y } }")
+    benchmark(py_gql.graphql_blocking, schema, "{ list_of_dicts { x y } }")
 
 
 def test_introspection_query(benchmark, fixture_file):
     github_schema = py_gql.build_schema(fixture_file("github-schema.graphql"))
     query = py_gql.utilities.introspection_query()
-    benchmark(py_gql.graphql_sync, github_schema, query)
+    benchmark(py_gql.graphql_blocking, github_schema, query)

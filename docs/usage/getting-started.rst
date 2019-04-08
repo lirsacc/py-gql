@@ -73,7 +73,7 @@ Executing queries against the schema
 ------------------------------------
 
 Now that we have a valid schema, we just need to provide client queries for
-execution. The execution is carried out by :func:`py_gql.graphql_sync` and
+execution. The execution is carried out by :func:`py_gql.graphql_blocking` and
 consistst of 3 steps:
 
 1. Parsing the client query and validating that it is a correct GraphQL document
