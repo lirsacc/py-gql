@@ -25,7 +25,6 @@ def do_graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     executor_cls: Optional[Type[Executor]] = None,
     executor_args: Optional[Mapping[str, Any]] = None
@@ -58,8 +57,6 @@ def do_graphql(
         validators: Custom validators.
             Setting this will replace the defaults so if you just want to add
             some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
-
-        middlewares: List of middleware callable to use when resolving fields.
 
         default_resolver: Alternative default resolver.
             For field which do not specify a resolver, this will be used instead
@@ -103,7 +100,6 @@ def do_graphql(
             variables=variables,
             initial_value=root,
             context_value=context,
-            middlewares=middlewares,
             default_resolver=default_resolver,
             executor_cls=executor_cls,
             executor_args=executor_args,
@@ -126,7 +122,6 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None
     # fmt: on
 ) -> GraphQLResult:
@@ -148,7 +143,6 @@ async def graphql(
                     root=root,
                     validators=validators,
                     context=context,
-                    middlewares=middlewares,
                     default_resolver=default_resolver,
                     executor_cls=AsyncExecutor,
                 )
@@ -168,7 +162,6 @@ def graphql_sync(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None
     # fmt: on
 ) -> GraphQLResult:
@@ -185,7 +178,6 @@ def graphql_sync(
             root=root,
             validators=validators,
             context=context,
-            middlewares=middlewares,
             default_resolver=default_resolver,
         ),
     )

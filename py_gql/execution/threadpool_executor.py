@@ -27,7 +27,6 @@ from ..exc import CoercionError, ResolverError
 from ..lang import ast as _ast
 from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
-from .middleware import apply_middlewares
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
 T = TypeVar("T")
@@ -51,7 +50,6 @@ class ThreadPoolExecutor(Executor):
         "fragments",
         "operation",
         "context_value",
-        "_middlewares",
         "_grouped_fields",
         "_fragment_type_applies",
         "_field_defs",
@@ -223,9 +221,6 @@ class ThreadPoolExecutor(Executor):
             return self._resolver_cache[base]
         except KeyError:
             resolver = functools.partial(self._inner.submit, base)
-            resolver = apply_middlewares(  # type: ignore
-                resolver, self._middlewares
-            )
             self._resolver_cache[base] = resolver
             return resolver
 

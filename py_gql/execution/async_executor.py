@@ -19,7 +19,6 @@ from ..exc import CoercionError, ResolverError
 from ..lang import ast as _ast
 from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
-from .middleware import apply_middlewares
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
 T = TypeVar("T")
@@ -176,6 +175,5 @@ class AsyncExecutor(Executor):
             else:
                 resolver = base
 
-            resolver = apply_middlewares(resolver, self._middlewares)
             self._resolver_cache[base] = resolver
             return resolver

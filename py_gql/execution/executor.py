@@ -45,7 +45,6 @@ from ..schema import (
 )
 from ..utilities import coerce_argument_values, directive_arguments
 from .default_resolver import default_resolver as _default_resolver
-from .middleware import apply_middlewares
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
 Resolver = Callable[..., Any]
@@ -72,7 +71,6 @@ class Executor:
         "fragments",
         "operation",
         "context_value",
-        "_middlewares",
         "_grouped_fields",
         "_fragment_type_applies",
         "_field_defs",
@@ -89,7 +87,6 @@ class Executor:
         document: _ast.Document,
         variables: Dict[str, Any],
         context_value: Any,
-        middlewares: Sequence[Resolver],
         default_resolver: Optional[Resolver] = None,
         **_: Any
         # fmt: on
@@ -104,7 +101,6 @@ class Executor:
         }
         self.context_value = context_value
 
-        self._middlewares = middlewares
         self._default_resolver = default_resolver or _default_resolver
 
         self._errors = []  # type: List[GraphQLResponseError]
@@ -361,9 +357,8 @@ class Executor:
         try:
             return self._resolver_cache[base]
         except KeyError:
-            resolver = apply_middlewares(base, self._middlewares)
-            self._resolver_cache[base] = resolver
-            return resolver
+            self._resolver_cache[base] = base
+            return base
 
     def _iterate_fields(
         self, parent_type: ObjectType, fields: GroupedFields

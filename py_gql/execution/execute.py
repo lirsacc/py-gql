@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Mapping, Optional, Type, TypeVar
 
 from ..exc import ExecutionError
 from ..lang import ast as _ast
@@ -23,7 +23,6 @@ def execute(
     variables: Optional[Mapping[str, Any]] = None,
     initial_value: Optional[Any] = None,
     context_value: Optional[Any] = None,
-    middlewares: Optional[Sequence[Resolver]] = None,
     default_resolver: Optional[Resolver] = None,
     executor_cls: Optional[TExecutorCls] = None,
     executor_args: Optional[Mapping[str, Any]] = None
@@ -51,8 +50,6 @@ def execute(
             Limits on the type(s) used here will depend on your own resolver
             implementations and the executor class you use. Most thread safe
             data-structures should work.
-
-        middlewares: List of middleware callable to use when resolving fields.
 
         default_resolver: Alternative default resolver.
             For field which do not specify a resolver, this will be used instead
@@ -98,7 +95,6 @@ def execute(
         document,
         coerced_variables,
         context_value,
-        middlewares or [],
         default_resolver=default_resolver,
         **(executor_args or {}),
     )
