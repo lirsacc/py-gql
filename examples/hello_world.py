@@ -11,7 +11,7 @@ schema = build_schema(
 
 @schema.resolver("Query.hello")
 def resolve_hello(*_, value):
-    return f"Hello {value}!"
+    return "Hello {}!".format(value)
 
 
 result = graphql_blocking(schema, '{ hello(value: "Foo") }')
