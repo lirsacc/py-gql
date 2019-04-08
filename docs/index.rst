@@ -33,6 +33,13 @@ The source code, issue tracker and development guidelines are available on
 `Github <https://github.com/lirsacc/py-gql>`_.
 
 
+Hello World
+------------
+
+.. literalinclude:: ../examples/hello_world.py
+   :language: python
+
+
 GraphQL
 -------
 

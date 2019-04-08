@@ -31,8 +31,8 @@ html_static_path = ["_static"]
 html_context = {
     "project_links": [
         ("PyPI releases", "https://pypi.org/project/py-gql/"),
-        ("Source Code", "https://github.com/lirsacc/py_gql/"),
-        ("Issue Tracker", "https://github.com/lirsacc/py_gql/issues/"),
+        ("Source Code", "https://github.com/lirsacc/py-gql/"),
+        ("Issue Tracker", "https://github.com/lirsacc/py-gql/issues/"),
     ]
 }
 

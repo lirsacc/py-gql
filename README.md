@@ -2,20 +2,20 @@
 
 [![CircleCI](https://img.shields.io/circleci/project/github/lirsacc/py-gql.svg?logo=circleci)](https://circleci.com/gh/lirsacc/workflows/py-gql) [![Codecov](https://img.shields.io/codecov/c/github/lirsacc/py-gql.svg?)](https://codecov.io/gh/lirsacc/py-gql) [![PyPI](https://img.shields.io/pypi/v/py-gql.svg)](https://pypi.org/project/py-gql/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-gql.svg?logo=python&logoColor=white) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/Django.svg) [![Read the Docs (version)](https://img.shields.io/readthedocs/pip/latest.svg)](https://py-gql.readthedocs.io/)
 
-py-gql is a pure python [GraphQL](http://facebook.github.io/graphql/) implementation aimed at creating GraphQL servers.
+py-gql_is a pure python [GraphQL](http://facebook.github.io/graphql/) implementation aimed at creating GraphQL servers.
 
 It supports:
 
-- Parsing the GraphQL query language and schema definition language
-- Building a GraphQL type schema programatically and from Schema Definition files (including support for schema directives)
-- Validating and Executing a GraphQL request against a type schema
+-   Parsing the GraphQL query language and schema definition language.
+-   Building a GraphQL type schema programatically and from Schema Definition files (including support for schema directives).
+-   Validating and Executing a GraphQL request against a type schema.
 
 ## Quick links
 
-- [Source Code](https://github.com/lirsacc/py-gql)
-- [PyPI project](https://pypi.org/project/py-gql/)
-- [Read The Docs](https://py-gql.readthedocs.io/)
-- [Changelog](./CHANGES.rst)
+-   [Source Code & Issue Tracker](https://github.com/lirsacc/py-gql)
+-   [PyPI project](https://pypi.org/project/py-gql/)
+-   [Read The Docs](https://py-gql.readthedocs.io/)
+-   [Changelog](./CHANGES.rst)
 
 ## Installation
 
@@ -30,52 +30,53 @@ For more details see [install.rst](docs/usage/install.rst).
 ### Hello World
 
 ```.python
-from py_gql import graphql
-from py_gql.schema.build import make_executable_schema
+from py_gql import build_schema, graphql_blocking
 
-schema = make_executable_schema("""
-type Query {
-    hello: String!
-}
-""")
+schema = build_schema(
+    """
+    type Query {
+        hello(value: String = "world"): String!
+    }
+    """
+)
 
-assert graphql(schema, "{ hello }", initial_value={"hello": "world"}).response() == {
+
+@schema.resolver("Query.hello")
+def resolve_hello(*_, value):
+    return f"Hello {value}!"
+
+
+result = graphql_blocking(schema, '{ hello(value: "Foo") }')
+assert result.response() == {
     "data": {
-        "hello": "world"
+        "hello": "Hello Foo!"
     }
 }
 ```
 
-- See the [User Guide](https://py-gql.readthedocs.io/en/latest/usage/index.html)
-- You can refer to the [tests](./tests) for some simple usage examples
-- Some more involved examples are available in the [examples](./examples) folder.
+For more usage examples, you can refer to the [User Guide](https://py-gql.readthedocs.io/en/latest/usage/index.html) and some more involved examples available in the [examples](./examples) folder.
+
+The [tests](./tests) should also provide some contrived exmaples.
 
 ## Goals & Status
 
-This project was initially born as an experiment / learning project following some frustration with with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) we encountered at work.
+This project was initially born as an experiment / learning project following some frustration with with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work.
 
-The main goals were to:
+The main goals were originally to:
 
-- Get a deeper understanding of the GraphQL specification and available implementations.
-- Provide an alternative to graphql-core that:
+-   Get a deeper understanding of GraphQL
+-   Provide an alternative to `graphql-core` which:
+    -   tracks the latest version of the spec (which `graphql-core` didn't)
+    -   does so without being a port of the JS code which leads to some weird edge case when we tried to extend the library
+    -   keeps support for Python 2 (which `graphql-core-next`) didn't.
+    -   (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between `Graphene` and `graphql-core`
+    -   makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
 
-  - tracks the lastest version of the GraphQL specification
-  - does not strictly attempt to track the reference javascript implementation
-  - (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between Graphene and graphql-core
+After going through a couple iterations, it should be ready ready for general use to create GraphQL servers; with the notable omissions of:
 
-- Make it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
-
-- Maintain Python 2.7 compatibility due to work projects still running it.
-
-**Note:** The [graphql-core-next](https://github.com/graphql-python/graphql-core-next) project is currently working on providing a more up to date alternative to graphql-core. Importantly for us it tracks the specification and includes SDL based schema creation; however it is Python 3+ only for now and aims at closely tracking the JS implementation.
-
-### Current status
-
-So far every aspect of the library that is necessary for us to start using it in production has been implemented; the most notable ommission being subscribtions. For a more detailled roadmap of what remains to be done before calling this a v1, see [Issue #1](https://github.com/lirsacc/py-gql/issues/1).
-
-- This library has been written from scratch but it uses ideas from both [graphql-js](https://github.com/graphql/graphql-js) (built and maintained by Facebook) and [graphql-core](https://github.com/graphql-python/graphql-core/) (built and maintained by Syrus Akbary). While some implementation and design choices are very similar to this prior work, this will most likely diverge in the future.
-- The test suite is quite extensive and largely based on the graphql-js's test suite
-- Supported Python versions are currently 2.7 and 3.5+ on CPython. I'd like to confirm support for PyPy but haven't had time to test it properly yet as I don't regularly use it.
+-   Subscription support
+-   Python 2 support has been dropped
+-   Middleware have been dropped pending an iteration on the API (and consequently tracers are not supported either)
 
 ## Development setup
 
@@ -86,7 +87,7 @@ Clone this repo and create a virtualenv before installing the development depend
 ```.bash
 git clone git@github.com:lirsacc/py-gql.git
 python -m venv $WORKON_HOME/py-gql --copies
-pip install -r dev-requirements.txt
+pip install -U -r dev-requirements.txt
 ```
 
 From there, most development tasks are available through [invoke](http://www.pyinvoke.org/).

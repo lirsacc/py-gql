@@ -104,7 +104,7 @@ def execute(
     elif operation.operation == "mutation":
         exe_fn = executor.execute_fields_serially
     else:
-        # TODO: subscribtions.
+        # TODO: subscriptions.
         raise NotImplementedError("%s not supported" % operation.operation)
 
     fields = executor.collect_fields(
