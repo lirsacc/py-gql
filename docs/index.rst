@@ -43,14 +43,14 @@ which means you can freely choose the transport and serialization protocols,
 data storage layer, etc. that fit your project / organisation and use GraphQL as
 a thin layer on top.
 
-.. note::
+GraphQL was originally developped at Facebook and released publicly in 2015.
 
-    If you are not familiar with GraphQL, already, we strongly suggest you head
+.. hint::
+
+    If you are not familiar with GraphQL already, we strongly suggest you head
     over to `graphql.org <https://graphql.org>`_ and have a look at the
     `official introduction <https://graphql.org/learn/>`_ and `the specification
     <https://github.com/facebook/graphql>`_ before going any further.
-
-GraphQL was originally developped at Facebook and released publicly in 2015.
 
 Documentation
 -------------
@@ -58,6 +58,7 @@ Documentation
 .. toctree::
     :maxdepth: 3
 
+    install
     usage/index
     api/index
     changes

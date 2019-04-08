@@ -3,11 +3,9 @@
 Installation
 ============
 
-**Python Versions**: py_gql supports CPython 3.5 and newer.
-
-**Platforms**: Unix/Posix, MacOS X.
-
-**Dependencies**: py_gql has no direct dependency.
+- **Python Versions**: :mod:`py_gql` supports CPython 3.5 and newer.
+- **Platforms**: Unix/Posix, MacOS X.
+- **Dependencies**: :mod:`py_gql` has no direct dependency.
 
 Installing from PyPI
 --------------------
@@ -27,7 +25,8 @@ Cython
 
 .. warning::
 
-    This is experimental and might be removed in the future.
+    This is experimental and might be removed in the future. It may also present
+    some rough edges.
 
 The default pip install should install the universal wheel, however for some
 extra performance in production py-gql's ``setup.py`` can detect the presence
