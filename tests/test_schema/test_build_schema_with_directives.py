@@ -8,11 +8,15 @@ import pytest
 
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
+from py_gql.builders import (
+    DeprecatedSchemaDirective,
+    SchemaDirective,
+    build_schema,
+)
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.execution import default_resolver
 from py_gql.schema import (
     Argument,
-    DeprecatedSchemaDirective,
     Directive,
     EnumType,
     EnumValue,
@@ -22,9 +26,7 @@ from py_gql.schema import (
     NonNullType,
     ObjectType,
     ScalarType,
-    SchemaDirective,
     String,
-    build_schema,
 )
 
 

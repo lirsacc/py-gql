@@ -4,14 +4,10 @@ import pytest
 
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
+from py_gql.builders import build_schema, build_schema_ignoring_extensions
 from py_gql.exc import SDLError
 from py_gql.lang import parse
-from py_gql.schema import (
-    SPECIFIED_DIRECTIVES,
-    UUID,
-    build_schema,
-    build_schema_ignoring_extensions,
-)
+from py_gql.schema import SPECIFIED_DIRECTIVES, UUID
 
 
 def _check(schema):

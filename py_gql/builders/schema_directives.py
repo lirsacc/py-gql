@@ -22,13 +22,10 @@ from typing import (
 from .._utils import flatten
 from ..exc import SDLError
 from ..lang import ast as _ast
-from ..utilities import coerce_argument_values
-from .directives import DeprecatedDirective
-from .scalars import SPECIFIED_SCALAR_TYPES
-from .schema import Schema
-from .schema_visitor import SchemaVisitor
-from .types import (
+from ..schema import (
+    SPECIFIED_SCALAR_TYPES,
     Argument,
+    DeprecatedDirective,
     Directive,
     EnumType,
     EnumValue,
@@ -39,6 +36,8 @@ from .types import (
     InterfaceType,
     ObjectType,
     ScalarType,
+    Schema,
+    SchemaVisitor,
     UnionType,
 )
 
@@ -148,6 +147,7 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
     def _collect_schema_directives(
         self, definition: _HasDirectives, loc: str
     ) -> Iterator[SchemaDirective]:
+        from ..utilities import coerce_argument_values
 
         applied = set()  # type: Set[str]
 

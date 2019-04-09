@@ -8,6 +8,7 @@ from typing import cast
 import pytest
 
 from py_gql._string_utils import dedent
+from py_gql.builders import extend_schema
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
@@ -19,7 +20,6 @@ from py_gql.schema import (
     Int,
     ObjectType,
     Schema,
-    extend_schema,
 )
 
 BASE_SCHEMA = Schema(ObjectType("Query", [Field("foo", Int)]))

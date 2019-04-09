@@ -19,7 +19,6 @@ from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import __Schema__
-from .printer import SchemaPrinter
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
@@ -410,7 +409,9 @@ class Schema:
             include_introspection:
                 If ``True``, include introspection types in the output
         """
-        return SchemaPrinter(
+        from ..utilities.ast_schema_printer import ASTSchemaPrinter
+
+        return ASTSchemaPrinter(
             indent=indent,
             include_descriptions=include_descriptions,
             include_introspection=include_introspection,

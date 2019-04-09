@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql.schema import build_schema
+from py_gql.builders import build_schema
 from py_gql.utilities.differ import SchemaChange, diff_schema
 
 TEST_GROUPS = [

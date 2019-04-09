@@ -2,7 +2,7 @@
 """ Utilities to validate Python values against a schema / types """
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from .._utils import find_one
 from ..exc import (
@@ -25,13 +25,10 @@ from ..schema import (
     ListType,
     NonNullType,
     ScalarType,
+    Schema,
     is_input_type,
 )
 from .value_from_ast import value_from_ast
-
-if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
-    from ..schema import Schema
-
 
 Path = List[Union[int, str]]
 
@@ -289,7 +286,7 @@ def directive_arguments(
 
 
 def coerce_variable_values(  # noqa: C901
-    schema: "Schema",
+    schema: Schema,
     operation: _ast.OperationDefinition,
     variables: Mapping[str, Any],
 ) -> Dict[str, Any]:

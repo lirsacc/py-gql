@@ -174,23 +174,6 @@ server.
 
     Tuple of all specified directives.
 
-
-Building a schema from a schema definition file
------------------------------------------------
-
-.. autofunction:: py_gql.schema.build_schema
-
-.. autofunction:: py_gql.schema.build_schema_ignoring_extensions
-
-.. autofunction:: py_gql.schema.extend_schema
-
-.. autoclass:: SchemaDirective
-    :members:
-
-.. autofunction:: apply_schema_directives
-
-.. autoclass:: DeprecatedSchemaDirective
-
 Schema Visitor
 --------------
 

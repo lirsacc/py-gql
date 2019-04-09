@@ -5,9 +5,27 @@ functions for programatically creating, validating and inspecting GraphQL
 schemas against which you can execute queries.
 """
 
-# isort:skip_file
 # flake8: noqa
 
+from .directives import (
+    SPECIFIED_DIRECTIVES,
+    DeprecatedDirective,
+    IncludeDirective,
+    SkipDirective,
+)
+from .introspection import is_introspection_type
+from .scalars import (
+    ID,
+    SPECIFIED_SCALAR_TYPES,
+    UUID,
+    Boolean,
+    Float,
+    Int,
+    RegexType,
+    String,
+)
+from .schema import Schema
+from .schema_visitor import SchemaVisitor
 from .types import (
     AbstractTypes,
     Argument,
@@ -20,49 +38,20 @@ from .types import (
     InputField,
     InputObjectType,
     InterfaceType,
-    is_abstract_type,
-    is_composite_type,
-    is_input_type,
-    is_leaf_type,
-    is_output_type,
     LeafTypes,
     ListType,
     NamedType,
     NonNullType,
-    nullable_type,
     ObjectType,
     OutputTypes,
     ScalarType,
     Type,
     UnionType,
+    is_abstract_type,
+    is_composite_type,
+    is_input_type,
+    is_leaf_type,
+    is_output_type,
+    nullable_type,
     unwrap_type,
 )
-from .scalars import (
-    Int,
-    Float,
-    ID,
-    UUID,
-    String,
-    Boolean,
-    RegexType,
-    SPECIFIED_SCALAR_TYPES,
-)
-from .directives import (
-    IncludeDirective,
-    SkipDirective,
-    DeprecatedDirective,
-    SPECIFIED_DIRECTIVES,
-)
-
-from .schema_from_ast import (
-    build_schema,
-    build_schema_ignoring_extensions,
-    extend_schema,
-)
-from .schema_directives import (
-    apply_schema_directives,
-    SchemaDirective,
-    DeprecatedSchemaDirective,
-)
-from .schema_visitor import SchemaVisitor
-from .schema import Schema

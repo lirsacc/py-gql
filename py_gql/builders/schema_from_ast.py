@@ -17,14 +17,11 @@ from typing import (
 from .._utils import lazy
 from ..exc import ExtensionError, SDLError
 from ..lang import ast as _ast, parse
-from ..utilities import directive_arguments, value_from_ast
-from .directives import SPECIFIED_DIRECTIVES, DeprecatedDirective
-from .introspection import INTROPSPECTION_TYPES
-from .scalars import SPECIFIED_SCALAR_TYPES, default_scalar
-from .schema import Schema
-from .schema_directives import SchemaDirective, apply_schema_directives
-from .types import (
+from ..schema import (
+    SPECIFIED_DIRECTIVES,
+    SPECIFIED_SCALAR_TYPES,
     Argument,
+    DeprecatedDirective,
     Directive,
     EnumType,
     EnumValue,
@@ -38,8 +35,13 @@ from .types import (
     NonNullType,
     ObjectType,
     ScalarType,
+    Schema,
     UnionType,
 )
+from ..schema.introspection import INTROPSPECTION_TYPES
+from ..schema.scalars import default_scalar
+from ..utilities import directive_arguments, value_from_ast
+from .schema_directives import SchemaDirective, apply_schema_directives
 
 T = TypeVar("T", bound=type)
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])

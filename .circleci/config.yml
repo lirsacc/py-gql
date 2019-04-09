@@ -313,7 +313,7 @@ jobs:
                       mkdir -p "$(pwd)/workspace/docs/"
                       results="$(pwd)/workspace/docs"
                       . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                      inv docs
+                      inv docs -s
                       mv docs/_build/* "${results}"
             - store_artifacts: { path: workspace/docs, destination: . }
 

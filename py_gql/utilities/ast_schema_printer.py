@@ -2,15 +2,13 @@
 """ Export schema as SDL. """
 
 import operator as op
-from typing import TYPE_CHECKING, Any, Union
+from typing import Any, Union
 
 from .._string_utils import leading_whitespace, wrapped_lines
 from ..lang import print_ast
-from ..utilities import ast_node_from_value
-from .directives import DEFAULT_DEPRECATION, SPECIFIED_DIRECTIVES
-from .introspection import is_introspection_type
-from .scalars import SPECIFIED_SCALAR_TYPES, String
-from .types import (
+from ..schema import (
+    SPECIFIED_DIRECTIVES,
+    SPECIFIED_SCALAR_TYPES,
     EnumType,
     EnumValue,
     Field,
@@ -19,14 +17,16 @@ from .types import (
     InterfaceType,
     ObjectType,
     ScalarType,
+    Schema,
+    String,
     UnionType,
 )
+from ..schema.directives import DEFAULT_DEPRECATION
+from ..schema.introspection import is_introspection_type
+from .ast_node_from_value import ast_node_from_value
 
-if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
-    from .schema import Schema
 
-
-class SchemaPrinter:
+class ASTSchemaPrinter:
     """
     Encode schema serialisation as a valid SDL document.
 
@@ -68,7 +68,7 @@ class SchemaPrinter:
 
         self.include_introspection = include_introspection
 
-    def __call__(self, schema: "Schema") -> str:
+    def __call__(self, schema: Schema) -> str:
         directives = sorted(
             (
                 d
