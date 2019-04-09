@@ -19,7 +19,7 @@ Welcome to py-gql's documentation!
 
 .. image:: https://img.shields.io/pypi/pyversions/py-gql.svg?logo=python&logoColor=white
 
-.. image:: https://img.shields.io/pypi/wheel/Django.svg
+.. image:: https://img.shields.io/pypi/wheel/py-gql.svg
 
 `py-gql </>`_ is a pure python `GraphQL <http://facebook.github.io/graphql/>`_
 implementation aimed at creating GraphQL servers. It supports:

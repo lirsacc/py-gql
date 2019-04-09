@@ -22,7 +22,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # HTML Config & Theme config
 
 html_theme = "documenteer"
-html_theme_path = ['.']
+html_theme_path = ["."]
 html_static_path = ["_static"]
 templates_path = ["_templates"]
 pygments_style = "borland"
