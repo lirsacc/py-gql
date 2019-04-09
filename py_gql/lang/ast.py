@@ -5,7 +5,6 @@ GraphQL AST representations corresponding to the `GraphQL language elements
 """
 # pylint: disable=redefined-builtin
 
-import copy
 from typing import (
     Any,
     Dict,
@@ -54,14 +53,6 @@ class Node:
         if key not in self.__slots__:
             raise KeyError(key)
         return getattr(self, key, default)
-
-    def __copy__(self):
-        return self.__class__(**{k: getattr(self, k) for k in self.__slots__})
-
-    def __deepcopy__(self, memo):
-        return self.__class__(
-            **{k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__}
-        )
 
     def to_dict(self) -> Dict[str, Any]:
         """
