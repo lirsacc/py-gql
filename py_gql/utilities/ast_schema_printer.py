@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Export schema as SDL. """
 
-import operator as op
 from typing import Any, Union
 
 from .._string_utils import leading_whitespace, wrapped_lines
@@ -75,7 +74,7 @@ class ASTSchemaPrinter:
                 for d in schema.directives.values()
                 if d not in SPECIFIED_DIRECTIVES
             ),
-            key=op.attrgetter("name"),
+            key=lambda x: x.name,
         )
 
         types = sorted(
@@ -90,7 +89,7 @@ class ASTSchemaPrinter:
                     )
                 )
             ),
-            key=op.attrgetter("name"),
+            key=lambda x: x.name,
         )
 
         parts = (

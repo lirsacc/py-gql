@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Work with strings """
 
-import operator
 import re
 from typing import (
     Callable,
@@ -353,7 +352,7 @@ def infer_suggestions(
         threshold = max(half, len(option) / 2, 1)
         if dist <= threshold:
             distances.append((option, dist))
-    return [opt for opt, _ in sorted(distances, key=operator.itemgetter(1))]
+    return [opt for opt, _ in sorted(distances, key=lambda s: s[1])]
 
 
 def quoted_options_list(options: Sequence[str]) -> str:
