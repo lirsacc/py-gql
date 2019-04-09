@@ -102,6 +102,8 @@ ENV
 # Pyre
 .pyre
 
+.bandit
+
 .vscode
 .idea
 *_bak
