@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """ Test the main entry point """
 
+import asyncio
+
 import pytest
 
 from py_gql._graphql import graphql, graphql_blocking
-from py_gql.exc import SchemaError
+from py_gql.builders import build_schema
+from py_gql.exc import ResolverError, SchemaError
 from py_gql.schema import Schema, String
 
 
@@ -261,3 +264,42 @@ def test_raises_if_invalid_schema_is_provided():
     with pytest.raises(SchemaError) as exc_info:
         graphql_blocking(schema, "{ field }")
     assert str(exc_info.value) == 'Query must be ObjectType but got "String"'
+
+
+@pytest.mark.asyncio
+async def test_graphql_with_async_resolvers(raiser):
+    schema = build_schema(
+        """
+        type Query {
+            foo: String
+            bar(value: Int!): Int
+            baz: String
+        }
+        """
+    )
+
+    @schema.resolver("Query.foo")
+    async def resolve_foo(*_):
+        await asyncio.sleep(0.001)
+        return "Foo"
+
+    @schema.resolver("Query.bar")
+    async def resolve_bar(*_, value):
+        await asyncio.sleep(0.001)
+        return value
+
+    @schema.resolver("Query.baz")
+    async def resolve_baz(*_):
+        raise ResolverError("Baz Error")
+
+    result = await graphql(schema, "{ foo, bar(value: 42), baz }")
+    assert {
+        "data": {"bar": 42, "foo": "Foo", "baz": None},
+        "errors": [
+            {
+                "locations": [{"column": 24, "line": 1}],
+                "message": "Baz Error",
+                "path": ["baz"],
+            }
+        ],
+    } == result.response()
