@@ -12,7 +12,6 @@ from concurrent.futures import (
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterable,
     List,
     Optional,
@@ -23,41 +22,29 @@ from typing import (
     cast,
 )
 
-from ..exc import CoercionError, ResolverError
-from ..lang import ast as _ast
-from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
-from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
 T = TypeVar("T")
 G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
-
-Resolver = Callable[..., Any]
 
 MaybeFuture = Union["Future[T]", T]
 
 
 class ThreadPoolExecutor(Executor):
     @staticmethod
-    def map_value(value, func):
-        return chain(value, func)
+    def map_value(value, then, else_=None):
+        return chain(unwrap_future(value), then, else_)
 
-    __slots__ = (
-        "schema",
-        "document",
-        "variables",
-        "fragments",
-        "operation",
-        "context_value",
-        "_grouped_fields",
-        "_fragment_type_applies",
-        "_field_defs",
-        "_argument_values",
-        "_resolver_cache",
-        "_errors",
-        "_inner",
-    )
+    @staticmethod
+    def gather_values(values):
+        return gather_futures(values)
+
+    @staticmethod
+    def unwrap_value(value):
+        return unwrap_future(value)
+
+    __slots__ = Executor.__slots__ + ("_inner",)
 
     def __init__(
         # fmt: off
@@ -70,153 +57,9 @@ class ThreadPoolExecutor(Executor):
         super().__init__(*args, **kwargs)
         self._inner = inner_executor or _ThreadPoolExecutor()
 
-    def execute_fields(
-        self,
-        parent_type: ObjectType,
-        root: Any,
-        path: ResponsePath,
-        fields: GroupedFields,
-    ) -> "Future[Dict[str, Any]]":
-
-        keys = []
-        pending = []
-
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            resolved = unwrap_future(
-                self.resolve_field(
-                    parent_type, root, field_def, nodes, path + [key]
-                )
-            )
-
-            keys.append(key)
-            pending.append(resolved)
-
-        return cast(
-            "Future[Dict[str, Any]]",
-            chain(  # type: ignore
-                gather(pending), lambda values: dict(zip(keys, values))
-            ),
-        )
-
-    def execute_fields_serially(
-        self,
-        parent_type: ObjectType,
-        root: Any,
-        path: ResponsePath,
-        fields: GroupedFields,
-    ) -> "Future[Dict[str, Any]]":
-        args = []
-        done = []  # type: List[Tuple[str, Any]]
-
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            # Needed because closures. Might be a better way to do this without
-            # resorting to inlining deferred_serial.
-            args.append((key, field_def, nodes, path + [key]))
-
-        final = Future()  # type: Future[Dict[str, Any]]
-
-        def _next():
-            try:
-                k, f, n, p = args.pop(0)
-            except IndexError:
-                return final.set_result(dict(done))
-            else:
-                resolved = self.resolve_field(parent_type, root, f, n, p)
-
-                def cb(f):
-                    try:
-                        r = f.result()
-                    # pylint: disable = broad-except
-                    except Exception as err:
-                        final.set_exception(err)
-                    else:
-                        done.append((k, r))
-                        _next()
-
-                unwrap_future(resolved).add_done_callback(cb)
-
-        _next()
-        return final
-
-    def resolve_field(
-        self,
-        parent_type: ObjectType,
-        parent_value: Any,
-        field_definition: Field,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-    ) -> Any:
-        resolver = self.get_field_resolver(
-            field_definition.resolver or self._default_resolver
-        )
-        node = nodes[0]
-        info = ResolveInfo(
-            field_definition,
-            path,
-            parent_type,
-            self.schema,
-            self.variables,
-            self.fragments,
-            nodes,
-        )
-
-        try:
-            coerced_args = self.argument_values(field_definition, node)
-            resolved = resolver(
-                parent_value, self.context_value, info, **coerced_args
-            )
-        except (CoercionError, ResolverError) as err:
-            self.add_error(err, path, node)
-            return None
-        else:
-
-            def on_error(err):
-                self.add_error(err, path, node)
-                return None
-
-            return chain(
-                resolved,
-                lambda value: self.complete_value(
-                    field_definition.type, nodes, path, value
-                ),
-                or_else=(ResolverError, on_error),
-            )
-
-    def complete_value(
-        self,
-        field_type: GraphQLType,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-        resolved_value: Any,
-    ) -> Any:
-        return chain(
-            unwrap_future(resolved_value),
-            functools.partial(super().complete_value, field_type, nodes, path),
-        )
-
-    def complete_list_value(
-        self,
-        inner_type: GraphQLType,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-        iterable: Any,
-    ) -> "Future[List[Any]]":
-        return gather(
-            unwrap_future(
-                self.complete_value(inner_type, nodes, path + [index], entry)
-            )
-            for index, entry in enumerate(iterable)
-        )
-
-    def handle_non_nullable_value(
-        self, nodes: List[_ast.Field], path: ResponsePath, resolved_value: Any
-    ) -> Any:
-        return chain(
-            unwrap_future(resolved_value),
-            functools.partial(super().handle_non_nullable_value, nodes, path),
-        )
-
-    def get_field_resolver(self, base: Resolver) -> Resolver:
+    def get_field_resolver(
+        self, base: Callable[..., Any]
+    ) -> Callable[..., Any]:
         try:
             return self._resolver_cache[base]
         except KeyError:
@@ -250,7 +93,7 @@ def unwrap_future(maybe_future):
     return outer
 
 
-def gather(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
+def gather_futures(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
     """ Concurrently collect multiple Futures. This is based on `asyncio.gather`.
 
     If all futures in the ``source`` sequence complete successfully, the result
@@ -258,13 +101,13 @@ def gather(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
     corresponds to the order of the provided futures.
 
     The first raised exception is immediately propagated to the future returned
-    from ``gather()``. Other futures in the provided sequence won’t be
+    from ``gather_futures()``. Other futures in the provided sequence won’t be
     cancelled and will continue to run.
 
-    Cancelling ``gather()`` will attempt to cancel the source futures
+    Cancelling ``gather_futures()`` will attempt to cancel the source futures
     that haven't already completed. If any Future from the ``source`` sequence
     is cancelled, it is treated as if it raised `CancelledError` – the
-    ``gather()`` call is not cancelled in this case. This is to prevent the
+    ``gather_futures()`` call is not cancelled in this case. This is to prevent the
     cancellation of one submitted Future to cause other futures to be
     cancelled.
     """
@@ -318,44 +161,23 @@ def gather(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
 
 
 def chain(
-    source: MaybeFuture[T],
-    map_result: Callable[[T], G],
-    or_else: Optional[
+    source: "Future[T]",
+    then: Callable[[T], G],
+    else_: Optional[
         Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], G]]
     ] = None,
 ) -> "Future[G]":
-    """
-    """
     target = Future()  # type: Future[G]
 
-    if isinstance(source, Future):
-
-        def on_finish(f: "Future[T]") -> None:
-            try:
-                res = map_result(f.result())
-            except CancelledError:
-                target.cancel()
-            # pylint: disable = broad-except
-            except Exception as err:
-                if or_else is not None:
-                    exc_type, cb = or_else
-                    if isinstance(err, exc_type):
-                        target.set_result(cb(err))  # type: ignore
-                    else:
-                        target.set_exception(err)
-                else:
-                    target.set_exception(err)
-            else:
-                target.set_result(res)
-
-        source.add_done_callback(on_finish)
-    else:
+    def on_finish(f: "Future[T]") -> None:
         try:
-            res = map_result(source)
+            res = then(f.result())
+        except CancelledError:
+            target.cancel()
         # pylint: disable = broad-except
         except Exception as err:
-            if or_else is not None:
-                exc_type, cb = or_else
+            if else_ is not None:
+                exc_type, cb = else_
                 if isinstance(err, exc_type):
                     target.set_result(cb(err))  # type: ignore
                 else:
@@ -364,5 +186,7 @@ def chain(
                 target.set_exception(err)
         else:
             target.set_result(res)
+
+    source.add_done_callback(on_finish)
 
     return target

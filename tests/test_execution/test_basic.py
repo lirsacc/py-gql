@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" """
 
 from inspect import isawaitable
 
@@ -319,7 +318,6 @@ def _resolve_article(id_):
     return {
         "id": id_,
         "isPublished": True,
-        "author": lambda *_: _JOHN_SMITH,
         "title": "My Article " + str(id_),
         "body": "This is a post",
         "hidden": "This data is not exposed in the schema",
@@ -331,11 +329,6 @@ _JOHN_SMITH = {
     "id": 123,
     "name": "John Smith",
     "recentArticle": _resolve_article(1),
-    "pic": lambda *_, **args: {
-        "url": "cdn://123",
-        "width": args["width"],
-        "height": args["height"],
-    },
 }
 
 BlogImage = ObjectType(
@@ -347,7 +340,7 @@ BlogArticle = ObjectType(
     [
         Field("id", String),
         Field("isPublished", Boolean),
-        Field("author", lambda: BlogAuthor),
+        Field("author", lambda: BlogAuthor, resolver=lambda *_: _JOHN_SMITH),
         Field("title", String),
         Field("body", String),
         Field("keywords", ListType(String)),
@@ -360,7 +353,14 @@ BlogAuthor = ObjectType(
         Field("id", String),
         Field("name", String),
         Field(
-            "pic", BlogImage, [Argument("width", Int), Argument("height", Int)]
+            "pic",
+            BlogImage,
+            [Argument("width", Int), Argument("height", Int)],
+            resolver=lambda *_, **args: {
+                "url": "cdn://123",
+                "width": args["width"],
+                "height": args["height"],
+            },
         ),
         Field("recentArticle", lambda: BlogArticle),
     ],

@@ -3,165 +3,47 @@
 import asyncio
 import functools as ft
 from inspect import isawaitable, iscoroutinefunction
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable
 
-from ..exc import CoercionError, ResolverError
-from ..lang import ast as _ast
-from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
-from .wrappers import GroupedFields, ResolveInfo, ResponsePath
-
-T = TypeVar("T")
-
-Resolver = Callable[..., Any]
-MaybeAwaitable = Union[Awaitable[T], T]
-
-
-async def unwrap_coro(maybe_coro):
-    if isawaitable(maybe_coro):
-        return await unwrap_coro(await maybe_coro)
-
-    return maybe_coro
 
 
 class AsyncExecutor(Executor):
+    """
+    Executor implementation to work Python's asyncio.
+    """
+
     @staticmethod
-    async def map_value(value, func):
-        return func(await unwrap_coro(value))
-
-    async def execute_fields(
-        self,
-        parent_type: ObjectType,
-        root: Any,
-        path: ResponsePath,
-        fields: GroupedFields,
-    ) -> Dict[str, Any]:
-
-        keys = []
+    async def gather_values(values):
         pending = []
+        pending_idx = []
+        done = []
+        for index, value in enumerate(values):
+            if isawaitable(value):
+                pending.append(value)
+                pending_idx.append(index)
+            done.append(value)
 
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            resolved = self.resolve_field(
-                parent_type, root, field_def, nodes, path + [key]
-            )
+        for index, awaited in zip(pending_idx, await asyncio.gather(*pending)):
+            done[index] = awaited
+        return done
 
-            keys.append(key)
-            pending.append(resolved)
-
-        return dict(zip(keys, await asyncio.gather(*pending)))
-
-    async def execute_fields_serially(
-        self,
-        parent_type: ObjectType,
-        root: Any,
-        path: ResponsePath,
-        fields: GroupedFields,
-    ) -> Dict[str, Any]:
-        args = []
-        done = []  # type: List[Tuple[str, Any]]
-
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            # Needed because closures. Might be a better way to do this without
-            # resorting to inlining deferred_serial.
-            args.append((key, field_def, nodes, path + [key]))
-
-        async def _next() -> Dict[str, Any]:
-            try:
-                k, f, n, p = args.pop(0)
-            except IndexError:
-                return dict(done)
-            else:
-                resolved = await self.resolve_field(parent_type, root, f, n, p)
-                done.append((k, resolved))
-                return await _next()
-
-        return await _next()
-
-    async def resolve_field(
-        self,
-        parent_type: ObjectType,
-        parent_value: Any,
-        field_definition: Field,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-    ) -> Any:
-        resolver = self.get_field_resolver(
-            field_definition.resolver or self._default_resolver
-        )
-        node = nodes[0]
-        info = ResolveInfo(
-            field_definition,
-            path,
-            parent_type,
-            self.schema,
-            self.variables,
-            self.fragments,
-            nodes,
-        )
-
+    @staticmethod
+    async def map_value(value, then, else_=None):
         try:
-            coerced_args = self.argument_values(field_definition, node)
-            resolved = await resolver(
-                parent_value, self.context_value, info, **coerced_args
-            )
-        except (CoercionError, ResolverError) as err:
-            self.add_error(err, path, node)
-            return None
-        else:
-            return await self.complete_value(
-                field_definition.type, nodes, path, resolved
-            )
+            return then(await unwrap_coro(value))
+        except Exception as err:
+            if else_ and isinstance(err, else_[0]):
+                return else_[1](err)
+            raise
 
-    async def complete_value(
-        self,
-        field_type: GraphQLType,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-        resolved_value: Any,
-    ) -> Any:
-        return await unwrap_coro(
-            super().complete_value(
-                field_type, nodes, path, await unwrap_coro(resolved_value)
-            )
-        )
+    @staticmethod
+    def unwrap_value(value):
+        return unwrap_coro(value)
 
-    async def complete_list_value(
-        self,
-        inner_type: GraphQLType,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-        iterable: Any,
-    ) -> List[Any]:
-        return cast(
-            List[Any],
-            await asyncio.gather(
-                *(
-                    self.complete_value(
-                        inner_type, nodes, path + [index], entry
-                    )
-                    for index, entry in enumerate(iterable)
-                )
-            ),
-        )
-
-    async def handle_non_nullable_value(
-        self, nodes: List[_ast.Field], path: ResponsePath, resolved_value: Any
-    ) -> Any:
-        return super().handle_non_nullable_value(
-            nodes, path, await unwrap_coro(resolved_value)
-        )
-
-    def get_field_resolver(self, base: Resolver) -> Resolver:
+    def get_field_resolver(
+        self, base: Callable[..., Any]
+    ) -> Callable[..., Any]:
         try:
             return self._resolver_cache[base]
         except KeyError:
@@ -177,3 +59,10 @@ class AsyncExecutor(Executor):
 
             self._resolver_cache[base] = resolver
             return resolver
+
+
+async def unwrap_coro(maybe_coro):
+    if isawaitable(maybe_coro):
+        return await unwrap_coro(await maybe_coro)
+
+    return maybe_coro

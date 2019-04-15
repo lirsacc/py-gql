@@ -148,6 +148,8 @@ async def test_ObjectType_is_type_of_for_union_runtime_inference(executor_cls):
     )
 
 
+# WARN: This test will trigger a coroutine never awaited warning as the runtime
+# warning short circuits the execution.
 async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
@@ -214,6 +216,8 @@ async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
     )
 
 
+# WARN: This test will trigger a coroutine never awaited warning as the runtime
+# warning short circuits the execution.
 async def test_type_resolution_on_union_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """

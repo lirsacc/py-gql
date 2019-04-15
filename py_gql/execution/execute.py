@@ -104,15 +104,16 @@ def execute(
     elif operation.operation == "mutation":
         exe_fn = executor.execute_fields_serially
     else:
-        # TODO: subscriptions.
         raise NotImplementedError("%s not supported" % operation.operation)
 
-    fields = executor.collect_fields(
-        root_type, operation.selection_set.selections
-    )
-
-    data = exe_fn(root_type, initial_value, [], fields)
-
     return executor.map_value(
-        data, lambda d: GraphQLResult(data=d, errors=executor.errors)
+        exe_fn(
+            root_type,
+            initial_value,
+            [],
+            executor.collect_fields(
+                root_type, operation.selection_set.selections
+            ),
+        ),
+        lambda d: GraphQLResult(data=d, errors=executor.errors),
     )

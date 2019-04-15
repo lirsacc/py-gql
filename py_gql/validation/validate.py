@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" """
 
 from itertools import chain
 from typing import Iterator, List, Optional, Sequence, Type

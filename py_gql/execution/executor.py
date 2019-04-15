@@ -7,10 +7,12 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -51,6 +53,7 @@ Resolver = Callable[..., Any]
 
 T = TypeVar("T")
 G = TypeVar("G")
+E = TypeVar("E", bound=Exception)
 
 
 class Executor:
@@ -58,11 +61,30 @@ class Executor:
     Default executor class (synchronous).
     """
 
+    # These static methods should likely be implemented in order to build
+    # custom executors.
     @staticmethod
-    def map_value(value: T, func: Callable[[T], G]) -> G:
-        """
-        """
-        return func(value)
+    def gather_values(values: Iterable[Any]) -> Any:
+        return values
+
+    @staticmethod
+    def map_value(
+        value: Any,
+        then: Callable[[Any], Any],
+        else_: Optional[
+            Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], Any]]
+        ] = None,
+    ) -> Any:
+        try:
+            return then(value)
+        except Exception as err:
+            if else_ and isinstance(err, else_[0]):
+                return else_[1](err)  # type: ignore
+            raise
+
+    @staticmethod
+    def unwrap_value(value):
+        return value
 
     __slots__ = (
         "schema",
@@ -139,19 +161,6 @@ class Executor:
         """ All field errors collected during query execution. """
         return self._errors[:]
 
-    def skip_selection(
-        self, node: Union[_ast.Field, _ast.InlineFragment, _ast.FragmentSpread]
-    ) -> bool:
-        skip = directive_arguments(
-            SkipDirective, node, variables=self.variables
-        )
-        include = directive_arguments(
-            IncludeDirective, node, variables=self.variables
-        )
-        skipped = skip is not None and skip["if"]
-        included = include is None or include["if"]
-        return skipped or (not included)
-
     def fragment_type_applies(
         self,
         object_type: ObjectType,
@@ -214,7 +223,7 @@ class Executor:
 
             for selection in selections:
                 if isinstance(selection, _ast.Field):
-                    if self.skip_selection(selection):
+                    if _skip_selection(selection, self.variables):
                         continue
 
                     key = selection.response_name
@@ -223,7 +232,7 @@ class Executor:
                     grouped_fields[key].append(selection)
 
                 elif isinstance(selection, _ast.InlineFragment):
-                    if self.skip_selection(selection):
+                    if _skip_selection(selection, self.variables):
                         continue
 
                     if not self.fragment_type_applies(parent_type, selection):
@@ -237,7 +246,7 @@ class Executor:
                     )
 
                 elif isinstance(selection, _ast.FragmentSpread):
-                    if self.skip_selection(selection):
+                    if _skip_selection(selection, self.variables):
                         continue
 
                     name = selection.name.value
@@ -259,7 +268,6 @@ class Executor:
     def field_definition(
         self, parent_type: ObjectType, name: str
     ) -> Optional[Field]:
-        """ """
         key = parent_type.name, name
         cache = self._field_defs
         is_query_type = self.schema.query_type == parent_type
@@ -340,17 +348,23 @@ class Executor:
             nodes,
         )
 
+        def fail(err):
+            self.add_error(err, path, node)
+            return None
+
+        def complete(res):
+            return self.complete_value(field_definition.type, nodes, path, res)
+
         try:
             coerced_args = self.argument_values(field_definition, node)
             resolved = resolver(
                 parent_value, self.context_value, info, **coerced_args
             )
         except (CoercionError, ResolverError) as err:
-            self.add_error(err, path, node)
-            return None
+            return fail(err)
         else:
-            return self.complete_value(
-                field_definition.type, nodes, path, resolved
+            return self.map_value(
+                resolved, complete, else_=(ResolverError, fail)
             )
 
     def get_field_resolver(self, base: Resolver) -> Resolver:
@@ -377,13 +391,23 @@ class Executor:
         path: ResponsePath,
         fields: GroupedFields,
     ) -> Any:
-        result = OrderedDict()  # type: Dict[str, Any]
+        keys = []
+        pending = []
+
         for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            result[key] = self.resolve_field(
-                parent_type, root, field_def, nodes, path + [key]
+            resolved = self.unwrap_value(
+                self.resolve_field(
+                    parent_type, root, field_def, nodes, path + [key]
+                )
             )
 
-        return result
+            keys.append(key)
+            pending.append(resolved)
+
+        def _collect(done):
+            return dict(zip(keys, done))
+
+        return self.map_value(self.gather_values(pending), _collect)
 
     def execute_fields_serially(
         self,
@@ -392,7 +416,33 @@ class Executor:
         path: ResponsePath,
         fields: GroupedFields,
     ) -> Any:
-        return self.execute_fields(parent_type, root, path, fields)
+        args = []
+        done = []  # type: List[Tuple[str, Any]]
+
+        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
+            # Needed because closures. Might be a better way to do this without
+            # resorting to inlining deferred_serial.
+            args.append((key, field_def, nodes, path + [key]))
+
+        def _next():
+            try:
+                k, f, n, p = args.pop(0)
+            except IndexError:
+                return dict(done)
+            else:
+
+                def cb(value):
+                    done.append((k, value))
+                    return _next()
+
+                return self.map_value(
+                    self.unwrap_value(
+                        self.resolve_field(parent_type, root, f, n, p)
+                    ),
+                    cb,
+                )
+
+        return _next()
 
     def complete_value(  # noqa: C901
         self,
@@ -402,12 +452,11 @@ class Executor:
         resolved_value: Any,
     ) -> Any:
         if isinstance(field_type, NonNullType):
-            return self.handle_non_nullable_value(
-                nodes,
-                path,
+            return self.map_value(
                 self.complete_value(
                     field_type.type, nodes, path, resolved_value
                 ),
+                lambda r: self._handle_non_nullable_value(nodes, path, r),
             )
 
         if resolved_value is None:
@@ -419,8 +468,13 @@ class Executor:
                     'Field "%s" is a list type and resolved value should be '
                     "iterable" % stringify_path(path)
                 )
-            return self.complete_list_value(
-                field_type.type, nodes, path, resolved_value
+            return self.gather_values(
+                [
+                    self.complete_value(
+                        field_type.type, nodes, path + [index], entry
+                    )
+                    for index, entry in enumerate(resolved_value)
+                ]
             )
 
         if isinstance(field_type, ScalarType):
@@ -474,19 +528,7 @@ class Executor:
             "Invalid field type %s at %s" % (field_type, stringify_path(path))
         )
 
-    def complete_list_value(
-        self,
-        inner_type: GraphQLType,
-        nodes: List[_ast.Field],
-        path: ResponsePath,
-        iterable: Any,
-    ) -> Any:
-        return [
-            self.complete_value(inner_type, nodes, path + [index], entry)
-            for index, entry in enumerate(iterable)
-        ]
-
-    def handle_non_nullable_value(
+    def _handle_non_nullable_value(
         self, nodes: List[_ast.Field], path: ResponsePath, resolved_value: Any
     ) -> Any:
         if resolved_value is None:
@@ -508,3 +550,14 @@ def _subselections(nodes: Iterable[_ast.Field]) -> Iterator[_ast.Selection]:
         if field.selection_set:
             for selection in field.selection_set.selections:
                 yield selection
+
+
+def _skip_selection(
+    node: Union[_ast.Field, _ast.InlineFragment, _ast.FragmentSpread],
+    variables: Mapping[str, Any],
+) -> bool:
+    skip = directive_arguments(SkipDirective, node, variables=variables)
+    include = directive_arguments(IncludeDirective, node, variables=variables)
+    skipped = skip is not None and skip["if"]
+    included = include is None or include["if"]
+    return skipped or (not included)
