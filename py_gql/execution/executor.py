@@ -547,6 +547,7 @@ class Executor:
 
 def _subselections(nodes: Iterable[_ast.Field]) -> Iterator[_ast.Selection]:
     for field in nodes:
+        # TODO: Can this happen provided query document has been validated?
         if field.selection_set:
             for selection in field.selection_set.selections:
                 yield selection

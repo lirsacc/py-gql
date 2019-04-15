@@ -559,3 +559,21 @@ async def test_custom_scalar(executor_cls):
             "bar": "gujwar@gagiv.kg",
         },
     )
+
+
+async def test_invalid_scalar(executor_cls):
+    schema = Schema(ObjectType("Query", [Field("field", Int)]))
+
+    await assert_execution(
+        schema,
+        "{ field }",
+        executor_cls=executor_cls,
+        initial_value={"field": "aff929fe-25a1"},
+        expected_exc=(
+            RuntimeError,
+            (
+                'Field "field" cannot be serialized as "Int": '
+                "Int cannot represent non integer value: aff929fe-25a1"
+            ),
+        ),
+    )

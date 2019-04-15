@@ -67,7 +67,9 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
     elif isinstance(input_type, EnumType):
         serialized = input_type.get_name(value)
     else:
-        serialized = None
+        # Should never happen if previous precondition have been
+        # implemented correctly.
+        raise NotImplementedError()
 
     if serialized is None:
         return _ast.NullValue()
@@ -136,7 +138,8 @@ def _scalar_node_from_value(
                 int_value = int(scalar_value)
                 if MIN_INT < int_value < MAX_INT:
                     return _ast.IntValue(value=scalar_value)
-                return _ast.FloatValue(value=scalar_value)
+                else:
+                    return _ast.FloatValue(value=scalar_value)
             try:
                 fl = float(scalar_value)
             except ValueError:

@@ -9,12 +9,14 @@ from py_gql.schema import (
     ID,
     Boolean,
     EnumType,
+    Field,
     Float,
     InputField,
     InputObjectType,
     Int,
     ListType,
     NonNullType,
+    ObjectType,
     ScalarType,
     String,
 )
@@ -28,9 +30,19 @@ def _custom_serialize(x: Any) -> Any:
     return x
 
 
+class _Object:
+    def __repr__(self):
+        return "<OBJECT>"
+
+
 CustomScalar = ScalarType(
-    name="CustomScalara", serialize=_custom_serialize, parse=lambda x: x
+    name="CustomScalar", serialize=_custom_serialize, parse=lambda x: x
 )  # type: ScalarType
+
+
+def test_raises_on_non_input_type():
+    with pytest.raises(TypeError):
+        ast_node_from_value(42, ObjectType("Foo", [Field("foo", Int)]))
 
 
 @pytest.mark.parametrize(
@@ -81,6 +93,14 @@ CustomScalar = ScalarType(
         (42.42, CustomScalar, _ast.FloatValue(value="42.42")),
         (MAX_INT + 2, CustomScalar, _ast.FloatValue(value="2147483649")),
         ("foo", CustomScalar, _ast.StringValue(value="foo")),
+        # - MAX_INT + 1
+        ("2147483648", CustomScalar, _ast.FloatValue(value="2147483648")),
+        ("2147483648", Float, _ast.FloatValue(value="2147483648.0")),
+        (
+            _Object(),
+            CustomScalar,
+            ValueError('Cannot convert value <OBJECT> for type "CustomScalar"'),
+        ),
     ],
 )
 def test_ast_node_from_value_with_scalars(value, input_type, expected):
