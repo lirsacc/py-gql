@@ -405,7 +405,7 @@ class Executor:
             pending.append(resolved)
 
         def _collect(done):
-            return dict(zip(keys, done))
+            return OrderedDict(zip(keys, done))
 
         return self.map_value(self.gather_values(pending), _collect)
 
@@ -428,7 +428,7 @@ class Executor:
             try:
                 k, f, n, p = args.pop(0)
             except IndexError:
-                return dict(done)
+                return OrderedDict(done)
             else:
 
                 def cb(value):
