@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Test type definition classes """
 
+import enum
 import re
 import uuid
 
@@ -48,6 +49,22 @@ def test_EnumType_get_name_fail():
     with pytest.raises(UnknownEnumValue) as exc_info:
         t.get_name(2)
     assert str(exc_info.value) == "Invalid value 2 for enum Enum"
+
+
+def test_EnumType_from_python_enum():
+    class FooEnum(enum.Enum):
+        A = "A"
+        B = "B"
+        C = "C"
+
+    enum_type = EnumType.from_python_enum(FooEnum)
+
+    for x in FooEnum:
+        assert x is enum_type.get_value(x.name)
+        assert enum_type.get_name(x) == x.name
+
+    with pytest.raises(UnknownEnumValue):
+        enum_type.get_value("D")
 
 
 @pytest.mark.parametrize(
