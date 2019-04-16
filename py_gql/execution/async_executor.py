@@ -7,6 +7,8 @@ from typing import Any, Callable
 
 from .executor import Executor
 
+Resolver = Callable[..., Any]
+
 
 class AsyncExecutor(Executor):
     """
@@ -41,24 +43,17 @@ class AsyncExecutor(Executor):
     def unwrap_value(value):
         return unwrap_coro(value)
 
-    def get_field_resolver(
-        self, base: Callable[..., Any]
-    ) -> Callable[..., Any]:
-        try:
-            return self._resolver_cache[base]
-        except KeyError:
-            if not iscoroutinefunction(base):
+    def wrap_field_resolver(self, base: Resolver) -> Resolver:
+        if not iscoroutinefunction(base):
 
-                async def resolver(*args, **kwargs):
-                    return await asyncio.get_event_loop().run_in_executor(
-                        None, ft.partial(base, *args, **kwargs)
-                    )
+            async def resolver(*args, **kwargs):
+                return await asyncio.get_event_loop().run_in_executor(
+                    None, ft.partial(base, *args, **kwargs)
+                )
 
-            else:
-                resolver = base
-
-            self._resolver_cache[base] = resolver
             return resolver
+
+        return base
 
 
 async def unwrap_coro(maybe_coro):

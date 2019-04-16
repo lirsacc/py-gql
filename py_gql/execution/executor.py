@@ -61,8 +61,9 @@ class Executor:
     Default executor class (synchronous).
     """
 
-    # These static methods should likely be implemented in order to build
-    # custom executors.
+    # These static methods should likely be re-implemented in order to build
+    # custom executors. See to AsyncExecutor and ThreadPoolExecutor for
+    # reference.
     @staticmethod
     def gather_values(values: Iterable[Any]) -> Any:
         return values
@@ -85,6 +86,11 @@ class Executor:
     @staticmethod
     def unwrap_value(value):
         return value
+
+    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
+        return resolver
+
+    # -------------------------------------------------------------------------
 
     __slots__ = (
         "schema",
@@ -326,6 +332,13 @@ class Executor:
                         return pt
             return None
 
+    def _get_field_resolver(self, base: Resolver) -> Resolver:
+        try:
+            return self._resolver_cache[base]
+        except KeyError:
+            self._resolver_cache[base] = self.wrap_field_resolver(base)
+            return base
+
     def resolve_field(
         self,
         parent_type: ObjectType,
@@ -334,7 +347,7 @@ class Executor:
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
-        resolver = self.get_field_resolver(
+        resolver = self._get_field_resolver(
             field_definition.resolver or self._default_resolver
         )
         node = nodes[0]
@@ -366,13 +379,6 @@ class Executor:
             return self.map_value(
                 resolved, complete, else_=(ResolverError, fail)
             )
-
-    def get_field_resolver(self, base: Resolver) -> Resolver:
-        try:
-            return self._resolver_cache[base]
-        except KeyError:
-            self._resolver_cache[base] = base
-            return base
 
     def _iterate_fields(
         self, parent_type: ObjectType, fields: GroupedFields

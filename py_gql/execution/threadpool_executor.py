@@ -29,6 +29,7 @@ G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
 
 MaybeFuture = Union["Future[T]", T]
+Resolver = Callable[..., Any]
 
 
 class ThreadPoolExecutor(Executor):
@@ -57,15 +58,8 @@ class ThreadPoolExecutor(Executor):
         super().__init__(*args, **kwargs)
         self._inner = inner_executor or _ThreadPoolExecutor()
 
-    def get_field_resolver(
-        self, base: Callable[..., Any]
-    ) -> Callable[..., Any]:
-        try:
-            return self._resolver_cache[base]
-        except KeyError:
-            resolver = functools.partial(self._inner.submit, base)
-            self._resolver_cache[base] = resolver
-            return resolver
+    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
+        return functools.partial(self._inner.submit, resolver)
 
 
 def unwrap_future(maybe_future):
