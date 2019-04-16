@@ -4,6 +4,7 @@ This example demonstrates:
 
 - Usage of `AsyncIOExecutor` for parallel fetching using `async/await` and regular synchronous functions.
 - Schema generation from an SDL file
+- Tracer and extension usage
 - Simple [aiohttp](https://aiohttp.readthedocs.io/) integration with GraphiQL
 
 Data is fetched live from <https://swapi.co>.
@@ -12,9 +13,8 @@ Data is fetched live from <https://swapi.co>.
 
 ## Running
 
-```
+```.bash
 pip install -r requirements.txt
-FLASK_APP=server.py python -m flask run --reload
 adev runserver -p 5000 --app-factory init server.py
 ```
 

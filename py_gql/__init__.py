@@ -14,14 +14,15 @@ on top of :mod:`py_gql`.
 
 # flake8: noqa
 
-from . import lang, schema, utilities
-from ._graphql import graphql, graphql_blocking
+from . import lang, schema, tracers, utilities
+from ._graphql import graphql, graphql_blocking, process_graphql_query
 from .builders import build_schema
 from .execution import GraphQLExtension, GraphQLResult, ResolveInfo
 
 __all__ = (
     "graphql",
     "graphql_blocking",
+    "process_graphql_query",
     "GraphQLResult",
     "GraphQLExtension",
     "ResolveInfo",

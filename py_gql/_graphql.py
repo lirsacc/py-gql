@@ -8,14 +8,20 @@ from .exc import (
     GraphQLSyntaxError,
     VariablesCoercionError,
 )
-from .execution import AsyncExecutor, Executor, GraphQLResult, execute
-from .execution.async_executor import unwrap_coro
+from .execution import (
+    AsyncExecutor,
+    Executor,
+    GraphQLResult,
+    NullTracer,
+    Tracer,
+    execute,
+)
 from .lang import parse
 from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
 
 
-def do_graphql(
+def process_graphql_query(
     # fmt: off
     schema: Schema,
     document: str,
@@ -26,6 +32,8 @@ def do_graphql(
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    tracer: Optional[Tracer] = None,
     executor_cls: Optional[Type[Executor]] = None,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
@@ -62,6 +70,13 @@ def do_graphql(
             For field which do not specify a resolver, this will be used instead
             of `py_gql.execution.default_resolver`.
 
+        middlewares: List of middleware functions.
+            Middlewares are used to wrap the resolution of **all** fields with
+            common logic, they are good canidates for logging, authentication,
+            and execution guards.
+
+        tracer: Tracer instance.
+
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
 
@@ -81,18 +96,27 @@ def do_graphql(
         `graphql_blocking` for example usage.
     """
     schema.validate()
+    tracer = tracer or NullTracer()
+    tracer.on_start()
 
     try:
+        tracer.on_parse_start()
         ast = parse(document, allow_type_system=False)
-        validation_result = validate_ast(schema, ast, validators=validators)
+    except GraphQLSyntaxError as err:
+        return GraphQLResult(errors=[err])
+    finally:
+        tracer.on_parse_end()
 
-        if not validation_result:
-            return GraphQLResult(
-                errors=cast(
-                    List[GraphQLResponseError], validation_result.errors
-                )
-            )
+    tracer.on_validate_start()
+    validation_result = validate_ast(schema, ast, validators=validators)
+    tracer.on_validate_end()
 
+    if not validation_result:
+        return GraphQLResult(
+            errors=cast(List[GraphQLResponseError], validation_result.errors)
+        )
+
+    try:
         return execute(
             schema,
             ast,
@@ -101,11 +125,11 @@ def do_graphql(
             initial_value=root,
             context_value=context,
             default_resolver=default_resolver,
+            tracer=tracer,
+            middlewares=middlewares,
             executor_cls=executor_cls,
             executor_args=executor_args,
         )
-    except GraphQLSyntaxError as err:
-        return GraphQLResult(errors=[err])
     except VariablesCoercionError as err:
         return GraphQLResult(data=None, errors=err.errors)
     except ExecutionError as err:
@@ -122,34 +146,33 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    default_resolver: Optional[Callable[..., Any]] = None
+    default_resolver: Optional[Callable[..., Any]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    tracer: Optional[Tracer] = None
     # fmt: on
 ) -> GraphQLResult:
     """
-    Same as `handle_graphql_request` but enforcing usage of AsyncIO.
+    Same as `process_graphql_query` but enforcing usage of AsyncIO.
 
     Resolvers are expected to be async functions. Sync functions will be
     executed in a thread.
     """
-    try:
-        return cast(
-            GraphQLResult,
-            await unwrap_coro(
-                do_graphql(
-                    schema,
-                    document,
-                    variables=variables,
-                    operation_name=operation_name,
-                    root=root,
-                    validators=validators,
-                    context=context,
-                    default_resolver=default_resolver,
-                    executor_cls=AsyncExecutor,
-                )
-            ),
-        )
-    except ExecutionError as err:
-        return GraphQLResult(data=None, errors=[err])
+    return cast(
+        GraphQLResult,
+        await process_graphql_query(
+            schema,
+            document,
+            variables=variables,
+            operation_name=operation_name,
+            root=root,
+            validators=validators,
+            context=context,
+            default_resolver=default_resolver,
+            tracer=tracer,
+            middlewares=middlewares,
+            executor_cls=AsyncExecutor,
+        ),
+    )
 
 
 def graphql_blocking(
@@ -162,15 +185,17 @@ def graphql_blocking(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
-    default_resolver: Optional[Callable[..., Any]] = None
+    default_resolver: Optional[Callable[..., Any]] = None,
+    middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+    tracer: Optional[Tracer] = None
     # fmt: on
 ) -> GraphQLResult:
     """
-    Same as `handle_graphql_request` but enforcing usage of sync resolvers.
+    Same as `process_graphql_query` but enforcing usage of sync resolvers.
     """
     return cast(
         GraphQLResult,
-        do_graphql(
+        process_graphql_query(
             schema,
             document,
             variables=variables,
@@ -179,5 +204,7 @@ def graphql_blocking(
             validators=validators,
             context=context,
             default_resolver=default_resolver,
+            tracer=tracer,
+            middlewares=middlewares,
         ),
     )

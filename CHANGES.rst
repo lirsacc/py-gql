@@ -19,8 +19,7 @@ Notable changes
 - :func:`py_gql.graphql` now defaults to working with :py:mod:`asyncio`. Use
   :func:`py_gql.graphql_blocking` for synchronous use cases. This should make
   things more obvious concerning implementing subscriptions
-- Dropped middleware support and tracers. This is temporary and should come back
-  at some point once we've found a nicer interface for them.
+- Simplify middleware and tracer implementation.
 - Multiple internal performance improvements.
 - Returning callables to lazily resolve values has been deprecated.
 - Fixed custom scalars support during execution.

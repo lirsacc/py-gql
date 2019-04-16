@@ -6,6 +6,7 @@ import os
 from aiohttp import web
 
 from py_gql import graphql
+from py_gql.tracers import ApolloTracer
 from schema import SCHEMA
 
 SCHEMA_SDL = SCHEMA.to_string()
@@ -21,12 +22,17 @@ async def sdl(request):
 async def graphql_handler(request):
     data = await request.json()
 
+    tracer = ApolloTracer()
+
     result = await graphql(
         SCHEMA,
         data["query"],
         variables=data.get("variables", {}),
         operation_name=data.get("operation_name"),
+        tracer=tracer,
     )
+
+    result.add_extension(tracer)
 
     return web.Response(
         text=json.dumps(result.response()), content_type="application/json"

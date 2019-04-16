@@ -5,8 +5,9 @@ from concurrent import futures
 
 import flask
 
-from py_gql._graphql import do_graphql
-from py_gql.execution.threadpool_executor import ThreadPoolExecutor
+from py_gql import process_graphql_query
+from py_gql.execution import ThreadPoolExecutor
+from py_gql.tracers import ApolloTracer
 from schema import SCHEMA
 
 SCHEMA_SDL = SCHEMA.to_string()
@@ -29,7 +30,9 @@ def graphql_route():
 
     data = flask.request.json
 
-    result = do_graphql(
+    tracer = ApolloTracer()
+
+    result = process_graphql_query(
         SCHEMA,
         data["query"],
         variables=data.get("variables", {}),
@@ -37,7 +40,10 @@ def graphql_route():
         executor_cls=ThreadPoolExecutor,
         context=dict(global_executor=GLOBAL_EXECUTOR),
         executor_args=dict(inner_executor=GLOBAL_EXECUTOR),
+        tracer=tracer,
     )
+
+    result.add_extension(tracer)
 
     return flask.jsonify(result.result().response())
 

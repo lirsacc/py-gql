@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import functools
 from typing import (
     Any,
     Callable,
@@ -47,6 +48,7 @@ from ..schema import (
 )
 from ..utilities import coerce_argument_values, directive_arguments
 from .default_resolver import default_resolver as _default_resolver
+from .tracer import NullTracer, Tracer
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
 Resolver = Callable[..., Any]
@@ -106,6 +108,8 @@ class Executor:
         "_resolver_cache",
         "_errors",
         "_default_resolver",
+        "_middlewares",
+        "_tracer",
     )
 
     def __init__(
@@ -116,6 +120,8 @@ class Executor:
         variables: Dict[str, Any],
         context_value: Any,
         default_resolver: Optional[Resolver] = None,
+        middlewares: Optional[Sequence[Callable[..., Any]]] = None,
+        tracer: Optional[Tracer] = None,
         **_: Any
         # fmt: on
     ):
@@ -145,6 +151,8 @@ class Executor:
             {}
         )  # type: Dict[Tuple[Field, _ast.Field], Dict[str, Any]]
         self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
+        self._middlewares = middlewares or []
+        self._tracer = tracer or NullTracer()
 
     def add_error(
         self,
@@ -336,8 +344,11 @@ class Executor:
         try:
             return self._resolver_cache[base]
         except KeyError:
-            self._resolver_cache[base] = self.wrap_field_resolver(base)
-            return base
+            wrapped = self.wrap_field_resolver(base)
+            if self._middlewares:
+                wrapped = _apply_middlewares(wrapped, self._middlewares)
+            self._resolver_cache[base] = wrapped
+            return wrapped
 
     def resolve_field(
         self,
@@ -363,10 +374,14 @@ class Executor:
 
         def fail(err):
             self.add_error(err, path, node)
+            self._tracer.on_field_end(info)
             return None
 
         def complete(res):
+            self._tracer.on_field_end(info)
             return self.complete_value(field_definition.type, nodes, path, res)
+
+        self._tracer.on_field_start(info)
 
         try:
             coerced_args = self.argument_values(field_definition, node)
@@ -568,3 +583,16 @@ def _skip_selection(
     skipped = skip is not None and skip["if"]
     included = include is None or include["if"]
     return skipped or (not included)
+
+
+def _apply_middlewares(
+    func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
+) -> Callable[..., Any]:
+    tail = func
+    for mw in reversed(middlewares):
+        if not callable(mw):
+            raise TypeError("Middleware should be a callable")
+
+        tail = functools.partial(mw, tail)
+
+    return tail

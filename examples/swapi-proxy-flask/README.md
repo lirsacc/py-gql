@@ -2,9 +2,9 @@
 
 This example demonstrates:
 
-- Usage of `ThreadPoolExecutor` for parallel synchronous IO
+- Usage of `ThreadPoolExecutor` for parallel synchronous IO and `process_graphql_request` to inject executor class.
 - Schema generation from an SDL file
-- ~~Tracer and extension usage~~
+- Tracer and extension usage
 - Simple [flask](http://flask.pocoo.org) integration with GraphiQL
 
 Data is fetched live from <https://swapi.co>.
