@@ -3,7 +3,6 @@
 Utilitiy classes to define custom types.
 """
 
-import enum as _enum
 from typing import (
     Any,
     Callable,
@@ -475,20 +474,13 @@ class EnumType(NamedType):
     """
 
     @classmethod
-    def from_python_enum(
-        cls,
-        enum: _enum.EnumMeta,
-        description: Optional[str] = None,
-        nodes: Optional[
-            List[Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]]
-        ] = None,
-    ) -> "EnumType":
+    def from_python_enum(cls, enum, description=None, nodes=None):
         """
         Create a GraphQL Enum type from a Python enum
         """
         return cls(
             enum.__name__,
-            [(v.name, v) for v in enum],  # type: ignore
+            [(v.name, v) for v in enum],
             description=description,
             nodes=nodes,
         )
