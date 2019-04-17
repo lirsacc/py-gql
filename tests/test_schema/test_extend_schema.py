@@ -8,7 +8,7 @@ from typing import cast
 import pytest
 
 from py_gql._string_utils import dedent
-from py_gql.builders import extend_schema
+from py_gql.builders import build_schema_ignoring_extensions, extend_schema
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
@@ -70,6 +70,16 @@ def test_ignores_known_directive_in_non_strict_mode():
         strict=False,
     )
     assert new_schema is BASE_SCHEMA
+
+
+def test_ignore_errors_in_non_strict_mode():
+    sdl = """
+    directive @FooDirective (a: Int) on FIELD
+    type FooType { a: String }
+    type Query { foo: FooType! }
+    extend type BarType { a: String }
+    """
+    extend_schema(build_schema_ignoring_extensions(sdl), sdl, strict=False)
 
 
 def test_raises_on_unknown_type_in_strict_mode():

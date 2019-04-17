@@ -91,6 +91,26 @@ def test_parse_block_string_removes_empty_leading_and_trailing_lines():
     )
 
 
+def test_parse_block_string_leaves_empty_leading_and_trailing_lines_alone_if_set():
+    raw_value = "\n".join(
+        [
+            "",
+            "",
+            "    Hello,",
+            "      World!",
+            "",
+            "    Yours,",
+            "      GraphQL.",
+            "",
+            "",
+        ]
+    )
+
+    assert parse_block_string(raw_value, False, False) == "\n".join(
+        ["", "", "Hello,", "  World!", "", "Yours,", "  GraphQL.", "", ""]
+    )
+
+
 def test_parse_block_string_removes_blank_leading_and_trailing_lines():
     raw_value = "\n".join(
         [

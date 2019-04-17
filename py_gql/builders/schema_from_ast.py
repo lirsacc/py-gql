@@ -152,9 +152,9 @@ def build_schema_ignoring_extensions(
         type_defs,
         directive_defs,
         {},
-        additional_types={t.name: t for t in additional_types}
-        if additional_types
-        else {},
+        additional_types=(
+            {t.name: t for t in additional_types} if additional_types else {}
+        ),
     )
 
     directives = [
@@ -471,7 +471,7 @@ class ASTTypeBuilder:
         type_defs: Mapping[str, _ast.TypeDefinition],
         directive_defs: Mapping[str, _ast.DirectiveDefinition],
         type_extensions: Mapping[str, List[_ast.TypeExtension]],
-        additional_types: Optional[Mapping[str, NamedType]] = None,
+        additional_types: Mapping[str, NamedType],
     ):
         self._type_defs = type_defs
         self._directive_defs = directive_defs
@@ -479,28 +479,23 @@ class ASTTypeBuilder:
         self._cache = dict(_DEFAULT_TYPES_MAP)  # type: Dict[str, GraphQLType]
         self._extended_cache = {}  # type: Dict[str, GraphQLType]
         self._extensions = type_extensions
-
-        if additional_types is not None:
-            self._cache.update(additional_types)
+        self._cache.update(additional_types)
 
     def _collect_extensions(
-        self, target_name: str, ext_type: TTypeExtension, strict: bool = True
+        self, target_name: str, ext_type: TTypeExtension
     ) -> List[TTypeExtension]:
         res = []
         for ext in self._extensions.get(target_name) or []:
             if not isinstance(ext, ext_type):
-                if strict:
-                    raise ExtensionError(
-                        "Expected %s when extending %s but got %s"
-                        % (
-                            ext_type.__name__,
-                            ext_type.__name__.replace("Extension", ""),
-                            type(ext).__name__,
-                        ),
-                        [ext],
-                    )
-                else:
-                    continue
+                raise ExtensionError(
+                    "Expected %s when extending %s but got %s"
+                    % (
+                        ext_type.__name__,
+                        ext_type.__name__.replace("Extension", ""),
+                        type(ext).__name__,
+                    ),
+                    [ext],
+                )
 
             res.append(cast(TTypeExtension, ext))
 

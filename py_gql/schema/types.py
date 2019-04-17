@@ -242,10 +242,12 @@ class InputField:
     @default_value.setter
     def default_value(self, value: Any) -> None:
         self._default_value = value
+        self.has_default_value = True
 
     @default_value.deleter
     def default_value(self) -> None:
         self._default_value = _UNSET
+        self.has_default_value = False
 
     @property
     def type(self) -> GraphQLType:
@@ -396,8 +398,7 @@ class EnumValue:
 
     @classmethod
     def from_def(
-        cls: Type[_EV],
-        definition: Union[_EV, str, Tuple[str, Any], Dict[str, Any]],
+        cls: Type[_EV], definition: Union[_EV, str, Tuple[str, Any]]
     ) -> _EV:
         """
         Create an enum value from various source objects.
@@ -413,8 +414,6 @@ class EnumValue:
         elif isinstance(definition, tuple):
             name, value = definition
             return cls(name, value)
-        elif isinstance(definition, dict):
-            return cls(**definition)
         else:
             raise TypeError("Invalid enum value definition %s" % definition)
 
@@ -488,9 +487,7 @@ class EnumType(NamedType):
     def __init__(
         self,
         name: str,
-        values: Iterable[
-            Union[EnumValue, str, Tuple[str, Any], Dict[str, Any]]
-        ],
+        values: Iterable[Union[EnumValue, str, Tuple[str, Any]]],
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]]
@@ -505,10 +502,7 @@ class EnumType(NamedType):
         self._set_values(values)
 
     def _set_values(
-        self,
-        values: Iterable[
-            Union[EnumValue, str, Tuple[str, Any], Dict[str, Any]]
-        ],
+        self, values: Iterable[Union[EnumValue, str, Tuple[str, Any]]]
     ) -> None:
         self.values = []  # type: List[EnumValue]
         self._values = {}  # type: Dict[str, EnumValue]
@@ -784,10 +778,12 @@ class Argument:
     @default_value.setter
     def default_value(self, value: Any) -> None:
         self._default_value = value
+        self.has_default_value = True
 
     @default_value.deleter
     def default_value(self) -> None:
         self._default_value = _UNSET
+        self.has_default_value = False
 
     @property
     def type(self) -> GraphQLType:
@@ -1259,10 +1255,10 @@ def nullable_type(type_: GraphQLType) -> GraphQLType:
     """ Extract nullable type from a potentially non nulllable one.
 
     >>> from py_gql.schema import Int, NonNullType
-    >>> unwrap_type(NonNullType(Int)) is Int
+    >>> nullable_type(NonNullType(Int)) is Int
     True
 
-    >>> unwrap_type(Int) is Int
+    >>> nullable_type(Int) is Int
     True
     """
     if isinstance(type_, NonNullType):

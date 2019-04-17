@@ -115,10 +115,6 @@ class Lexer:
     __slots__ = ("_source", "_len", "_done", "_position", "_started")
 
     def __init__(self, source: Union[str, bytes]):
-
-        if source is None:
-            raise ValueError("source cannot be None")
-
         self._source = ensure_unicode(source)
         self._len = len(source)
         self._done = False
@@ -208,8 +204,6 @@ class Lexer:
             else:
                 acc.append(char)
 
-        raise NonTerminatedString("", self._position, self._source)
-
     def _read_block_string(self) -> BlockString:
         """
         Advance lexer over a triple quoted block string.
@@ -244,8 +238,6 @@ class Lexer:
                 raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
-
-        raise NonTerminatedString("", self._position, self._source)
 
     def _read_escape_sequence(self) -> str:
         """

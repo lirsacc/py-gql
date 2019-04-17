@@ -80,12 +80,8 @@ class GraphQLSyntaxError(GraphQLResponseError):
         if self._highlighted is not None:
             return self._highlighted
 
-        if self.source is not None:
-            highlight = highlight_location(self.source, self.position)
-            self._highlighted = "%s %s" % (self.message, highlight)
-        else:
-            self._highlighted = self.message
-
+        highlight = highlight_location(self.source, self.position)
+        self._highlighted = "%s %s" % (self.message, highlight)
         return self._highlighted
 
     def __str__(self) -> str:

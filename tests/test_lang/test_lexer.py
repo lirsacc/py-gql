@@ -28,6 +28,20 @@ def test_it_disallows_uncommon_control_characters():
     assert exc_info.value.position == 1
 
 
+def test_lex_with_trailing_whitespace():
+    assert [token.SOF(0, 0), token.Name(1, 4, "foo"), token.EOF(9, 9)] == list(
+        Lexer(" foo     ")
+    )
+
+
+def test_lex_with_trailing_whitespace_2():
+    assert [
+        token.SOF(0, 0),
+        token.Name(1, 4, "foo"),
+        token.EOF(11, 11),
+    ] == list(Lexer(" foo     \n#"))
+
+
 def test_it_accepts_bom_header():
     assert lex_one("\uFEFF foo") == token.Name(2, 5, "foo")
 
@@ -118,6 +132,9 @@ def test_it_lexes_strings(value, expected):
         ('"null-byte is not \u0000 end of file"', InvalidCharacter, 18),
         ('"multi\nline"', NonTerminatedString, 6),
         ('"multi\rline"', NonTerminatedString, 6),
+        ('"\\\\', NonTerminatedString, 3),
+        ('"\\', NonTerminatedString, 3),
+        ('"\\u', NonTerminatedString, 4),
         ('"bad \\z esc"', InvalidEscapeSequence, 6),
         ('"bad \\x esc"', InvalidEscapeSequence, 6),
         ('"bad \\u1 esc"', InvalidEscapeSequence, 6),

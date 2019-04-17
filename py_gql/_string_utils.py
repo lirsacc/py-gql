@@ -178,6 +178,9 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
     >>> loc_to_index("{", (1, 2))
     1
 
+    >>> loc_to_index("{       ", (1, 3))
+    2
+
     >>> loc_to_index("ab\ncd\ne", (6, 7))
     Traceback (most recent call last):
         ...

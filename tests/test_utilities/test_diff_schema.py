@@ -949,3 +949,23 @@ def test_no_incompatible_changes(old_schema, new_schema):
             min_severity=SchemaChangeSeverity.DANGEROUS,
         )
     )
+
+
+def test_minimum_severity():
+    assert [(SchemaChange.TYPE_REMOVED, "Type Type1 was removed.")] == list(
+        diff_schema(
+            build_schema(
+                """
+                type Type1 { field1: String }
+                type Query { field1: String }
+                """
+            ),
+            build_schema(
+                """
+                type Type2 { field1: String }
+                type Query { field1: String }
+                """
+            ),
+            min_severity=SchemaChangeSeverity.BREAKING,
+        )
+    )

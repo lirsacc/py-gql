@@ -60,6 +60,84 @@ def test_single_field_schema(type_, opts, expected):
     )
 
 
+def test_mutation():
+    assert (
+        dedent(
+            """
+            type Mutation {
+                foo: Int
+            }
+            """
+        )
+        == print_schema(
+            Schema(mutation_type=ObjectType("Mutation", [Field("foo", Int)]))
+        )
+    )
+
+
+def test_custom_mutation():
+    assert (
+        dedent(
+            """
+            schema {
+                mutation: CustomMutation
+            }
+
+            type CustomMutation {
+                foo: Int
+            }
+            """
+        )
+        == print_schema(
+            Schema(
+                mutation_type=ObjectType("CustomMutation", [Field("foo", Int)])
+            )
+        )
+    )
+
+
+def test_subscription():
+    assert (
+        dedent(
+            """
+            type Subscription {
+                foo: Int
+            }
+            """
+        )
+        == print_schema(
+            Schema(
+                subscription_type=ObjectType(
+                    "Subscription", [Field("foo", Int)]
+                )
+            )
+        )
+    )
+
+
+def test_custom_subscription():
+    assert (
+        dedent(
+            """
+            schema {
+                subscription: CustomSubscription
+            }
+
+            type CustomSubscription {
+                foo: Int
+            }
+            """
+        )
+        == print_schema(
+            Schema(
+                subscription_type=ObjectType(
+                    "CustomSubscription", [Field("foo", Int)]
+                )
+            )
+        )
+    )
+
+
 def test_object_field():
     schema = _single_field_schema(ObjectType("Foo", [Field("str", String)]))
     assert print_schema(schema, indent="    ") == dedent(
