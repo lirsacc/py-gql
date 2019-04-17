@@ -68,7 +68,7 @@ Documentation
     install
     usage/index
     api/index
-    changes
+    CHANGES
 
 
 Indices and tables
