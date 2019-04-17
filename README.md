@@ -6,16 +6,16 @@ py-gql_is a pure python [GraphQL](http://facebook.github.io/graphql/) implementa
 
 It supports:
 
--   Parsing the GraphQL query language and schema definition language.
--   Building a GraphQL type schema programatically and from Schema Definition files (including support for schema directives).
--   Validating and Executing a GraphQL request against a type schema.
+- Parsing the GraphQL query language and schema definition language.
+- Building a GraphQL type schema programatically and from Schema Definition files (including support for schema directives).
+- Validating and Executing a GraphQL request against a type schema.
 
 ## Quick links
 
--   [Source Code & Issue Tracker](https://github.com/lirsacc/py-gql)
--   [PyPI project](https://pypi.org/project/py-gql/)
--   [Read The Docs](https://py-gql.readthedocs.io/)
--   [Changelog](./CHANGES.rst)
+- [Source Code & Issue Tracker](https://github.com/lirsacc/py-gql)
+- [PyPI project](https://pypi.org/project/py-gql/)
+- [Read The Docs](https://py-gql.readthedocs.io/)
+- [Changelog](./CHANGES.md)
 
 ## Installation
 
@@ -64,19 +64,20 @@ This project was initially born as an experiment / learning project following so
 
 The main goals were originally to:
 
--   Get a deeper understanding of GraphQL
--   Provide an alternative to `graphql-core` which:
-    -   tracks the latest version of the spec (which `graphql-core` didn't)
-    -   does so without being a port of the JS code which leads to some weird edge case when we tried to extend the library
-    -   keeps support for Python 2 (which `graphql-core-next`) didn't.
-    -   (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between `Graphene` and `graphql-core`
-    -   makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
+- Get a deeper understanding of GraphQL
+- Provide an alternative to `graphql-core` which:
+
+  - tracks the latest version of the spec (which `graphql-core` didn't)
+  - does so without being a port of the JS code which leads to some weird edge case when we tried to extend the library
+  - keeps support for Python 2 (which `graphql-core-next`) didn't.
+  - (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between `Graphene` and `graphql-core`
+  - makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
 
 After going through a couple iterations, it should be ready ready for general use to create GraphQL servers; with the notable omissions of:
 
--   Subscription support
--   Python 2 support has been dropped
--   Middleware have been dropped pending an iteration on the API (and consequently tracers are not supported either)
+- Subscription support
+- Python 2 support has been dropped
+- Middleware have been dropped pending an iteration on the API (and consequently tracers are not supported either)
 
 ## Development setup
 
