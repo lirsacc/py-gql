@@ -1,10 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 This release follow some extensive internal refactor and legwork in order to make `py_gql` easier to improve and extend moving forward.
 
-### Most notable changes:
+### Most notable changes
 
 - **Dropped Python 2 support**; the minimum supported version is now Python 3.5.
 - `py_gql.build_schema` is now the preferred way to define executable GraphQL schema (instead of using the `py_gql.schema.Schema` class).
