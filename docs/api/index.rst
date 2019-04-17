@@ -16,4 +16,5 @@ rendered automatically from the code.
     builders
     validation
     execution
+    tracers
     utilities

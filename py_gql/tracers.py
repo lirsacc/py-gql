@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+Collection of useful tracers implementations.
+"""
 
 import datetime
 from typing import Any, Dict, Tuple, Union, cast
 
 from ._utils import OrderedDict
 from .execution import GraphQLExtension, ResolveInfo, Tracer
+
+__all__ = ("TimingTracer", "ApolloTracer")
 
 
 def _ns(start: datetime.datetime, end: datetime.datetime) -> int:
@@ -28,8 +33,8 @@ class TimingTracer(Tracer):
     """
     Default implementation for tracers that collect graphql operations timing.
 
-    This records times using :py:func:`datetime.datetime.utcnow` and needs to be
-    consumed separately to be useful.
+    This records times as UTC using :py:class:`datetime.datetime` and needs to
+    be consumed separately to be useful.
     """
 
     def __init__(self):
@@ -78,9 +83,11 @@ class TimingTracer(Tracer):
 
 class ApolloTracer(TimingTracer, GraphQLExtension):
     """
-    `Apollo Tracing <https://github.com/apollographql/apollo-tracing>`_
-    implementation. This tracers also implements
-    :class:`py_gql.GraphQLExtension`.
+    Tracer implementation compatible with the `Apollo Tracing
+    <https://github.com/apollographql/apollo-tracing>`_ specification.
+
+    This tracers also implements :class:`py_gql.GraphQLExtension` in order to be
+    included in the response according to the specification.
     """
 
     name = "tracing"
