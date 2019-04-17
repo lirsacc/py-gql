@@ -3,9 +3,13 @@
 import pytest
 
 from py_gql.builders import build_schema
-from py_gql.utilities.differ import SchemaChange, diff_schema
+from py_gql.utilities.differ import (
+    SchemaChange,
+    SchemaChangeSeverity,
+    diff_schema,
+)
 
-TEST_GROUPS = [
+DIFF_TEST_GROUPS = [
     (
         "add_and_remove_types",
         build_schema(
@@ -887,11 +891,11 @@ def _cached_diff_schema(s1, s2, cache={}):
         pytest.param(
             old_schema, new_schema, diff, id="{}:{}".format(group, diff[1])
         )
-        for group, old_schema, new_schema, diffs in TEST_GROUPS
+        for group, old_schema, new_schema, diffs in DIFF_TEST_GROUPS
         for diff in diffs
     ],
 )
-def test(old_schema, new_schema, expected_diff):
+def test_diffs(old_schema, new_schema, expected_diff):
     diffs = _cached_diff_schema(old_schema, new_schema)
 
     # Run pytest with -s to see the actual diffs in a somewhat more readable
@@ -912,3 +916,36 @@ def test(old_schema, new_schema, expected_diff):
 def test_detects_no_change_in_same_schema(fixture_file):
     schema = build_schema(fixture_file("github-schema.graphql"))
     assert [] == list(diff_schema(schema, schema))
+
+
+@pytest.mark.parametrize(
+    "old_schema,new_schema",
+    [
+        (
+            """
+            type Query { foo: Int }
+            """,
+            """
+            type Query { foo: Int! }
+            """,
+        ),
+        (
+            """
+            input Input { foo: Int! }
+            type Query { foo: Int }
+            """,
+            """
+            input Input { foo: Int }
+            type Query { foo: Int }
+            """,
+        ),
+    ],
+)
+def test_no_incompatible_changes(old_schema, new_schema):
+    assert [] == list(
+        diff_schema(
+            build_schema(old_schema),
+            build_schema(new_schema),
+            min_severity=SchemaChangeSeverity.DANGEROUS,
+        )
+    )

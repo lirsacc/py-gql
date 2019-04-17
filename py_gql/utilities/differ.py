@@ -250,7 +250,7 @@ def _old_and_new(
 def diff_schema(
     old_schema: Schema,
     new_schema: Schema,
-    severity: Optional[SchemaChangeSeverity] = None,
+    min_severity: Optional[SchemaChangeSeverity] = None,
 ) -> Iterator[Diff]:
     """
     List all differences that can be statically found between `old_schema` and
@@ -264,6 +264,9 @@ def diff_schema(
     queries made by clients of your schema. However it is not possible to detect
     this  without looking at the usage of the schema so this classification
     should err on the side of safety.
+
+    Some compatible type changes are ignored given that they should not lead to
+    any change in client behaviour.
 
     Args:
         old_schema: Source schema
@@ -289,7 +292,7 @@ def diff_schema(
     ]
 
     for change, format_args in itertools.chain(*diffs):
-        if severity is None or change.severity == severity:
+        if min_severity is None or change.severity >= min_severity:
             yield change, change.format_str.format(*format_args)
 
 
