@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Bugfix: Handle early return from `process_graphql_query` in `py_gql.graphql`.
-- Bugfix: Make sure `process_graphql_query` calls `tracer.on_end()` on early returns.
+### Fixed
+
+- Handle early return from `process_graphql_query` in `py_gql.graphql`.
+- Make sure `process_graphql_query` calls `tracer.on_end()` on early returns.
 
 ## 0.2.0
 
