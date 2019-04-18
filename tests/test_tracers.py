@@ -129,8 +129,6 @@ def test_ApolloTracer(starwars_schema):
         tracer=tracer,
     )
 
-    print(tracer.payload())
-
     assert tracer.name == "tracing"
     assert tracer.payload() == {
         "version": 1,
@@ -332,3 +330,60 @@ def test_ApolloTracer(starwars_schema):
     # Order is not deterministic.
     for r in expected_resolvers:
         assert r in tracer.payload()["execution"]["resolvers"]
+
+
+def test_ApolloTracer_on_validation_error(starwars_schema):
+    tracer = ApolloTracer()
+
+    graphql_blocking(
+        starwars_schema,
+        """
+        query NestedQuery {
+            hero {
+                nameasd  # this is the validation error
+                friends {
+                    name
+                    appearsIn
+                    friends {
+                    name
+                    }
+                }
+            }
+        }
+        """,
+        tracer=tracer,
+    )
+
+    assert tracer.name == "tracing"
+    assert tracer.payload() == {
+        "version": 1,
+        "startTime": AnyTimestamp(),
+        "endTime": AnyTimestamp(),
+        "duration": AnyInt(),
+        "execution": None,
+        "validation": {"duration": AnyInt(), "startOffset": AnyInt()},
+        "parsing": {"duration": AnyInt(), "startOffset": AnyInt()},
+    }
+
+
+def test_ApolloTracer_on_syntax_error(starwars_schema):
+    tracer = ApolloTracer()
+
+    graphql_blocking(
+        starwars_schema,
+        """
+        FOO
+        """,
+        tracer=tracer,
+    )
+
+    assert tracer.name == "tracing"
+    assert tracer.payload() == {
+        "version": 1,
+        "startTime": AnyTimestamp(),
+        "endTime": AnyTimestamp(),
+        "duration": AnyInt(),
+        "execution": None,
+        "validation": None,
+        "parsing": {"duration": AnyInt(), "startOffset": AnyInt()},
+    }

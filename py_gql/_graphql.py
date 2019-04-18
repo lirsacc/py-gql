@@ -104,6 +104,7 @@ def process_graphql_query(
         tracer.on_parse_start()
         ast = parse(document, allow_type_system=False)
     except GraphQLSyntaxError as err:
+        tracer.on_end()
         return GraphQLResult(errors=[err])
     finally:
         tracer.on_parse_end()
@@ -113,6 +114,7 @@ def process_graphql_query(
     tracer.on_validate_end()
 
     if not validation_result:
+        tracer.on_end()
         return GraphQLResult(
             errors=cast(List[GraphQLResponseError], validation_result.errors)
         )
@@ -132,8 +134,10 @@ def process_graphql_query(
             executor_args=executor_args,
         )
     except VariablesCoercionError as err:
+        tracer.on_end()
         return GraphQLResult(data=None, errors=err.errors)
     except ExecutionError as err:
+        tracer.on_end()
         return GraphQLResult(data=None, errors=[err])
 
 
