@@ -16,6 +16,7 @@ from .execution import (
     Tracer,
     execute,
 )
+from .execution.async_executor import unwrap_coro
 from .lang import parse
 from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
@@ -159,18 +160,20 @@ async def graphql(
     """
     return cast(
         GraphQLResult,
-        await process_graphql_query(
-            schema,
-            document,
-            variables=variables,
-            operation_name=operation_name,
-            root=root,
-            validators=validators,
-            context=context,
-            default_resolver=default_resolver,
-            tracer=tracer,
-            middlewares=middlewares,
-            executor_cls=AsyncExecutor,
+        await unwrap_coro(
+            process_graphql_query(
+                schema,
+                document,
+                variables=variables,
+                operation_name=operation_name,
+                root=root,
+                validators=validators,
+                context=context,
+                default_resolver=default_resolver,
+                tracer=tracer,
+                middlewares=middlewares,
+                executor_cls=AsyncExecutor,
+            )
         ),
     )
 

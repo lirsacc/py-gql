@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Bugfix: Handle early return from `process_graphql_query` in `py_gql.graphq`.
+
 ## 0.2.0
 
 This release follow some extensive internal refactor and legwork in order to make `py_gql` easier to improve and extend moving forward.
