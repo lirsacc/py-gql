@@ -392,7 +392,7 @@ _LIBRARY_QUERY = """
         title
     },
     article(id: "1") {
-        ...articleFields,a
+        ...articleFields,
         author {
             id,
             name,
