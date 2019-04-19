@@ -201,7 +201,7 @@ UUID = ScalarType(
     "UUID",
     description=(
         "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
-        "[https://tools.ietf.org/html/rfc4122]"
+        "(https://tools.ietf.org/html/rfc4122)"
     ),
     serialize=_serialize_uuid,
     parse=_parse_uuid,

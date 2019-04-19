@@ -6,6 +6,7 @@
 
 - Handle early return from `process_graphql_query` in `py_gql.graphql`.
 - Make sure `process_graphql_query` calls `tracer.on_end()` on early returns.
+- Fix link in the description of the `UUID` scalar type.
 
 ## 0.2.0
 
