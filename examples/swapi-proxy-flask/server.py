@@ -32,20 +32,22 @@ def graphql_route():
 
     tracer = ApolloTracer()
 
-    result = process_graphql_query(
-        SCHEMA,
-        data["query"],
-        variables=data.get("variables", {}),
-        operation_name=data.get("operation_name"),
-        executor_cls=ThreadPoolExecutor,
-        context=dict(global_executor=GLOBAL_EXECUTOR),
-        executor_args=dict(inner_executor=GLOBAL_EXECUTOR),
-        tracer=tracer,
-    )
+    result = ThreadPoolExecutor.unwrap_value(
+        process_graphql_query(
+            SCHEMA,
+            data["query"],
+            variables=data.get("variables", {}),
+            operation_name=data.get("operation_name"),
+            executor_cls=ThreadPoolExecutor,
+            context=dict(global_executor=GLOBAL_EXECUTOR),
+            executor_args=dict(inner_executor=GLOBAL_EXECUTOR),
+            tracer=tracer,
+        )
+    ).result()
 
     result.add_extension(tracer)
 
-    return flask.jsonify(result.result().response())
+    return flask.jsonify(result.response())
 
 
 @app.route("/graphiql")

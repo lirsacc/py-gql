@@ -11,7 +11,7 @@ import requests
 import swapi
 from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.execution.threadpool_executor import gather as gather_futures
+from py_gql.execution import ThreadPoolExecutor
 
 
 def swapi_caller(func):
@@ -64,7 +64,7 @@ def nested_list_resolver(key, resource):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
-        return gather_futures(
+        return ThreadPoolExecutor.gather_values(
             [
                 ctx["global_executor"].submit(swapi.fetch_one, resource, id)
                 for id in ids
