@@ -175,7 +175,7 @@ class Executor:
         """ All field errors collected during query execution. """
         return self._errors[:]
 
-    def fragment_type_applies(
+    def does_fragment_type_apply(
         self,
         object_type: ObjectType,
         fragment: Union[_ast.InlineFragment, _ast.FragmentDefinition],
@@ -186,22 +186,21 @@ class Executor:
             return True
 
         cache_key = (object_type.name, type_condition)
+
         try:
             return self._fragment_type_applies[cache_key]
         except KeyError:
-            fragment_type = self.schema.get_type_from_literal(type_condition)
-            if fragment_type == object_type:
-                self._fragment_type_applies[cache_key] = True
-                return True
+            pass
 
-            if isinstance(object_type, AbstractTypes):
-                if self.schema.is_possible_type(object_type, fragment_type):
-                    self._fragment_type_applies[cache_key] = True
-                    return True
+        fragment_type = self.schema.get_type_from_literal(type_condition)
+        self._fragment_type_applies[cache_key] = applies = (
+            fragment_type == object_type
+        ) or (
+            isinstance(fragment_type, AbstractTypes)
+            and self.schema.is_possible_type(fragment_type, object_type)
+        )
 
-            # TODO: Is this point technically possible given a valid document.
-            self._fragment_type_applies[cache_key] = False
-            return False
+        return applies
 
     def _collect_fragment_fields(
         self,
@@ -249,7 +248,9 @@ class Executor:
                     if _skip_selection(selection, self.variables):
                         continue
 
-                    if not self.fragment_type_applies(parent_type, selection):
+                    if not self.does_fragment_type_apply(
+                        parent_type, selection
+                    ):
                         continue
 
                     self._collect_fragment_fields(
@@ -268,7 +269,7 @@ class Executor:
                         continue
 
                     fragment = self.fragments[name]
-                    if not self.fragment_type_applies(parent_type, fragment):
+                    if not self.does_fragment_type_apply(parent_type, fragment):
                         continue
 
                     self._collect_fragment_fields(
@@ -542,7 +543,7 @@ class Executor:
                 runtime_type,
                 resolved_value,
                 path,
-                self.collect_fields(field_type, tuple(_subselections(nodes))),
+                self.collect_fields(runtime_type, tuple(_subselections(nodes))),
             )
 
         raise TypeError(

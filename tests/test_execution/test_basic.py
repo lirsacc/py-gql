@@ -577,3 +577,53 @@ async def test_invalid_scalar(executor_cls):
             ),
         ),
     )
+
+
+async def test_spreading_fragments_with_interfaces(
+    executor_cls, starwars_schema
+):
+    # Fragment should spread in all 3 cases:
+    # - Spread Implementer { ... on Interface }
+    # - Spread Interface { ... on Interface }
+    # - Spread Interface { ... on Implementer }
+    await assert_execution(
+        starwars_schema,
+        """
+        {
+            luke: human(id: "1000") {
+                name
+                # Spread Implementer { ... on Interface }
+                ...characterData
+            }
+            threepio: droid(id: "2000") {
+                name
+                # Spread Implementer { ... on Interface }
+                ... on Character {
+                    id
+                }
+            }
+            hero: hero {
+                name
+                # Spread Interface { ... on Implementer }
+                ... on Droid {
+                    primaryFunction
+                }
+                # Spread Interface { ... on Interface }
+                ...characterData
+            }
+        }
+
+        fragment characterData on Character {
+            id
+        }
+        """,
+        expected_data={
+            "hero": {
+                "id": "2001",
+                "name": "R2-D2",
+                "primaryFunction": "Astromech",
+            },
+            "luke": {"name": "Luke Skywalker", "id": "1000"},
+            "threepio": {"name": "C-3PO", "id": "2000"},
+        },
+    )
