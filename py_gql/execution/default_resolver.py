@@ -38,14 +38,14 @@ def default_resolver(
         Resolved value
     """
     field_name = info.field_definition.name
-    try:
-        field_value = root.get(field_name, None)
-    except AttributeError:
-        attr_value = getattr(root, field_name, None)
-        if callable(attr_value):
-            return attr_value(context, info, **args)
-        return attr_value
+
+    field_value = (
+        root.get(field_name)
+        if isinstance(root, dict)
+        else getattr(root, field_name, None)
+    )
+
+    if callable(field_value):
+        return field_value(context, info, **args)
     else:
-        if callable(field_value):
-            return field_value(root, context, info, **args)
         return field_value

@@ -147,7 +147,7 @@ async def test_custom_directive_on_field(mocker):
         initial_value={"a": resolver},
     )
 
-    (_, _, info), _ = resolver.call_args
+    (_, info), _ = resolver.call_args
     assert directive_arguments(CustomDirective, info.nodes[0], {}) == {
         "a": "foo",
         "b": 42,
