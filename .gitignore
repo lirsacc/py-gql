@@ -51,6 +51,7 @@ junit.xml
 *,cover
 .hypothesis/
 .pytest_cache
+.benchmarks
 
 # Translations
 *.mo
@@ -78,9 +79,6 @@ target/
 
 # pyenv
 .python-version
-
-# celery beat schedule file
-celerybeat-schedule
 
 # dotenv
 .env
