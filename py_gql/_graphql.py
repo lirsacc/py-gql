@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Type, cast
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, cast
 
-from .exc import (
-    ExecutionError,
-    GraphQLResponseError,
-    GraphQLSyntaxError,
-    VariablesCoercionError,
-)
+from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import (
     AsyncExecutor,
     Executor,
@@ -16,7 +11,6 @@ from .execution import (
     Tracer,
     execute,
 )
-from .execution.async_executor import unwrap_coro
 from .lang import parse
 from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
@@ -35,7 +29,7 @@ def process_graphql_query(
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     tracer: Optional[Tracer] = None,
-    executor_cls: Optional[Type[Executor]] = None,
+    executor_cls: Type[Executor] = Executor,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
@@ -97,15 +91,24 @@ def process_graphql_query(
         `graphql_blocking` for example usage.
     """
     schema.validate()
+
     tracer = tracer or NullTracer()
+
     tracer.on_start()
+
+    def _abort(*args, **kwargs):
+        tracer.on_end()  # type: ignore
+        return executor_cls.unwrap_value(GraphQLResult(*args, **kwargs))
+
+    def _on_end(result):
+        tracer.on_end()  # type: ignore
+        return result
 
     try:
         tracer.on_parse_start()
         ast = parse(document, allow_type_system=False)
     except GraphQLSyntaxError as err:
-        tracer.on_end()
-        return GraphQLResult(errors=[err])
+        return _abort(errors=[err])
     finally:
         tracer.on_parse_end()
 
@@ -114,31 +117,29 @@ def process_graphql_query(
     tracer.on_validate_end()
 
     if not validation_result:
-        tracer.on_end()
-        return GraphQLResult(
-            errors=cast(List[GraphQLResponseError], validation_result.errors)
-        )
+        return _abort(errors=validation_result.errors)
 
     try:
-        return execute(
-            schema,
-            ast,
-            operation_name=operation_name,
-            variables=variables,
-            initial_value=root,
-            context_value=context,
-            default_resolver=default_resolver,
-            tracer=tracer,
-            middlewares=middlewares,
-            executor_cls=executor_cls,
-            executor_args=executor_args,
+        return executor_cls.map_value(
+            execute(
+                schema,
+                ast,
+                operation_name=operation_name,
+                variables=variables,
+                initial_value=root,
+                context_value=context,
+                default_resolver=default_resolver,
+                tracer=tracer,
+                middlewares=middlewares,
+                executor_cls=executor_cls,
+                executor_args=executor_args,
+            ),
+            _on_end,
         )
     except VariablesCoercionError as err:
-        tracer.on_end()
-        return GraphQLResult(data=None, errors=err.errors)
+        return _abort(data=None, errors=err.errors)
     except ExecutionError as err:
-        tracer.on_end()
-        return GraphQLResult(data=None, errors=[err])
+        return _abort(data=None, errors=[err])
 
 
 async def graphql(
@@ -164,20 +165,18 @@ async def graphql(
     """
     return cast(
         GraphQLResult,
-        await unwrap_coro(
-            process_graphql_query(
-                schema,
-                document,
-                variables=variables,
-                operation_name=operation_name,
-                root=root,
-                validators=validators,
-                context=context,
-                default_resolver=default_resolver,
-                tracer=tracer,
-                middlewares=middlewares,
-                executor_cls=AsyncExecutor,
-            )
+        await process_graphql_query(
+            schema,
+            document,
+            variables=variables,
+            operation_name=operation_name,
+            root=root,
+            validators=validators,
+            context=context,
+            default_resolver=default_resolver,
+            tracer=tracer,
+            middlewares=middlewares,
+            executor_cls=AsyncExecutor,
         ),
     )
 

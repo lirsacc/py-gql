@@ -127,7 +127,6 @@ def execute(
 
     def _on_finish(data):
         tracer.on_query_end()  # type: ignore
-        tracer.on_end()  # type: ignore
         return GraphQLResult(data=data, errors=executor.errors)
 
     return executor.map_value(
