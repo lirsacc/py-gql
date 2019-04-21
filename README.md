@@ -2,7 +2,7 @@
 
 [![CircleCI](https://img.shields.io/circleci/project/github/lirsacc/py-gql.svg?logo=circleci)](https://circleci.com/gh/lirsacc/workflows/py-gql) [![Codecov](https://img.shields.io/codecov/c/github/lirsacc/py-gql.svg?)](https://codecov.io/gh/lirsacc/py-gql) [![PyPI](https://img.shields.io/pypi/v/py-gql.svg)](https://pypi.org/project/py-gql/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/py-gql.svg?logo=python&logoColor=white) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/py-gql.svg) [![Read the Docs (version)](https://img.shields.io/readthedocs/pip/latest.svg)](https://py-gql.readthedocs.io/)
 
-py-gql_is a pure python [GraphQL](http://facebook.github.io/graphql/) implementation aimed at creating GraphQL servers.
+py-gql is a pure python [GraphQL](http://facebook.github.io/graphql/) implementation aimed at creating GraphQL servers.
 
 It supports:
 
@@ -60,7 +60,7 @@ The [tests](./tests) should also provide some contrived exmaples.
 
 ## Goals & Status
 
-This project was initially born as an experiment / learning project following some frustration with with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work.
+This project was initially born as an experiment / learning project following some frustration with [graphql-core](https://github.com/graphql-python/graphql-core/) and [Graphene](https://github.com/graphql-python/graphene/) I encountered at work.
 
 The main goals were originally to:
 
@@ -69,15 +69,11 @@ The main goals were originally to:
 
   - tracks the latest version of the spec (which `graphql-core` didn't)
   - does so without being a port of the JS code which leads to some weird edge case when we tried to extend the library
-  - keeps support for Python 2 (which `graphql-core-next`) didn't.
+  - keeps support for Python 2 (which `graphql-core-next`) didn't (this isn't a focu anymore and version 0.2 dropped Python 2 support).
   - (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between `Graphene` and `graphql-core`
-  - makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools.
+  - makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools as well as builder infrastructure to support easily implementing graphql layers over existing data layers (such as ORM).
 
-After going through a couple iterations, it should be ready ready for general use to create GraphQL servers; with the notable omissions of:
-
-- Subscription support
-- Python 2 support has been dropped
-- Middleware have been dropped pending an iteration on the API (and consequently tracers are not supported either)
+Not all these points are satisfied yet but py-gql should be ready for general use. It is however still in a fairly experimental phase and to reflect that versions are still in the `0.x.y`.
 
 ## Development setup
 
