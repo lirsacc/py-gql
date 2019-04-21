@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Mapping, Optional, Sequence, Type
 
 from ..exc import ExecutionError
 from ..lang import ast as _ast
@@ -12,7 +12,6 @@ from .tracer import NullTracer, Tracer
 from .wrappers import GraphQLResult
 
 Resolver = Callable[..., Any]
-TExecutorCls = TypeVar("TExecutorCls", bound=Type[Executor])
 
 
 def execute(
@@ -27,7 +26,7 @@ def execute(
     default_resolver: Optional[Resolver] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     tracer: Optional[Tracer] = None,
-    executor_cls: Optional[TExecutorCls] = None,
+    executor_cls: Type[Executor] = Executor,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
@@ -107,7 +106,7 @@ def execute(
         tracer.on_query_end()
         raise
 
-    executor = (executor_cls or Executor)(
+    executor = executor_cls(
         schema,
         document,
         coerced_variables,
