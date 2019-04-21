@@ -466,6 +466,32 @@ class Executor:
 
         return _next()
 
+    def complete_list_value(
+        self,
+        inner_type: GraphQLType,
+        nodes: List[_ast.Field],
+        path: ResponsePath,
+        resolved_value: Any,
+    ) -> Any:
+        return self.gather_values(
+            [
+                self.complete_value(inner_type, nodes, path + [index], entry)
+                for index, entry in enumerate(resolved_value)
+            ]
+        )
+
+    def complete_non_nullable_value(
+        self,
+        inner_type: GraphQLType,
+        nodes: List[_ast.Field],
+        path: ResponsePath,
+        resolved_value: Any,
+    ) -> Any:
+        return self.map_value(
+            self.complete_value(inner_type, nodes, path, resolved_value),
+            lambda r: self._handle_non_nullable_value(nodes, path, r),
+        )
+
     def complete_value(  # noqa: C901
         self,
         field_type: GraphQLType,
@@ -474,11 +500,8 @@ class Executor:
         resolved_value: Any,
     ) -> Any:
         if isinstance(field_type, NonNullType):
-            return self.map_value(
-                self.complete_value(
-                    field_type.type, nodes, path, resolved_value
-                ),
-                lambda r: self._handle_non_nullable_value(nodes, path, r),
+            return self.complete_non_nullable_value(
+                field_type.type, nodes, path, resolved_value
             )
 
         if resolved_value is None:
@@ -490,13 +513,8 @@ class Executor:
                     'Field "%s" is a list type and resolved value should be '
                     "iterable" % stringify_path(path)
                 )
-            return self.gather_values(
-                [
-                    self.complete_value(
-                        field_type.type, nodes, path + [index], entry
-                    )
-                    for index, entry in enumerate(resolved_value)
-                ]
+            return self.complete_list_value(
+                field_type.type, nodes, path, resolved_value
             )
 
         if isinstance(field_type, ScalarType):

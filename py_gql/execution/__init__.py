@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .asyncio_executor import AsyncIOExecutor
+from .blocking_executor import BlockingExecutor
 from .default_resolver import default_resolver
 from .execute import execute
 from .executor import Executor
@@ -19,6 +20,7 @@ __all__ = (
     "default_resolver",
     "AsyncIOExecutor",
     "ThreadPoolExecutor",
+    "BlockingExecutor",
     "get_operation",
     "Tracer",
     "NullTracer",

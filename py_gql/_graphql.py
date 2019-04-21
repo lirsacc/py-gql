@@ -5,6 +5,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, cast
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import (
     AsyncIOExecutor,
+    BlockingExecutor,
     Executor,
     GraphQLResult,
     NullTracer,
@@ -212,5 +213,6 @@ def graphql_blocking(
             default_resolver=default_resolver,
             tracer=tracer,
             middlewares=middlewares,
+            executor_cls=BlockingExecutor,
         ),
     )
