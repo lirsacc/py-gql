@@ -4,7 +4,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, cast
 
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import (
-    AsyncExecutor,
+    AsyncIOExecutor,
     Executor,
     GraphQLResult,
     NullTracer,
@@ -176,7 +176,7 @@ async def graphql(
             default_resolver=default_resolver,
             tracer=tracer,
             middlewares=middlewares,
-            executor_cls=AsyncExecutor,
+            executor_cls=AsyncIOExecutor,
         ),
     )
 

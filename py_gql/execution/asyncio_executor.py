@@ -10,7 +10,7 @@ from .executor import Executor
 Resolver = Callable[..., Any]
 
 
-class AsyncExecutor(Executor):
+class AsyncIOExecutor(Executor):
     """
     Executor implementation to work Python's asyncio.
     """

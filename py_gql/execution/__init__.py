@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .async_executor import AsyncExecutor
+from .asyncio_executor import AsyncIOExecutor
 from .default_resolver import default_resolver
 from .execute import execute
 from .executor import Executor
@@ -12,13 +12,13 @@ from .wrappers import GraphQLExtension, GraphQLResult, ResolveInfo, ResponsePath
 __all__ = (
     "execute",
     "Executor",
-    "AsyncExecutor",
-    "GraphQLExtension",
     "GraphQLResult",
+    "GraphQLExtension",
     "ResolveInfo",
     "ResponsePath",
-    "ThreadPoolExecutor",
     "default_resolver",
+    "AsyncIOExecutor",
+    "ThreadPoolExecutor",
     "get_operation",
     "Tracer",
     "NullTracer",

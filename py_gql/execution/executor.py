@@ -64,7 +64,7 @@ class Executor:
     """
 
     # These static methods should likely be re-implemented in order to build
-    # custom executors. See to AsyncExecutor and ThreadPoolExecutor for
+    # custom executors. See to AsyncIOExecutor and ThreadPoolExecutor for
     # reference.
     @staticmethod
     def gather_values(values: Iterable[Any]) -> Any:

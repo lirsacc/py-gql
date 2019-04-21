@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from py_gql.execution import AsyncExecutor, Executor, ThreadPoolExecutor
+from py_gql.execution import AsyncIOExecutor, Executor, ThreadPoolExecutor
 
 
 @pytest.fixture
@@ -40,6 +40,6 @@ def raiser():
     return factory
 
 
-@pytest.fixture(params=[Executor, AsyncExecutor, ThreadPoolExecutor])
+@pytest.fixture(params=[Executor, AsyncIOExecutor, ThreadPoolExecutor])
 def executor_cls(request):
     yield request.param

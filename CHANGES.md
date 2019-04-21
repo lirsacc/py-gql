@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- `AsyncExecutor` renamed to `AsyncIOExecutor`
+
 ### Fixed
 
 - Handle early return from `process_graphql_query` in `py_gql.graphql`.
