@@ -6,6 +6,10 @@
 
 - `AsyncExecutor` renamed to `AsyncIOExecutor`
 
+### Updated
+
+- Support passing an already parsed ast to `process_graphql_query` and its derivatives.
+
 ### Fixed
 
 - Handle early return from `process_graphql_query` in `py_gql.graphql`.

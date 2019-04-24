@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, cast
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 
 from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import (
@@ -13,6 +13,7 @@ from .execution import (
     execute,
 )
 from .lang import parse
+from .lang.ast import Document
 from .schema import Schema
 from .validation import ValidationVisitor, validate_ast
 
@@ -20,7 +21,7 @@ from .validation import ValidationVisitor, validate_ast
 def process_graphql_query(
     # fmt: off
     schema: Schema,
-    document: str,
+    document: Union[str, Document],
     *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
@@ -99,19 +100,24 @@ def process_graphql_query(
 
     def _abort(*args, **kwargs):
         tracer.on_end()  # type: ignore
+        # Make sure the value is wrapped similarly to the execution result to
+        # make it easier for consumers.
         return executor_cls.unwrap_value(GraphQLResult(*args, **kwargs))
 
     def _on_end(result):
         tracer.on_end()  # type: ignore
         return result
 
-    try:
-        tracer.on_parse_start()
-        ast = parse(document, allow_type_system=False)
-    except GraphQLSyntaxError as err:
-        return _abort(errors=[err])
-    finally:
-        tracer.on_parse_end()
+    if isinstance(document, str):
+        try:
+            tracer.on_parse_start()
+            ast = parse(document, allow_type_system=False)
+        except GraphQLSyntaxError as err:
+            return _abort(errors=[err])
+        finally:
+            tracer.on_parse_end()
+    else:
+        ast = document
 
     tracer.on_validate_start()
     validation_result = validate_ast(schema, ast, validators=validators)
@@ -146,7 +152,7 @@ def process_graphql_query(
 async def graphql(
     # fmt: off
     schema: Schema,
-    document: str,
+    document: Union[str, Document],
     *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
@@ -185,7 +191,7 @@ async def graphql(
 def graphql_blocking(
     # fmt: off
     schema: Schema,
-    document: str,
+    document: Union[str, Document],
     *,
     variables: Optional[Mapping[str, Any]] = None,
     operation_name: Optional[str] = None,
