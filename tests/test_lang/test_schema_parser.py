@@ -55,7 +55,7 @@ type Hello {
   world: String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 31),
             definitions=[
@@ -84,7 +84,8 @@ def test_it_parses_type_with_description_string():
 "Description"
 type Hello {
   world: String
-}"""
+}""",
+            allow_type_system=True,
         ),
         _ast.Document(
             loc=(0, 45),
@@ -111,9 +112,7 @@ type Hello {
 
 
 def test_it_parses_type_with_description_multi_line_string():
-    assert_node_equal(
-        parse(
-            '''
+    body = '''
 """
 Description
 """
@@ -121,7 +120,9 @@ Description
 type Hello {
   world: String
 }'''
-        ),
+
+    assert_node_equal(
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 85),
             definitions=[
@@ -153,7 +154,7 @@ extend type Hello {
 }
 """
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 39),
             [
@@ -177,7 +178,7 @@ extend type Hello {
 
 def test_it_parses_extension_without_fields():
     assert_node_equal(
-        parse("extend type Hello implements Greeting"),
+        parse("extend type Hello implements Greeting", allow_type_system=True),
         _doc(
             (0, 37),
             [
@@ -200,7 +201,8 @@ def test_it_parses_extension_without_fields_followed_by_extension():
       extend type Hello implements Greeting
 
       extend type Hello implements SecondGreeting
-    """
+    """,
+            allow_type_system=True,
         ),
         _ast.Document(
             loc=(0, 100),
@@ -226,7 +228,7 @@ def test_it_parses_extension_without_fields_followed_by_extension():
 
 def test_extension_without_anything_throws():
     with pytest.raises(UnexpectedEOF) as exc_info:
-        parse("extend type Hello")
+        parse("extend type Hello", allow_type_system=True)
     assert exc_info.value.position == 17
     assert exc_info.value.message == "Unexpected <EOF>"
 
@@ -238,7 +240,8 @@ def test_extension_do_not_include_descriptions_0():
       "Description"
       extend type Hello {
         world: String
-      }"""
+      }""",
+            allow_type_system=True,
         )
     assert exc_info.value.position == 27
     assert exc_info.value.message == 'Unexpected "extend"'
@@ -250,7 +253,8 @@ def test_extension_do_not_include_descriptions_1():
             """
       extend "Description" type Hello {
         world: String
-      }"""
+      }""",
+            allow_type_system=True,
         )
     assert exc_info.value.position == 14
     assert exc_info.value.message == 'Unexpected "Description"'
@@ -262,7 +266,7 @@ type Hello {
   world: String!
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 32),
             definitions=[
@@ -289,7 +293,7 @@ type Hello {
 def test_it_parses_simple_type_inheriting_interface():
     body = "type Hello implements World { field: String }"
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 45),
             definitions=[
@@ -314,7 +318,7 @@ def test_it_parses_simple_type_inheriting_interface():
 def test_it_parses_simple_type_inheriting_multiple_interfaces():
     body = "type Hello implements Wo & rld { field: String }"
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 48),
             definitions=[
@@ -339,7 +343,7 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces():
 def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_ampersand():  # noqa: E501
     body = "type Hello implements & Wo & rld { field: String }"
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _ast.Document(
             loc=(0, 50),
             definitions=[
@@ -364,7 +368,7 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_amper
 def test_it_parses_single_value_enum():
     body = "enum Hello { WORLD }"
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 20),
             [
@@ -386,7 +390,7 @@ def test_it_parses_single_value_enum():
 def test_it_parses_double_value_enum():
     body = "enum Hello { WO, RLD }"
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 22),
             [
@@ -414,7 +418,7 @@ interface Hello {
   world: String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 36),
             [
@@ -441,7 +445,7 @@ type Hello {
   world(flag: Boolean): String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 46),
             [
@@ -476,7 +480,7 @@ type Hello {
   world(flag: Boolean = true): String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 53),
             [
@@ -512,7 +516,7 @@ type Hello {
   world(things: [String]): String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 49),
             [
@@ -550,7 +554,7 @@ type Hello {
   world(argOne: Boolean, argTwo: Int): String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 61),
             [
@@ -586,7 +590,7 @@ type Hello {
 
 def test_it_parses_simple_union():
     assert_node_equal(
-        parse("union Hello = World"),
+        parse("union Hello = World", allow_type_system=True),
         _doc(
             (0, 19),
             [
@@ -603,7 +607,7 @@ def test_it_parses_simple_union():
 
 def test_it_parses_union_with_two_types():
     assert_node_equal(
-        parse("union Hello = Wo | Rld"),
+        parse("union Hello = Wo | Rld", allow_type_system=True),
         _doc(
             (0, 22),
             [
@@ -620,7 +624,7 @@ def test_it_parses_union_with_two_types():
 
 def test_it_parses_union_with_two_types_and_leading_pipe():
     assert_node_equal(
-        parse("union Hello = | Wo | Rld"),
+        parse("union Hello = | Wo | Rld", allow_type_system=True),
         _doc(
             (0, 24),
             [
@@ -637,35 +641,35 @@ def test_it_parses_union_with_two_types_and_leading_pipe():
 
 def test_union_fails_with_no_types():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse("union Hello = |")
+        parse("union Hello = |", allow_type_system=True)
     assert exc_info.value.position == 15
     assert exc_info.value.message == 'Expected Name but found "<EOF>"'
 
 
 def test_union_fails_with_leading_douple_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse("union Hello = || Wo | Rld")
+        parse("union Hello = || Wo | Rld", allow_type_system=True)
     assert exc_info.value.position == 15
     assert exc_info.value.message == 'Expected Name but found "|"'
 
 
 def test_union_fails_with_double_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse("union Hello = Wo || Rld")
+        parse("union Hello = Wo || Rld", allow_type_system=True)
     assert exc_info.value.position == 18
     assert exc_info.value.message == 'Expected Name but found "|"'
 
 
 def test_union_fails_with_trailing_pipe():
     with pytest.raises(UnexpectedToken) as exc_info:
-        parse("union Hello = | Wo | Rld |")
+        parse("union Hello = | Wo | Rld |", allow_type_system=True)
     assert exc_info.value.position == 26
     assert exc_info.value.message == 'Expected Name but found "<EOF>"'
 
 
 def test_it_parses_scalar():
     assert_node_equal(
-        parse("scalar Hello"),
+        parse("scalar Hello", allow_type_system=True),
         _doc(
             (0, 12),
             [
@@ -683,7 +687,7 @@ input Hello {
   world: String
 }"""
     assert_node_equal(
-        parse(body),
+        parse(body, allow_type_system=True),
         _doc(
             (0, 32),
             [
@@ -710,7 +714,8 @@ def test_simple_input_object_with_args_should_fail():
             """
       input Hello {
         world(foo: Int): String
-      }"""
+      }""",
+            allow_type_system=True,
         )
 
     assert exc_info.value.position == 34
@@ -721,7 +726,8 @@ def test_directive_with_incorrect_locations_fails():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse(
             """
-      directive @foo on FIELD | INCORRECT_LOCATION"""
+      directive @foo on FIELD | INCORRECT_LOCATION""",
+            allow_type_system=True,
         )
 
     assert exc_info.value.position == 33
@@ -730,12 +736,20 @@ def test_directive_with_incorrect_locations_fails():
 
 def test_it_parses_kitchen_sink(fixture_file):
     # assert doesn't raise
-    assert parse(fixture_file("schema-kitchen-sink.graphql"), no_location=True)
+    assert parse(
+        fixture_file("schema-kitchen-sink.graphql"),
+        no_location=True,
+        allow_type_system=True,
+    )
 
 
 def test_it_parses_github_schema(fixture_file):
     # assert doesn't raise
-    assert parse(fixture_file("github-schema.graphql"), no_location=True)
+    assert parse(
+        fixture_file("github-schema.graphql"),
+        no_location=True,
+        allow_type_system=True,
+    )
 
 
 def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(

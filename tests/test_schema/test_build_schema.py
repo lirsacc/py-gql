@@ -23,7 +23,8 @@ def test_built_schema_is_executable():
             type Query {
                 str: String
             }
-            """
+            """,
+            allow_type_system=True,
         )
     )
     data, _ = graphql_blocking(schema, "{ str }", root={"str": 123})

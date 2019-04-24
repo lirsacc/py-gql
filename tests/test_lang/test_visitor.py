@@ -28,7 +28,7 @@ def test_null_visitor_does_not_crash_on_kitchen_sink(fixture_file):
 
 def test_null_visitor_does_not_crash_on_kitchen_sink_schema(fixture_file):
     source = fixture_file("schema-kitchen-sink.graphql")
-    ast = parse(source, no_location=True)
+    ast = parse(source, no_location=True, allow_type_system=True)
     visit(NullVisitor(), ast)
 
 
@@ -278,7 +278,7 @@ def test_it_processes_kitchen_sink(fixture_file):
 def test_it_processes_schema_kitchen_sink(fixture_file):
     ks = fixture_file("schema-kitchen-sink.graphql")
     visitor = Tracker()
-    visit(visitor, parse(ks, no_location=True))
+    visit(visitor, parse(ks, no_location=True, allow_type_system=True))
     assert visitor.stack == [
         ("enter", "Document"),
         ("enter", "SchemaDefinition"),

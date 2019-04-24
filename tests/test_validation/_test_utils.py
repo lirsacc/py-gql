@@ -22,7 +22,9 @@ def assert_validation_result(
     expected_locs = expected_locs or []
 
     print(source)
-    result = validate_ast(schema, parse(dedent(source)), checkers)
+    result = validate_ast(
+        schema, parse(dedent(source), allow_type_system=True), checkers
+    )
     errors = result.errors
 
     msgs = [str(err) for err in errors]

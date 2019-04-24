@@ -215,7 +215,7 @@ fragment frag on Friend {
 
 def test_schema_kitchen_sink(fixture_file):
     ks = fixture_file("schema-kitchen-sink.graphql")
-    assert print_ast(parse(ks)) == dedent(
+    assert print_ast(parse(ks, allow_type_system=True)) == dedent(
         '''
 schema {
   query: QueryType

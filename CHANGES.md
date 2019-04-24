@@ -5,6 +5,7 @@
 ### Breaking Changes
 
 - `AsyncExecutor` renamed to `AsyncIOExecutor`
+- `allow_type_system` argument to `py_gql.lang.Parser` now defaults to `False`.
 
 ### Updated
 

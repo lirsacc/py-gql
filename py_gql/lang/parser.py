@@ -226,7 +226,7 @@ class Parser:
         self,
         source: Union[str, bytes],
         no_location: bool = False,
-        allow_type_system: bool = True,
+        allow_type_system: bool = False,
         experimental_fragment_variables: bool = False,
     ):
         self._lexer = Lexer(source)

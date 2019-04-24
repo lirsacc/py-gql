@@ -111,7 +111,7 @@ def process_graphql_query(
     if isinstance(document, str):
         try:
             tracer.on_parse_start()
-            ast = parse(document, allow_type_system=False)
+            ast = parse(document)
         except GraphQLSyntaxError as err:
             return _abort(errors=[err])
         finally:
