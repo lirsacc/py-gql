@@ -3,6 +3,7 @@
 import pytest
 
 from py_gql._string_utils import dedent
+from py_gql.builders import SchemaDirective, build_schema
 from py_gql.schema import (
     UUID,
     Argument,
@@ -475,3 +476,178 @@ def test_introspection_schema_comments(fixture_file):
         include_introspection=True,
         use_legacy_comment_descriptions=True,
     ) == fixture_file("intropsection-schema-comments.graphql")
+
+
+def test_custom_directive_from_sdl_are_included_if_set():
+    custom_directive = Directive(
+        "custom",
+        [
+            "SCHEMA",
+            "SCALAR",
+            "OBJECT",
+            "FIELD_DEFINITION",
+            "ARGUMENT_DEFINITION",
+            "INTERFACE",
+            "UNION",
+            "ENUM",
+            "ENUM_VALUE",
+            "INPUT_OBJECT",
+            "INPUT_FIELD_DEFINITION",
+        ],
+        [Argument("arg", NonNullType(String))],
+    )
+
+    class CustomDirective(SchemaDirective):
+        definition = custom_directive
+
+    sdl = """
+    schema @custom(arg: "SCHEMA") {
+        query: Query
+    }
+
+    directive @custom(arg: Int!) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION \
+| ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT \
+| INPUT_FIELD_DEFINITION
+
+    enum Enum @custom(arg: "ENUM") {
+        WITH @custom(arg: "ENUM_VALUE")
+        WITHOUT
+    }
+
+    input Input @custom(arg: "INPUT_OBJECT") {
+        with: String = "foo" @custom(arg: "INPUT_FIELD_DEFINITION")
+        without: Int
+    }
+
+    interface Interface @custom(arg: "INTERFACE") {
+        with(\
+with: String = "foo" @custom(arg: "ARGUMENT_DEFINITION"), \
+without: Int\
+): Int @custom(arg: "FIELD_DEFINITION")
+        without: String
+    }
+
+    type Query implements Interface @custom(arg: "OBJECT") {
+        with(\
+with: String = "foo" @custom(arg: "ARGUMENT_DEFINITION"), \
+without: Int\
+): Int @custom(arg: "FIELD_DEFINITION")
+        without: String
+    }
+
+    scalar Scalar @custom(arg: "SCALAR")
+
+    union Union @custom(arg: "UNION") = Query
+    """
+
+    schema = build_schema(sdl, schema_directives={"custom": CustomDirective})
+    assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
+
+
+def test_custom_directives_from_sdl_are_included_if_set_to_True():
+    custom_directive = Directive(
+        "custom",
+        [
+            "SCHEMA",
+            "SCALAR",
+            "OBJECT",
+            "FIELD_DEFINITION",
+            "ARGUMENT_DEFINITION",
+            "INTERFACE",
+            "UNION",
+            "ENUM",
+            "ENUM_VALUE",
+            "INPUT_OBJECT",
+            "INPUT_FIELD_DEFINITION",
+        ],
+        [Argument("arg", NonNullType(String))],
+    )
+
+    class CustomDirective(SchemaDirective):
+        definition = custom_directive
+
+    sdl = """
+    schema @custom(arg: "SCHEMA") {
+        query: Query
+    }
+
+    directive @custom(arg: String!) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION \
+| ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT \
+| INPUT_FIELD_DEFINITION
+
+    enum Enum @custom(arg: "ENUM") {
+        WITH @custom(arg: "ENUM_VALUE")
+        WITHOUT
+    }
+
+    input Input @custom(arg: "INPUT_OBJECT") {
+        with: String = "foo" @custom(arg: "INPUT_FIELD_DEFINITION")
+        without: Int
+    }
+
+    interface Interface @custom(arg: "INTERFACE") {
+        with(\
+with: String = "foo" @custom(arg: "ARGUMENT_DEFINITION"), \
+without: Int\
+): Int @custom(arg: "FIELD_DEFINITION")
+        without: String
+    }
+
+    type Query implements Interface @custom(arg: "OBJECT") {
+        with(\
+with: String = "foo" @custom(arg: "ARGUMENT_DEFINITION"), \
+without: Int\
+): Int @custom(arg: "FIELD_DEFINITION")
+        without: String
+    }
+
+    scalar Scalar @custom(arg: "SCALAR")
+
+    union Union @custom(arg: "UNION") = Query
+    """
+
+    schema = build_schema(sdl, schema_directives={"custom": CustomDirective})
+    assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
+
+
+def test_custom_directives_whitelist():
+    class CustomDirective(SchemaDirective):
+        pass
+
+    sdl = """
+    schema @custom1(arg: 1) @custom2(arg: 2) {
+        query: Query
+    }
+
+    directive @custom1(arg: Int!) on SCHEMA
+    directive @custom2(arg: Int!) on SCHEMA
+
+    type Query {
+        foo: Int
+    }
+    """
+
+    schema = build_schema(
+        sdl,
+        schema_directives={
+            "custom1": CustomDirective,
+            "custom2": CustomDirective,
+        },
+    )
+    assert print_schema(
+        schema, include_custom_directives=["custom1"]
+    ) == dedent(
+        """
+        schema @custom1(arg: 1) {
+            query: Query
+        }
+
+        directive @custom1(arg: Int!) on SCHEMA
+
+        directive @custom2(arg: Int!) on SCHEMA
+
+        type Query {
+            foo: Int
+        }
+        """
+    )

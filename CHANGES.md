@@ -10,6 +10,7 @@
 ### Updated
 
 - Support passing an already parsed ast to `process_graphql_query` and its derivatives.
+- `ASTSchemaPrinter` (and `Schema.to_string()`) now supports printing custom schema directves collected when using `build_schema` behind the `include_custom_directives` flag.
 
 ### Fixed
 

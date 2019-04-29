@@ -388,26 +388,12 @@ class Schema:
         include_descriptions: bool = True,
         include_introspection: bool = False,
         use_legacy_comment_descriptions: bool = False,
+        include_custom_directives: bool = False,
     ) -> str:
         """
         Format the schema as an SDL string.
 
-        Args:
-            indent:
-                Indent character or number of spaces
-
-            include_descriptions:
-                If ``True`` include descriptions in the output
-
-            use_legacy_comment_descriptions:
-                Control how descriptions are formatted.
-
-                Set to ``True`` for the old standard (use comments) which will be
-                compatible with most GraphQL parsers while the default settings is
-                to use block strings and is part of the most recent specification.
-
-            include_introspection:
-                If ``True``, include introspection types in the output
+        Refer to :class:`py_gql.utilities.ASTSchemaPrinter` for details.
         """
         from ..utilities.ast_schema_printer import ASTSchemaPrinter
 
@@ -416,6 +402,7 @@ class Schema:
             include_descriptions=include_descriptions,
             include_introspection=include_introspection,
             use_legacy_comment_descriptions=use_legacy_comment_descriptions,
+            include_custom_directives=include_custom_directives,
         )(self)
 
     def assign_resolver(

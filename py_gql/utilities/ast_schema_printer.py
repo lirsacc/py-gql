@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 """ Export schema as SDL. """
 
-from typing import Any, Union
+from typing import Any, Sequence, Union
 
 from .._string_utils import leading_whitespace, wrapped_lines
+from .._utils import flatten
 from ..lang import print_ast
 from ..schema import (
     SPECIFIED_DIRECTIVES,
     SPECIFIED_SCALAR_TYPES,
+    Argument,
+    Directive,
     EnumType,
     EnumValue,
     Field,
     GraphQLType,
+    InputField,
     InputObjectType,
     InterfaceType,
     ObjectType,
@@ -40,6 +44,18 @@ class ASTSchemaPrinter:
             to use block strings and is part of the most recent specification.
 
         include_introspection: If ``True``, include introspection types in the output
+
+        include_custom_directives: Include custom directives collected when
+            building the schema from an SDL document.
+
+            By default this class will not print any directive included in the
+            schema as there is no guarantee any external tooling consuming the
+            SDL will undertand them. You can set this flag to ``True`` to
+            include all of them or use a whitelist of directive names.
+
+            This applies only to directive locations and not directive
+            definitions as they could be relevant to clients regardless of their
+            use in the schema.
     """
 
     __slots__ = (
@@ -47,6 +63,7 @@ class ASTSchemaPrinter:
         "include_descriptions",
         "use_legacy_comment_descriptions",
         "include_introspection",
+        "include_custom_directives",
     )
 
     def __init__(
@@ -56,6 +73,7 @@ class ASTSchemaPrinter:
         include_introspection: bool = False,
         # TODO: Can this be dropped?
         use_legacy_comment_descriptions: bool = False,
+        include_custom_directives: Union[bool, Sequence[str]] = False,
     ):
         self.include_descriptions = include_descriptions
         self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
@@ -66,6 +84,7 @@ class ASTSchemaPrinter:
             self.indent = indent
 
         self.include_introspection = include_introspection
+        self.include_custom_directives = include_custom_directives
 
     def __call__(self, schema: Schema) -> str:
         directives = sorted(
@@ -93,13 +112,16 @@ class ASTSchemaPrinter:
         )
 
         parts = (
-            [_schema_definition(schema, self.indent)]
+            [self.print_schema_definition(schema)]
             + (
-                [self.print_directive(d) for d in SPECIFIED_DIRECTIVES]
+                [
+                    self.print_directive_definition(d)
+                    for d in SPECIFIED_DIRECTIVES
+                ]
                 if self.include_introspection
                 else []
             )
-            + [self.print_directive(d) for d in directives]
+            + [self.print_directive_definition(d) for d in directives]
             + [self.print_type(t) for t in types]
         )
 
@@ -186,6 +208,55 @@ class ASTSchemaPrinter:
             ast_node_from_value(field_or_enum_value.deprecation_reason, String)
         )
 
+    def include_custom_directive(self, directive_name: str) -> bool:
+        known_directive_names = (d.name for d in SPECIFIED_DIRECTIVES)
+        if directive_name in known_directive_names:
+            return False
+
+        if not isinstance(self.include_custom_directives, bool):
+            return directive_name in self.include_custom_directives
+        else:
+            return True
+
+    def print_directives(
+        self,
+        definition: Union[
+            Argument,
+            EnumType,
+            EnumValue,
+            Field,
+            InputField,
+            InputObjectType,
+            InterfaceType,
+            ObjectType,
+            ScalarType,
+            Schema,
+            UnionType,
+        ],
+    ) -> str:
+        if not self.include_custom_directives:
+            return ""
+
+        if isinstance(definition, (Field, Argument, InputField, EnumValue)):
+            directives_nodes = (
+                definition.node.directives
+                if definition.node is not None
+                else []
+            )
+        else:
+            directives_nodes = list(
+                flatten(n.directives for n in definition.nodes if n)
+            )
+
+        if not directives_nodes:
+            return ""
+
+        return " " + " ".join(
+            print_ast(directive_node)
+            for directive_node in directives_nodes
+            if self.include_custom_directive(directive_node.name.value)
+        )
+
     def print_type(self, type_: GraphQLType) -> str:
         if isinstance(type_, ScalarType):
             return self.print_scalar_type(type_)
@@ -203,15 +274,17 @@ class ASTSchemaPrinter:
         raise TypeError(type_)
 
     def print_scalar_type(self, type_: ScalarType) -> str:
-        return "%sscalar %s" % (
+        return "%sscalar %s%s" % (
             self.print_description(type_, 0, True),
             type_.name,
+            self.print_directives(type_),
         )
 
     def print_enum_type(self, type_: EnumType) -> str:
-        return "%senum %s {\n%s\n}" % (
+        return "%senum %s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
+            self.print_directives(type_),
             "\n".join(
                 [
                     "".join(
@@ -220,34 +293,41 @@ class ASTSchemaPrinter:
                             self.indent,
                             enum_value.name,
                             self.print_deprecated(enum_value),
+                            self.print_directives(enum_value),
                         ]
-                    )
+                    ).rstrip()
                     for i, enum_value in enumerate(type_.values)
                 ]
             ),
         )
 
     def print_union_type(self, type_: UnionType) -> str:
-        return "%sunion %s = %s" % (
+        return "%sunion %s%s = %s" % (
             self.print_description(type_),
             type_.name,
+            self.print_directives(type_),
             " | ".join((t.name for t in type_.types)),
         )
 
     def print_object_type(self, type_: ObjectType) -> str:
-        return "%stype %s%s {\n%s\n}" % (
+        return "%stype %s%s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
-            " implements %s" % " & ".join([i.name for i in type_.interfaces])
-            if type_.interfaces
-            else "",
+            (
+                " implements %s"
+                % " & ".join([i.name for i in type_.interfaces])
+                if type_.interfaces
+                else ""
+            ),
+            self.print_directives(type_),
             self.print_fields(type_),
         )
 
     def print_interface_type(self, type_: InterfaceType) -> str:
-        return "%sinterface %s {\n%s\n}" % (
+        return "%sinterface %s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
+            self.print_directives(type_),
             self.print_fields(type_),
         )
 
@@ -262,16 +342,18 @@ class ASTSchemaPrinter:
                         self.print_arguments(field.arguments, 1),
                         ": %s" % field.type,
                         self.print_deprecated(field),
+                        self.print_directives(field),
                     ]
-                )
+                ).rstrip()
                 for i, field in enumerate(type_.fields)
             ]
         )
 
     def print_input_object_type(self, type_: InputObjectType) -> str:
-        return "%sinput %s {\n%s\n}" % (
+        return "%sinput %s%s {\n%s\n}" % (
             self.print_description(type_),
             type_.name,
+            self.print_directives(type_),
             "\n".join(
                 [
                     "%s%s%s"
@@ -285,7 +367,7 @@ class ASTSchemaPrinter:
             ),
         )
 
-    def print_directive(self, directive):
+    def print_directive_definition(self, directive: Directive) -> str:
         return "%sdirective @%s%s on %s" % (
             self.print_description(directive),
             directive.name,
@@ -293,7 +375,7 @@ class ASTSchemaPrinter:
             " | ".join(directive.locations),
         )
 
-    def print_arguments(self, args, depth=0):
+    def print_arguments(self, args: Sequence[Argument], depth: int = 0) -> str:
         if not args:
             return ""
 
@@ -320,7 +402,9 @@ class ASTSchemaPrinter:
                 [self.print_input_value(arg) for arg in args]
             )
 
-    def print_input_value(self, arg_or_inut_field):
+    def print_input_value(
+        self, arg_or_inut_field: Union[Argument, InputField]
+    ) -> str:
         s = "%s: %s" % (arg_or_inut_field.name, arg_or_inut_field.type)
         if arg_or_inut_field.has_default_value:
             s += " = %s" % print_ast(
@@ -328,32 +412,38 @@ class ASTSchemaPrinter:
                     arg_or_inut_field.default_value, arg_or_inut_field.type
                 )
             )
-        return s
+        return (s + self.print_directives(arg_or_inut_field)).strip()
 
+    def print_schema_definition(self, schema: Schema) -> str:
+        directives = self.print_directives(schema)
 
-def _schema_definition(schema: "Schema", indent: str) -> str:
-    if (
-        (not schema.query_type or schema.query_type.name == "Query")
-        and (
-            not schema.mutation_type or schema.mutation_type.name == "Mutation"
-        )
-        and (
-            not schema.subscription_type
-            or schema.subscription_type.name == "Subscription"
-        )
-    ):
-        return ""
+        if (
+            not directives
+            and (not schema.query_type or schema.query_type.name == "Query")
+            and (
+                not schema.mutation_type
+                or schema.mutation_type.name == "Mutation"
+            )
+            and (
+                not schema.subscription_type
+                or schema.subscription_type.name == "Subscription"
+            )
+        ):
+            return ""
 
-    operation_types = []
-    if schema.query_type:
-        operation_types.append("%squery: %s" % (indent, schema.query_type.name))
-    if schema.mutation_type:
-        operation_types.append(
-            "%smutation: %s" % (indent, schema.mutation_type.name)
-        )
-    if schema.subscription_type:
-        operation_types.append(
-            "%ssubscription: %s" % (indent, schema.subscription_type.name)
-        )
+        operation_types = []
+        if schema.query_type:
+            operation_types.append(
+                "%squery: %s" % (self.indent, schema.query_type.name)
+            )
+        if schema.mutation_type:
+            operation_types.append(
+                "%smutation: %s" % (self.indent, schema.mutation_type.name)
+            )
+        if schema.subscription_type:
+            operation_types.append(
+                "%ssubscription: %s"
+                % (self.indent, schema.subscription_type.name)
+            )
 
-    return "schema {\n%s\n}" % "\n".join(operation_types)
+        return "schema%s {\n%s\n}" % (directives, "\n".join(operation_types))
