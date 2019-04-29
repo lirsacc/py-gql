@@ -176,6 +176,12 @@ def fmt(ctx, check=False, files=None):
         black(ctx, files=files)
 
 
+@invoke.task(pre=[invoke.call(fmt, check=True), flake8, mypy, test])
+def check(ctx):
+    """ Run all checks. """
+    pass
+
+
 @invoke.task
 def docs(ctx, clean_=True, strict=False, verbose=False):
     """ Generate documentation """
