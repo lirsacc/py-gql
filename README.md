@@ -73,7 +73,7 @@ The main goals were originally to:
   - (subjective) attempts to be a bit more usable for our use cases, the ideal result would sit somewhere in between `Graphene` and `graphql-core`
   - makes it easier for us to build / include some extra tooling such as custom tracing, custom validation and SDL based tools as well as builder infrastructure to support easily implementing graphql layers over existing data layers (such as ORM).
 
-Not all these points are satisfied yet but py-gql should be ready for general use. It is however still in a fairly experimental phase and to reflect that versions are still in the `0.x.y`.
+Not all these points are satisfied yet but py-gql should be ready for general use. It is however still in a fairly experimental phase and to reflect that versions are still in the `0.x.y`.The API is still subject to change as different part of the codebase are iterated on and are getting more use against production codebases.
 
 ## Development setup
 
