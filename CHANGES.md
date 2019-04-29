@@ -6,6 +6,7 @@
 
 - `AsyncExecutor` renamed to `AsyncIOExecutor`
 - `allow_type_system` argument to `py_gql.lang.Parser` now defaults to `False`.
+- `SchemaDirective` do not support defining their own definition which now has to be defined in the schema.
 
 ### Updated
 

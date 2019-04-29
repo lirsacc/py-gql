@@ -16,12 +16,9 @@ from py_gql.builders import (
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.execution import default_resolver
 from py_gql.schema import (
-    Argument,
-    Directive,
     EnumType,
     EnumValue,
     Field,
-    Int,
     ListType,
     NonNullType,
     ObjectType,
@@ -112,13 +109,6 @@ def test_ignores_unknown_directive_implementation():
 
 def test_field_modifier_using_arguments():
     class PowerDirective(SchemaDirective):
-
-        definition = Directive(
-            "power",
-            ["FIELD_DEFINITION"],
-            args=[Argument("exponent", Int, default_value=2)],
-        )
-
         # pylint: disable = super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
@@ -130,6 +120,8 @@ def test_field_modifier_using_arguments():
         graphql_blocking(
             build_schema(
                 """
+                directive @power(exponent: Int = 2) on FIELD_DEFINITION
+
                 type Query {
                     foo: Int @power
                     bar: Int @power(exponent: 3)
@@ -252,13 +244,6 @@ def test_missing_definition():
 
 def test_multiple_directives_applied_in_order():
     class PowerDirective(SchemaDirective):
-
-        definition = Directive(
-            "power",
-            ["FIELD_DEFINITION"],
-            args=[Argument("exponent", Int, default_value=2)],
-        )
-
         # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
@@ -267,8 +252,6 @@ def test_multiple_directives_applied_in_order():
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     class PlusOneDirective(SchemaDirective):
-        definition = Directive("plus_one", ["FIELD_DEFINITION"])
-
         def on_field_definition(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x + 1)
 
@@ -276,6 +259,9 @@ def test_multiple_directives_applied_in_order():
         graphql_blocking(
             build_schema(
                 """
+                directive @power(exponent: Int = 2) on FIELD_DEFINITION
+                directive @plus_one on FIELD_DEFINITION
+
                 type Query {
                     foo: Int @power @plus_one
                     bar: Int @plus_one @power
@@ -334,12 +320,6 @@ def test_input_values():
             self.min = args["min"]
             self.max = args.get("max")
 
-        definition = Directive(
-            "len",
-            ["ARGUMENT_DEFINITION", "INPUT_FIELD_DEFINITION"],
-            [Argument("min", Int, default_value=0), Argument("max", Int)],
-        )
-
         def on_argument_definition(self, arg):
             arg.type = LimitedLengthScalarType.wrap(
                 arg.type, self.min, self.max
@@ -354,6 +334,9 @@ def test_input_values():
 
     schema = build_schema(
         """
+        directive @len(min: Int = 0, max: Int)
+            on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
         type Query {
             foo (
                 bar: BarInput
@@ -370,6 +353,9 @@ def test_input_values():
 
     assert schema.to_string() == dedent(
         """
+        directive @len(min: Int = 0, max: Int) \
+on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
         input BarInput {
             baz: LimitedLenthString_3_inf
         }

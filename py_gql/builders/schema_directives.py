@@ -7,17 +7,7 @@ This is largely based on the way Apollo and grpahql-tools implement it,
 borrowing the same idea of extending the AST visitor concept to the schema.
 """
 
-from typing import (
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Iterator, List, Mapping, Optional, Set, Type, TypeVar, Union
 
 from .._utils import flatten
 from ..exc import SDLError
@@ -25,12 +15,10 @@ from ..lang import ast as _ast
 from ..schema import (
     SPECIFIED_SCALAR_TYPES,
     Argument,
-    DeprecatedDirective,
     Directive,
     EnumType,
     EnumValue,
     Field,
-    GraphQLType,
     InputField,
     InputObjectType,
     InterfaceType,
@@ -48,36 +36,37 @@ T = TypeVar("T")
 TType = TypeVar("TType", bound=type)
 
 _HasDirectives = Union[
-    Schema, GraphQLType, Field, Argument, InputField, EnumValue
+    Argument,
+    EnumType,
+    EnumValue,
+    Field,
+    InputField,
+    InputObjectType,
+    InterfaceType,
+    ObjectType,
+    ScalarType,
+    Schema,
+    UnionType,
 ]
 
 
 def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:
-    node = getattr(definition, "node", None)
-    if node:
-        return cast(_ast.SupportDirectives, node).directives or []
-
-    nodes = getattr(definition, "nodes", [])
-    return list(
-        flatten(cast(_ast.SupportDirectives, n).directives for n in nodes if n)
-    )
+    if isinstance(definition, (Field, Argument, InputField, EnumValue)):
+        return definition.node.directives if definition.node is not None else []
+    else:
+        return list(flatten(n.directives for n in definition.nodes if n))
 
 
 # REVIEW: With the definition and the usage as a keyed map we end up repeating
 # the name of the directive.
 class SchemaDirective(SchemaVisitor):
-    """ @directive implementation for use alongside
-    :func:`py_gql.schema.build_schema`.
+    """
+    @directive implementation for use alongside  :func:`py_gql.schema.build_schema`.
 
     You need to subclass this in order to define your own custom directives.
     All valid directive locations have a corresponding `on_X` method to
     implement from :class:`~py_gql.schema.SchemaVisitor`.
-
-    Attributes:
-        definition (py_gql.schema.Directive): Corresponding directive definition.
     """
-
-    definition = NotImplemented  # type: Directive
 
     def __init__(self, args=None):
         self.args = args or {}
@@ -124,18 +113,12 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
         self._schema_directives = schema_directives
         directive_definitions = dict(directive_definitions)
 
-        for directive_name, schema_directive in schema_directives.items():
-
+        for schema_directive in schema_directives.values():
             if not issubclass(schema_directive, SchemaDirective):
                 raise TypeError(
                     'Expected SchemaDirective subclass but got "%r"'
                     % schema_directive
                 )
-
-            if schema_directive.definition != NotImplemented:
-                directive_definitions[
-                    directive_name
-                ] = schema_directive.definition
 
         for directive_name in directive_definitions:
             visitor_cls = schema_directives.get(directive_name)
@@ -267,11 +250,9 @@ class DeprecatedSchemaDirective(SchemaDirective):
     object / interface fields and enum values as deprecated when running
     introspection queries.
 
-    Refer to :obj:`py_gql.schema.DeprecatedDirective` for details about the
-    directive itself.
+    Refer to the spec or :obj:`py_gql.schema.DeprecatedDirective` for details
+    about the directive itself.
     """
-
-    definition = DeprecatedDirective
 
     def on_field_definition(self, field: Field) -> Field:
         return Field(

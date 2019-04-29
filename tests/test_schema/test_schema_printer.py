@@ -479,33 +479,15 @@ def test_introspection_schema_comments(fixture_file):
 
 
 def test_custom_directive_from_sdl_are_included_if_set():
-    custom_directive = Directive(
-        "custom",
-        [
-            "SCHEMA",
-            "SCALAR",
-            "OBJECT",
-            "FIELD_DEFINITION",
-            "ARGUMENT_DEFINITION",
-            "INTERFACE",
-            "UNION",
-            "ENUM",
-            "ENUM_VALUE",
-            "INPUT_OBJECT",
-            "INPUT_FIELD_DEFINITION",
-        ],
-        [Argument("arg", NonNullType(String))],
-    )
-
     class CustomDirective(SchemaDirective):
-        definition = custom_directive
+        pass
 
     sdl = """
     schema @custom(arg: "SCHEMA") {
         query: Query
     }
 
-    directive @custom(arg: Int!) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION \
+    directive @custom(arg: String!) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION \
 | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT \
 | INPUT_FIELD_DEFINITION
 
@@ -545,26 +527,8 @@ without: Int\
 
 
 def test_custom_directives_from_sdl_are_included_if_set_to_True():
-    custom_directive = Directive(
-        "custom",
-        [
-            "SCHEMA",
-            "SCALAR",
-            "OBJECT",
-            "FIELD_DEFINITION",
-            "ARGUMENT_DEFINITION",
-            "INTERFACE",
-            "UNION",
-            "ENUM",
-            "ENUM_VALUE",
-            "INPUT_OBJECT",
-            "INPUT_FIELD_DEFINITION",
-        ],
-        [Argument("arg", NonNullType(String))],
-    )
-
     class CustomDirective(SchemaDirective):
-        definition = custom_directive
+        pass
 
     sdl = """
     schema @custom(arg: "SCHEMA") {
