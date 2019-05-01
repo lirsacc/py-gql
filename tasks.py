@@ -147,7 +147,7 @@ def mypy(ctx, files=None, junit=False):
 
 
 @invoke.task(iterable=["files"])
-def sort_imports(ctx, files=None):
+def sort_imports(ctx, check=False, files=None):
     with ctx.cd(ROOT):
         ctx.run(
             _join(
@@ -158,6 +158,7 @@ def sort_imports(ctx, files=None):
                         if not files
                         else " ".join(files)
                     ),
+                     "--check-only" if check else None,
                 ]
             ),
             echo=True,
