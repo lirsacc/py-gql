@@ -48,6 +48,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 junit.xml
+*.junit.xml
 *,cover
 .hypothesis/
 .pytest_cache
@@ -105,3 +106,5 @@ ENV
 .vscode
 .idea
 *_bak
+
+flake8.txt

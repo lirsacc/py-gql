@@ -108,9 +108,24 @@ def test(
 
 
 @invoke.task(iterable=["files"])
-def flake8(ctx, files=None):
+def flake8(ctx, files=None, junit=False):
     files = ("%s tests" % PACKAGE) if not files else " ".join(files)
-    ctx.run("flake8 %s" % files, echo=True)
+    try:
+        ctx.run(
+            _join(
+                [
+                    "flake8",
+                    "--output-file flake8.txt --tee" if junit else None,
+                    files,
+                ]
+            ),
+            echo=True,
+        )
+    except invoke.exceptions.UnexpectedExit as err:
+        raise
+    finally:
+        if junit:
+            ctx.run("flake8_junit flake8.txt flake8.junit.xml", echo=True)
 
 
 @invoke.task(iterable=["files"])

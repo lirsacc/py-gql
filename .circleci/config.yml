@@ -77,7 +77,7 @@ references:
             when: always
             command: |
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                inv flake8
+                inv flake8 --junit
 
     mypy: &mypy
         run:
@@ -110,6 +110,7 @@ references:
                 mv coverage.xml ${results}/python${PY}/results.xml || true
                 mv junit.xml "${results}/python${PY}/junit.xml" || true
                 mv mypy.junit.xml "${results}/python${PY}/mypy.junit.xml" || true
+                mv flake8.junit.xml "${results}/python${PY}/flake8.junit.xml" || true
                 mv htmlcov ${results}/python${PY} || true
 
     store-tests: &store-tests
@@ -254,6 +255,7 @@ jobs:
                           mv "${results}/${file}/results.xml" "${results}/${file}.xml" || true
                           mv "${results}/${file}/junit.xml" "${results}/${file}.junit.xml" || true
                           mv "${results}/${file}/mypy.junit.xml" "${results}/${file}.mypy.junit.xml" || true
+                          mv "${results}/${file}/flake8.junit.xml" "${results}/${file}.flake8.junit.xml" || true
                           mv "${results}/${file}" "${results}/python/${file##python}"
                       done
                       if [ -n "$(ls -1 .coverage.* 2>/dev/null || true)" ]; then
