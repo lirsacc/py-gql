@@ -188,7 +188,7 @@ def black(ctx, check=False, files=None):
 
 
 @invoke.task(aliases=["format"], iterable=["files"])
-def fmt(ctx, check=False, files=None):
+def fmt(ctx, files=None):
     """ Run formatters """
     with ctx.cd(ROOT):
         sort_imports(ctx, files=files)
