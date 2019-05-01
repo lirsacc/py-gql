@@ -20,16 +20,22 @@ from ...schema import (
 
 class SchemaChangeSeverity(IntEnum):
     """
-    SchemaChangeSeverity level of a schema change.
+    Severity level of a schema change.
     """
 
+    #: Change should be safe for all clients.
     COMPATIBLE = 0
+    #: Change could break some clients or create silent issues depending on
+    #: which part of the schema they use.
     DANGEROUS = 1
+    #: Change will break most clients.
     BREAKING = 2
 
 
 # TODO: Add docstring describing the reasoning behind every change on each
 # SchemaChange subclass.
+
+
 class SchemaChange:
     severity = NotImplemented  # type: SchemaChangeSeverity
     format_str = NotImplemented  # type: str

@@ -134,16 +134,10 @@ def diff_schema(
     Iterate over all changes that can be statically found between `old_schema`
     and `new_schema`.
 
-    The differences are classified by severity as:
-
-    - `SchemaChangeSeverity.BREAKING`: will break most clients
-    - `SchemaChangeSeverity.DANGEROUS`: could break some clients depending on usage
-    - `SchemaChangeSeverity.COMPATIBLE`: safe change
-
-    Some BREAKING and DANGEROUS changes could be safe depending on the actual
-    queries made by clients of your schema. However it is not possible to detect
-    this  without looking at the queries being run against the schema so this
-    classification errs on the side of safety.
+    Some ``BREAKING`` and ``DANGEROUS`` changes could be safe depending on the
+    actual queries made by clients of your schema. However it is not possible
+    to detect this  without looking at the queries being run against the schema
+    so this classification errs on the side of safety.
 
     Some compatible type changes are ignored given that they should not lead to
     any change in client behaviour.
@@ -152,9 +146,6 @@ def diff_schema(
         old_schema: Source schema
         new_schema: Updated schema
         min_severity: Set this to filter for changes of a given severity
-
-    Yields:
-        `SchemaChange` instances.
     """
     old_schema.validate()
     new_schema.validate()

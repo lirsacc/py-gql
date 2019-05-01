@@ -5,4 +5,5 @@ py_gql.utilities.diff_schema
 
 .. automodule:: py_gql.utilities.diff_schema
     :members:
+    :undoc-members:
     :show-inheritance:
