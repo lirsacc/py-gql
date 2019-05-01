@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.3.2
+
+Docs & dev update.
+
 ## 0.3.0
 
 ### Breaking Changes
