@@ -100,14 +100,14 @@ references:
             name: Format and move test results
             when: always
             command: |
-                results="$(pwd)/workspace/test-results"
+                results="$(pwd)/workspace/src/test-results"
                 checkout="$(pwd)/workspace/src"
                 mkdir -p "${results}/python${PY}"
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 python -c \
                     'import sys; sys.stdout.write(sys.stdin.read().replace(sys.argv[1], sys.argv[2]))' \
                     "$(pwd)/" "${checkout}/" < .coverage >"${results}/python${PY}/.coverage" || true
-                mv coverage.xml ${results}/python${PY}/results.xml || true
+                mv coverage.xml ${results}/python${PY}/coverage.xml || true
                 mv junit.xml "${results}/python${PY}/junit.xml" || true
                 mv mypy.junit.xml "${results}/python${PY}/mypy.junit.xml" || true
                 mv flake8.junit.xml "${results}/python${PY}/flake8.junit.xml" || true
@@ -115,7 +115,7 @@ references:
 
     store-tests: &store-tests
         store_test_results:
-            path: workspace/test-results
+            path: workspace/src/test-results
 
 jobs:
     checkout:
@@ -188,7 +188,7 @@ jobs:
             - *collect-tests
             - *store-tests
             - persist_to_workspace:
-                  paths: workspace/test-results/python35
+                  paths: workspace/src/test-results/python35
                   root: .
 
     check-36:
@@ -202,7 +202,7 @@ jobs:
             - *collect-tests
             - *store-tests
             - persist_to_workspace:
-                  paths: workspace/test-results/python36
+                  paths: workspace/src/test-results/python36
                   root: .
 
     check-37:
@@ -216,7 +216,7 @@ jobs:
             - *collect-tests
             - *store-tests
             - persist_to_workspace:
-                  paths: workspace/test-results/python37
+                  paths: workspace/src/test-results/python37
                   root: .
 
     test-35-cython:
@@ -244,19 +244,19 @@ jobs:
         <<: *docker-python37
         steps:
             - *workspace
+            - restore_cache: *read-cache-python-37
             - run:
                   name: Collect test results across Python versions
                   command: |
-                      results="$(pwd)/workspace/test-results"
+                      results="$(pwd)/workspace/src/test-results"
                       . "venv${PY}/bin/activate" && cd workspace/src
-                      mkdir -p "${results}/python"
                       ls -1 "${results}" | grep python. | while read file; do
                           cp "${results}/${file}/.coverage" ".coverage.${file}" || true
-                          mv "${results}/${file}/results.xml" "${results}/${file}.xml" || true
+                          mv "${results}/${file}/coverage.xml" "${results}/${file}.coverage.xml" || true
                           mv "${results}/${file}/junit.xml" "${results}/${file}.junit.xml" || true
                           mv "${results}/${file}/mypy.junit.xml" "${results}/${file}.mypy.junit.xml" || true
                           mv "${results}/${file}/flake8.junit.xml" "${results}/${file}.flake8.junit.xml" || true
-                          mv "${results}/${file}" "${results}/python/${file##python}"
+                          mv "${results}/${file}" "${results}/${file##python}"
                       done
                       if [ -n "$(ls -1 .coverage.* 2>/dev/null || true)" ]; then
                           which coverage >/dev/null 2>&1 || pip install coverage
@@ -265,18 +265,32 @@ jobs:
                           coverage report --rcfile setup.cfg
                           coverage html --rcfile setup.cfg
                           coverage xml --rcfile setup.cfg
-                          mv .coverage coverage.xml htmlcov/* ${results}/python/
+                          sed 's/\/home\/circleci\/project\/workspace\/src//g' -i coverage.xml
+                          sed 's/\/home\/circleci\/project\/workspace\/src//g' -i .coverage
+                          mv .coverage coverage.xml htmlcov ${results}
                       fi
             - run:
                   name: Upload coverage to Codecov
                   command: |
-                      results="$(pwd)/workspace/test-results"
+                      results="$(pwd)/workspace/src/test-results"
                       . "venv${PY}/bin/activate" && cd workspace/src
-                      cd ${results}/python/
-                      pip install codecov
+                      cd ${results}/
+                      pip install -U codecov
                       codecov
+            - run:
+                  name: Upload coverage to Coveralls
+                  command: |
+                      results="$(pwd)/workspace/src/test-results"
+                      . "venv${PY}/bin/activate" && cd workspace/src
+                      cd ${results}/
+                      pip install -U coveralls
+                      coveralls
+            - save_cache:
+                  <<: *write-cache-python-37
+                  paths: ~/.cache/pip
             - *store-tests
-            - store_artifacts: { path: workspace/test-results, destination: . }
+            - store_artifacts:
+                  { path: workspace/src/test-results, destination: . }
 
     check-format:
         <<: *docker-python37
@@ -354,7 +368,5 @@ workflows:
 
             - docs:
                   requires:
-                      - check-35
-                      - check-36
-                      - check-37
+                      - collect-tests
                       - check-format
