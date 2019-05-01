@@ -46,21 +46,38 @@ references:
 
     run-tests-cython: &run-tests-cython
         run:
-            name: Reinstalling with Cython
+            name: Running tests after rebuilding with Cython
             command: |
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 pip install cython
                 pip install -v -e .
                 PY_IGNORE_IMPORTMISMATCH=1 inv test -v --junit --no-bail
 
-    run-tests: &run-tests
+    flake8: &flake8
         run:
-            name: Run tests
+            name: Running Flake8
+            when: always
+            command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                inv flake8
+
+    mypy: &mypy
+        run:
+            name: Running MyPy
+            when: always
+            command: |
+                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
+                inv mypy
+
+    test: &test
+        run:
+            name: Running test suite
+            when: always
             command: |
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
                 inv test -v --coverage --junit --no-bail
 
-    mv-tests: &mv-tests
+    collect-tests: &collect-tests
         run:
             name: Format and move test results
             when: always
@@ -79,22 +96,6 @@ references:
     store-tests: &store-tests
         store_test_results:
             path: workspace/test-results
-
-    flake8: &flake8
-        run:
-            name: Running Flake8
-            when: always
-            command: |
-                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                inv flake8
-
-    typecheck: &typecheck
-        run:
-            name: Running MyPy
-            when: always
-            command: |
-                . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                inv mypy
 
 jobs:
     checkout:
@@ -156,37 +157,43 @@ jobs:
                   paths: venv37
                   root: .
 
-    test-36:
-        <<: *docker-python36
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-36
-            - *run-tests
-            - *mv-tests
-            - *store-tests
-            - persist_to_workspace:
-                  paths: workspace/test-results/python36
-                  root: .
-
-    test-35:
+    check-35:
         <<: *docker-python35
         steps:
             - *workspace
             - restore_cache: *cache-python-35
-            - *run-tests
-            - *mv-tests
+            - *flake8
+            - *mypy
+            - *test
+            - *collect-tests
             - *store-tests
             - persist_to_workspace:
                   paths: workspace/test-results/python35
                   root: .
 
-    test-37:
+    check-36:
+        <<: *docker-python36
+        steps:
+            - *workspace
+            - restore_cache: *cache-python-36
+            - *flake8
+            - *mypy
+            - *test
+            - *collect-tests
+            - *store-tests
+            - persist_to_workspace:
+                  paths: workspace/test-results/python36
+                  root: .
+
+    check-37:
         <<: *docker-python37
         steps:
             - *workspace
             - restore_cache: *cache-python-37
-            - *run-tests
-            - *mv-tests
+            - *flake8
+            - *mypy
+            - *test
+            - *collect-tests
             - *store-tests
             - persist_to_workspace:
                   paths: workspace/test-results/python37
@@ -249,48 +256,6 @@ jobs:
             - *store-tests
             - store_artifacts: { path: workspace/test-results, destination: . }
 
-    flake8-35:
-        <<: *docker-python35
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-35
-            - *flake8
-
-    flake8-36:
-        <<: *docker-python36
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-36
-            - *flake8
-
-    flake8-37:
-        <<: *docker-python37
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-37
-            - *flake8
-
-    typecheck-35:
-        <<: *docker-python35
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-35
-            - *typecheck
-
-    typecheck-36:
-        <<: *docker-python36
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-36
-            - *typecheck
-
-    typecheck-37:
-        <<: *docker-python37
-        steps:
-            - *workspace
-            - restore_cache: *cache-python-37
-            - *typecheck
-
     check-format:
         <<: *docker-python37
         steps:
@@ -327,51 +292,33 @@ workflows:
             - deps-35:
                   requires:
                       - checkout
-            - flake8-35:
-                  requires:
-                      - deps-35
-            - typecheck-35:
-                  requires:
-                      - deps-35
-            - test-35:
+            - check-35:
                   requires:
                       - deps-35
 
             - deps-36:
                   requires:
                       - checkout
-            - flake8-36:
-                  requires:
-                      - deps-36
-            - typecheck-36:
-                  requires:
-                      - deps-36
-            - test-36:
+            - check-36:
                   requires:
                       - deps-36
 
             - deps-37:
                   requires:
                       - checkout
-            - flake8-37:
-                  requires:
-                      - deps-37
-            - typecheck-37:
-                  requires:
-                      - deps-37
-            - test-37:
+            - check-37:
                   requires:
                       - deps-37
 
             - test-35-cython:
                   requires:
-                      - test-35
+                      - check-35
             - test-36-cython:
                   requires:
-                      - test-36
+                      - check-36
             - test-37-cython:
                   requires:
-                      - test-37
+                      - check-37
 
             - check-format:
                   requires:
@@ -379,18 +326,13 @@ workflows:
 
             - collect-tests:
                   requires:
-                      - test-35
-                      - test-36
-                      - test-37
+                      - check-35
+                      - check-36
+                      - check-37
 
             - docs:
                   requires:
-                      - flake8-35
-                      - flake8-36
-                      - flake8-37
-                      - typecheck-35
-                      - typecheck-36
-                      - typecheck-37
-                      - test-35
-                      - test-36
-                      - test-37
+                      - check-35
+                      - check-36
+                      - check-37
+                      - check-format
