@@ -85,7 +85,7 @@ references:
             when: always
             command: |
                 . "venv${PY}/bin/activate" && cd "venv${PY}/src"
-                inv mypy
+                inv mypy --junit
 
     test: &test
         run:
@@ -109,6 +109,7 @@ references:
                     "$(pwd)/" "${checkout}/" < .coverage >"${results}/python${PY}/.coverage" || true
                 mv coverage.xml ${results}/python${PY}/results.xml || true
                 mv junit.xml "${results}/python${PY}/junit.xml" || true
+                mv mypy.junit.xml "${results}/python${PY}/mypy.junit.xml" || true
                 mv htmlcov ${results}/python${PY} || true
 
     store-tests: &store-tests
@@ -252,6 +253,7 @@ jobs:
                           cp "${results}/${file}/.coverage" ".coverage.${file}" || true
                           mv "${results}/${file}/results.xml" "${results}/${file}.xml" || true
                           mv "${results}/${file}/junit.xml" "${results}/${file}.junit.xml" || true
+                          mv "${results}/${file}/mypy.junit.xml" "${results}/${file}.mypy.junit.xml" || true
                           mv "${results}/${file}" "${results}/python/${file##python}"
                       done
                       if [ -n "$(ls -1 .coverage.* 2>/dev/null || true)" ]; then

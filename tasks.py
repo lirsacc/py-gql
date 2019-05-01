@@ -123,9 +123,12 @@ def pylint(ctx, files=None):
 
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
-def mypy(ctx, files=None):
+def mypy(ctx, files=None, junit=False):
     files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
-    ctx.run("mypy %s" % files, echo=True)
+    ctx.run(
+        _join(["mypy", "--junit-xml mypy.junit.xml" if junit else None, files]),
+        echo=True,
+    )
 
 
 @invoke.task(iterable=["files"])
