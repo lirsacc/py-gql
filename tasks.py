@@ -195,7 +195,7 @@ def fmt(ctx, files=None):
         black(ctx, files=files)
 
 
-@invoke.task(pre=[invoke.call(fmt, check=True), flake8, mypy, test])
+@invoke.task(pre=[invoke.call(black, check=True), flake8, mypy, test])
 def check(ctx):
     """ Run all checks. """
     pass
