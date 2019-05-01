@@ -7,6 +7,8 @@
 - `AsyncExecutor` renamed to `AsyncIOExecutor`
 - `allow_type_system` argument to `py_gql.lang.Parser` now defaults to `False`.
 - `SchemaDirective` do not support defining their own definition which now has to be defined in the schema.
+- `py_gql.utilities.diff_schema` has been moved to its own submodule `py_gql.utilities.diff_schema.diff_schema` (alongside related types and constants).
+- `py_gql.utilities.diff_schema.diff_schema` now return instances of `SchemaChange` instead of combining enum values and formatted string in a tuple. The classes contain more context and references to the actual schema objects (Field, Argument, etc.).
 
 ### Updated
 

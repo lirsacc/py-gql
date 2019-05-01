@@ -13,7 +13,6 @@ from .coerce_value import (
     coerce_variable_values,
     directive_arguments,
 )
-from .differ import SchemaChange, SchemaChangeSeverity, diff_schema
 from .introspection_query import introspection_query
 from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
@@ -30,7 +29,4 @@ __all__ = (
     "TypeInfoVisitor",
     "untyped_value_from_ast",
     "value_from_ast",
-    "diff_schema",
-    "SchemaChange",
-    "SchemaChangeSeverity",
 )

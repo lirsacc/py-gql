@@ -3,13 +3,46 @@
 import pytest
 
 from py_gql.builders import build_schema
-from py_gql.utilities.differ import (
-    SchemaChange,
+from py_gql.utilities.diff_schema import (
+    DirectiveAdded,
+    DirectiveArgumentAdded,
+    DirectiveArgumentChangedType,
+    DirectiveArgumentDefaultValueChange,
+    DirectiveArgumentRemoved,
+    DirectiveLocationAdded,
+    DirectiveLocationRemoved,
+    DirectiveRemoved,
+    EnumValueAdded,
+    EnumValueDeprecated,
+    EnumValueDeprecationReasonChanged,
+    EnumValueDeprecationRemoved,
+    EnumValueRemoved,
+    FieldAdded,
+    FieldArgumentAdded,
+    FieldArgumentChangedType,
+    FieldArgumentDefaultValueChange,
+    FieldArgumentRemoved,
+    FieldChangedType,
+    FieldDeprecated,
+    FieldDeprecationReasonChanged,
+    FieldDeprecationRemoved,
+    FieldRemoved,
+    InputFieldAdded,
+    InputFieldChangedType,
+    InputFieldDefaultValueChange,
+    InputFieldRemoved,
     SchemaChangeSeverity,
+    TypeAdded,
+    TypeAddedToInterface,
+    TypeAddedToUnion,
+    TypeChangedKind,
+    TypeRemoved,
+    TypeRemovedFromInterface,
+    TypeRemovedFromUnion,
     diff_schema,
 )
 
-DIFF_TEST_GROUPS = [
+GROUPED_TEST_CASES = [
     (
         "add_and_remove_types",
         build_schema(
@@ -25,8 +58,8 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
-            (SchemaChange.TYPE_REMOVED, "Type Type1 was removed."),
-            (SchemaChange.TYPE_ADDED, "Type Type2 was added."),
+            (TypeRemoved, "Type Type1 was removed."),
+            (TypeAdded, "Type Type2 was added."),
         ],
     ),
     (
@@ -44,12 +77,7 @@ DIFF_TEST_GROUPS = [
             type Query { field1: String }
             """
         ),
-        [
-            (
-                SchemaChange.TYPE_CHANGED_KIND,
-                "Type1 changed from an Interface type to a Union type.",
-            )
-        ],
+        [(TypeChangedKind, "Type1 changed from Interface type to Union type.")],
     ),
     (
         "object_fields",
@@ -112,67 +140,61 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
+            (FieldRemoved, "Field field2 was removed from type Type1."),
             (
-                SchemaChange.FIELD_REMOVED,
-                "Field field2 was removed from type Type1.",
-            ),
-            (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field3 of type Type1 has changed type from String to Boolean.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field4 of type Type1 has changed type from TypeA to TypeB.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field6 of type Type1 has changed type from String to [String].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field7 of type Type1 has changed type from [String] to String.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field9 of type Type1 has changed type from Int! to Int.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field10 of type Type1 has changed type from [Int]! to [Int].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field11 of type Type1 has changed type from Int to [Int]!.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field12 of type Type1 has changed type from [Int] to [Int!].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field14 of type Type1 has changed type from [Int] to [[Int]].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field15 of type Type1 has changed type from [[Int]] to [Int].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field16 of type Type1 has changed type from Int! to [Int]!.",
             ),
             (
-                SchemaChange.FIELD_DEPRECATION_REMOVED,
+                FieldDeprecationRemoved,
                 "Field field19 of type Type1 is no longer deprecated.",
             ),
             (
-                SchemaChange.FIELD_DEPRECATION_REASON_CHANGED,
+                FieldDeprecationReasonChanged,
                 "Field field20 of type Type1 has changed deprecation reason.",
             ),
-            (
-                SchemaChange.FIELD_DEPRECATED,
-                "Field field21 of type Type1 was deprecated.",
-            ),
-            (SchemaChange.FIELD_ADDED, "Field field5 was added to type Type1."),
+            (FieldDeprecated, "Field field21 of type Type1 was deprecated."),
+            (FieldAdded, "Field field5 was added to type Type1."),
         ],
     ),
     (
@@ -236,78 +258,72 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
+            (FieldRemoved, "Field field2 was removed from interface Type1."),
             (
-                SchemaChange.FIELD_REMOVED,
-                "Field field2 was removed from interface Type1.",
-            ),
-            (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field3 of interface Type1 has changed type "
                 "from String to Boolean.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field4 of interface Type1 has changed type from TypeA to TypeB.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field6 of interface Type1 has changed type "
                 "from String to [String].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field7 of interface Type1 has changed type "
                 "from [String] to String.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field9 of interface Type1 has changed type from Int! to Int.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field10 of interface Type1 has changed type "
                 "from [Int]! to [Int].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field11 of interface Type1 has changed type from Int to [Int]!.",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field12 of interface Type1 has changed type "
                 "from [Int] to [Int!].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field14 of interface Type1 has changed type "
                 "from [Int] to [[Int]].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field15 of interface Type1 has changed type "
                 "from [[Int]] to [Int].",
             ),
             (
-                SchemaChange.FIELD_CHANGED_TYPE,
+                FieldChangedType,
                 "Field field16 of interface Type1 has changed type "
                 "from Int! to [Int]!.",
             ),
             (
-                SchemaChange.FIELD_DEPRECATION_REMOVED,
+                FieldDeprecationRemoved,
                 "Field field19 of interface Type1 is no longer deprecated.",
             ),
             (
-                SchemaChange.FIELD_DEPRECATION_REASON_CHANGED,
+                FieldDeprecationReasonChanged,
                 "Field field20 of interface Type1 has changed deprecation reason.",
             ),
             (
-                SchemaChange.FIELD_DEPRECATED,
+                FieldDeprecated,
                 "Field field21 of interface Type1 was deprecated.",
             ),
-            (
-                SchemaChange.FIELD_ADDED,
-                "Field field5 was added to interface Type1.",
-            ),
+            (FieldAdded, "Field field5 was added to interface Type1."),
         ],
     ),
     (
@@ -330,13 +346,10 @@ DIFF_TEST_GROUPS = [
         ),
         [
             (
-                SchemaChange.TYPE_REMOVED_FROM_UNION,
+                TypeRemovedFromUnion,
                 "Type2 was removed from union type UnionType1.",
             ),
-            (
-                SchemaChange.TYPE_ADDED_TO_UNION,
-                "Type3 was added to union type UnionType1.",
-            ),
+            (TypeAddedToUnion, "Type3 was added to union type UnionType1."),
         ],
     ),
     (
@@ -368,25 +381,16 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
+            (EnumValueRemoved, "VALUE1 was removed from enum EnumType1."),
+            (EnumValueAdded, "VALUE6 was added to enum EnumType1."),
             (
-                SchemaChange.VALUE_REMOVED_FROM_ENUM,
-                "VALUE1 was removed from enum type EnumType1.",
+                EnumValueDeprecationRemoved,
+                "VALUE4 from enum EnumType1 is no longer deprecated.",
             ),
+            (EnumValueDeprecated, "VALUE5 from enum EnumType1 was deprecated."),
             (
-                SchemaChange.VALUE_ADDED_TO_ENUM,
-                "VALUE6 was added to enum type EnumType1.",
-            ),
-            (
-                SchemaChange.ENUM_VALUE_DEPRECATION_REMOVED,
-                "VALUE4 from enum type EnumType1 is no longer deprecated.",
-            ),
-            (
-                SchemaChange.ENUM_VALUE_DEPRECATED,
-                "VALUE5 from enum type EnumType1 was deprecated.",
-            ),
-            (
-                SchemaChange.ENUM_VALUE_DEPRECATION_REASON_CHANGE,
-                "VALUE3 from enum type EnumType1 has changed deprecation reason.",
+                EnumValueDeprecationReasonChanged,
+                "VALUE3 from enum EnumType1 has changed deprecation reason.",
             ),
         ],
     ),
@@ -407,17 +411,14 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
+            (DirectiveRemoved, "Directive fooDirective was removed."),
+            (DirectiveAdded, "Directive barDirective was added."),
             (
-                SchemaChange.DIRECTIVE_REMOVED,
-                "Directive fooDirective was removed.",
-            ),
-            (SchemaChange.DIRECTIVE_ADDED, "Directive barDirective was added."),
-            (
-                SchemaChange.DIRECTIVE_LOCATION_REMOVED,
+                DirectiveLocationRemoved,
                 "Location OBJECT was removed from directive bazDirective.",
             ),
             (
-                SchemaChange.DIRECTIVE_LOCATION_ADDED,
+                DirectiveLocationAdded,
                 "Location SCALAR was added to directive bazDirective.",
             ),
         ],
@@ -427,6 +428,7 @@ DIFF_TEST_GROUPS = [
         build_schema(
             """
             directive @fooDirective(
+                arg0: String,
                 arg1: String
                 arg2: String
                 arg3: [String]
@@ -475,79 +477,83 @@ DIFF_TEST_GROUPS = [
         ),
         [
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentRemoved,
+                "Argument arg0 was removed from directive fooDirective.",
+            ),
+            (
+                DirectiveArgumentChangedType,
                 "Argument arg1 of directive fooDirective has changed type "
                 "from String to Int.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg2 of directive fooDirective has changed type "
                 "from String to [String].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg3 of directive fooDirective has changed type "
                 "from [String] to String.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg4 of directive fooDirective has changed type "
                 "from String to String!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg5 of directive fooDirective has changed type "
                 "from String! to Int.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg6 of directive fooDirective has changed type "
                 "from String! to Int!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg8 of directive fooDirective has changed type "
                 "from Int to [Int]!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg9 of directive fooDirective has changed type "
                 "from [Int] to [Int!].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg11 of directive fooDirective has changed type "
                 "from [Int] to [[Int]].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg12 of directive fooDirective has changed type "
                 "from [[Int]] to [Int].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg13 of directive fooDirective has changed type "
                 "from Int! to [Int]!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                DirectiveArgumentChangedType,
                 "Argument arg15 of directive fooDirective has changed type "
                 "from [[Int]!] to [[Int!]!].",
             ),
             (
-                SchemaChange.ARG_DEFAULT_VALUE_CHANGE,
+                DirectiveArgumentDefaultValueChange,
                 "Argument arg16 of directive fooDirective has changed default value.",
             ),
             (
-                SchemaChange.REQUIRED_ARG_ADDED,
+                DirectiveArgumentAdded,
                 "Required argument arg17 was added to directive fooDirective.",
             ),
             (
-                SchemaChange.OPTIONAL_ARG_ADDED,
+                DirectiveArgumentAdded,
                 "Optional argument arg18 was added to directive fooDirective.",
             ),
             (
-                SchemaChange.OPTIONAL_ARG_ADDED,
+                DirectiveArgumentAdded,
                 "Optional argument arg19 was added to directive fooDirective.",
             ),
         ],
@@ -558,6 +564,7 @@ DIFF_TEST_GROUPS = [
             """
             type Foo {
                 field1(
+                    arg0: String,
                     arg1: String
                     arg2: String
                     arg3: [String]
@@ -609,79 +616,83 @@ DIFF_TEST_GROUPS = [
         ),
         [
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentRemoved,
+                "Argument arg0 was removed from field field1 of type Foo.",
+            ),
+            (
+                FieldArgumentChangedType,
                 "Argument arg1 of field field1 of type Foo has changed type "
                 "from String to Int.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg2 of field field1 of type Foo has changed type "
                 "from String to [String].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg3 of field field1 of type Foo has changed type "
                 "from [String] to String.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg4 of field field1 of type Foo has changed type "
                 "from String to String!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg5 of field field1 of type Foo has changed type "
                 "from String! to Int.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg6 of field field1 of type Foo has changed type "
                 "from String! to Int!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg8 of field field1 of type Foo has changed type "
                 "from Int to [Int]!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg9 of field field1 of type Foo has changed type "
                 "from [Int] to [Int!].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg11 of field field1 of type Foo has changed type "
                 "from [Int] to [[Int]].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg12 of field field1 of type Foo has changed type "
                 "from [[Int]] to [Int].",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg13 of field field1 of type Foo has changed type "
                 "from Int! to [Int]!.",
             ),
             (
-                SchemaChange.ARG_CHANGED_TYPE,
+                FieldArgumentChangedType,
                 "Argument arg15 of field field1 of type Foo has changed type "
                 "from [[Int]!] to [[Int!]!].",
             ),
             (
-                SchemaChange.ARG_DEFAULT_VALUE_CHANGE,
+                FieldArgumentDefaultValueChange,
                 "Argument arg16 of field field1 of type Foo has changed default value.",
             ),
             (
-                SchemaChange.REQUIRED_ARG_ADDED,
+                FieldArgumentAdded,
                 "Required argument arg17 was added to field field1 of type Foo.",
             ),
             (
-                SchemaChange.OPTIONAL_ARG_ADDED,
+                FieldArgumentAdded,
                 "Optional argument arg18 was added to field field1 of type Foo.",
             ),
             (
-                SchemaChange.OPTIONAL_ARG_ADDED,
+                FieldArgumentAdded,
                 "Optional argument arg19 was added to field field1 of type Foo.",
             ),
         ],
@@ -707,22 +718,10 @@ DIFF_TEST_GROUPS = [
             """
         ),
         [
-            (
-                SchemaChange.TYPE_REMOVED_FROM_INTERFACE,
-                "Type1 no longer implements Iface1.",
-            ),
-            (
-                SchemaChange.TYPE_ADDED_TO_INTERFACE,
-                "Type1 now implements Iface2.",
-            ),
-            (
-                SchemaChange.TYPE_REMOVED_FROM_INTERFACE,
-                "Type2 no longer implements Iface2.",
-            ),
-            (
-                SchemaChange.TYPE_ADDED_TO_INTERFACE,
-                "Type2 now implements Iface1.",
-            ),
+            (TypeRemovedFromInterface, "Type1 no longer implements Iface1."),
+            (TypeAddedToInterface, "Type1 now implements Iface2."),
+            (TypeRemovedFromInterface, "Type2 no longer implements Iface2."),
+            (TypeAddedToInterface, "Type2 now implements Iface1."),
         ],
     ),
     (
@@ -751,23 +750,23 @@ DIFF_TEST_GROUPS = [
         ),
         [
             (
-                SchemaChange.REQUIRED_INPUT_FIELD_ADDED,
+                InputFieldAdded,
                 "Required input field requiredField was added to InputType1.",
             ),
             (
-                SchemaChange.OPTIONAL_INPUT_FIELD_ADDED,
-                "Optional argument optionalField1 was added to InputType1.",
+                InputFieldAdded,
+                "Optional input field optionalField1 was added to InputType1.",
             ),
             (
-                SchemaChange.OPTIONAL_INPUT_FIELD_ADDED,
-                "Optional argument optionalField2 was added to InputType1.",
+                InputFieldAdded,
+                "Optional input field optionalField2 was added to InputType1.",
             ),
             (
-                SchemaChange.INPUT_FIELD_DEFAULT_VALUE_CHANGE,
+                InputFieldDefaultValueChange,
                 "Input field field2 of InputType1 has changed default value.",
             ),
             (
-                SchemaChange.INPUT_FIELD_REMOVED,
+                InputFieldRemoved,
                 "Input field field3 was removed from InputType1.",
             ),
         ],
@@ -819,56 +818,56 @@ DIFF_TEST_GROUPS = [
         ),
         [
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field1 of InputType1 has changed type "
                 "from String to Int.",
             ),
             (
-                SchemaChange.INPUT_FIELD_REMOVED,
+                InputFieldRemoved,
                 "Input field field2 was removed " "from InputType1.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field3 of InputType1 has changed type "
                 "from [String] to String.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field5 of InputType1 has changed type "
                 "from String to String!.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field6 of InputType1 has changed type "
                 "from [Int] to [Int]!.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field8 of InputType1 has changed type "
                 "from Int to [Int]!.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field9 of InputType1 has changed type "
                 "from [Int] to [Int!].",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field11 of InputType1 has changed type "
                 "from [Int] to [[Int]].",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field12 of InputType1 has changed type "
                 "from [[Int]] to [Int].",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field13 of InputType1 has changed type "
                 "from Int! to [Int]!.",
             ),
             (
-                SchemaChange.INPUT_FIELD_CHANGED_TYPE,
+                InputFieldChangedType,
                 "Input field field15 of InputType1 has changed type "
                 "from [[Int]!] to [[Int!]!].",
             ),
@@ -877,40 +876,32 @@ DIFF_TEST_GROUPS = [
 ]
 
 
-def _cached_diff_schema(s1, s2, cache={}):
-    try:
-        return cache[(s1, s2)]
-    except KeyError:
-        return list(diff_schema(s1, s2))
+def assert_change_found(changes, expected, cache={}):
+
+    hashed_changes = [(c.__class__, c.message) for c in changes]
+
+    print("\nTest case:")
+    print('{}("{}"),'.format(expected[0].__name__, expected[1]))
+    print("Found diffs:")
+    for change_cls, change_str in hashed_changes:
+        print('{}("{}"),'.format(change_cls.__name__, change_str))
+
+    assert expected in hashed_changes
 
 
-# Split each group in multiple tests for easier reporting.
 @pytest.mark.parametrize(
-    "old_schema, new_schema, expected_diff",
+    "old_schema, new_schema, expected",
+    # Isolate each test case.
     [
         pytest.param(
-            old_schema, new_schema, diff, id="{}:{}".format(group, diff[1])
+            old_schema, new_schema, change, id="{}:{}".format(group, change[1])
         )
-        for group, old_schema, new_schema, diffs in DIFF_TEST_GROUPS
-        for diff in diffs
+        for group, old_schema, new_schema, changes in GROUPED_TEST_CASES
+        for change in changes  # type: ignore
     ],
 )
-def test_diffs(old_schema, new_schema, expected_diff):
-    diffs = _cached_diff_schema(old_schema, new_schema)
-
-    # Run pytest with -s to see the actual diffs in a somewhat more readable
-    # format than the assertion error.
-    print("\nTest case:")
-    print(
-        '(SchemaChange.{}, "{}"),'.format(
-            expected_diff[0]._name, expected_diff[1]
-        )
-    )
-    print("Found diffs:")
-    for diff in diffs:
-        print('(SchemaChange.{}, "{}"),'.format(diff[0]._name, diff[1]))
-
-    assert expected_diff in diffs
+def test_diffs(old_schema, new_schema, expected):
+    assert_change_found(list(diff_schema(old_schema, new_schema)), expected)
 
 
 def test_detects_no_change_in_same_schema(fixture_file):
@@ -952,7 +943,7 @@ def test_no_incompatible_changes(old_schema, new_schema):
 
 
 def test_minimum_severity():
-    assert [(SchemaChange.TYPE_REMOVED, "Type Type1 was removed.")] == list(
+    changes = list(
         diff_schema(
             build_schema(
                 """
@@ -969,3 +960,6 @@ def test_minimum_severity():
             min_severity=SchemaChangeSeverity.BREAKING,
         )
     )
+
+    assert len(changes) == 1
+    assert_change_found(changes, (TypeRemoved, "Type Type1 was removed."))
