@@ -75,9 +75,9 @@ The main goals were originally to:
 
 Not all these points are satisfied yet but py-gql should be ready for general use. It is however still in a fairly experimental phase and to reflect that versions are still in the `0.x.y`.The API is still subject to change as different part of the codebase are iterated on and are getting more use against production codebases.
 
-## Development setup
+## Development
 
-Make sure you are using Python 3.6+.
+Make sure you are using Python 3.6+ (you can run the tests under 3.5 but `black` other development tasks are not guaranteed to work).
 
 Clone this repo and create a virtualenv before installing the development dependencies:
 
@@ -90,3 +90,9 @@ pip install -U -r dev-requirements.txt
 From there, most development tasks are available through [invoke](http://www.pyinvoke.org/).
 
 Use `inv -l` to list all available tasks and `inv {TASKS} --help` to get help on a specific task.
+
+### Branches
+
+- The last tag should correspond to the latest release version
+- `master` contains unreleased changes that are planned to be released
+- `dev` is used for experimenting and hard changes such as rebase and force pushed should be expected (I plan to move to using specific feature branches for better organisation)
