@@ -21,7 +21,7 @@ class GraphQLError(Exception):
     using one of its subclasses most of the time.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, message: str = ""):
         super().__init__(message)
         self.message = message
 

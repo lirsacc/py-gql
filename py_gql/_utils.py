@@ -10,10 +10,12 @@ from typing import (
     Hashable,
     Iterable,
     Iterator,
+    Mapping,
     MutableMapping,
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     ValuesView,
@@ -22,6 +24,8 @@ from typing import (
 T = TypeVar("T")
 G = TypeVar("G")
 H = TypeVar("H", bound=Hashable)
+C = TypeVar("C", bound=Callable[..., T])
+TType = TypeVar("TType", bound=Type[Any])
 
 Lazy = Union[T, Callable[[], T]]
 
@@ -41,14 +45,14 @@ def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
 
 
 def map_and_filter(
-    func: Callable[[T], Optional[T]], iterator: Iterable[T]
+    func: Callable[[T], Optional[T]], iterable: Iterable[T]
 ) -> Iterator[T]:
     """ Map an  iterable filtering out None.
 
     >>> list(map_and_filter(lambda x: None if x % 2 else x, range(10)))
     [0, 2, 4, 6, 8]
     """
-    for entry in iterator:
+    for entry in iterable:
         mapped = func(entry)
         if mapped is not None:
             yield mapped
@@ -256,3 +260,47 @@ if sys.version < "3.6":  # noqa: C901
 else:
     OrderedDict = dict  # type: ignore
     DefaultOrderedDict = collections.defaultdict  # type: ignore
+
+
+def classdispatch(
+    value: Any, registry: Mapping[TType, C], *args: Any, **kwargs: Any
+) -> T:
+    """
+    Poor man's singledispatch to be used inline.
+
+    >>> class A:
+    ...     pass
+
+    >>> class B(A):
+    ...     pass
+
+    >>> class C(A):
+    ...     pass
+
+    >>> registry = {A: lambda _: 1, B: lambda _: 2}
+
+    >>> classdispatch(A(), registry)
+    1
+
+    >>> classdispatch(B(), registry)
+    2
+
+    >>> classdispatch(C(), registry)
+    Traceback (most recent call last):
+        ...
+    TypeError: <class 'py_gql._utils.C'>
+
+    >>> classdispatch(object(), registry)
+    Traceback (most recent call last):
+        ...
+    TypeError: <class 'object'>
+
+    >>> classdispatch(A(), {A: lambda _, *a, **kw: (a, kw)}, 0, 1, foo=2, bar=3)
+    ((0, 1), {'foo': 2, 'bar': 3})
+    """
+    try:
+        impl = registry[value.__class__]
+    except KeyError:
+        raise TypeError(value.__class__)
+
+    return impl(value, *args, **kwargs)

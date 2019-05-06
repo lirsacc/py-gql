@@ -10,6 +10,7 @@ from ..schema import Schema
 from ..utilities import TypeInfoVisitor
 
 T = TypeVar("T")
+N = TypeVar("N", bound=_ast.Node)
 MMap = Mapping[str, Mapping[str, T]]
 LMap = Mapping[str, List[T]]
 
@@ -51,6 +52,10 @@ class ValidationVisitor(DispatchingVisitor):
                 Nodes where the error comes from
         """
         self.errors.append(ValidationError(message, nodes))
+
+    def enter(self, node: N) -> N:
+        super().enter(node)
+        return node
 
 
 class VariablesCollector(ValidationVisitor):
