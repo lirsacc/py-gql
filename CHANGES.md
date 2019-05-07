@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- (Re) add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
+
 ### Fixed
 
 - Fix a bug where selection set indentation was not correct when using `ASTPrinter`.

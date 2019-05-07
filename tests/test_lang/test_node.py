@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import copy
+
 import pytest
 
-from py_gql.lang import ast as _ast
+from py_gql.lang import ast as _ast, parse
 
 
 @pytest.mark.parametrize(
@@ -149,7 +151,6 @@ def test_eq(rhs, lhs, eq):
                 "directives": [],
                 "loc": None,
                 "name": {"__kind__": "Name", "loc": None, "value": "field"},
-                "response_name": "field",
                 "selection_set": None,
             },
         ),
@@ -157,3 +158,17 @@ def test_eq(rhs, lhs, eq):
 )
 def test_to_dict(value, expected):
     assert expected == value.to_dict()
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "kitchen-sink.graphql",
+        "schema-kitchen-sink.graphql",
+        "github-schema.graphql",
+    ],
+)
+def test_copy_does_not_raise(fixture_file, fixture_name):
+    doc = parse(fixture_file(fixture_name), allow_type_system=True)
+    assert copy.copy(doc) == doc
+    assert copy.deepcopy(doc) == doc

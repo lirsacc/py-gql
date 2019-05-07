@@ -5,6 +5,7 @@ GraphQL AST representations corresponding to the `GraphQL language elements
 """
 # pylint: disable=redefined-builtin
 
+import copy
 from typing import (
     Any,
     Dict,
@@ -48,6 +49,19 @@ class Node:
                 "%s=%s" % (attr, getattr(self, attr)) for attr in self._props()
             ),
         )
+
+    def __copy__(self):
+        return self.__class__(**{k: getattr(self, k) for k in self.__slots__})
+
+    def __deepcopy__(self, memo):
+        return self.__class__(
+            **{k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__}
+        )
+
+    copy = __copy__
+
+    def deepcopy(self):
+        return copy.deepcopy(self)
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -252,7 +266,6 @@ class Field(SupportDirectives, Selection):
         "arguments",
         "directives",
         "selection_set",
-        "response_name",
     )
 
     def __init__(
@@ -272,7 +285,10 @@ class Field(SupportDirectives, Selection):
         self.selection_set = selection_set
         self.source = source
         self.loc = loc
-        self.response_name = alias.value if alias else name.value
+
+    @property
+    def response_name(self) -> str:
+        return self.alias.value if self.alias else self.name.value
 
 
 class Argument(Node):
