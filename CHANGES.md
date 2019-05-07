@@ -3,6 +3,7 @@
 ## Unreleased
 
 - (Re) add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
+- Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor`.
 
 ### Fixed
 
