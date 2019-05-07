@@ -3,6 +3,7 @@
 import json
 from typing import Iterable, Optional, Union
 
+from .._utils import classdispatch
 from . import ast as _ast
 
 
@@ -54,94 +55,54 @@ class ASTPrinter:
         if node is None:
             return ""
 
-        if isinstance(node, _ast.Name):
-            return self.print_name(node)
-        elif isinstance(node, _ast.Variable):
-            return self.print_variable(node)
-        elif isinstance(node, _ast.Document):
-            return self.print_document(node)
-        elif isinstance(node, _ast.OperationDefinition):
-            return self.print_operation_definition(node)
-        elif isinstance(node, _ast.VariableDefinition):
-            return self.print_variable_definition(node)
-        elif isinstance(node, _ast.SelectionSet):
-            return self.print_selection_set(node)
-        elif isinstance(node, _ast.Field):
-            return self.print_field(node)
-        elif isinstance(node, _ast.Argument):
-            return self.print_argument(node)
-        elif isinstance(node, _ast.FragmentSpread):
-            return self.print_fragment_spread(node)
-        elif isinstance(node, _ast.InlineFragment):
-            return self.print_inline_fragment(node)
-        elif isinstance(node, _ast.IntValue):
-            return self.print_int_value(node)
-        elif isinstance(node, _ast.FloatValue):
-            return self.print_float_value(node)
-        elif isinstance(node, _ast.EnumValue):
-            return self.print_enum_value(node)
-        elif isinstance(node, _ast.BooleanValue):
-            return self.print_boolean_value(node)
-        elif isinstance(node, _ast.NullValue):
-            return self.print_null_value(node)
-        elif isinstance(node, _ast.StringValue):
-            return self.print_string_value(node)
-        elif isinstance(node, _ast.ListValue):
-            return self.print_list_value(node)
-        elif isinstance(node, _ast.ObjectValue):
-            return self.print_object_value(node)
-        elif isinstance(node, _ast.ObjectField):
-            return self.print_object_field(node)
-        elif isinstance(node, _ast.Directive):
-            return self.print_directive(node)
-        elif isinstance(node, _ast.NamedType):
-            return self.print_named_type(node)
-        elif isinstance(node, _ast.ListType):
-            return self.print_list_type(node)
-        elif isinstance(node, _ast.NonNullType):
-            return self.print_non_null_type(node)
-        elif isinstance(node, _ast.FragmentDefinition):
-            return self.print_fragment_definition(node)
-        elif isinstance(node, _ast.SchemaDefinition):
-            return self.print_schema_definition(node)
-        elif isinstance(node, _ast.SchemaExtension):
-            return self.print_schema_extension(node)
-        elif isinstance(node, _ast.OperationTypeDefinition):
-            return self.print_operation_type_definition(node)
-        elif isinstance(node, _ast.ScalarTypeDefinition):
-            return self.print_scalar_type_definition(node)
-        elif isinstance(node, _ast.ScalarTypeExtension):
-            return self.print_scalar_type_extension(node)
-        elif isinstance(node, _ast.ObjectTypeDefinition):
-            return self.print_object_type_definition(node)
-        elif isinstance(node, _ast.ObjectTypeExtension):
-            return self.print_object_type_extension(node)
-        elif isinstance(node, _ast.FieldDefinition):
-            return self.print_field_definition(node)
-        elif isinstance(node, _ast.InputValueDefinition):
-            return self.print_input_value_definition(node)
-        elif isinstance(node, _ast.InterfaceTypeDefinition):
-            return self.print_interface_type_definition(node)
-        elif isinstance(node, _ast.InterfaceTypeExtension):
-            return self.print_interface_type_extension(node)
-        elif isinstance(node, _ast.UnionTypeDefinition):
-            return self.print_union_type_definition(node)
-        elif isinstance(node, _ast.UnionTypeExtension):
-            return self.print_union_type_extension(node)
-        elif isinstance(node, _ast.EnumTypeDefinition):
-            return self.print_enum_type_definition(node)
-        elif isinstance(node, _ast.EnumTypeExtension):
-            return self.print_enum_type_extension(node)
-        elif isinstance(node, _ast.EnumValueDefinition):
-            return self.print_enum_value_definition(node)
-        elif isinstance(node, _ast.InputObjectTypeDefinition):
-            return self.print_input_object_type_definition(node)
-        elif isinstance(node, _ast.InputObjectTypeExtension):
-            return self.print_input_object_type_extension(node)
-        elif isinstance(node, _ast.DirectiveDefinition):
-            return self.print_directive_definition(node)
-
-        raise TypeError(type(node))
+        return classdispatch(  # type: ignore
+            node,
+            {
+                _ast.Name: self.print_name,
+                _ast.Variable: self.print_variable,
+                _ast.Document: self.print_document,
+                _ast.OperationDefinition: self.print_operation_definition,
+                _ast.VariableDefinition: self.print_variable_definition,
+                _ast.SelectionSet: self.print_selection_set,
+                _ast.Field: self.print_field,
+                _ast.Argument: self.print_argument,
+                _ast.FragmentSpread: self.print_fragment_spread,
+                _ast.InlineFragment: self.print_inline_fragment,
+                _ast.IntValue: self.print_int_value,
+                _ast.FloatValue: self.print_float_value,
+                _ast.EnumValue: self.print_enum_value,
+                _ast.BooleanValue: self.print_boolean_value,
+                _ast.NullValue: self.print_null_value,
+                _ast.StringValue: self.print_string_value,
+                _ast.ListValue: self.print_list_value,
+                _ast.ObjectValue: self.print_object_value,
+                _ast.ObjectField: self.print_object_field,
+                _ast.Directive: self.print_directive,
+                _ast.NamedType: self.print_named_type,
+                _ast.ListType: self.print_list_type,
+                _ast.NonNullType: self.print_non_null_type,
+                _ast.FragmentDefinition: self.print_fragment_definition,
+                _ast.SchemaDefinition: self.print_schema_definition,
+                _ast.SchemaExtension: self.print_schema_extension,
+                _ast.OperationTypeDefinition: self.print_operation_type_definition,
+                _ast.ScalarTypeDefinition: self.print_scalar_type_definition,
+                _ast.ScalarTypeExtension: self.print_scalar_type_extension,
+                _ast.ObjectTypeDefinition: self.print_object_type_definition,
+                _ast.ObjectTypeExtension: self.print_object_type_extension,
+                _ast.FieldDefinition: self.print_field_definition,
+                _ast.InputValueDefinition: self.print_input_value_definition,
+                _ast.InterfaceTypeDefinition: self.print_interface_type_definition,
+                _ast.InterfaceTypeExtension: self.print_interface_type_extension,
+                _ast.UnionTypeDefinition: self.print_union_type_definition,
+                _ast.UnionTypeExtension: self.print_union_type_extension,
+                _ast.EnumTypeDefinition: self.print_enum_type_definition,
+                _ast.EnumTypeExtension: self.print_enum_type_extension,
+                _ast.EnumValueDefinition: self.print_enum_value_definition,
+                _ast.InputObjectTypeDefinition: self.print_input_object_type_definition,
+                _ast.InputObjectTypeExtension: self.print_input_object_type_extension,
+                _ast.DirectiveDefinition: self.print_directive_definition,
+            },
+        )
 
     def print_name(self, node: _ast.Name) -> str:
         return node.value
