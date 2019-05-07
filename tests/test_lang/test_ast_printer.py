@@ -357,3 +357,49 @@ def test_comment_descriptions():
             bar: Bar
         }"""
     )
+
+
+# From a broken case
+def test_custom_indentation_object():
+    assert (
+        ASTPrinter(indent=4)(
+            parse(
+                """
+            {
+                bar {
+                    one
+                        two
+                    ... on Object {
+                        three
+                    }
+                    ...A
+                }
+            }
+
+            fragment A on Object {
+                four
+            five
+            }
+            """
+            )
+        )
+        == dedent(
+            """
+            {
+                bar {
+                    one
+                    two
+                    ... on Object {
+                        three
+                    }
+                    ...A
+                }
+            }
+
+            fragment A on Object {
+                four
+                five
+            }
+            """
+        )
+    )

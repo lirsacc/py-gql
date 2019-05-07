@@ -567,7 +567,9 @@ def _join(entries: Iterable[str], separator: str = "") -> str:
 
 
 def _indent(maybe_string: str, indent: str) -> str:
-    return maybe_string and (indent + maybe_string.replace("\n", "\n  "))
+    return maybe_string and (
+        indent + maybe_string.replace("\n", "\n%s" % indent)
+    )
 
 
 def _block(iterator: Iterable[str], indent: str) -> str:

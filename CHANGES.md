@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fix a bug where selection set indentation was not correct when using `ASTPrinter`.
+
 ## 0.3.2
 
 Docs & dev update.
