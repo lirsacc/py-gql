@@ -295,8 +295,10 @@ def classdispatch(
         ...
     TypeError: <class 'object'>
 
-    >>> classdispatch(A(), {A: lambda _, *a, **kw: (a, kw)}, 0, 1, foo=2, bar=3)
-    ((0, 1), {'foo': 2, 'bar': 3})
+    >>> classdispatch(A(), {
+    ...     A: lambda _, *a, **kw: (a, sorted(kw.items()))
+    ... }, 0, 1, foo=2, bar=3)
+    ((0, 1), [('bar', 3), ('foo', 2)])
     """
     try:
         impl = registry[value.__class__]
