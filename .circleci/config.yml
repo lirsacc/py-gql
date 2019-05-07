@@ -309,6 +309,19 @@ jobs:
                       . "venv${PY}/bin/activate"
                       inv black --check
 
+    # Make sure the benchmarks still run, do nothing with the result
+    check-benchmarks:
+        <<: *docker-python37
+        <<: *workdir
+        steps:
+            - *workspace
+            - restore_cache: *read-cache-python-37
+            - run:
+                  name: Check benchmarks run
+                  command: |
+                      . "venv${PY}/bin/activate"
+                      inv benchmark
+
     docs:
         <<: *docker-python37
         <<: *workdir
@@ -364,6 +377,10 @@ workflows:
                   requires:
                       - deps-37
 
+            - check-benchmarks:
+                  requires:
+                      - deps-37
+
             - collect-tests:
                   requires:
                       - check-35
@@ -374,3 +391,4 @@ workflows:
                   requires:
                       - collect-tests
                       - check-format
+                      - check-benchmarks
