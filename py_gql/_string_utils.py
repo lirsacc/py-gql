@@ -413,3 +413,48 @@ def stringify_path(path: ResponsePath) -> str:
         else:
             path_str += ".%s" % entry
     return path_str.lstrip(".")
+
+
+def snakecase_to_camelcase(value: str) -> str:
+    """
+    >>> snakecase_to_camelcase('')
+    ''
+
+    >>> snakecase_to_camelcase('foo')
+    'foo'
+
+    >>> snakecase_to_camelcase('foo_bar_baz')
+    'fooBarBaz'
+
+    >>> snakecase_to_camelcase('fooBarBaz')
+    'fooBarBaz'
+    """
+    if not value:
+        return value
+
+    head, *tail = value.split("_")
+    return head[0].lower() + head[1:] + "".join(s.title() for s in tail)
+
+
+def camelcase_to_snakecase(value: str) -> str:
+    """
+    >>> camelcase_to_snakecase('')
+    ''
+
+    >>> camelcase_to_snakecase('foo')
+    'foo'
+
+    >>> camelcase_to_snakecase('fooBarBaz')
+    'foo_bar_baz'
+
+    >>> camelcase_to_snakecase('foo_bar_baz')
+    'foo_bar_baz'
+    """
+    value = re.sub(r"[\-\.\s]", "_", value)
+
+    if not value:
+        return value
+
+    return value[0].lower() + re.sub(
+        r"[A-Z]", lambda matched: "_" + matched.group(0).lower(), value[1:]
+    )

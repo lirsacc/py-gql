@@ -2,7 +2,7 @@
 
 from py_gql._string_utils import dedent
 from py_gql.lang import parse, print_ast
-from py_gql.utilities.ast_transforms import RemoveFieldAliasesVisitor
+from py_gql.utilities import ast_transforms
 
 
 def test_RemoveFieldAliasesVisitor():
@@ -24,7 +24,9 @@ def test_RemoveFieldAliasesVisitor():
         """
     )
 
-    visited_query = RemoveFieldAliasesVisitor().visit(query.deepcopy())
+    visited_query = ast_transforms.RemoveFieldAliasesVisitor().visit(
+        query.deepcopy()
+    )
 
     assert visited_query
 
@@ -42,6 +44,90 @@ def test_RemoveFieldAliasesVisitor():
 
         fragment A on Object {
             three
+        }
+        """
+    )
+
+
+def test_CamelCaseToSnakeCaseVisitor():
+    query = parse(
+        """
+        {
+            fooBar {
+                barFoo
+                ... on Object {
+                    bazFoo
+                }
+            }
+        }
+
+        fragment A on Object {
+            fooBaz
+        }
+        """
+    )
+
+    visited_query = ast_transforms.CamelCaseToSnakeCaseVisitor().visit(
+        query.deepcopy()
+    )
+
+    assert visited_query
+
+    assert print_ast(visited_query, indent=4) == dedent(
+        """
+        {
+            foo_bar {
+                bar_foo
+                ... on Object {
+                    baz_foo
+                }
+            }
+        }
+
+        fragment A on Object {
+            foo_baz
+        }
+        """
+    )
+
+
+def test_SnakeCaseToCamelCaseVisitor():
+    query = parse(
+        """
+        {
+            foo_bar {
+                bar_foo
+                ... on Object {
+                    baz_foo
+                }
+            }
+        }
+
+        fragment A on Object {
+            foo_baz
+        }
+        """
+    )
+
+    visited_query = ast_transforms.SnakeCaseToCamelCaseVisitor().visit(
+        query.deepcopy()
+    )
+
+    assert visited_query
+
+    assert print_ast(visited_query, indent=4) == dedent(
+        """
+        {
+            fooBar {
+                barFoo
+                ... on Object {
+                    bazFoo
+                }
+            }
+        }
+
+        fragment A on Object {
+            fooBaz
         }
         """
     )
