@@ -267,7 +267,7 @@ def test_raises_if_invalid_schema_is_provided():
 
 
 @pytest.mark.asyncio
-async def test_graphql_with_async_resolvers(raiser):
+async def test_graphql_with_async_resolvers():
     schema = build_schema(
         """
         type Query {

@@ -876,7 +876,7 @@ GROUPED_TEST_CASES = [
 ]
 
 
-def assert_change_found(changes, expected, cache={}):
+def assert_change_found(changes, expected):
 
     hashed_changes = [(c.__class__, c.message) for c in changes]
 

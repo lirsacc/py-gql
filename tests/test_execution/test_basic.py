@@ -617,6 +617,7 @@ async def test_spreading_fragments_with_interfaces(
             id
         }
         """,
+        executor_cls=executor_cls,
         expected_data={
             "hero": {
                 "id": "2001",
