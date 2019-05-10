@@ -4,7 +4,6 @@ import pytest
 
 from py_gql._string_utils import dedent
 from py_gql._utils import flatten
-from py_gql.builders import SchemaDirective, build_schema
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
@@ -17,6 +16,7 @@ from py_gql.schema import (
     ObjectType,
     String,
 )
+from py_gql.sdl import SchemaDirective, build_schema
 
 
 def test_object_type_extension():

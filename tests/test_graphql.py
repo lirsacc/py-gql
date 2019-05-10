@@ -6,9 +6,9 @@ import asyncio
 import pytest
 
 from py_gql._graphql import graphql, graphql_blocking
-from py_gql.builders import build_schema
 from py_gql.exc import ResolverError, SchemaError
 from py_gql.schema import Schema, String
+from py_gql.sdl import build_schema
 
 
 def test_it_correctly_identifies_r2_d2_as_the_hero_sync(starwars_schema):

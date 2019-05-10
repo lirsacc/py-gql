@@ -3,7 +3,6 @@
 import pytest
 
 from py_gql._string_utils import dedent
-from py_gql.builders import SchemaDirective, build_schema
 from py_gql.schema import (
     UUID,
     Argument,
@@ -22,6 +21,7 @@ from py_gql.schema import (
     String,
     UnionType,
 )
+from py_gql.sdl import SchemaDirective, build_schema
 
 
 def print_schema(schema, *args, **kwargs):

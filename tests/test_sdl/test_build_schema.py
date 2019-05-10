@@ -4,10 +4,10 @@ import pytest
 
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
-from py_gql.builders import build_schema, build_schema_ignoring_extensions
 from py_gql.exc import SDLError
 from py_gql.lang import parse
 from py_gql.schema import SPECIFIED_DIRECTIVES, UUID
+from py_gql.sdl import build_schema
 
 
 def _check(schema):
@@ -837,9 +837,9 @@ def test_inject_custom_types():
     assert schema.types["UUID"] is UUID
 
 
-def test_build_schema_ignoring_extensions_ignores_extensions():
+def test_build_schema_ignores_extensions_if_specified():
     assert (
-        build_schema_ignoring_extensions(
+        build_schema(
             """
             type Query {
                 one: Int
@@ -852,7 +852,8 @@ def test_build_schema_ignoring_extensions_ignores_extensions():
             extend type Query {
                 two: String
             }
-            """
+            """,
+            ignore_extensions=True,
         ).to_string()
         == dedent(
             """

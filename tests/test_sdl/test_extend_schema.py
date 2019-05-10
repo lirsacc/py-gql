@@ -3,12 +3,12 @@
 # This file only test some cases that are not exercised when testing
 # build_schema as well as adds some lower level assertions.
 
+import functools
 from typing import cast
 
 import pytest
 
 from py_gql._string_utils import dedent
-from py_gql.builders import build_schema_ignoring_extensions, extend_schema
 from py_gql.exc import SDLError
 from py_gql.lang import ast as _ast
 from py_gql.schema import (
@@ -21,8 +21,13 @@ from py_gql.schema import (
     ObjectType,
     Schema,
 )
+from py_gql.sdl import build_schema, extend_schema
 
 BASE_SCHEMA = Schema(ObjectType("Query", [Field("foo", Int)]))
+
+build_schema_ignoring_extensions = functools.partial(
+    build_schema, ignore_extensions=True
+)
 
 
 def test_noop_without_extension_nodes():

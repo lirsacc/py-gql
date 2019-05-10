@@ -242,34 +242,3 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             if field is None:
                 return None
         return super().on_input_field_definition(field)
-
-
-class DeprecatedSchemaDirective(SchemaDirective):
-    """
-    Implementation of the ``@deprecated`` schema directive to mark
-    object / interface fields and enum values as deprecated when running
-    introspection queries.
-
-    Refer to the spec or :obj:`py_gql.schema.DeprecatedDirective` for details
-    about the directive itself.
-    """
-
-    def on_field_definition(self, field: Field) -> Field:
-        return Field(
-            field.name,
-            type_=field.type,
-            args=field.arguments,
-            description=field.description,
-            deprecation_reason=self.args["reason"],
-            resolver=field.resolver,
-            node=field.node,
-        )
-
-    def on_enum_value(self, enum_value: EnumValue) -> EnumValue:
-        return EnumValue(
-            enum_value.name,
-            enum_value.value,
-            description=enum_value.description,
-            deprecation_reason=self.args["reason"],
-            node=enum_value.node,
-        )

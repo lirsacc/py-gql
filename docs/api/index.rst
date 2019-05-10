@@ -13,7 +13,7 @@ rendered automatically from the code.
     exc
     lang
     schema
-    builders
+    sdl
     validation
     execution
     tracers

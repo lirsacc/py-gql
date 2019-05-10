@@ -16,8 +16,8 @@ on top of :mod:`py_gql`.
 
 from . import lang, schema, tracers, utilities
 from ._graphql import graphql, graphql_blocking, process_graphql_query
-from .builders import build_schema
 from .execution import GraphQLExtension, GraphQLResult, ResolveInfo
+from .sdl import build_schema
 
 __all__ = (
     "graphql",

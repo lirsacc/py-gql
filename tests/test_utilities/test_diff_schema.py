@@ -2,7 +2,7 @@
 
 import pytest
 
-from py_gql.builders import build_schema
+from py_gql.sdl import build_schema
 from py_gql.utilities.diff_schema import (
     DirectiveAdded,
     DirectiveArgumentAdded,

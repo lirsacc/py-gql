@@ -63,6 +63,7 @@ def build_schema(
     # fmt: off
     document: Union[_ast.Document, str],
     *,
+    ignore_extensions: bool = False,
     additional_types: Optional[List[NamedType]] = None,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
     # fmt: on
@@ -78,6 +79,8 @@ def build_schema(
     Args:
         document: SDL document
 
+        ignore_extensions: Whether to apply schema and type extensions or not.
+
         additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums, etc.
             - In case of object types, interfaces, etc. the supplied type will
@@ -87,29 +90,34 @@ def build_schema(
             so users should not rely on type identity.
 
         schema_directives: Schema directive classes.
-
             Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
             and must either  define a non-null ``definition`` attribute or the
-            corresponding definition must be present in the document.
+            corresponding definition must be present in the document. See
+            :func:`~py_gql.schema.apply_schema_directives` for more details.
 
-            See :func:`~py_gql.schema.apply_schema_directives` for more details.
+            Note:
+                Specified directives such as ``@deperecated`` do not need to be
+                specified this way and are always processed internally to ensure
+                compliance with the specification.
 
     Returns:
         Executable schema
 
     Raises:
         py_gql.exc.SDLError:
+        py_gql.exc.ExtensionError:
     """
     ast = _document_ast(document)
     schema = build_schema_ignoring_extensions(
         ast, additional_types=additional_types
     )
 
-    schema = extend_schema(
-        schema, ast, additional_types=additional_types, strict=False
-    )
+    if not ignore_extensions:
+        schema = extend_schema(
+            schema, ast, additional_types=additional_types, strict=False
+        )
 
-    if schema_directives:
+    if schema_directives is not None:
         schema = apply_schema_directives(schema, schema_directives)
 
     schema.validate()
@@ -125,26 +133,7 @@ def build_schema_ignoring_extensions(
     # fmt: on
 ) -> Schema:
     """ Build an executable schema from an SDL-based schema definition ignoring
-    extensions.
-
-    Args:
-        document: SDL document
-
-        additional_types: User supplied list of types
-            Use this to specify some custom implementation for scalar, enums,
-            etc.
-            - In case of object types, interfaces, etc. the supplied type will
-            override the extracted type without checking for compatibility.
-            - Extension will be applied to these types. As a result, the
-            resulting types may not be the same objects that were provided,
-            so users should not rely on type identity.
-
-    Returns:
-        Executable schema
-
-    Raises:
-        py_gql.exc.SDLError:
-    """
+    extensions. """
     ast = _document_ast(document)
     schema_def, type_defs, directive_defs = _collect_definitions(ast)
 
@@ -200,7 +189,8 @@ def extend_schema(
     document: Union[_ast.Document, str],
     *,
     additional_types: Optional[List[NamedType]] = None,
-    strict: bool = True
+    strict: bool = True,
+    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
     # fmt: on
 ) -> Schema:
     """ Extend an existing Schema according to a GraphQL document (adding new
@@ -229,6 +219,17 @@ def extend_schema(
             :class:`ExtensionError`. Disable strict mode will silently ignore
             such errors.
 
+        schema_directives: Schema directive classes.
+            Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
+            and must either  define a non-null ``definition`` attribute or the
+            corresponding definition must be present in the document. See
+            :func:`~py_gql.schema.apply_schema_directives` for more details.
+
+            Note:
+                Specified directives such as ``@deperecated`` do not need to be
+                specified this way and are always processed internally to ensure
+                compliance with the specification.
+
     Returns:
         py_gql.schema.Schema: Executable schema
 
@@ -254,7 +255,10 @@ def extend_schema(
         type_defs,
         directive_defs,
         type_exts,
-        additional_types=_merge_type_maps(schema.types, additional_types or []),
+        additional_types={
+            **schema.types,
+            **{t.name: t for t in additional_types or []},
+        },
     )
 
     directives = [
@@ -295,7 +299,7 @@ def extend_schema(
                 builder.build_type(op_def.type)
             )
 
-    return Schema(
+    schema = Schema(
         query_type=operation_types["query"],
         mutation_type=operation_types["mutation"],
         subscription_type=operation_types["subscription"],
@@ -303,6 +307,12 @@ def extend_schema(
         directives=directives,
         nodes=(schema.nodes or []) + (schema_exts or []),  # type: ignore
     )
+
+    if schema_directives is not None:
+        schema = apply_schema_directives(schema, schema_directives)
+
+    schema.validate()
+    return schema
 
 
 def _collect_definitions(
@@ -417,18 +427,6 @@ def _collect_extensions(  # noqa: C901
             type_exts[target].append(ext)
 
     return schema_exts, type_defs, directive_defs, dict(type_exts)
-
-
-def _merge_type_maps(
-    *type_maps: Union[Mapping[str, NamedType], List[NamedType]]
-) -> Dict[str, NamedType]:
-    type_map = {}  # type: Dict[str, NamedType]
-    for tm in type_maps:
-        if isinstance(tm, list):
-            type_map.update({type_.name: type_ for type_ in tm})
-        elif isinstance(tm, dict):
-            type_map.update(tm)
-    return type_map
 
 
 def _deprecation_reason(

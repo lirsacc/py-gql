@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
+
+### Updated / Added
+
 - (Re) add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
 - Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor`.
 - Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor`.
+- Clarify that specified schema directives do not need to be applied manually.
 
 ### Fixed
 

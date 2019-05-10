@@ -8,11 +8,6 @@ import pytest
 
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
-from py_gql.builders import (
-    DeprecatedSchemaDirective,
-    SchemaDirective,
-    build_schema,
-)
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.execution import default_resolver
 from py_gql.schema import (
@@ -25,6 +20,7 @@ from py_gql.schema import (
     ScalarType,
     String,
 )
+from py_gql.sdl import SchemaDirective, build_schema
 
 
 def wrap_resolver(field_def, func):
@@ -528,44 +524,3 @@ def test_schema_extension_duplicate_directive():
         "locations": [{"column": 27, "line": 11}],
         "message": 'Directive "@onSchema" already applied',
     }
-
-
-class TestDeprecatedSchemaDirective:
-
-    sdl = """
-    type Query {
-        foo: Foo
-    }
-
-    type Foo {
-        a: Int
-        b: Int @deprecated
-        c: Bar
-    }
-
-    enum Bar {
-        A
-        B @deprecated(reason: "I don't like b")
-        C
-    }
-    """
-
-    def test_marks_field_as_deprecated_with_default_reason(self):
-        schema = build_schema(
-            self.sdl,
-            schema_directives={"deprecated": DeprecatedSchemaDirective},
-        )
-        foo_type = schema.get_type("Foo")
-        b_field = cast(ObjectType, foo_type).field_map["b"]
-        assert b_field.deprecated
-        assert b_field.deprecation_reason
-
-    def test_marks_enum_value_as_deprecated_with_custom_reason(self):
-        schema = build_schema(
-            self.sdl,
-            schema_directives={"deprecated": DeprecatedSchemaDirective},
-        )
-        bar_type = schema.get_type("Bar")
-        b_value = cast(EnumType, bar_type)._values["B"]
-        assert b_value.deprecated
-        assert b_value.deprecation_reason == "I don't like b"
