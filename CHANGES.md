@@ -5,6 +5,7 @@
 ### Breaking Changes
 
 - `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
+- `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracing`.
 
 ### Updated / Added
 
@@ -12,6 +13,7 @@
 - Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor`.
 - Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor`.
 - Clarify that specified schema directives do not need to be applied manually.
+- Extended the tracer concept into `Instrumentation` which supports overriding runtime values as well as observing execution stages.
 
 ### Fixed
 

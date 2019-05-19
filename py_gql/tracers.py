@@ -7,7 +7,7 @@ import datetime
 from typing import Any, Dict, Tuple, Union, cast
 
 from ._utils import OrderedDict
-from .execution import GraphQLExtension, ResolveInfo, Tracer
+from .execution import GraphQLExtension, Instrumentation, ResolveInfo
 
 __all__ = ("TimingTracer", "ApolloTracer")
 
@@ -29,12 +29,10 @@ class FieldTiming:
         self.end = None
 
 
-class TimingTracer(Tracer):
+class TimingTracer(Instrumentation):
     """
-    Default implementation for tracers that collect graphql operations timing.
-
-    This records times as UTC using :py:class:`datetime.datetime` and needs to
-    be consumed separately to be useful.
+    Default implementation for tracers that collect GraphQL execution timing
+    using the :py:mod:`datetime` module. All times are collected as UTC.
     """
 
     def __init__(self):
@@ -50,35 +48,41 @@ class TimingTracer(Tracer):
         self.validation_end = None
         self.validation_start = None
 
-    def on_start(self):
+    def on_query(self):
         self.start = datetime.datetime.utcnow()
-
-    def on_end(self):
-        self.end = datetime.datetime.utcnow()
-
-    def on_query_start(self):
-        self.query_start = datetime.datetime.utcnow()
+        return self.on_query_end
 
     def on_query_end(self):
+        self.end = datetime.datetime.utcnow()
+
+    def on_execution(self):
+        self.query_start = datetime.datetime.utcnow()
+        return self.on_execution_end
+
+    def on_execution_end(self):
         self.query_end = datetime.datetime.utcnow()
 
-    def on_parse_start(self):
+    def on_parse(self):
         self.parse_start = datetime.datetime.utcnow()
+        return self.on_parse_end
 
     def on_parse_end(self):
         self.parse_end = datetime.datetime.utcnow()
 
-    def on_validate_start(self):
+    def on_validate(self):
         self.validation_start = datetime.datetime.utcnow()
+        return self.on_validate_end
 
     def on_validate_end(self):
         self.validation_end = datetime.datetime.utcnow()
 
-    def on_field_start(self, info):
+    def on_field(self, _root, _ctx, info):
         self.fields[tuple(info.path)] = FieldTiming(info)
 
-    def on_field_end(self, info):
-        self.fields[tuple(info.path)].end = datetime.datetime.utcnow()
+        def on_field_end():
+            self.fields[tuple(info.path)].end = datetime.datetime.utcnow()
+
+        return on_field_end
 
 
 class ApolloTracer(TimingTracer, GraphQLExtension):

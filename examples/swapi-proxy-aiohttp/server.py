@@ -29,7 +29,7 @@ async def graphql_handler(request):
         data["query"],
         variables=data.get("variables", {}),
         operation_name=data.get("operation_name"),
-        tracer=tracer,
+        instrumentation=tracer,
     )
 
     result.add_extension(tracer)

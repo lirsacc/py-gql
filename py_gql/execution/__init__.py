@@ -6,8 +6,8 @@ from .default_resolver import default_resolver
 from .execute import execute
 from .executor import Executor
 from .get_operation import get_operation
+from .instrumentation import Instrumentation, MultiInstrumentation
 from .threadpool_executor import ThreadPoolExecutor
-from .tracer import NullTracer, Tracer
 from .wrappers import GraphQLExtension, GraphQLResult, ResolveInfo, ResponsePath
 
 __all__ = (
@@ -22,6 +22,6 @@ __all__ = (
     "ThreadPoolExecutor",
     "BlockingExecutor",
     "get_operation",
-    "Tracer",
-    "NullTracer",
+    "Instrumentation",
+    "MultiInstrumentation",
 )

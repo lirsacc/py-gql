@@ -41,7 +41,7 @@ def graphql_route():
             executor_cls=ThreadPoolExecutor,
             context=dict(global_executor=GLOBAL_EXECUTOR),
             executor_args=dict(inner_executor=GLOBAL_EXECUTOR),
-            tracer=tracer,
+            instrumentation=tracer,
         )
     ).result()
 

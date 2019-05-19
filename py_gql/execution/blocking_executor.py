@@ -67,7 +67,9 @@ class BlockingExecutor(Executor):
             nodes,
         )
 
-        self._tracer.on_field_start(info)
+        on_field_end = self._instrumentation.on_field(
+            parent_value, self.context_value, info
+        )
 
         try:
             coerced_args = self.argument_values(field_definition, node)
@@ -76,12 +78,11 @@ class BlockingExecutor(Executor):
             )
         except (CoercionError, ResolverError) as err:
             self.add_error(err, path, node)
-            self._tracer.on_field_end(info)
-        else:
-            self._tracer.on_field_end(info)
-            return self.complete_value(
-                field_definition.type, nodes, path, resolved
-            )
+            return None
+        finally:
+            on_field_end()
+
+        return self.complete_value(field_definition.type, nodes, path, resolved)
 
     def complete_list_value(
         self,

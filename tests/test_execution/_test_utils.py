@@ -7,6 +7,7 @@ from typing import Any, List, Optional, Tuple, Type, Union
 
 import pytest
 
+from py_gql import process_graphql_query
 from py_gql._string_utils import dedent, stringify_path
 from py_gql.execution import GraphQLResult, execute
 from py_gql.lang import parse
@@ -130,3 +131,14 @@ async def assert_execution(
         result = await _execute()
         assert isinstance(result, GraphQLResult)
         assert_result_match(result, expected_data, expected_errors)
+
+
+async def process_request(
+    schema: Schema, query: str, **kwargs: Any
+) -> GraphQLResult:
+    result = process_graphql_query(schema, query, **kwargs)
+    if isawaitable(result):
+        return await result  # type: ignore
+    elif isinstance(result, Future):
+        return result.result(timeout=2)  # type: ignore
+    return result  # type: ignore

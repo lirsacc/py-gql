@@ -2,14 +2,18 @@
 
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 
-from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
+from .exc import (
+    ExecutionError,
+    GraphQLResponseError,
+    GraphQLSyntaxError,
+    VariablesCoercionError,
+)
 from .execution import (
     AsyncIOExecutor,
     BlockingExecutor,
     Executor,
     GraphQLResult,
-    NullTracer,
-    Tracer,
+    Instrumentation,
     execute,
 )
 from .lang import parse
@@ -30,7 +34,7 @@ def process_graphql_query(
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    tracer: Optional[Tracer] = None,
+    instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
@@ -72,7 +76,9 @@ def process_graphql_query(
             common logic, they are good canidates for logging, authentication,
             and execution guards.
 
-        tracer: Tracer instance.
+        instrumentation: Instrumentation instance.
+            Use :class:`~py_gql.execution.MultiInstrumentation` to compose
+            mutiple instances together.
 
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
@@ -94,34 +100,44 @@ def process_graphql_query(
     """
     schema.validate()
 
-    tracer = tracer or NullTracer()
+    instrumentation = instrumentation or Instrumentation()
 
-    tracer.on_start()
+    on_query_end = instrumentation.on_query()
 
     def _abort(*args, **kwargs):
-        tracer.on_end()  # type: ignore
         # Make sure the value is wrapped similarly to the execution result to
         # make it easier for consumers.
-        return executor_cls.unwrap_value(GraphQLResult(*args, **kwargs))
+        return executor_cls.unwrap_value(
+            _on_end(GraphQLResult(*args, **kwargs))
+        )
 
-    def _on_end(result):
-        tracer.on_end()  # type: ignore
-        return result
+    def _on_end(result: GraphQLResult) -> GraphQLResult:
+        on_query_end()
+        return cast(Instrumentation, instrumentation).instrument_result(result)
 
     if isinstance(document, str):
+        on_parse_end = instrumentation.on_parse()
         try:
-            tracer.on_parse_start()
             ast = parse(document)
         except GraphQLSyntaxError as err:
             return _abort(errors=[err])
         finally:
-            tracer.on_parse_end()
+            on_parse_end()
     else:
         ast = document
 
-    tracer.on_validate_start()
+    try:
+        ast = instrumentation.instrument_ast(ast)
+    except GraphQLResponseError as err:
+        return _abort(errors=[err])
+
+    on_validate_end = instrumentation.on_validate()
     validation_result = validate_ast(schema, ast, validators=validators)
-    tracer.on_validate_end()
+    on_validate_end()
+
+    validation_result = instrumentation.instrument_validation_result(
+        validation_result
+    )
 
     if not validation_result:
         return _abort(errors=validation_result.errors)
@@ -136,7 +152,7 @@ def process_graphql_query(
                 initial_value=root,
                 context_value=context,
                 default_resolver=default_resolver,
-                tracer=tracer,
+                instrumentation=instrumentation,
                 middlewares=middlewares,
                 executor_cls=executor_cls,
                 executor_args=executor_args,
@@ -161,7 +177,7 @@ async def graphql(
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    tracer: Optional[Tracer] = None
+    instrumentation: Optional[Instrumentation] = None
     # fmt: on
 ) -> GraphQLResult:
     """
@@ -181,7 +197,7 @@ async def graphql(
             validators=validators,
             context=context,
             default_resolver=default_resolver,
-            tracer=tracer,
+            instrumentation=instrumentation,
             middlewares=middlewares,
             executor_cls=AsyncIOExecutor,
         ),
@@ -200,7 +216,7 @@ def graphql_blocking(
     validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    tracer: Optional[Tracer] = None
+    instrumentation: Optional[Instrumentation] = None
     # fmt: on
 ) -> GraphQLResult:
     """
@@ -217,7 +233,7 @@ def graphql_blocking(
             validators=validators,
             context=context,
             default_resolver=default_resolver,
-            tracer=tracer,
+            instrumentation=instrumentation,
             middlewares=middlewares,
             executor_cls=BlockingExecutor,
         ),

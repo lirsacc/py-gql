@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-from concurrent.futures import Future
-from inspect import isawaitable
 
-import pytest
-
-from py_gql import graphql_blocking, process_graphql_query
-from py_gql.tracers import ApolloTracer, TimingTracer
+from py_gql import graphql_blocking
+from py_gql.tracers import ApolloTracer
 
 
 # Timestamps are not deterministic
@@ -36,77 +32,6 @@ class AnyInt:
             return True
 
 
-@pytest.mark.asyncio
-async def test_TimingTracer(starwars_schema, executor_cls):
-
-    tracer = TimingTracer()
-
-    result = process_graphql_query(
-        starwars_schema,
-        """
-        query NestedQuery {
-            hero {
-                name
-                friends {
-                    name
-                    appearsIn
-                    friends {
-                    name
-                    }
-                }
-            }
-        }
-        """,
-        tracer=tracer,
-        executor_cls=executor_cls,
-    )
-
-    # Handle other executors.
-    if isawaitable(result):
-        result = await result
-    elif isinstance(result, Future):
-        result = result.result(timeout=2)
-
-    assert tracer.start is not None
-    assert tracer.end is not None
-    assert tracer.parse_end is not None
-    assert tracer.parse_start is not None
-    assert tracer.query_end is not None
-    assert tracer.query_start is not None
-    assert tracer.validation_end is not None
-    assert tracer.validation_start is not None
-
-    assert [
-        ("hero",),
-        ("hero", "friends"),
-        ("hero", "friends", 0, "appearsIn"),
-        ("hero", "friends", 0, "friends"),
-        ("hero", "friends", 0, "friends", 0, "name"),
-        ("hero", "friends", 0, "friends", 1, "name"),
-        ("hero", "friends", 0, "friends", 2, "name"),
-        ("hero", "friends", 0, "friends", 3, "name"),
-        ("hero", "friends", 0, "name"),
-        ("hero", "friends", 1, "appearsIn"),
-        ("hero", "friends", 1, "friends"),
-        ("hero", "friends", 1, "friends", 0, "name"),
-        ("hero", "friends", 1, "friends", 1, "name"),
-        ("hero", "friends", 1, "friends", 2, "name"),
-        ("hero", "friends", 1, "name"),
-        ("hero", "friends", 2, "appearsIn"),
-        ("hero", "friends", 2, "friends"),
-        ("hero", "friends", 2, "friends", 0, "name"),
-        ("hero", "friends", 2, "friends", 1, "name"),
-        ("hero", "friends", 2, "friends", 2, "name"),
-        ("hero", "friends", 2, "friends", 3, "name"),
-        ("hero", "friends", 2, "name"),
-        ("hero", "name"),
-    ] == list(sorted(tracer.fields.keys()))
-
-    for field_timing in tracer.fields.values():
-        assert field_timing.start is not None
-        assert field_timing.end is not None
-
-
 def test_ApolloTracer(starwars_schema):
     tracer = ApolloTracer()
 
@@ -126,7 +51,7 @@ def test_ApolloTracer(starwars_schema):
             }
         }
         """,
-        tracer=tracer,
+        instrumentation=tracer,
     )
 
     assert tracer.name == "tracing"
@@ -351,7 +276,7 @@ def test_ApolloTracer_on_validation_error(starwars_schema):
             }
         }
         """,
-        tracer=tracer,
+        instrumentation=tracer,
     )
 
     assert tracer.name == "tracing"
@@ -374,7 +299,7 @@ def test_ApolloTracer_on_syntax_error(starwars_schema):
         """
         FOO
         """,
-        tracer=tracer,
+        instrumentation=tracer,
     )
 
     assert tracer.name == "tracing"

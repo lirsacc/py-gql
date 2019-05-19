@@ -8,7 +8,7 @@ from ..schema import Schema
 from ..utilities import coerce_variable_values
 from .executor import Executor
 from .get_operation import get_operation
-from .tracer import NullTracer, Tracer
+from .instrumentation import Instrumentation
 from .wrappers import GraphQLResult
 
 Resolver = Callable[..., Any]
@@ -25,7 +25,7 @@ def execute(
     context_value: Optional[Any] = None,
     default_resolver: Optional[Resolver] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    tracer: Optional[Tracer] = None,
+    instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
@@ -62,7 +62,9 @@ def execute(
             common logic, they are good canidates for logging, authentication,
             and execution guards.
 
-        tracer: Tracer instance.
+        instrumentation: Instrumentation instance.
+            Use :class:`~py_gql.execution.MultiInstrumentation` to compose
+            mutiple instances together.
 
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
@@ -82,29 +84,24 @@ def execute(
         `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
         `graphql_blocking` for example usage.
     """
-    tracer = tracer or NullTracer()
-    tracer.on_query_start()
+    instrumentation = instrumentation or Instrumentation()
 
-    try:
-        operation = get_operation(document, operation_name)
+    operation = get_operation(document, operation_name)
 
-        root_type = {
-            "query": schema.query_type,
-            "mutation": schema.mutation_type,
-            "subscription": schema.subscription_type,
-        }[operation.operation]
+    root_type = {
+        "query": schema.query_type,
+        "mutation": schema.mutation_type,
+        "subscription": schema.subscription_type,
+    }[operation.operation]
 
-        if root_type is None:
-            raise ExecutionError(
-                "Schema doesn't support %s operation" % operation.operation
-            )
-
-        coerced_variables = coerce_variable_values(
-            schema, operation, variables or {}
+    if root_type is None:
+        raise ExecutionError(
+            "Schema doesn't support %s operation" % operation.operation
         )
-    except Exception:
-        tracer.on_query_end()
-        raise
+
+    coerced_variables = coerce_variable_values(
+        schema, operation, variables or {}
+    )
 
     executor = executor_cls(
         schema,
@@ -112,7 +109,7 @@ def execute(
         coerced_variables,
         context_value,
         default_resolver=default_resolver,
-        tracer=tracer,
+        instrumentation=instrumentation,
         middlewares=middlewares,
         **(executor_args or {}),
     )
@@ -124,8 +121,10 @@ def execute(
     else:
         raise NotImplementedError("%s not supported" % operation.operation)
 
+    on_execution_end = instrumentation.on_execution()
+
     def _on_finish(data):
-        tracer.on_query_end()  # type: ignore
+        on_execution_end()
         return GraphQLResult(data=data, errors=executor.errors)
 
     return executor.map_value(
