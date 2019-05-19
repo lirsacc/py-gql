@@ -33,7 +33,7 @@ def clean(ctx, include_cython_files=False):
 
         if include_cython_files:
             ctx.run(
-                'find py_gql | grep -E "(\\.c|\\.so)$" | xargs rm -rf',
+                'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
                 echo=True,
             )
 
