@@ -29,12 +29,12 @@ def test_allows_querying_the_schema_for_types(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionTypeQuery {
-        __schema {
-            types { name }
+        query IntrospectionTypeQuery {
+            __schema {
+                types { name }
+            }
         }
-    }
-    """,
+        """,
         {
             "__schema": {
                 "types": [
@@ -67,14 +67,14 @@ def test_allows_querying_the_schema_for_query_type(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionQueryTypeQuery {
-        __schema {
-            queryType {
-                name
+        query IntrospectionQueryTypeQuery {
+            __schema {
+                queryType {
+                    name
+                }
             }
         }
-    }
-    """,
+        """,
         {"__schema": {"queryType": {"name": "Query"}}},
         [],
     )
@@ -84,12 +84,12 @@ def test_allows_querying_the_schema_for_a_specific_type(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionDroidTypeQuery {
-        __type(name: "Droid") {
-           name
+        query IntrospectionDroidTypeQuery {
+            __type(name: "Droid") {
+                name
+            }
         }
-    }
-    """,
+        """,
         {"__type": {"name": "Droid"}},
         [],
     )
@@ -99,13 +99,13 @@ def test_allows_querying_the_schema_for_an_object_kind(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionDroidKindQuery {
-        __type(name: "Droid") {
-            name
-            kind
+        query IntrospectionDroidKindQuery {
+            __type(name: "Droid") {
+                name
+                kind
+            }
         }
-    }
-    """,
+        """,
         {"__type": {"name": "Droid", "kind": "OBJECT"}},
         [],
     )
@@ -115,13 +115,13 @@ def test_allows_querying_the_schema_for_an_interface_kind(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionCharacterKindQuery {
-        __type(name: "Character") {
-            name
-           kind
+        query IntrospectionCharacterKindQuery {
+            __type(name: "Character") {
+                name
+                kind
+            }
         }
-    }
-    """,
+        """,
         {"__type": {"name": "Character", "kind": "INTERFACE"}},
         [],
     )
@@ -131,19 +131,19 @@ def test_allows_querying_the_schema_for_object_fields(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-     query IntrospectionDroidFieldsQuery {
-        __type(name: "Droid") {
-            name
-            fields {
+        query IntrospectionDroidFieldsQuery {
+            __type(name: "Droid") {
                 name
-                type {
+                fields {
                     name
-                   kind
+                    type {
+                        name
+                        kind
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         {
             "__type": {
                 "name": "Droid",
@@ -177,23 +177,23 @@ def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionDroidNestedFieldsQuery {
-        __type(name: "Droid") {
-            name
-            fields {
+        query IntrospectionDroidNestedFieldsQuery {
+            __type(name: "Droid") {
                 name
-                type {
+                fields {
                     name
-                    kind
-                    ofType {
+                    type {
                         name
                         kind
+                        ofType {
+                            name
+                            kind
+                        }
                     }
                 }
             }
         }
-    }
-    """,
+        """,
         {
             "__type": {
                 "fields": [
@@ -260,29 +260,29 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionQueryTypeQuery {
-        __schema {
-            queryType {
-                fields {
-                   name
-                    args {
-                        name
-                        description
-                        type {
+        query IntrospectionQueryTypeQuery {
+            __schema {
+                queryType {
+                    fields {
+                    name
+                        args {
                             name
-                            kind
-                            ofType {
+                            description
+                            type {
                                 name
                                 kind
+                                ofType {
+                                    name
+                                    kind
+                                }
                             }
+                            defaultValue
                         }
-                        defaultValue
                     }
                 }
             }
         }
-    }
-    """,
+        """,
         {
             "__schema": {
                 "queryType": {
@@ -352,13 +352,13 @@ def test_allows_querying_the_schema_for_documentation(starwars_schema):
     assert_sync_execution(
         starwars_schema,
         """
-    query IntrospectionDroidDescriptionQuery {
-        __type(name: "Droid") {
-            name
-           description
+        query IntrospectionDroidDescriptionQuery {
+            __type(name: "Droid") {
+                name
+                description
+            }
         }
-    }
-    """,
+        """,
         {
             "__type": {
                 "name": "Droid",
@@ -1266,22 +1266,19 @@ def test_intropsection_on_input_object():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestInputObject") {
-            kind
-            name
-            inputFields {
+        {
+            __type(name: "TestInputObject") {
+                kind
                 name
-                type { ...TypeRef }
-                defaultValue
+                inputFields {
+                    name
+                    type { ...TypeRef }
+                    defaultValue
+                }
             }
         }
-    }
 
-    fragment TypeRef on __Type {
-        kind
-        name
-        ofType {
+        fragment TypeRef on __Type {
             kind
             name
             ofType {
@@ -1290,11 +1287,14 @@ def test_intropsection_on_input_object():
                 ofType {
                     kind
                     name
+                    ofType {
+                        kind
+                        name
+                    }
                 }
             }
         }
-    }
-    """,
+        """,
         expected_data={
             "__type": {
                 "inputFields": [
@@ -1344,12 +1344,12 @@ def test_it_supports_the_type_root_field():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestType") {
-            name
+        {
+            __type(name: "TestType") {
+                name
+            }
         }
-    }
-    """,
+        """,
         expected_data={"__type": {"name": "TestType"}},
         expected_errors=[],
     )
@@ -1368,17 +1368,17 @@ def test_it_identifies_deprecated_fields():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestType") {
-            name
-            fields(includeDeprecated: true) {
+        {
+            __type(name: "TestType") {
                 name
-                isDeprecated,
-               deprecationReason
+                fields(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                    deprecationReason
+                }
             }
         }
-    }
-    """,
+        """,
         expected_data={
             "__type": {
                 "name": "TestType",
@@ -1413,17 +1413,17 @@ def test_it_respects_the_include_deprecated_parameter_for_fields():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestType") {
-            name
-            fields {
+        {
+            __type(name: "TestType") {
                 name
-                isDeprecated,
-               deprecationReason
+                fields {
+                    name
+                    isDeprecated
+                    deprecationReason
+                }
             }
         }
-    }
-    """,
+        """,
         expected_data={
             "__type": {
                 "name": "TestType",
@@ -1455,17 +1455,17 @@ def test_it_identifies_deprecated_enum_values():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestEnum") {
-            name
-            enumValues(includeDeprecated: true) {
+        {
+            __type(name: "TestEnum") {
                 name
-                isDeprecated,
-                deprecationReason
+                enumValues(includeDeprecated: true) {
+                    name
+                    isDeprecated
+                    deprecationReason
+                }
             }
         }
-    }
-    """,
+        """,
         {
             "__type": {
                 "enumValues": [
@@ -1507,17 +1507,17 @@ def test_it_respects_the_include_deprecated_parameter_for_enum_values():
     assert_sync_execution(
         schema,
         """
-    {
-        __type(name: "TestEnum") {
-            name
-            enumValues(includeDeprecated: false) {
+        {
+            __type(name: "TestEnum") {
                 name
-                isDeprecated,
-                deprecationReason
+                enumValues(includeDeprecated: false) {
+                    name
+                    isDeprecated
+                    deprecationReason
+                }
             }
         }
-    }
-    """,
+        """,
         {
             "__type": {
                 "enumValues": [
@@ -1561,14 +1561,14 @@ def test_it_exposes_descriptions_on_types_and_fields():
     assert_sync_execution(
         schema,
         """
-    {
-        schemaType: __type(name: "__Schema") {
-            name,
-            description,
-            fields { name, description }
+        {
+            schemaType: __type(name: "__Schema") {
+                name,
+                description,
+                fields { name, description }
+            }
         }
-    }
-    """,
+        """,
         {
             "schemaType": {
                 "name": "__Schema",
@@ -1612,17 +1612,17 @@ def test_it_exposes_descriptions_on_enums():
     assert_sync_execution(
         schema,
         """
-    {
-        typeKindType: __type(name: "__TypeKind") {
-            name,
-            description,
-            enumValues {
+        {
+            typeKindType: __type(name: "__TypeKind") {
                 name,
-                description
+                description,
+                enumValues {
+                    name,
+                    description
+                }
             }
         }
-    }
-    """,
+        """,
         {
             "typeKindType": {
                 "description": "An enum describing what kind of type a given `__Type` is.",
