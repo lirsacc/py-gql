@@ -1671,3 +1671,52 @@ def test_it_exposes_descriptions_on_enums():
         },
         [],
     )
+
+
+def test_disable_introspection_typename(starwars_schema):
+    assert_sync_execution(
+        starwars_schema,
+        """
+        {
+            hero {
+                id
+                name
+                __typename
+            }
+        }
+        """,
+        disable_introspection=True,
+        expected_data={"hero": {"id": "2001", "name": "R2-D2"}},
+    )
+
+
+def test_disable_introspection_schema(starwars_schema):
+    assert_sync_execution(
+        starwars_schema,
+        """
+        {
+            __schema {
+                types {
+                    name
+                }
+            }
+        }
+        """,
+        disable_introspection=True,
+        expected_data={},
+    )
+
+
+def test_disable_introspection_type(starwars_schema):
+    assert_sync_execution(
+        starwars_schema,
+        """
+        {
+            __type(name: "Droid") {
+                name
+            }
+        }
+        """,
+        disable_introspection=True,
+        expected_data={},
+    )

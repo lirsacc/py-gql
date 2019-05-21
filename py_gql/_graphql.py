@@ -35,6 +35,7 @@ def process_graphql_query(
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
+    disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
     executor_args: Optional[Mapping[str, Any]] = None
     # fmt: on
@@ -79,6 +80,12 @@ def process_graphql_query(
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
             mutiple instances together.
+
+        disable_introspection: Use this to prevent schema introspection.
+            This can be useful when you want to hide your full schema while
+            keeping your API available. Note that this deviates the GraphQL
+            specification and will likely break some clients so use this with
+            caution.
 
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
@@ -154,6 +161,7 @@ def process_graphql_query(
                 default_resolver=default_resolver,
                 instrumentation=instrumentation,
                 middlewares=middlewares,
+                disable_introspection=disable_introspection,
                 executor_cls=executor_cls,
                 executor_args=executor_args,
             ),

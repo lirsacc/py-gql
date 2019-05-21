@@ -110,6 +110,7 @@ class Executor:
         "_default_resolver",
         "_middlewares",
         "_instrumentation",
+        "_disable_introspection",
     )
 
     def __init__(
@@ -122,6 +123,7 @@ class Executor:
         default_resolver: Optional[Resolver] = None,
         middlewares: Optional[Sequence[Callable[..., Any]]] = None,
         instrumentation: Optional[Instrumentation] = None,
+        disable_introspection: bool = False,
         **_: Any
         # fmt: on
     ):
@@ -153,6 +155,7 @@ class Executor:
         self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
         self._middlewares = middlewares or []
         self._instrumentation = instrumentation or Instrumentation()
+        self._disable_introspection = disable_introspection
 
     def add_error(
         self,
@@ -291,7 +294,10 @@ class Executor:
             return cache[key]
         except KeyError:
             if name in ("__schema", "__type", "__typename"):
-                if name == "__schema" and is_query_type:
+                if self._disable_introspection:
+                    return None
+
+                elif name == "__schema" and is_query_type:
                     cache[key] = _introspection.schema_field
                 elif name == "__type" and is_query_type:
                     cache[key] = _introspection.type_field
