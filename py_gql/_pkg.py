@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-py_gql package information
+Package information.
 """
 
 __title__ = "py_gql"

@@ -4,15 +4,15 @@
 
 import os
 
-from py_gql import __version__
+from py_gql import _pkg
 
 # Project information
 
-project = __version__.__title__
-copyright = __version__.__copyright__
-author = __version__.__author__
-version = __version__.__version__
-release = __version__.__version__
+project = _pkg.__title__
+copyright = _pkg.__copyright__
+author = _pkg.__author__
+version = _pkg.__version__
+release = _pkg.__version__
 
 source_parsers = {".md": "recommonmark.parser.CommonMarkParser"}
 source_suffix = [".rst", ".md"]
@@ -51,7 +51,7 @@ html_theme_options = {
     "show_relbars": False,
     "code_font_family": CODE_FONT,
     "logo_font_family": CODE_FONT,
-    "description": __version__.__description__,
+    "description": _pkg.__description__,
     "show_related": True,
 }
 

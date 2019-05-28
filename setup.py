@@ -10,7 +10,7 @@ import os
 
 from setuptools import find_packages, setup
 
-ABBOUT = imp.load_source("about", os.path.join(".", "py_gql", "__version__.py"))
+ABBOUT = imp.load_source("about", os.path.join(".", "py_gql", "_pkg.py"))
 
 
 def run_setup():
