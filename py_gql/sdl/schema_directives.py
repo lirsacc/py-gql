@@ -3,8 +3,8 @@
 Schema Directives
 ~~~~~~~~~~~~~~~~~
 
-This is largely based on the way Apollo and grpahql-tools implement it,
-borrowing the same idea of extending the AST visitor concept to the schema.
+This is largely based on the way Apollo and graphql-tools implement it,
+borrowing the same idea of using visitors and treating the schema as graph.
 """
 
 from typing import Iterator, List, Mapping, Optional, Set, Type, TypeVar, Union
