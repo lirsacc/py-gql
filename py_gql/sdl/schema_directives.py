@@ -28,6 +28,7 @@ from ..schema import (
     SchemaVisitor,
     UnionType,
 )
+from ..utilities import coerce_argument_values
 
 __all__ = ("SchemaDirective", "apply_schema_directives")
 
@@ -130,8 +131,6 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
     def _collect_schema_directives(
         self, definition: _HasDirectives, loc: str
     ) -> Iterator[SchemaDirective]:
-        from ..utilities import coerce_argument_values
-
         applied = set()  # type: Set[str]
 
         for node in _find_directives(definition):
