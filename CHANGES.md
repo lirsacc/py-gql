@@ -7,6 +7,7 @@
 - `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
 - `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracing`.
 - `Directive` is not a subclass of `GraphQLType` anymore.
+- It is no longer possible to override specified directives and types when creating a schema.
 
 ### Updated / Added
 

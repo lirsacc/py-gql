@@ -1,29 +1,18 @@
 # -*- coding: utf-8 -*-
 """ Schema definition. """
 
-import itertools as it
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
+from .build_type_map import build_type_map
 from .directives import SPECIFIED_DIRECTIVES
-from .introspection import __Schema__
+from .introspection import INTROPSPECTION_TYPES
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
     GraphQLType,
-    InputObjectType,
     InterfaceType,
     ListType,
     NamedType,
@@ -31,9 +20,10 @@ from .types import (
     ObjectType,
     UnionType,
     is_abstract_type,
-    unwrap_type,
 )
 from .validation import validate_schema
+
+_SPECIFIED_DIRECTIVE_NAMES = [t.name for t in SPECIFIED_DIRECTIVES]
 
 
 class Schema:
@@ -103,7 +93,7 @@ class Schema:
         mutation_type: Optional[ObjectType] = None,
         subscription_type: Optional[ObjectType] = None,
         directives: Optional[List[Directive]] = None,
-        types: Optional[List[GraphQLType]] = None,
+        types: Optional[List[NamedType]] = None,
         nodes: Optional[
             List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
         ] = None,
@@ -116,40 +106,23 @@ class Schema:
             nodes or []
         )  # type: List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
 
-        _types = [
-            x
-            for x in (query_type, mutation_type, subscription_type)
-            if x is not None
-        ]  # type: List[GraphQLType]
+        self.directives = _build_directive_map(directives or [])
 
-        _types.append(__Schema__)
-        _types.extend(list(SPECIFIED_SCALAR_TYPES))
-
-        if types:
-            _types.extend(types)
-
-        _directives = []  # type: List[Directive]
-        if directives:
-            _directives.extend(directives)
-
-        _directive_names = set(
-            d.name for d in _directives if isinstance(d, Directive)
+        self.types = build_type_map(
+            [query_type, mutation_type, subscription_type, *(types or [])],
+            self.directives.values(),
+            _type_map=_default_type_map(),
         )
 
-        for d in SPECIFIED_DIRECTIVES:
-            if d.name not in _directive_names:
-                _directives.append(d)
+        self._invalidate_and_rebuild_caches()
 
+    def _invalidate_and_rebuild_caches(self):
         self._possible_types = (
             {}
         )  # type: Dict[Union[UnionType, InterfaceType], List[ObjectType]]
         self._is_valid = None  # type: Optional[bool]
         self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
-        self.types, self.directives = _build_type_maps(_types, _directives)
-        self._invalidate_and_rebuild_caches()
-
-    def _invalidate_and_rebuild_caches(self):
         self.implementations = defaultdict(
             list
         )  # type: Dict[str, List[ObjectType]]
@@ -158,8 +131,6 @@ class Schema:
             if isinstance(type_, ObjectType):
                 for i in type_.interfaces:
                     self.implementations[i.name].append(type_)
-
-        self._is_valid = None
 
     def _replace_types_and_directives(
         self,
@@ -484,74 +455,39 @@ class Schema:
         return decorator
 
 
-def _build_type_maps(
-    # fmt: off
-    *types: Sequence[GraphQLType],
-    _type_map: Optional[Dict[str, NamedType]] = None
-    # fmt: on
-) -> Tuple[Dict[str, NamedType], Dict[str, Directive]]:
-    """
-    Recursively build a mapping name <> Type from a list of types to include
-    all referenced types.
+def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
+    directives = {
+        d.name: d for d in SPECIFIED_DIRECTIVES
+    }  # Dict[str, Directive]
 
-    Warning:
-        This will flatten all lazy type definitions and attributes.
+    for value in maybe_directives:
+        if not isinstance(value, Directive):
+            raise SchemaError(
+                'Expected directive but got "%r" of type "%s"'
+                % (value, type(value))
+            )
 
-    Args:
-        types: List of types
-        _type_map: Pre-built type map (used for recursive calls)
-    """
-    type_map = (
-        _type_map if _type_map is not None else {}
-    )  # type: Dict[str, NamedType]
+        name = value.name
 
-    directive_map = {}  # type: Dict[str, Directive]
-
-    for type_ in it.chain(*types):
-        if not type_:
+        if name in _SPECIFIED_DIRECTIVE_NAMES:
+            if value is not directives[name]:
+                raise SchemaError(
+                    'Cannot override specified directive "%s"' % name
+                )
             continue
 
-        child_types = []  # type: List[GraphQLType]
+        if name in directives:
+            if value is not directives[name]:
+                raise SchemaError('Duplicate directive "%s"' % name)
+            continue
 
-        if isinstance(type_, Directive):
-            # Directives cannot be referenced outside of the first call in the
-            # recursion.
-            child_types.extend([arg.type for arg in type_.arguments or []])
-            directive_map[type_.name] = type_
-        else:
-            type_ = cast(NamedType, unwrap_type(type_))
+        directives[name] = value
 
-            if not isinstance(type_, NamedType):
-                raise SchemaError(
-                    'Expected NamedType but got "%s" of type %s'
-                    % (type_, type(type_))
-                )
+    return directives
 
-            name = type_.name
-            if name in type_map:
-                if type_ is not type_map[name]:
-                    raise SchemaError('Duplicate type "%s"' % name)
-                continue
 
-            type_map[name] = type_
-
-            if isinstance(type_, UnionType):
-                child_types.extend(type_.types)
-
-            if isinstance(type_, ObjectType):
-                child_types.extend(type_.interfaces)
-
-            if isinstance(type_, (ObjectType, InterfaceType)):
-                for field in type_.fields:
-                    child_types.append(field.type)
-                    child_types.extend(
-                        [arg.type for arg in field.arguments or []]
-                    )
-
-            if isinstance(type_, InputObjectType):
-                for input_field in type_.fields:
-                    child_types.append(input_field.type)
-
-        type_map.update(_build_type_maps(child_types, _type_map=type_map)[0])
-
-    return type_map, directive_map
+def _default_type_map() -> Dict[str, NamedType]:
+    types = {}  # type: Dict[str, NamedType]
+    types.update({t.name: t for t in SPECIFIED_SCALAR_TYPES})
+    types.update({t.name: t for t in INTROPSPECTION_TYPES})
+    return types

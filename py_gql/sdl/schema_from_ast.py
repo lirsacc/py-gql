@@ -118,7 +118,11 @@ def build_schema_ignoring_extensions(
         for directive_def in directive_defs.values()
     ]
 
-    types = [builder.build_type(type_def) for type_def in type_defs.values()]
+    # Cast is safe as type defs will always lead to named types and not wrapped types
+    types = [
+        cast(NamedType, builder.build_type(type_def))
+        for type_def in type_defs.values()
+    ]
 
     if schema_def is None:
         operations = {
@@ -235,12 +239,13 @@ def extend_schema(
         for d in directive_defs.values()
     ]
 
+    # Cast is safe as type defs will always lead to named types and not wrapped types
     types = [
-        builder.extend_type(t)
+        cast(NamedType, builder.extend_type(t))
         for t in schema.types.values()
         if t.name in type_exts
     ] + [
-        builder.extend_type(builder.build_type(t))
+        cast(NamedType, builder.extend_type(builder.build_type(t)))
         for t in type_defs.values()
         if t.name.value not in schema.types
     ]

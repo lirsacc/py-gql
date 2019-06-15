@@ -107,22 +107,6 @@ def test_specified_directives_are_enforced():
         assert d is schema.directives[d.name]
 
 
-def test_specified_directives_can_be_overriden():
-    schema = build_schema(
-        """
-        directive @skip on FIELD
-        directive @include on FIELD
-        directive @deprecated on FIELD_DEFINITION
-
-        type Query {
-            str: String
-        }
-        """
-    )
-    for d in SPECIFIED_DIRECTIVES:
-        assert d is not schema.directives[d.name]
-
-
 def test_type_modifiers():
     _check(
         """
