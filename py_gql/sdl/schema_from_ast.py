@@ -19,7 +19,6 @@ from ..schema import NamedType, ObjectType, Schema
 from .ast_type_builder import ASTTypeBuilder
 from .schema_directives import SchemaDirective, apply_schema_directives
 
-T = TypeVar("T", bound=type)
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
 
 
