@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from ..exc import GraphQLResponseError
 from ..lang import ast as _ast
@@ -92,8 +92,7 @@ class GraphQLResult:
         self.errors = (
             list(errors) if errors is not None else []
         )  # type: List[GraphQLResponseError]
-        self.extensions = []  # type: List[GraphQLExtension]
-        self._known_extensions = set()  # type: Set[str]
+        self.extensions = {}  # type: Dict[str, GraphQLExtension]
 
     def __bool__(self) -> bool:
         return not self.errors
@@ -110,10 +109,9 @@ class GraphQLResult:
         Raises:
             ValueError: Extension with the same name has already been added
         """
-        if ext.name in self._known_extensions:
+        if ext.name in self.extensions:
             raise ValueError('Duplicate extension "%s"' % ext.name)
-        self.extensions.append(ext)
-        self._known_extensions.add(ext.name)
+        self.extensions[ext.name] = ext
 
     def response(self) -> Dict[str, Any]:
         """ Generate an ordered response dict. """
@@ -124,7 +122,7 @@ class GraphQLResult:
             d["data"] = self.data
         if self.extensions:
             d["extensions"] = {  # type: ignore
-                e.name: e.payload() for e in self.extensions
+                e.name: e.payload() for e in self.extensions.values()
             }
         return d
 
