@@ -16,6 +16,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from .._utils import Lazy, lazy
@@ -1144,7 +1145,7 @@ class UnionType(NamedType):
         self._types = self._source_types = types
 
 
-class Directive(GraphQLType):
+class Directive:
     """
     Directive definition
 
@@ -1224,7 +1225,7 @@ def is_output_type(type_: GraphQLType) -> bool:
 
 
 def is_leaf_type(type_: GraphQLType) -> bool:
-    """  These types may describe types which may be leaf values. """
+    """ These types may describe types which may be leaf values. """
     return isinstance(type_, (ScalarType, EnumType))
 
 
@@ -1238,7 +1239,7 @@ def is_abstract_type(type_: GraphQLType) -> bool:
     return isinstance(type_, (InterfaceType, UnionType))
 
 
-def unwrap_type(type_: GraphQLType) -> GraphQLType:
+def unwrap_type(type_: GraphQLType) -> NamedType:
     """ Recursively extract type for a potentially wrapping type like
     :class:`ListType` or :class:`NonNullType`.
 
@@ -1248,7 +1249,7 @@ def unwrap_type(type_: GraphQLType) -> GraphQLType:
     """
     if isinstance(type_, (ListType, NonNullType)):
         return unwrap_type(type_.type)
-    return type_
+    return cast(NamedType, type_)
 
 
 def nullable_type(type_: GraphQLType) -> GraphQLType:
