@@ -235,13 +235,11 @@ class Parser:
         self._allow_type_system = allow_type_system
         self._experimental_fragment_variables = experimental_fragment_variables
 
-        if no_location:
-            self._loc = lambda _: None  # type: LocCallable
-        else:
-            self._loc = lambda start: (
-                start.start,
-                self._last.end,
-            )  # type: LocCallable
+        self._loc = (
+            (lambda _: None)
+            if no_location
+            else (lambda start: (start.start, self._last.end))
+        )  # type: LocCallable
 
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead

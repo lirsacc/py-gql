@@ -33,13 +33,14 @@ from ..utilities import directive_arguments, value_from_ast
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
 
 
-_DEFAULT_TYPES_MAP = {}  # type: Dict[str, NamedType]
+def _default_type_map() -> Dict[str, NamedType]:
+    types = {}  # type: Dict[str, NamedType]
+    types.update({t.name: t for t in SPECIFIED_SCALAR_TYPES})
+    types.update({t.name: t for t in INTROPSPECTION_TYPES})
+    return types
 
-for t in SPECIFIED_SCALAR_TYPES:
-    _DEFAULT_TYPES_MAP[t.name] = t
 
-for t in INTROPSPECTION_TYPES:
-    _DEFAULT_TYPES_MAP[t.name] = t
+_DEFAULT_TYPES_MAP = _default_type_map()
 
 
 class ASTTypeBuilder:
