@@ -11,12 +11,12 @@ from ..schema import (
     EnumType,
     EnumValue,
     Field,
+    GraphQLCompositeType,
     InputField,
     InputObjectType,
     InterfaceType,
     ListType,
     ObjectType,
-    is_composite_type,
     is_input_type,
     is_output_type,
     nullable_type,
@@ -48,7 +48,10 @@ def _get_field_def(schema, parent_type, field):
         if name == type_field.name:
             return type_field
 
-    if is_composite_type(parent_type) and name == type_name_field.name:
+    if (
+        isinstance(parent_type, GraphQLCompositeType)
+        and name == type_name_field.name
+    ):
         return type_name_field
 
     if isinstance(parent_type, (ObjectType, InterfaceType)):
@@ -172,7 +175,9 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     def enter_selection_set(self, node):
         named_type = unwrap_type(self.type)
-        self._parent_type_stack.append(_or_none(named_type, is_composite_type))
+        self._parent_type_stack.append(
+            _or_none(named_type, lambda x: isinstance(x, GraphQLCompositeType))
+        )
         return node
 
     def leave_selection_set(self, _node):

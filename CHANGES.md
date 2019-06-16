@@ -8,6 +8,7 @@
 - `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracing`.
 - `Directive` is not a subclass of `GraphQLType` anymore.
 - It is no longer possible to override specified directives and types when creating a schema.
+- Dropped `is_abstract_type`, `is_composite_type` and `is_leaf_type`: use the `GraphQLAbstractType`, `GraphQLCompositeType`, and `GraphQLLeafType` directly instead.
 
 ### Updated / Added
 

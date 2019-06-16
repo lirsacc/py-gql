@@ -18,14 +18,14 @@ from ...exc import UnknownType
 from ...lang import ast as _ast, print_ast
 from ...lang.visitor import SkipNode
 from ...schema import (
+    GraphQLCompositeType,
+    GraphQLLeafType,
     GraphQLType,
     InterfaceType,
     NonNullType,
     ObjectType,
     UnionType,
-    is_composite_type,
     is_input_type,
-    is_leaf_type,
     unwrap_type,
 )
 from ..visitors import ValidationVisitor, VariablesCollector
@@ -190,7 +190,7 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
     def enter_inline_fragment(self, node):
         if node.type_condition:
             type_ = self.schema.get_type_from_literal(node.type_condition)
-            if not is_composite_type(type_):
+            if not isinstance(type_, GraphQLCompositeType):
                 self.add_error(
                     'Fragment cannot condition on non composite type "%s".'
                     % type_.name,
@@ -200,7 +200,7 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
 
     def enter_fragment_definition(self, node):
         type_ = self.schema.get_type_from_literal(node.type_condition)
-        if not is_composite_type(type_):
+        if not isinstance(type_, GraphQLCompositeType):
             self.add_error(
                 'Fragment "%s" cannot condition on non composite type "%s".'
                 % (node.name.value, type_.name),
@@ -236,14 +236,20 @@ class ScalarLeafsChecker(ValidationVisitor):
     def enter_field(self, node):
         type_ = self.type_info.type
 
-        if is_leaf_type(unwrap_type(type_)) and node.selection_set:
+        if (
+            isinstance(unwrap_type(type_), GraphQLLeafType)
+            and node.selection_set
+        ):
             self.add_error(
                 'Field "%s" must not have a selection since type "%s" has no subfields.'
                 % (node.name.value, type_),
                 [node],
             )
 
-        if is_composite_type(unwrap_type(type_)) and not node.selection_set:
+        if (
+            isinstance(unwrap_type(type_), GraphQLCompositeType)
+            and not node.selection_set
+        ):
             self.add_error(
                 'Field "%s" of type "%s" must have a selection of subfields. '
                 'Did you mean "%s { ... }"?'
@@ -406,8 +412,8 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
         parent_type = self.type_info.type
 
         if (
-            is_composite_type(frag_type)
-            and is_composite_type(parent_type)
+            isinstance(frag_type, GraphQLCompositeType)
+            and isinstance(parent_type, GraphQLCompositeType)
             and not self.schema.types_overlap(frag_type, parent_type)
         ):
             self.add_error(
@@ -422,8 +428,8 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
         parent_type = self.type_info.parent_type
 
         if (
-            is_composite_type(type_)
-            and is_composite_type(parent_type)
+            isinstance(type_, GraphQLCompositeType)
+            and isinstance(parent_type, GraphQLCompositeType)
             and not self.schema.types_overlap(type_, parent_type)
         ):
             self.add_error(

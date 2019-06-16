@@ -65,6 +65,31 @@ class GraphQLType:
         return id(self)
 
 
+class GraphQLAbstractType:
+    """
+    These types may describe the parent context of a selection set and indicate
+    that the value will be of a concrete ObjectType.
+    """
+
+    pass
+
+
+class GraphQLCompositeType:
+    """
+    These types may describe the parent context of a selection set.
+    """
+
+    pass
+
+
+class GraphQLLeafType:
+    """
+    These types may describe types which may be leaf values.
+    """
+
+    pass
+
+
 class NamedType(GraphQLType):
     """
     Named type base class.
@@ -440,7 +465,7 @@ class EnumValue:
         return self.name
 
 
-class EnumType(NamedType):
+class EnumType(GraphQLLeafType, NamedType):
     """
     Enum Type Definition
 
@@ -565,7 +590,7 @@ _ScalarValueNode = Union[
 
 
 # pylint: disable=unsubscriptable-object
-class ScalarType(NamedType):
+class ScalarType(GraphQLLeafType, NamedType):
     """
     Scalar Type Definition
 
@@ -908,7 +933,7 @@ class Field:
         return "Field(%s: %s at %d)" % (self.name, self.type, id(self))
 
 
-class InterfaceType(NamedType):
+class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
     """
     Interface Type Definition.
 
@@ -985,7 +1010,7 @@ class InterfaceType(NamedType):
         return {f.name: f for f in self.fields}
 
 
-class ObjectType(NamedType):
+class ObjectType(GraphQLCompositeType, NamedType):
     """
     Object Type Definition
 
@@ -1079,7 +1104,7 @@ class ObjectType(NamedType):
         return {f.name: f for f in self.fields}
 
 
-class UnionType(NamedType):
+class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
     """
     Union Type Definition
 
@@ -1224,21 +1249,6 @@ def is_output_type(type_: GraphQLType) -> bool:
     )
 
 
-def is_leaf_type(type_: GraphQLType) -> bool:
-    """ These types may describe types which may be leaf values. """
-    return isinstance(type_, (ScalarType, EnumType))
-
-
-def is_composite_type(type_: GraphQLType) -> bool:
-    """ These types may describe the parent context of a selection set. """
-    return isinstance(type_, (ObjectType, InterfaceType, UnionType))
-
-
-def is_abstract_type(type_: GraphQLType) -> bool:
-    """ These types may describe the parent context of a selection set. """
-    return isinstance(type_, (InterfaceType, UnionType))
-
-
 def unwrap_type(type_: GraphQLType) -> NamedType:
     """ Recursively extract type for a potentially wrapping type like
     :class:`ListType` or :class:`NonNullType`.
@@ -1265,10 +1275,3 @@ def nullable_type(type_: GraphQLType) -> GraphQLType:
     if isinstance(type_, NonNullType):
         return type_.type
     return type_
-
-
-# Used for simple isinstance classes
-AbstractTypes = (InterfaceType, UnionType)
-CompositeTypes = (ObjectType, InterfaceType, UnionType)
-LeafTypes = (ScalarType, EnumType)
-OutputTypes = (ScalarType, EnumType, ObjectType, InterfaceType, UnionType)

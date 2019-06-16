@@ -7,11 +7,11 @@ from ...exc import UnknownType
 from ...lang import ast as _ast
 from ...schema import (
     Field,
+    GraphQLLeafType,
     GraphQLType,
     InterfaceType,
     ObjectType,
     Schema,
-    is_leaf_type,
     unwrap_type,
 )
 from ...schema.types import ListType, NonNullType
@@ -642,7 +642,9 @@ def _types_conflict(type_1: GraphQLType, type_2: GraphQLType) -> bool:
             type_1.type, type_2.type  # type: ignore
         )
 
-    if is_leaf_type(type_1) or is_leaf_type(type_2):
+    if isinstance(type_1, GraphQLLeafType) or isinstance(
+        type_2, GraphQLLeafType
+    ):
         return type_1 != type_2
 
     return False

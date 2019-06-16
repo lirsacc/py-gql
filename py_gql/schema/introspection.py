@@ -10,6 +10,7 @@ from .types import (
     EnumType,
     EnumValue,
     Field,
+    GraphQLAbstractType,
     GraphQLType,
     InputField,
     InputObjectType,
@@ -19,7 +20,6 @@ from .types import (
     ObjectType,
     ScalarType,
     UnionType,
-    is_abstract_type,
 )
 
 __Schema__ = ObjectType(
@@ -248,7 +248,7 @@ __Type__ = ObjectType(
                         key=lambda t: t.name,
                     )
                 )
-                if is_abstract_type(type_)
+                if isinstance(type_, GraphQLAbstractType)
                 else None
             ),
         ),

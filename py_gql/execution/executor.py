@@ -30,10 +30,10 @@ from ..exc import (
 )
 from ..lang import ast as _ast
 from ..schema import (
-    AbstractTypes,
-    CompositeTypes,
     EnumType,
     Field,
+    GraphQLAbstractType,
+    GraphQLCompositeType,
     GraphQLType,
     IncludeDirective,
     InterfaceType,
@@ -199,7 +199,7 @@ class Executor:
         self._fragment_type_applies[cache_key] = applies = (
             fragment_type == object_type
         ) or (
-            isinstance(fragment_type, AbstractTypes)
+            isinstance(fragment_type, GraphQLAbstractType)
             and self.schema.is_possible_type(fragment_type, object_type)
         )
 
@@ -543,8 +543,8 @@ class Executor:
                     % (stringify_path(path), field_type, err)
                 ) from err
 
-        if isinstance(field_type, CompositeTypes):
-            if isinstance(field_type, AbstractTypes):
+        if isinstance(field_type, GraphQLCompositeType):
+            if isinstance(field_type, GraphQLAbstractType):
                 runtime_type = self.resolve_type(resolved_value, field_type)
 
                 if not isinstance(runtime_type, ObjectType):

@@ -12,6 +12,7 @@ from .introspection import INTROPSPECTION_TYPES
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
+    GraphQLAbstractType,
     GraphQLType,
     InterfaceType,
     ListType,
@@ -19,7 +20,6 @@ from .types import (
     NonNullType,
     ObjectType,
     UnionType,
-    is_abstract_type,
 )
 from .validation import validate_schema
 
@@ -119,7 +119,7 @@ class Schema:
     def _invalidate_and_rebuild_caches(self):
         self._possible_types = (
             {}
-        )  # type: Dict[Union[UnionType, InterfaceType], List[ObjectType]]
+        )  # type: Dict[GraphQLAbstractType, List[ObjectType]]
         self._is_valid = None  # type: Optional[bool]
         self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
@@ -247,7 +247,7 @@ class Schema:
         raise TypeError("Invalid type node %r" % ast_node)
 
     def get_possible_types(
-        self, abstract_type: Union[UnionType, InterfaceType]
+        self, abstract_type: GraphQLAbstractType
     ) -> List[ObjectType]:
         """
         Get the possible implementations of an abstract type.
@@ -272,7 +272,7 @@ class Schema:
         raise TypeError("Not an abstract type: %s" % abstract_type)
 
     def is_possible_type(
-        self, abstract_type: Union[UnionType, InterfaceType], type_: GraphQLType
+        self, abstract_type: GraphQLAbstractType, type_: GraphQLType
     ) -> bool:
         """
         Check that ``type_`` is a possible realization of ``abstract_type``.
@@ -314,7 +314,7 @@ class Schema:
             return False
 
         return (
-            is_abstract_type(super_type)
+            isinstance(super_type, GraphQLAbstractType)
             and isinstance(type_, ObjectType)
             and self.is_possible_type(super_type, type_)
         )
@@ -332,25 +332,19 @@ class Schema:
         if rhs == lhs:
             return True
 
-        if is_abstract_type(rhs) and is_abstract_type(lhs):
-            rhs_types = self.get_possible_types(
-                cast(Union[UnionType, InterfaceType], rhs)
-            )
-            lhs_types = self.get_possible_types(
-                cast(Union[UnionType, InterfaceType], lhs)
-            )
+        if isinstance(rhs, GraphQLAbstractType) and isinstance(
+            lhs, GraphQLAbstractType
+        ):
+            rhs_types = self.get_possible_types(cast(GraphQLAbstractType, rhs))
+            lhs_types = self.get_possible_types(cast(GraphQLAbstractType, lhs))
             return any((t in lhs_types for t in rhs_types))
 
         return (
-            is_abstract_type(rhs)
-            and self.is_possible_type(
-                cast(Union[UnionType, InterfaceType], rhs), lhs
-            )
+            isinstance(rhs, GraphQLAbstractType)
+            and self.is_possible_type(cast(GraphQLAbstractType, rhs), lhs)
         ) or (
-            is_abstract_type(lhs)
-            and self.is_possible_type(
-                cast(Union[UnionType, InterfaceType], lhs), rhs
-            )
+            isinstance(lhs, GraphQLAbstractType)
+            and self.is_possible_type(cast(GraphQLAbstractType, lhs), rhs)
         )
 
     def to_string(
