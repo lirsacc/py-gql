@@ -14,7 +14,7 @@ on top of :mod:`py_gql`.
 
 # flake8: noqa
 
-from ._pkg import __version__
+from ._pkg import __version__  # isort:skip
 
 from . import lang, schema, tracers, utilities
 from ._graphql import graphql, graphql_blocking, process_graphql_query
