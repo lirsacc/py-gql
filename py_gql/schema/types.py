@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Utilitiy classes to define custom types.
-"""
 
 from typing import (
     Any,
@@ -24,26 +21,24 @@ from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
 from ..lang import ast as _ast
 from ..lang.parser import DIRECTIVE_LOCATIONS
 
-# TODO: Encode as much of the rules for validate_schema in the type system
+# TODO: Encode as much of the rules for validate_schema in the type system such
+# as making sure only output types can be used in `Field`. This most likely
+# requires making some types generic, such as `NonNullType`.
 
 # TODO: Multiple objects expose both a X and X_map method which could be
-# staandardised under either of these.
+# standardised under either of these.
 
 T = TypeVar("T")
+LazyIter = Lazy[Union[Sequence[Lazy[T]], Sequence[T]]]
 
 _UNSET = object()
-
-# Use this to allow providing input as a list, tuple or dict of entries.
-LazyIter = Lazy[Union[Sequence[Lazy[T]], Sequence[T]]]
 
 
 def _evaluate_lazy_iter(entries: Optional[LazyIter[T]]) -> List[T]:
     _entries = lazy(entries)
     if not _entries:
         return []
-    elif isinstance(_entries, (list, tuple)):
-        return [lazy(entry) for entry in _entries]
-    raise TypeError("Expected list or dict of items")
+    return [lazy(entry) for entry in _entries]
 
 
 class GraphQLType:
@@ -328,7 +323,7 @@ class InputObjectType(NamedType):
 
         fields (List[InputField]): Object fields.
 
-        field_map (Dict[str, InputField]): Object field as a map.
+        field_map (Dict[str, InputField]): Object fields as a map.
     """
 
     def __init__(
@@ -369,8 +364,6 @@ class InputObjectType(NamedType):
 
 
 _EV = TypeVar("_EV", bound="EnumValue")
-
-# TODO: Support defining enum from enum.Enum
 
 
 class EnumValue:
@@ -961,7 +954,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         fields (List[py_gql.schema.Field]): Object fields.
 
         field_map (Dict[str, py_gql.schema.Field]):
-            Object field as a map.
+            Object fields as a map.
 
         resolve_type (Optional[callable]): Type resolver
 
@@ -1041,7 +1034,7 @@ class ObjectType(GraphQLCompositeType, NamedType):
         fields (List[py_gql.schema.Field]): Object fields.
 
         field_map (Dict[str, py_gql.schema.Field]):
-            Object field as a map.
+            Object fields as a map.
 
         is_type_of (Optional[callable]): Value type checker.
 
@@ -1229,9 +1222,6 @@ class Directive:
         self.arguments = args if args is not None else []
         self.argument_map = {arg.name: arg for arg in self.arguments}
         self.node = node
-
-
-# TODO: Types could be more specific.
 
 
 def is_input_type(type_: GraphQLType) -> bool:
