@@ -34,16 +34,16 @@ def validate_schema(schema: "Schema") -> bool:
     """ Validate a provided GraphQL schema.
 
     Useful for handling untrusted schemas or during development, but ideally
-    you do not need to run this in production when controlling the schema.
+    you do not need to run this in production when fully controlling the
+    schema's origin.
+
+    This assumes the schema was created through `Schema()` and the type map
+    has been built.
 
     Raises:
         :class:`~py_gql.exc.SchemaError` if the schema is invalid.
     """
     for type_ in schema.types.values():
-        _assert(
-            type_ and hasattr(type_, "name"),
-            "Expected named type but got %s" % type_,
-        )
         _assert(
             is_introspection_type(type_)
             or type_ in SPECIFIED_SCALAR_TYPES
