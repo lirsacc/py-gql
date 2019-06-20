@@ -13,7 +13,6 @@ from .types import (
     EnumType,
     EnumValue,
     Field,
-    InputField,
     InputObjectType,
     InterfaceType,
     NonNullType,
@@ -128,14 +127,12 @@ def validate_root_types(schema: "Schema") -> None:
             isinstance(schema.query_type, ObjectType),
             'Query must be ObjectType but got "%s"' % schema.query_type,
         )
-        _assert_valid_name(schema.query_type.name)
 
     if schema.mutation_type is not None:
         _assert(
             isinstance(schema.mutation_type, ObjectType),
             'Mutation must be ObjectType but got "%s"' % schema.mutation_type,
         )
-        _assert_valid_name(schema.mutation_type.name)
 
     if schema.subscription_type is not None:
         _assert(
@@ -143,7 +140,6 @@ def validate_root_types(schema: "Schema") -> None:
             'Subscription must be ObjectType but got "%s"'
             % schema.subscription_type,
         )
-        _assert_valid_name(schema.subscription_type.name)
 
 
 def validate_directives(schema: "Schema") -> None:
@@ -158,12 +154,6 @@ def validate_directives(schema: "Schema") -> None:
         # TODO: Ensure proper locations.
         argnames = set()  # type: Set[str]
         for arg in directive.arguments:
-
-            _assert(
-                isinstance(arg, Argument),
-                'Expected Argument in directive "@%s" but got "%s"'
-                % (directive.name, arg),
-            )
 
             _assert_valid_name(arg.name)
 
@@ -189,10 +179,6 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
     )
     fieldnames = set()  # type: Set[str]
     for field in composite_type.fields:
-        _assert(
-            isinstance(field, Field),
-            'Expected Field in "%s" but got "%s"' % (composite_type, field),
-        )
 
         _assert_valid_name(field.name)
 
@@ -212,11 +198,6 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
         for arg in field.arguments:
 
             path = "%s.%s" % (composite_type, field.name)
-
-            _assert(
-                isinstance(arg, Argument),
-                'Expected Argument in "%s" but got "%s"' % (path, arg),
-            )
 
             _assert_valid_name(arg.name)
 
@@ -239,12 +220,6 @@ def validate_fields(composite_type: Union[ObjectType, InterfaceType]) -> None:
 def validate_interfaces(schema: "Schema", type_: ObjectType) -> None:
     imlemented_types = set()  # type: Set[str]
     for interface in type_.interfaces:
-        _assert(
-            isinstance(interface, InterfaceType),
-            'Type "%s" mut only implement InterfaceType but got "%s"'
-            % (type_, interface),
-        )
-
         _assert(
             interface.name not in imlemented_types,
             'Type "%s" mut only implement interface "%s" once'
@@ -366,11 +341,6 @@ def validate_input_fields(input_object: InputObjectType) -> None:
     fieldnames = set()  # type: Set[str]
 
     for field in input_object.fields:
-        _assert(
-            isinstance(field, InputField),
-            'Expected InputField in "%s" but got "%s"' % (input_object, field),
-        )
-
         _assert(
             field.name not in fieldnames,
             'Duplicate field "%s" on "%s"' % (field.name, input_object),
