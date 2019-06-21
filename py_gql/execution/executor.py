@@ -347,7 +347,14 @@ class Executor:
                         return pt
             return None
 
-    def _get_field_resolver(self, base: Resolver) -> Resolver:
+    def _get_field_resolver(
+        self, parent_type: ObjectType, field_definition: Field
+    ) -> Resolver:
+        base = (
+            field_definition.resolver
+            or parent_type.default_resolver
+            or self._default_resolver
+        )
         try:
             return self._resolver_cache[base]
         except KeyError:
@@ -365,9 +372,7 @@ class Executor:
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
-        resolver = self._get_field_resolver(
-            field_definition.resolver or self._default_resolver
-        )
+        resolver = self._get_field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
             field_definition,

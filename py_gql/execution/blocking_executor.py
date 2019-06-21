@@ -53,9 +53,7 @@ class BlockingExecutor(Executor):
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
-        resolver = self._get_field_resolver(
-            field_definition.resolver or self._default_resolver
-        )
+        resolver = self._get_field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
             field_definition,

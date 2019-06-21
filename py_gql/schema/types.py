@@ -30,6 +30,7 @@ from ..lang.parser import DIRECTIVE_LOCATIONS
 
 T = TypeVar("T")
 LazyIter = Lazy[Union[Sequence[Lazy[T]], Sequence[T]]]
+Resolver = Callable[[Any], Any]
 
 _UNSET = object()
 
@@ -1019,6 +1020,8 @@ class ObjectType(GraphQLCompositeType, NamedType):
 
         is_type_of: Value type checker
 
+        default_resolver:
+
         description: Type description
 
         nodes: Source nodes used when building type from the SDL
@@ -1038,6 +1041,8 @@ class ObjectType(GraphQLCompositeType, NamedType):
 
         is_type_of (Optional[callable]): Value type checker.
 
+        default_resolver (Optional[Callable[..., Any]]):
+
         nodes (List[Union[\
             py_gql.lang.ast.ObjectTypeDefinition,\
             py_gql.lang.ast.ObjectTypeExtension,\
@@ -1051,6 +1056,7 @@ class ObjectType(GraphQLCompositeType, NamedType):
         fields: LazyIter[Field],
         interfaces: Optional[LazyIter[InterfaceType]] = None,
         is_type_of: Optional[Union[Callable[[Any], bool], Type[Any]]] = None,
+        default_resolver: Optional[Resolver] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
@@ -1061,6 +1067,7 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self._source_fields = fields
         self._source_fields = fields
         self._fields = None  # type: Optional[List[Field]]
+        self.default_resolver = default_resolver
         self._source_interfaces = interfaces
         self._interfaces = None  # type: Optional[List[InterfaceType]]
         self.nodes = (
@@ -1095,6 +1102,63 @@ class ObjectType(GraphQLCompositeType, NamedType):
     @property
     def field_map(self) -> Dict[str, Field]:
         return {f.name: f for f in self.fields}
+
+    def assign_resolver(
+        self, fieldname: str, func: Resolver, allow_override: bool = False
+    ) -> "ObjectType":
+        """
+        Register a resolver.
+
+        Args:
+            fieldname: Field name.
+            func: The resolver function.
+            allow_override:
+                By default this function will raise :py:class:`ValueError` if
+                the field already has a resolver defined. Set this to ``True``
+                to allow overriding.
+
+        Raises:
+            :py:class:`ValueError`:
+        """
+
+        try:
+            field = self.field_map[fieldname]
+        except KeyError:
+            raise ValueError(
+                'Unknown field "%s" for type "%s".' % (fieldname, self.name)
+            )
+        else:
+            if (not allow_override) and field.resolver is not None:
+                raise ValueError(
+                    'Field "%s" of type "%s" already has a resolver.'
+                    % (fieldname, self.name)
+                )
+
+            field.resolver = func or field.resolver
+
+        return self
+
+    def resolver(self, fieldname: str) -> Callable[[Resolver], Resolver]:
+        """
+        Decorator version of :meth:`assign_resolver`.
+
+        .. code-block:: python
+
+            schema = ...
+
+            @schema.resolver("Query.foo")
+            def resolve_foo(obj, ctx, info):
+                return "foo"
+
+        Args:
+            fieldname: Field name.
+        """
+
+        def decorator(func: Resolver) -> Resolver:
+            self.assign_resolver(fieldname, func)
+            return func
+
+        return decorator
 
 
 class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):

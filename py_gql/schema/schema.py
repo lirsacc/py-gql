@@ -26,6 +26,9 @@ from .validation import validate_schema
 _SPECIFIED_DIRECTIVE_NAMES = [t.name for t in SPECIFIED_DIRECTIVES]
 
 
+Resolver = Callable[..., Any]
+
+
 class Schema:
     """ A GraphQL schema definition.
 
@@ -371,11 +374,8 @@ class Schema:
         )(self)
 
     def assign_resolver(
-        self,
-        fieldpath: str,
-        func: Callable[..., Any],
-        allow_override: bool = False,
-    ) -> None:
+        self, fieldpath: str, func: Resolver, allow_override: bool = False
+    ) -> "Schema":
         """
         Register a resolver against a type in the schema.
 
@@ -411,22 +411,13 @@ class Schema:
                 % (typename, object_type.__class__.__name__)
             )
 
-        try:
-            field = object_type.field_map[fieldname]
-        except KeyError:
-            raise ValueError(
-                'Unknown field "%s" for type "%s".' % (fieldname, typename)
-            )
-        else:
-            if (not allow_override) and field.resolver is not None:
-                raise ValueError(
-                    'Field "%s" of type "%s" already has a resolver.'
-                    % (fieldname, typename)
-                )
+        object_type.assign_resolver(
+            fieldname, func, allow_override=allow_override
+        )
 
-            field.resolver = func or field.resolver
+        return self
 
-    def resolver(self, fieldpath):
+    def resolver(self, fieldpath: str) -> Callable[[Resolver], Resolver]:
         """
         Decorator version of :meth:`assign_resolver`.
 
@@ -442,7 +433,7 @@ class Schema:
             fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
         """
 
-        def decorator(func):
+        def decorator(func: Resolver) -> Resolver:
             self.assign_resolver(fieldpath, func)
             return func
 
