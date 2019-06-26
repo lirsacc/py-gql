@@ -122,7 +122,7 @@ class Schema:
     def _invalidate_and_rebuild_caches(self):
         self._possible_types = (
             {}
-        )  # type: Dict[GraphQLAbstractType, List[ObjectType]]
+        )  # type: Dict[GraphQLAbstractType, Sequence[ObjectType]]
         self._is_valid = None  # type: Optional[bool]
         self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
@@ -251,7 +251,7 @@ class Schema:
 
     def get_possible_types(
         self, abstract_type: GraphQLAbstractType
-    ) -> List[ObjectType]:
+    ) -> Sequence[ObjectType]:
         """
         Get the possible implementations of an abstract type.
 

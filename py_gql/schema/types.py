@@ -29,17 +29,11 @@ from ..lang.parser import DIRECTIVE_LOCATIONS
 # standardised under either of these.
 
 T = TypeVar("T")
-LazyIter = Lazy[Union[Sequence[Lazy[T]], Sequence[T]]]
+
+LazySeq = Lazy[Sequence[T]]
 Resolver = Callable[[Any], Any]
 
 _UNSET = object()
-
-
-def _evaluate_lazy_iter(entries: Optional[LazyIter[T]]) -> List[T]:
-    _entries = lazy(entries)
-    if not _entries:
-        return []
-    return [lazy(entry) for entry in _entries]
 
 
 class GraphQLType:
@@ -322,7 +316,7 @@ class InputObjectType(NamedType):
             ]\
         ]): Source nodes used when building type from the SDL
 
-        fields (List[InputField]): Object fields.
+        fields (Sequence[InputField]): Object fields.
 
         field_map (Dict[str, InputField]): Object fields as a map.
     """
@@ -330,7 +324,7 @@ class InputObjectType(NamedType):
     def __init__(
         self,
         name: str,
-        fields: LazyIter[InputField],
+        fields: LazySeq[InputField],
         description: Optional[str] = None,
         nodes: Optional[
             List[
@@ -344,15 +338,15 @@ class InputObjectType(NamedType):
         self.name = name
         self.description = description
         self._source_fields = fields
-        self._fields = None  # type: Optional[List[InputField]]
+        self._fields = None  # type: Optional[Sequence[InputField]]
         self.nodes = (
             [] if nodes is None else nodes
         )  # noqa: B950, type: List[Union[_ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension]]
 
     @property
-    def fields(self) -> List[InputField]:
+    def fields(self) -> Sequence[InputField]:
         if self._fields is None:
-            self._fields = _evaluate_lazy_iter(self._source_fields)
+            self._fields = lazy(self._source_fields) or []
         return self._fields
 
     @fields.setter
@@ -878,7 +872,7 @@ class Field:
         self,
         name: str,
         type_: Lazy[GraphQLType],
-        args: Optional[LazyIter[Argument]] = None,
+        args: Optional[LazySeq[Argument]] = None,
         description: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
         resolver: Optional[Callable[..., Any]] = None,
@@ -890,7 +884,7 @@ class Field:
         self.deprecation_reason = deprecation_reason
         self.resolver = resolver
         self._source_args = args
-        self._args = None  # type: Optional[List[Argument]]
+        self._args = None  # type: Optional[Sequence[Argument]]
         self.node = node
 
         self._ltype = type_
@@ -907,9 +901,9 @@ class Field:
         self._type = self._ltype = type_
 
     @property
-    def arguments(self) -> List[Argument]:
+    def arguments(self) -> Sequence[Argument]:
         if self._args is None:
-            self._args = _evaluate_lazy_iter(self._source_args)
+            self._args = lazy(self._source_args) or []
         return self._args
 
     @arguments.setter
@@ -952,7 +946,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
 
         description (Optional[str]): Type description
 
-        fields (List[py_gql.schema.Field]): Object fields.
+        fields (Sequence[py_gql.schema.Field]): Object fields.
 
         field_map (Dict[str, py_gql.schema.Field]):
             Object fields as a map.
@@ -969,7 +963,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
     def __init__(
         self,
         name: str,
-        fields: LazyIter[Field],
+        fields: LazySeq[Field],
         resolve_type: Optional[
             Callable[[Any], Union["ObjectType", str]]
         ] = None,
@@ -983,16 +977,16 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self.name = name
         self.description = description
         self._source_fields = fields
-        self._fields = None  # type: Optional[List[Field]]
+        self._fields = None  # type: Optional[Sequence[Field]]
         self.nodes = (
             [] if nodes is None else nodes
         )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
         self.resolve_type = resolve_type
 
     @property
-    def fields(self) -> List[Field]:
+    def fields(self) -> Sequence[Field]:
         if self._fields is None:
-            self._fields = _evaluate_lazy_iter(self._source_fields)
+            self._fields = lazy(self._source_fields) or []
         return self._fields
 
     @fields.setter
@@ -1031,10 +1025,10 @@ class ObjectType(GraphQLCompositeType, NamedType):
 
         description (Optional[str]): Type description
 
-        interfaces (List[InterfaceType]):
+        interfaces (Sequence[InterfaceType]):
             Implemented interfaces.
 
-        fields (List[py_gql.schema.Field]): Object fields.
+        fields (Sequence[py_gql.schema.Field]): Object fields.
 
         field_map (Dict[str, py_gql.schema.Field]):
             Object fields as a map.
@@ -1053,8 +1047,8 @@ class ObjectType(GraphQLCompositeType, NamedType):
     def __init__(
         self,
         name: str,
-        fields: LazyIter[Field],
-        interfaces: Optional[LazyIter[InterfaceType]] = None,
+        fields: LazySeq[Field],
+        interfaces: Optional[LazySeq[InterfaceType]] = None,
         is_type_of: Optional[Union[Callable[[Any], bool], Type[Any]]] = None,
         default_resolver: Optional[Resolver] = None,
         description: Optional[str] = None,
@@ -1066,10 +1060,10 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self.description = description
         self._source_fields = fields
         self._source_fields = fields
-        self._fields = None  # type: Optional[List[Field]]
         self.default_resolver = default_resolver
+        self._fields = None  # type: Optional[Sequence[Field]]
         self._source_interfaces = interfaces
-        self._interfaces = None  # type: Optional[List[InterfaceType]]
+        self._interfaces = None  # type: Optional[Sequence[InterfaceType]]
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
@@ -1080,9 +1074,9 @@ class ObjectType(GraphQLCompositeType, NamedType):
             self.is_type_of = is_type_of  # type: ignore
 
     @property
-    def interfaces(self) -> List[InterfaceType]:
+    def interfaces(self) -> Sequence[InterfaceType]:
         if self._interfaces is None:
-            self._interfaces = _evaluate_lazy_iter(self._source_interfaces)
+            self._interfaces = lazy(self._source_interfaces) or []
         return self._interfaces
 
     @interfaces.setter
@@ -1090,9 +1084,9 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self._interfaces = self._source_interfaces = interfaces
 
     @property
-    def fields(self) -> List[Field]:
+    def fields(self) -> Sequence[Field]:
         if self._fields is None:
-            self._fields = _evaluate_lazy_iter(self._source_fields)
+            self._fields = lazy(self._source_fields) or []
         return self._fields
 
     @fields.setter
@@ -1187,7 +1181,7 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
 
         resolve_type (Optional[callable]): Type resolver
 
-        types (List[ObjectType]): Member types.
+        types (Sequence[ObjectType]): Member types.
 
         nodes (List[Union[\
             py_gql.lang.ast.UnionTypeDefinition,\
@@ -1200,7 +1194,7 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
     def __init__(
         self,
         name: str,
-        types: LazyIter[ObjectType],
+        types: LazySeq[ObjectType],
         resolve_type: Optional[Callable[[Any], Union[ObjectType, str]]] = None,
         description: Optional[str] = None,
         nodes: Optional[
@@ -1210,16 +1204,16 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self.name = name
         self.description = description
         self._source_types = types
-        self._types = None  # type: Optional[List[ObjectType]]
+        self._types = None  # type: Optional[Sequence[ObjectType]]
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]
         self.resolve_type = resolve_type
 
     @property
-    def types(self) -> List[ObjectType]:
+    def types(self) -> Sequence[ObjectType]:
         if self._types is None:
-            self._types = _evaluate_lazy_iter(self._source_types)
+            self._types = lazy(self._source_types) or []
         return self._types
 
     @types.setter

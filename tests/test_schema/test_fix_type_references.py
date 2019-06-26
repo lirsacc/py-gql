@@ -91,8 +91,10 @@ def test_replace_interface_in_implementers(schema: Schema) -> None:
 def test_replace_type_in_union(schema: Schema) -> None:
     NewPerson = ObjectType(
         "Person",
-        fields=cast(ObjectType, schema.types["Person"]).fields
-        + [Field("last_name", NonNullType(String))],
+        fields=(
+            list(cast(ObjectType, schema.types["Person"]).fields)
+            + [Field("last_name", NonNullType(String))]
+        ),
         interfaces=[cast(InterfaceType, schema.types["Object"])],
     )
 
