@@ -108,3 +108,5 @@ ENV
 *_bak
 
 flake8.txt
+
+/py-gql-*/
