@@ -9,10 +9,8 @@ jobs:
 
     strategy:
       matrix:
-        python:
-          - "3.5"
-          - "3.6"
-          - "3.7"
+        python: ["3.5", "3.6", "3.7"]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v1
@@ -46,10 +44,8 @@ jobs:
 
     strategy:
       matrix:
-        python:
-          - "3.5"
-          - "3.6"
-          - "3.7"
+        python: ["3.5", "3.6", "3.7", "3.8"]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v1
@@ -72,12 +68,12 @@ jobs:
   test-cython:
     runs-on: ubuntu-latest
 
+    needs: [test]
+
     strategy:
       matrix:
-        python:
-          - "3.5"
-          - "3.6"
-          - "3.7"
+        python: ["3.6", "3.7"]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v1
