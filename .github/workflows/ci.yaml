@@ -100,4 +100,4 @@ jobs:
 
       - name: Test
         run: |
-          inv test -v --junit --no-bail
+          PY_IGNORE_IMPORTMISMATCH=1 inv test -v --junit --no-bail
