@@ -6,12 +6,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         python:
           - "3.5"
           - "3.6"
           - "3.7"
+
     steps:
       - uses: actions/checkout@v1
         with:
@@ -24,7 +26,7 @@ jobs:
 
       - name: Dependencies
         run: |
-          pip install -r dev-requirements.txt
+          pip install --upgrade -r dev-requirements.txt -e .
 
       - name: Lint (Flake 8)
         run: |
@@ -33,3 +35,7 @@ jobs:
       - name: Lint (Mypy)
         run: |
           inv mypy --junit
+
+      - name: Test & Coverage
+        run: |
+          inv test -v --coverage --junit --no-bail
