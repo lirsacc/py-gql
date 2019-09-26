@@ -24,9 +24,9 @@ pylint ~= 2.2
 mypy
 
 recommonmark ~= 0.4
-sphinx ~= 1.8
+sphinx ~= 2.2
 alabaster ~= 0.7
-sphinx-autodoc-typehints ~= 1.6
+sphinx-autodoc-typehints ~= 1.8
 
 wheel
 setuptools

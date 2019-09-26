@@ -14,8 +14,8 @@ author = _pkg.__author__
 version = _pkg.__version__
 release = _pkg.__version__
 
-source_parsers = {".md": "recommonmark.parser.CommonMarkParser"}
-source_suffix = [".rst", ".md"]
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
+
 master_doc = "index"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
@@ -66,6 +66,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
+    "recommonmark",
 ]
 
 autodoc_member_order = "bysource"
