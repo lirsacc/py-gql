@@ -32,5 +32,3 @@ wheel
 setuptools
 twine
 pip
-
--e .

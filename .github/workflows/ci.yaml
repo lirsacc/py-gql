@@ -24,6 +24,10 @@ jobs:
       - name: Dependencies
         run: |
           pip install --upgrade -r dev-requirements.txt
+          python setup.py develop
+
+      - name: (Debug) dependency versions
+        run: |
           python --version
           pip --version
           pip freeze
