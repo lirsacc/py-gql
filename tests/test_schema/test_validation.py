@@ -105,8 +105,9 @@ def test_reject_non_object_query_type():
 
 
 def test_reject_non_object_mutation_type():
-    schema = Schema(  # type: ignore
-        ObjectType("Query", [Field("test", String)]), mutation_type=String
+    schema = Schema(
+        ObjectType("Query", [Field("test", String)]),
+        mutation_type=String,  # type: ignore
     )
 
     with pytest.raises(SchemaError) as exc_info:
@@ -116,8 +117,9 @@ def test_reject_non_object_mutation_type():
 
 
 def test_reject_non_object_subscription_type():
-    schema = Schema(  # type: ignore
-        ObjectType("Query", [Field("test", String)]), subscription_type=String
+    schema = Schema(
+        ObjectType("Query", [Field("test", String)]),
+        subscription_type=String,  # type: ignore
     )
 
     with pytest.raises(SchemaError) as exc_info:

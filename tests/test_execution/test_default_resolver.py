@@ -54,7 +54,7 @@ def test_evaluates_callables():
         "c": lambda *_: "Cookie",
         "d": lambda *_: "Donut",
         "e": lambda *_: "Egg",
-        "deep": lambda *_: data,
+        "deep": lambda *_: data,  # type: ignore
     }
 
     Fruits = ObjectType(

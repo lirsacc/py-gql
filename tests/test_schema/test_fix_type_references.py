@@ -30,9 +30,7 @@ def schema() -> Schema:
         fields=[
             Field("id", NonNullType(ID)),
             Field("name", NonNullType(String)),
-            Field(
-                "pets", NonNullType(ListType(lambda: Animal))  # type: ignore
-            ),
+            Field("pets", NonNullType(ListType(lambda: Animal))),
         ],
         interfaces=[Object],
     )

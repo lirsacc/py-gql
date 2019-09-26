@@ -266,7 +266,7 @@ def schema_2():
             Field("unrelatedField", String),
             Field("listStringBox", lambda: ListType(StringBox)),
             Field("stringBox", lambda: StringBox),
-            Field("intBox", lambda: IntBox),  # type: ignore
+            Field("intBox", lambda: IntBox),
         ],
         [SomeBox],
     )  # type: ObjectType
