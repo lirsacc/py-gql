@@ -3,16 +3,20 @@ name: ci
 on:
   - push
 
-jobs:
-  check:
-    runs-on: ubuntu-latest
-
+references:
+  strategy-matrix: &strategy-matrix
     strategy:
       matrix:
         python:
           - "3.5"
           - "3.6"
           - "3.7"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    <<: *strategy-matrix
 
     steps:
       - uses: actions/checkout@v1
@@ -35,6 +39,21 @@ jobs:
       - name: Lint (Mypy)
         run: |
           inv mypy --junit
+
+  test:
+    runs-on: ubuntu-latest
+
+    <<: *strategy-matrix
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
 
       - name: Test & Coverage
         run: |
