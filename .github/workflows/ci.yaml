@@ -71,7 +71,6 @@ jobs:
 
   test-cython:
     runs-on: ubuntu-latest
-
     needs: [test]
 
     strategy:
@@ -96,3 +95,22 @@ jobs:
       - name: Test
         run: |
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --junit --no-bail
+
+  docs:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Dependencies
+        run: |
+          pip install cython
+          pip install -v --upgrade -r dev-requirements.txt -e .
+          pip freeze
+
+      - name: Build docs
+        run: |
+          inv docs -s
