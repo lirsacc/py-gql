@@ -167,14 +167,10 @@ def sort_imports(ctx, check=False, files=None):
 
 @invoke.task(iterable=["files"])
 def black(ctx, check=False, files=None):
-    # TODO: Track https://github.com/ambv/black/issues/683 for setup.cfg
-    # support.
     ctx.run(
         _join(
             [
                 "black",
-                "--line-length=80",
-                "--target-version=py35",
                 "--check" if check else None,
                 (
                     "%s tests examples setup.py tasks.py" % PACKAGE
