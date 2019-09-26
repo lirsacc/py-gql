@@ -65,6 +65,11 @@ jobs:
         run: |
           inv test -v --coverage --junit --no-bail
 
+      - name: Check benchmarks run
+        if: matrix.python == '3.7'
+        run: |
+          inv benchmark
+
   test-cython:
     runs-on: ubuntu-latest
 
