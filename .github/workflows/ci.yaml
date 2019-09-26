@@ -9,19 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.5", "3.6", "3.7"]
-      fail-fast: false
+
+    container:
+      image: python:${{ matrix.python }}-buster
 
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
 
       - name: Dependencies
         run: |
@@ -45,19 +43,17 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        python: ["3.5", "3.6", "3.7"]
       fail-fast: false
+      matrix:
+        python: ["3.5", "3.6", "3.7", "3.8-rc"]
+
+    container:
+      image: python:${{ matrix.python }}-buster
 
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
 
       - name: Dependencies
         run: |
@@ -79,19 +75,17 @@ jobs:
     needs: [test]
 
     strategy:
-      matrix:
-        python: ["3.6", "3.7"]
       fail-fast: false
+      matrix:
+        python: ["3.5", "3.6", "3.7"]
+
+    container:
+      image: python:${{ matrix.python }}-buster
 
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
 
       - name: Dependencies
         run: |
