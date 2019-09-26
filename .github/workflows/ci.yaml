@@ -23,7 +23,8 @@ jobs:
 
       - name: Dependencies
         run: |
-          pip install --upgrade -r dev-requirements.txt
+          mkdir -p .pip-cache
+          pip install --cache-dir .pip-cache --upgrade -r dev-requirements.txt
           python setup.py develop
 
       - name: (Debug) dependency versions
@@ -57,7 +58,7 @@ jobs:
       - name: Test with Cython
         if: matrix.python != '3.8-rc'
         run: |
-          pip install cython
+          pip install --cache-dir .pip-cache cython
           pip install -v -e .
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
           inv clean
