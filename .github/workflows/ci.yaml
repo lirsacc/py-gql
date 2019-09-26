@@ -59,7 +59,7 @@ jobs:
 
       - name: Dependencies
         run: |
-          pip install --upgrade -r dev-requirements.txt -e .
+          pip install --upgrade -r test-requirements.txt -e .
 
       - name: Test & Coverage
         run: |
@@ -93,7 +93,7 @@ jobs:
       - name: Dependencies
         run: |
           pip install cython
-          pip install --upgrade -r dev-requirements.txt -e .
+          pip install --upgrade -r test-requirements.txt -e .
 
       - name: Test
         run: |

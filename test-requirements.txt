@@ -1,5 +1,7 @@
 # Dependencies related to testing.
 
+invoke ~= 1.1
+
 pytest ~= 5.1
 
 pytest-asyncio ~= 0.10
