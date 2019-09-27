@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """ execution tests related to abstract types (Interface, Union) """
-# pylint: disable = redefined-outer-name
 
 import pytest
 

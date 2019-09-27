@@ -105,7 +105,6 @@ def test_ignores_unknown_directive_implementation():
 
 def test_field_modifier_using_arguments():
     class PowerDirective(SchemaDirective):
-        # pylint: disable = super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -138,7 +137,6 @@ def test_object_modifier_and_field_modifier():
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     class UniqueID(SchemaDirective):
-        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.name = args["name"]
             self.source = args["source"]
@@ -240,7 +238,6 @@ def test_missing_definition():
 
 def test_multiple_directives_applied_in_order():
     class PowerDirective(SchemaDirective):
-        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -285,7 +282,6 @@ def test_input_values():
                 return type(type_)(cls.wrap(type_.type, *args, **kwargs))
             return cls(type_, *args, **kwargs)
 
-        # pylint:disable=super-init-not-called,redefined-builtin
         def __init__(self, type, min, max):
             assert isinstance(type, ScalarType)
             self.type = type
@@ -310,8 +306,6 @@ def test_input_values():
             return parsed
 
     class LimitedLengthDirective(SchemaDirective):
-
-        # pylint:disable=super-init-not-called
         def __init__(self, args):
             self.min = args["min"]
             self.max = args.get("max")

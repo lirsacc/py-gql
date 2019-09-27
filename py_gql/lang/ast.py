@@ -3,7 +3,6 @@
 GraphQL AST representations corresponding to the `GraphQL language elements
 <http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language>`_.
 """
-# pylint: disable=redefined-builtin
 
 import copy
 from typing import (

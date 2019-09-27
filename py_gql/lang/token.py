@@ -58,7 +58,6 @@ class ConstToken(Token):
 
     value = ""
 
-    # pylint: disable = super-init-not-called
     def __init__(self, start: int, end: int):
         self.start = start
         self.end = end

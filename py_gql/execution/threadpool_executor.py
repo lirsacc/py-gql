@@ -71,7 +71,6 @@ def unwrap_future(maybe_future):
                 r = f.result()
             except CancelledError:
                 outer.cancel()
-            # pylint: disable = broad-except
             except Exception as err:
                 outer.set_exception(err)
             else:
@@ -125,7 +124,6 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
 
         try:
             d.result()
-        # pylint: disable = broad-except
         except Exception as err:
             outer.set_exception(err)
             return
@@ -168,7 +166,6 @@ def chain(
             res = then(f.result())
         except CancelledError:
             target.cancel()
-        # pylint: disable = broad-except
         except Exception as err:
             if else_ is not None:
                 exc_type, cb = else_

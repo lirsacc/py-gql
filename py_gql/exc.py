@@ -2,7 +2,6 @@
 """
 This module implements all the exceptions relevant to `py_gql`.
 """
-# pylint: disable = too-many-ancestors
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 

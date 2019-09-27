@@ -577,7 +577,6 @@ _ScalarValueNode = Union[
 ]
 
 
-# pylint: disable=unsubscriptable-object
 class ScalarType(GraphQLLeafType, NamedType):
     """
     Scalar Type Definition

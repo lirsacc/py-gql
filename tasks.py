@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable
 # flake8: noqa
 """ Development scripts.
 
@@ -126,15 +125,6 @@ def flake8(ctx, files=None, junit=False):
     finally:
         if junit:
             ctx.run("flake8_junit flake8.txt flake8.junit.xml", echo=True)
-
-
-@invoke.task(iterable=["files"])
-def pylint(ctx, files=None):
-    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
-    ctx.run(
-        "pylint --rcfile=.pylintrc --output-format=colorized -j 0 %s" % files,
-        echo=True,
-    )
 
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
