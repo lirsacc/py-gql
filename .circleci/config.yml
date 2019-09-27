@@ -73,6 +73,14 @@ references:
                 pip install -v -e .
                 PY_IGNORE_IMPORTMISMATCH=1 inv test -v --junit --no-bail
 
+    check-formatting: &check-formatting
+        run:
+            name: Check file formats
+            when: always
+            command: |
+                . "venv${PY}/bin/activate"
+                inv black --check
+
     flake8: &flake8
         run:
             name: Running Flake8
@@ -96,6 +104,14 @@ references:
             command: |
                 . "venv${PY}/bin/activate"
                 inv test -v --coverage --junit --no-bail
+
+    run-benchmarks: &run-benchmarks
+        run:
+            name: Check benchmarks run
+            when: always
+            command: |
+                . "venv${PY}/bin/activate"
+                inv benchmark
 
     collect-tests: &collect-tests
         run:
@@ -213,9 +229,11 @@ jobs:
         steps:
             - *workspace
             - restore_cache: *read-cache-python-37
+            - *check-formatting
             - *flake8
             - *mypy
             - *test
+            - *run-benchmarks
             - *collect-tests
             - *store-tests
             - persist_to_workspace:
@@ -294,33 +312,7 @@ jobs:
                   <<: *write-cache-python-37
                   paths: ~/.cache/pip
             - *store-tests
-            - store_artifacts:
-                  { path: test-results, destination: . }
-
-    check-format:
-        <<: *docker-python37
-        <<: *workdir
-        steps:
-            - *workspace
-            - restore_cache: *read-cache-python-37
-            - run:
-                  name: Check file formats
-                  command: |
-                      . "venv${PY}/bin/activate"
-                      inv black --check
-
-    # Make sure the benchmarks still run, do nothing with the result
-    check-benchmarks:
-        <<: *docker-python37
-        <<: *workdir
-        steps:
-            - *workspace
-            - restore_cache: *read-cache-python-37
-            - run:
-                  name: Check benchmarks run
-                  command: |
-                      . "venv${PY}/bin/activate"
-                      inv benchmark
+            - store_artifacts: { path: test-results, destination: . }
 
     docs:
         <<: *docker-python37
@@ -373,14 +365,6 @@ workflows:
                   requires:
                       - check-37
 
-            - check-format:
-                  requires:
-                      - deps-37
-
-            - check-benchmarks:
-                  requires:
-                      - deps-37
-
             - collect-tests:
                   requires:
                       - check-35
@@ -390,5 +374,3 @@ workflows:
             - docs:
                   requires:
                       - collect-tests
-                      - check-format
-                      - check-benchmarks
