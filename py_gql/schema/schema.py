@@ -411,9 +411,20 @@ class Schema:
                 % (typename, object_type.__class__.__name__)
             )
 
-        object_type.assign_resolver(
-            fieldname, func, allow_override=allow_override
-        )
+        try:
+            field = object_type.field_map[fieldname]
+        except KeyError:
+            raise ValueError(
+                'Unknown field "%s" for type "%s".' % (fieldname, typename)
+            )
+        else:
+            if (not allow_override) and field.resolver is not None:
+                raise ValueError(
+                    'Field "%s" of type "%s" already has a resolver.'
+                    % (fieldname, typename)
+                )
+
+            field.resolver = func or field.resolver
 
         return self
 

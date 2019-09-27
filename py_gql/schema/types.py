@@ -1096,63 +1096,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
     def field_map(self) -> Dict[str, Field]:
         return {f.name: f for f in self.fields}
 
-    def assign_resolver(
-        self, fieldname: str, func: Resolver, allow_override: bool = False
-    ) -> "ObjectType":
-        """
-        Register a resolver.
-
-        Args:
-            fieldname: Field name.
-            func: The resolver function.
-            allow_override:
-                By default this function will raise :py:class:`ValueError` if
-                the field already has a resolver defined. Set this to ``True``
-                to allow overriding.
-
-        Raises:
-            :py:class:`ValueError`:
-        """
-
-        try:
-            field = self.field_map[fieldname]
-        except KeyError:
-            raise ValueError(
-                'Unknown field "%s" for type "%s".' % (fieldname, self.name)
-            )
-        else:
-            if (not allow_override) and field.resolver is not None:
-                raise ValueError(
-                    'Field "%s" of type "%s" already has a resolver.'
-                    % (fieldname, self.name)
-                )
-
-            field.resolver = func or field.resolver
-
-        return self
-
-    def resolver(self, fieldname: str) -> Callable[[Resolver], Resolver]:
-        """
-        Decorator version of :meth:`assign_resolver`.
-
-        .. code-block:: python
-
-            schema = ...
-
-            @schema.resolver("Query.foo")
-            def resolve_foo(obj, ctx, info):
-                return "foo"
-
-        Args:
-            fieldname: Field name.
-        """
-
-        def decorator(func: Resolver) -> Resolver:
-            self.assign_resolver(fieldname, func)
-            return func
-
-        return decorator
-
 
 class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
     """
