@@ -324,28 +324,34 @@ class Executor:
             )
         return self._argument_values[cache_key]
 
-    # REVIEW: This seems too involved, I'd rather have one single way to do this
-    # at the cost of diverging from the various methods seen in graphql-js.
     def resolve_type(
-        self, value: Any, t: Union[InterfaceType, UnionType]
+        self,
+        value: Any,
+        info: ResolveInfo,
+        abstract_type: Union[InterfaceType, UnionType],
     ) -> Optional[ObjectType]:
-        if t.resolve_type is not None:
-            maybe_type = t.resolve_type(value)
-            if isinstance(maybe_type, str):
-                return self.schema.get_type(maybe_type)  # type: ignore
-            else:
-                return maybe_type
-        elif isinstance(value, dict) and value.get("__typename__"):
-            return self.schema.get_type(value["__typename__"])  # type: ignore
-        elif hasattr(value, "__typename__") and value.__typename__:
-            return self.schema.get_type(value.__typename__)  # type: ignore
+
+        maybe_type = None  # type: Optional[Union[ObjectType, str]]
+
+        if abstract_type.resolve_type is not None:
+            maybe_type = abstract_type.resolve_type(
+                value, self.context_value, info
+            )
         else:
-            possible_types = self.schema.get_possible_types(t)
-            for pt in possible_types:
-                if pt.is_type_of is not None:
-                    if pt.is_type_of(value):
-                        return pt
-            return None
+            # Default type resolution
+            maybe_type = (
+                value.get("__typename__", None)
+                if isinstance(value, dict)
+                else getattr(value, "__typename__", None)
+            )
+
+        if maybe_type is None:
+            maybe_type = type(value).__name__
+
+        if isinstance(maybe_type, str):
+            return self.schema.get_type(maybe_type)  # type: ignore
+        else:
+            return maybe_type
 
     def _get_field_resolver(
         self, parent_type: ObjectType, field_definition: Field
@@ -395,7 +401,9 @@ class Executor:
 
         def complete(res):
             on_field_end()
-            return self.complete_value(field_definition.type, nodes, path, res)
+            return self.complete_value(
+                field_definition.type, nodes, path, info, res
+            )
 
         try:
             coerced_args = self.argument_values(field_definition, node)
@@ -484,11 +492,14 @@ class Executor:
         inner_type: GraphQLType,
         nodes: List[_ast.Field],
         path: ResponsePath,
+        info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
         return self.gather_values(
             [
-                self.complete_value(inner_type, nodes, path + [index], entry)
+                self.complete_value(
+                    inner_type, nodes, path + [index], info, entry
+                )
                 for index, entry in enumerate(resolved_value)
             ]
         )
@@ -498,10 +509,11 @@ class Executor:
         inner_type: GraphQLType,
         nodes: List[_ast.Field],
         path: ResponsePath,
+        info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
         return self.map_value(
-            self.complete_value(inner_type, nodes, path, resolved_value),
+            self.complete_value(inner_type, nodes, path, info, resolved_value),
             lambda r: self._handle_non_nullable_value(nodes, path, r),
         )
 
@@ -510,11 +522,12 @@ class Executor:
         field_type: GraphQLType,
         nodes: List[_ast.Field],
         path: ResponsePath,
+        info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
         if isinstance(field_type, NonNullType):
             return self.complete_non_nullable_value(
-                field_type.type, nodes, path, resolved_value
+                field_type.type, nodes, path, info, resolved_value
             )
 
         if resolved_value is None:
@@ -527,7 +540,7 @@ class Executor:
                     "iterable" % stringify_path(path)
                 )
             return self.complete_list_value(
-                field_type.type, nodes, path, resolved_value
+                field_type.type, nodes, path, info, resolved_value
             )
 
         if isinstance(field_type, ScalarType):
@@ -550,7 +563,9 @@ class Executor:
 
         if isinstance(field_type, GraphQLCompositeType):
             if isinstance(field_type, GraphQLAbstractType):
-                runtime_type = self.resolve_type(resolved_value, field_type)
+                runtime_type = self.resolve_type(
+                    resolved_value, info, field_type
+                )
 
                 if not isinstance(runtime_type, ObjectType):
                     raise RuntimeError(
@@ -559,8 +574,7 @@ class Executor:
                         % (field_type, stringify_path(path), runtime_type)
                     )
 
-                # Backup check in case of badly implemented `resolve_type` or
-                # `is_type_of`
+                # Backup check in case of badly implemented `resolve_type`
                 if not self.schema.is_possible_type(field_type, runtime_type):
                     raise RuntimeError(
                         'Runtime ObjectType "%s" is not a possible type for '

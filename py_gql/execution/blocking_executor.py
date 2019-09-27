@@ -80,17 +80,20 @@ class BlockingExecutor(Executor):
         finally:
             on_field_end()
 
-        return self.complete_value(field_definition.type, nodes, path, resolved)
+        return self.complete_value(
+            field_definition.type, nodes, path, info, resolved
+        )
 
     def complete_list_value(
         self,
         inner_type: GraphQLType,
         nodes: List[_ast.Field],
         path: ResponsePath,
+        info: ResolveInfo,
         resolved_value: Any,
     ) -> List[Any]:
         return [
-            self.complete_value(inner_type, nodes, path + [index], entry)
+            self.complete_value(inner_type, nodes, path + [index], info, entry)
             for index, entry in enumerate(resolved_value)
         ]
 
@@ -99,10 +102,11 @@ class BlockingExecutor(Executor):
         inner_type: GraphQLType,
         nodes: List[_ast.Field],
         path: ResponsePath,
+        info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
         return self._handle_non_nullable_value(
             nodes,
             path,
-            self.complete_value(inner_type, nodes, path, resolved_value),
+            self.complete_value(inner_type, nodes, path, info, resolved_value),
         )

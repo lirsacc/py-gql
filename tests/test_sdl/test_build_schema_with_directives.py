@@ -159,7 +159,6 @@ def test_object_modifier_and_field_modifier():
                     + object_definition.fields
                 ),
                 interfaces=object_definition.interfaces,
-                is_type_of=object_definition.is_type_of,
                 nodes=object_definition.nodes,
             )
 

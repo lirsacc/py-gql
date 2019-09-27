@@ -2,13 +2,14 @@
 
 ## Unreleased
 
-### Breaking Changes
+### Breaking Changes & Deprecations
 
 - `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
 - `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracing`.
 - `Directive` is not a subclass of `GraphQLType` anymore.
 - It is no longer possible to override specified directives and types when creating a schema.
 - Dropped `is_abstract_type`, `is_composite_type` and `is_leaf_type`: use the `GraphQLAbstractType`, `GraphQLCompositeType`, and `GraphQLLeafType` directly instead.
+- Dropped `ObjectTye.is_type_of` option for concrete type resolution, use `resolve_type` instead.
 
 ### Updated / Added
 
@@ -17,6 +18,7 @@
 - Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor`.
 - Clarify that specified schema directives do not need to be applied manually.
 - Extended the tracer concept into `Instrumentation` which supports overriding runtime values as well as observing execution stages.
+- `resolve_type` now receives the current context value and `ResolveInfo`.
 
 ### Fixed
 

@@ -44,116 +44,13 @@ class Person:
         self.friends = friends
 
 
-async def test_ObjectType_is_type_of_for_interface_runtime_inference(
-    executor_cls
-):
-    PetType = InterfaceType("Pet", [Field("name", String)])
-
-    DogType = ObjectType(
-        "Dog",
-        [Field("name", String), Field("woofs", Boolean)],
-        interfaces=[PetType],
-        is_type_of=Dog,
-    )  # type: ObjectType
-
-    CatType = ObjectType(
-        "Cat",
-        [Field("name", String), Field("meows", Boolean)],
-        interfaces=[PetType],
-        is_type_of=Cat,
-    )  # type: ObjectType
-
-    schema = Schema(
-        ObjectType(
-            "Query",
-            [
-                Field(
-                    "pets",
-                    ListType(PetType),
-                    resolver=lambda *_: [
-                        Dog("Odie", True),
-                        Cat("Garfield", False),
-                    ],
-                )
-            ],
-        ),
-        types=[DogType, CatType],
-    )
-
-    await assert_execution(
-        schema,
-        """{
-            pets {
-                name
-                __typename
-                ... on Dog { woofs }
-                ... on Cat { meows }
-            }
-        }""",
-        executor_cls=executor_cls,
-        expected_data={
-            "pets": [
-                {"name": "Odie", "woofs": True, "__typename": "Dog"},
-                {"name": "Garfield", "meows": False, "__typename": "Cat"},
-            ]
-        },
-    )
-
-
-async def test_ObjectType_is_type_of_for_union_runtime_inference(executor_cls):
-    DogType = ObjectType(
-        "Dog", [Field("name", String), Field("woofs", Boolean)], is_type_of=Dog
-    )
-
-    CatType = ObjectType(
-        "Cat", [Field("name", String), Field("meows", Boolean)], is_type_of=Cat
-    )
-
-    PetType = UnionType("Pet", [DogType, CatType])
-
-    schema = Schema(
-        ObjectType(
-            "Query",
-            [
-                Field(
-                    "pets",
-                    ListType(PetType),
-                    resolver=lambda *_: [
-                        Dog("Odie", True),
-                        Cat("Garfield", False),
-                    ],
-                )
-            ],
-        ),
-        types=[DogType, CatType],
-    )
-
-    await assert_execution(
-        schema,
-        """{
-            pets {
-                __typename
-                ... on Dog { woofs, name }
-                ... on Cat { meows, name }
-            }
-        }""",
-        executor_cls=executor_cls,
-        expected_data={
-            "pets": [
-                {"name": "Odie", "woofs": True, "__typename": "Dog"},
-                {"name": "Garfield", "meows": False, "__typename": "Cat"},
-            ]
-        },
-    )
-
-
 # WARN: This test will trigger a coroutine never awaited warning as the runtime
 # warning short circuits the execution.
 async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value):
+    def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
@@ -221,7 +118,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
-    def _resolve_pet_type(value):
+    def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
             type(value), None
         )
@@ -279,7 +176,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
 
 
 async def test_type_resolution_supports_strings(executor_cls):
-    def _resolve_pet_type(value):
+    def _resolve_pet_type(value, *_):
         return type(value).__name__
 
     PetType = InterfaceType(
@@ -395,7 +292,6 @@ DogType = ObjectType(
     "Dog",
     [Field("name", String), Field("woofs", Boolean)],
     interfaces=[NamedType],
-    is_type_of=Dog,
 )
 
 
@@ -403,11 +299,10 @@ CatType = ObjectType(
     "Cat",
     [Field("name", String), Field("meows", Boolean)],
     interfaces=[NamedType],
-    is_type_of=Cat,
 )
 
 
-def _resolve_pet_type(value):
+def _resolve_pet_type(value, *_):
     if isinstance(value, Dog):
         return DogType
     elif isinstance(value, Cat):
@@ -424,7 +319,6 @@ PersonType = ObjectType(
         Field("friends", lambda: ListType(NamedType)),
     ],
     interfaces=[NamedType],
-    is_type_of=Person,
 )
 
 _SCHEMA = Schema(PersonType)

@@ -130,7 +130,7 @@ Episode = EnumType(
 )
 
 
-def resolve_character_type(character):
+def resolve_character_type(character, *_):
     return {"Human": Human, "Droid": Droid}[character["type"]]
 
 

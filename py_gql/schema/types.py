@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -20,6 +21,10 @@ from .._utils import Lazy, lazy
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
 from ..lang import ast as _ast
 from ..lang.parser import DIRECTIVE_LOCATIONS
+
+if TYPE_CHECKING:
+    from ..execution.wrappers import ResolveInfo  # noqa: F401
+
 
 # TODO: Encode as much of the rules for validate_schema in the type system such
 # as making sure only output types can be used in `Field`. This most likely
@@ -964,7 +969,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         name: str,
         fields: LazySeq[Field],
         resolve_type: Optional[
-            Callable[[Any], Union["ObjectType", str]]
+            Callable[[Any, Any, "ResolveInfo"], Union["ObjectType", str]]
         ] = None,
         description: Optional[str] = None,
         nodes: Optional[
@@ -1011,8 +1016,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
 
         interfaces: Implemented interfaces
 
-        is_type_of: Value type checker
-
         default_resolver:
 
         description: Type description
@@ -1032,8 +1035,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
         field_map (Dict[str, py_gql.schema.Field]):
             Object fields as a map.
 
-        is_type_of (Optional[callable]): Value type checker.
-
         default_resolver (Optional[Callable[..., Any]]):
 
         nodes (List[Union[\
@@ -1048,7 +1049,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
         name: str,
         fields: LazySeq[Field],
         interfaces: Optional[LazySeq[InterfaceType]] = None,
-        is_type_of: Optional[Union[Callable[[Any], bool], Type[Any]]] = None,
         default_resolver: Optional[Resolver] = None,
         description: Optional[str] = None,
         nodes: Optional[
@@ -1066,11 +1066,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
-
-        if isinstance(is_type_of, type):
-            self.is_type_of = lambda v, *_, **__: isinstance(v, is_type_of)
-        else:
-            self.is_type_of = is_type_of  # type: ignore
 
     @property
     def interfaces(self) -> Sequence[InterfaceType]:
@@ -1137,7 +1132,9 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         types: LazySeq[ObjectType],
-        resolve_type: Optional[Callable[[Any], Union[ObjectType, str]]] = None,
+        resolve_type: Optional[
+            Callable[[Any, Any, "ResolveInfo"], Union[ObjectType, str]]
+        ] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]
