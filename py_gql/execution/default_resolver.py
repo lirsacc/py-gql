@@ -40,7 +40,7 @@ def default_resolver(
     field_name = info.field_definition.name
 
     field_value = (
-        root.get(field_name)
+        root.get(field_name, None)
         if isinstance(root, dict)
         else getattr(root, field_name, None)
     )
