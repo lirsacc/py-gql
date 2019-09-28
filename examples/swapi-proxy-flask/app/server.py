@@ -8,7 +8,8 @@ import flask
 from py_gql import process_graphql_query
 from py_gql.execution import ThreadPoolExecutor
 from py_gql.tracers import ApolloTracer
-from schema import SCHEMA
+
+from .schema import SCHEMA
 
 SCHEMA_SDL = SCHEMA.to_string()
 GLOBAL_EXECUTOR = futures.ThreadPoolExecutor(max_workers=20)

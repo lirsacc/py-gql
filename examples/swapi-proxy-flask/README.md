@@ -15,7 +15,7 @@ Data is fetched live from <https://swapi.co>.
 
 ```.bash
 pip install -r requirements.txt
-FLASK_APP=server.py python -m flask run --reload
+FLASK_APP=app.server:app python -m flask run --reload
 ```
 
 You can then open <http://localhost:5000/graphiql> to run queries interactively.

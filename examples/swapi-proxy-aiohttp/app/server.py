@@ -7,7 +7,8 @@ from aiohttp import web
 
 from py_gql import graphql
 from py_gql.tracers import ApolloTracer
-from schema import SCHEMA
+
+from .schema import SCHEMA
 
 SCHEMA_SDL = SCHEMA.to_string()
 

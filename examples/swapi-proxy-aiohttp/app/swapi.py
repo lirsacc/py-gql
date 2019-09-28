@@ -2,10 +2,9 @@
 import aiohttp
 
 URL = "https://swapi.co/api"
-LOCAL_CACHE = {}
 
 
-async def fetch(url, query=None, cache=LOCAL_CACHE):
+async def fetch(url, query=None, cache={}):
     headers = {"User-Agent": "python"}
     cache_key = (url, tuple(sorted(query.items())) if query else None)
 

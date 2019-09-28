@@ -2,29 +2,30 @@
 """ Define the GraphQL schema
 """
 
+import asyncio
 import functools as ft
 import os
 import re
 
-import requests
+import aiohttp
 
-import swapi
 from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.execution import ThreadPoolExecutor
+
+from . import swapi
 
 
 def swapi_caller(func):
     @ft.wraps(func)
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
-        except requests.exceptions.HTTPError as err:
+            return await func(*args, **kwargs)
+        except aiohttp.client_exceptions.ClientResponseError as err:
             raise ResolverError(
                 "Cannot reach SWAPI",
                 extensions={
                     "msg": str(err),
-                    "code": err.response.status_code,
+                    "code": err.status,
                     "url": err.request.url,
                 },
             )
@@ -34,41 +35,38 @@ def swapi_caller(func):
 
 def single_resource_resolver(resource):
     @swapi_caller
-    def resolve(*_, id):
-        return swapi.fetch_one(resource, id)
+    async def resolve(obj, ctx, info, **args):
+        return await swapi.fetch_one(resource, args["id"])
 
     return resolve
 
 
 def nested_single_resource_resolver(key, resource):
     @swapi_caller
-    def resolve(obj, ctx, info, **args):
+    async def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
-        return swapi.fetch_one(resource, int(obj[key].split("/")[-2]))
+        return await swapi.fetch_one(resource, int(obj[key].split("/")[-2]))
 
     return resolve
 
 
 def resource_resolver(resource):
     @swapi_caller
-    def resolve(obj, ctx, info, **args):
-        return swapi.fetch_many(resource, search=args.get("search"))
+    async def resolve(obj, ctx, info, **args):
+        return await swapi.fetch_many(resource, search=args.get("search"))
 
     return resolve
 
 
 def nested_list_resolver(key, resource):
     @swapi_caller
-    def resolve(obj, ctx, info, **args):
+    async def resolve(obj, ctx, info, **args):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
-        return ThreadPoolExecutor.gather_values(
-            [
-                ctx["global_executor"].submit(swapi.fetch_one, resource, id)
-                for id in ids
-            ]
+        return await asyncio.gather(
+            *[swapi.fetch_one(resource, id) for id in ids]
         )
 
     return resolve
@@ -136,7 +134,6 @@ RESOLVERS = {
         "average_lifespan": string_numeric_resolver("average_lifespan"),
     },
 }
-
 
 with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
     SCHEMA = build_schema(f.read())
