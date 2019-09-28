@@ -129,7 +129,7 @@ def flake8(ctx, files=None, junit=False):
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
 def mypy(ctx, files=None, junit=False):
-    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
+    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
     ctx.run(
         _join(["mypy", "--junit-xml mypy.junit.xml" if junit else None, files]),
         echo=True,
