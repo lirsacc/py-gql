@@ -20,6 +20,10 @@
 - Extended the tracer concept into `Instrumentation` which supports overriding runtime values as well as observing execution stages.
 - `resolve_type` now receives the current context value and `ResolveInfo`.
 
+#### Subscription support
+
+- Basic subscription support has been added through `py_gql.execution.subscribe`. It's not well documented yet is subject to change. For now refer to the _starlette-ws-subsriptions_ example.
+
 ### Fixed
 
 - Fix a bug where selection set indentation was not correct when using `ASTPrinter`.
