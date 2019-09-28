@@ -22,6 +22,7 @@ from .._string_utils import stringify_path
 from .._utils import OrderedDict, is_iterable
 from ..exc import (
     CoercionError,
+    GraphQLLocatedError,
     GraphQLResponseError,
     MultiCoercionError,
     ResolverError,
@@ -63,9 +64,11 @@ class Executor:
     Default executor class (synchronous).
     """
 
+    # -------------------------------------------------------------------------
     # These static methods should likely be re-implemented in order to build
     # custom executors. See to AsyncIOExecutor and ThreadPoolExecutor for
     # reference.
+    # -------------------------------------------------------------------------
     @staticmethod
     def gather_values(values: Iterable[Any]) -> Any:
         return values
@@ -91,6 +94,12 @@ class Executor:
 
     def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
         return resolver
+
+    supports_subscriptions = False
+
+    @staticmethod
+    def map_stream(source_stream: Any, map_value: Callable[[Any], Any]) -> Any:
+        raise NotImplementedError()
 
     # -------------------------------------------------------------------------
 
@@ -159,7 +168,7 @@ class Executor:
 
     def add_error(
         self,
-        err: Union[CoercionError, ResolverError],
+        err: Union[GraphQLLocatedError],
         path: Optional[ResponsePath] = None,
         node: Optional[_ast.Node] = None,
     ) -> None:
@@ -177,6 +186,9 @@ class Executor:
     def errors(self) -> List[GraphQLResponseError]:
         """ All field errors collected during query execution. """
         return self._errors[:]
+
+    def clear_errors(self) -> None:
+        self._errors[:] = []
 
     def does_fragment_type_apply(
         self,

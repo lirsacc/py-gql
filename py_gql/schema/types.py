@@ -867,6 +867,7 @@ class Field:
             Field arguments in indexed form.
 
         resolver (callable): Field resolver.
+        subscription_resolver (callable): Field resolver for subscriptions.
 
         node (Optional[py_gql.lang.ast.FieldDefinition]):
             Source node used when building type from the SDL
@@ -880,6 +881,7 @@ class Field:
         description: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
         resolver: Optional[Callable[..., Any]] = None,
+        subscription_resolver: Optional[Callable[..., Any]] = None,
         node: Optional[_ast.FieldDefinition] = None,
     ):
         self.name = name
@@ -887,6 +889,7 @@ class Field:
         self.deprecated = bool(deprecation_reason)
         self.deprecation_reason = deprecation_reason
         self.resolver = resolver
+        self.subscription_resolver = subscription_resolver
         self._source_args = args
         self._args = None  # type: Optional[Sequence[Argument]]
         self.node = node

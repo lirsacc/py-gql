@@ -450,6 +450,76 @@ class Schema:
 
         return decorator
 
+    def assign_subscription_resolver(
+        self,
+        fieldpath: str,
+        func: Callable[..., Any],
+        allow_override: bool = False,
+    ) -> None:
+        """
+        Register a subscription resolver against a type in the schema.
+
+        Args:
+            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+            func: The resolver function.
+            allow_override:
+                By default this function will raise :py:class:`ValueError` if
+                the field already has a resolver defined. Set this to ``True``
+                to allow overriding.
+
+        Raises:
+            :py:class:`ValueError`:
+
+        Warning:
+            This will update the type inline and as such is expected to be used
+            after having used `py_gql.build_schema`.
+        """
+
+        try:
+            typename, fieldname = fieldpath.split(".")[:2]
+        except ValueError:
+            raise ValueError(
+                'Invalid field path "%s". Field path must of the form '
+                '"{Typename}.{Fieldname}"' % fieldpath
+            )
+
+        object_type = self.get_type(typename)
+
+        if not isinstance(object_type, ObjectType):
+            raise ValueError(
+                'Expected "%s" to be ObjectTye but got %s.'
+                % (typename, object_type.__class__.__name__)
+            )
+
+        try:
+            field = object_type.field_map[fieldname]
+        except KeyError:
+            raise ValueError(
+                'Unknown field "%s" for type "%s".' % (fieldname, typename)
+            )
+        else:
+            if (not allow_override) and field.subscription_resolver is not None:
+                raise ValueError(
+                    'Field "%s" of type "%s" already has a subscription_resolver.'
+                    % (fieldname, typename)
+                )
+
+            field.subscription_resolver = func or field.subscription_resolver
+
+    def subscription(self, fieldpath):
+        """
+        Decorator version of :meth:`assign_subscription_resolver`.
+
+        Args:
+            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+        """
+
+        def decorator(func):
+            self.assign_subscription_resolver(fieldpath, func)
+            return func
+
+        return decorator
+
 
 def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
     directives = {

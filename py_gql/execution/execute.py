@@ -2,12 +2,11 @@
 
 from typing import Any, Callable, Mapping, Optional, Sequence, Type
 
-from ..exc import ExecutionError
 from ..lang import ast as _ast
 from ..schema import Schema
 from ..utilities import coerce_variable_values
 from .executor import Executor
-from .get_operation import get_operation
+from .get_operation import get_operation_with_type
 from .instrumentation import Instrumentation
 from .wrappers import GraphQLResult
 
@@ -32,7 +31,7 @@ def execute(
     # fmt: on
 ) -> Any:
     """
-    Execute a GraphQL document against a schema.
+    Execute a GraphQL query or mutation against a schema.
 
     Args:
         schema: Schema to execute the query against
@@ -93,19 +92,9 @@ def execute(
     """
     instrumentation = instrumentation or Instrumentation()
 
-    operation = get_operation(document, operation_name)
-
-    root_type = {
-        "query": schema.query_type,
-        "mutation": schema.mutation_type,
-        "subscription": schema.subscription_type,
-    }[operation.operation]
-
-    if root_type is None:
-        raise ExecutionError(
-            "Schema doesn't support %s operation" % operation.operation
-        )
-
+    operation, root_type = get_operation_with_type(
+        schema, document, operation_name
+    )
     coerced_variables = coerce_variable_values(
         schema, operation, variables or {}
     )
@@ -126,8 +115,13 @@ def execute(
         exe_fn = executor.execute_fields
     elif operation.operation == "mutation":
         exe_fn = executor.execute_fields_serially
+    elif operation.operation == "subscription":
+        raise RuntimeError(
+            "`execute` does not support subscriptions, "
+            "use the `subscribe` helper."
+        )
     else:
-        raise NotImplementedError("%s not supported" % operation.operation)
+        raise AssertionError("Unknown operation type %s." % operation.operation)
 
     on_execution_end = instrumentation.on_execution()
 

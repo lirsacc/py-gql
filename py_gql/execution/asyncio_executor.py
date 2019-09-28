@@ -3,11 +3,20 @@
 import asyncio
 import functools as ft
 from inspect import isawaitable, iscoroutinefunction
-from typing import Any, Callable
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    TypeVar,
+)
 
 from .executor import Executor
 
 Resolver = Callable[..., Any]
+T = TypeVar("T")
+G = TypeVar("G")
 
 
 class AsyncIOExecutor(Executor):
@@ -43,6 +52,14 @@ class AsyncIOExecutor(Executor):
     def unwrap_value(value):
         return unwrap_coro(value)
 
+    supports_subscriptions = True
+
+    @staticmethod
+    def map_stream(
+        source_stream: AsyncIterator[T], map_value: Callable[[T], Awaitable[G]]
+    ) -> AsyncIterable[G]:
+        return AsyncMap(source_stream, map_value)
+
     def wrap_field_resolver(self, base: Resolver) -> Resolver:
         if not iscoroutinefunction(base):
 
@@ -61,3 +78,20 @@ async def unwrap_coro(maybe_coro):
         return await unwrap_coro(await maybe_coro)
 
     return maybe_coro
+
+
+# We cannot use async generators in order to support Python 3.5.
+class AsyncMap:
+    __slots__ = ("source_stream", "map_value")
+
+    def __init__(self, source_stream, map_value):
+        self.source_stream = source_stream
+        self.map_value = map_value
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        return await self.map_value(
+            await type(self.source_stream).__anext__(self.source_stream)
+        )
