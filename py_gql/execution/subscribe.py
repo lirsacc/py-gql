@@ -99,7 +99,9 @@ def subscribe(
         coerced_variables,
         context_value,
         instrumentation=instrumentation,
-        middlewares=[],  # Enforce no middlewares for subscriptions.
+        # Enforce no middlewares for subscriptions.
+        # TODO: This should work somehow but needs more work.
+        middlewares=[],
         **(executor_args or {}),
     )
 
