@@ -376,7 +376,11 @@ class Executor:
         try:
             return self._resolver_cache[base]
         except KeyError:
-            wrapped = self.wrap_field_resolver(base)
+            wrapped = (
+                self.wrap_field_resolver(base)
+                if base is not self._default_resolver
+                else base
+            )
             if self._middlewares:
                 wrapped = _apply_middlewares(wrapped, self._middlewares)
             self._resolver_cache[base] = wrapped
