@@ -25,7 +25,7 @@ from .types import (
 if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 
-VALID_NAME_RE = re.compile(r"^[_a-zA-Z][_a-zA-Z0-9]*$")
+VALID_NAME_RE = re.compile(r"^(?!__)[_a-zA-Z][_a-zA-Z0-9]*$")
 RESERVED_NAMES = set(t.name for t in SPECIFIED_SCALAR_TYPES)
 
 
@@ -108,9 +108,7 @@ def _is_valid_name(name: str) -> bool:
     >>> _is_valid_name('42')
     False
     """
-    return bool(
-        name and not name.startswith("__") and VALID_NAME_RE.match(name)
-    )
+    return bool(VALID_NAME_RE.match(name))
 
 
 def _assert_valid_name(name: str) -> None:
