@@ -141,10 +141,13 @@ async def test_simple_counter_subscription():
             "counter",
             NonNullType(Int),
             args=[Argument("delay", NonNullType(Float))],
-            subscription_resolver=lambda *_, delay: AsyncCounter(delay, 10),
             resolver=lambda event, *_, **__: event,
         )
     )
+
+    @schema.subscription("counter")
+    def counter_subscription(*_, delay):
+        return AsyncCounter(delay, 10)
 
     response_stream = await subscribe(
         schema,

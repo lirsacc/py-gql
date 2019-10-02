@@ -452,15 +452,16 @@ class Schema:
 
     def assign_subscription_resolver(
         self,
-        fieldpath: str,
+        fieldname: str,
         func: Callable[..., Any],
         allow_override: bool = False,
     ) -> None:
         """
-        Register a subscription resolver against a type in the schema.
+        Register a subscription resolver against a field of the schema's
+        subscription type.
 
         Args:
-            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+            fieldname: Field name.
             func: The resolver function.
             allow_override:
                 By default this function will raise :py:class:`ValueError` if
@@ -475,47 +476,43 @@ class Schema:
             after having used `py_gql.build_schema`.
         """
 
-        try:
-            typename, fieldname = fieldpath.split(".")[:2]
-        except ValueError:
-            raise ValueError(
-                'Invalid field path "%s". Field path must of the form '
-                '"{Typename}.{Fieldname}"' % fieldpath
-            )
+        if self.subscription_type is None:
+            raise ValueError("Schema doesn't have a subscription type.")
 
-        object_type = self.get_type(typename)
+        object_type = self.subscription_type
 
         if not isinstance(object_type, ObjectType):
             raise ValueError(
                 'Expected "%s" to be ObjectTye but got %s.'
-                % (typename, object_type.__class__.__name__)
+                % (object_type.name, object_type.__class__.__name__)
             )
 
         try:
             field = object_type.field_map[fieldname]
         except KeyError:
             raise ValueError(
-                'Unknown field "%s" for type "%s".' % (fieldname, typename)
+                'Unknown field "%s" for type "%s".'
+                % (fieldname, object_type.name)
             )
         else:
             if (not allow_override) and field.subscription_resolver is not None:
                 raise ValueError(
                     'Field "%s" of type "%s" already has a subscription_resolver.'
-                    % (fieldname, typename)
+                    % (fieldname, object_type.name)
                 )
 
             field.subscription_resolver = func or field.subscription_resolver
 
-    def subscription(self, fieldpath):
+    def subscription(self, fieldname):
         """
         Decorator version of :meth:`assign_subscription_resolver`.
 
         Args:
-            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
+            fieldname: Field name.
         """
 
         def decorator(func):
-            self.assign_subscription_resolver(fieldpath, func)
+            self.assign_subscription_resolver(fieldname, func)
             return func
 
         return decorator

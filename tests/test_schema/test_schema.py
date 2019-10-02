@@ -270,3 +270,46 @@ def test_assign_resolver_accepts_override_with_flag():
     assert (
         schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
     )
+
+
+def test_assign_subscription_resolver_works():
+    Query = ObjectType("Query", [Field("id", String)])
+    Subscription = ObjectType("Subscription", [Field("values", Int)])
+    schema = Schema(Query, subscription_type=Subscription)
+
+    schema.assign_subscription_resolver("values", lambda *_: 42)
+
+    assert (
+        schema.subscription_type.field_map[  # type: ignore
+            "values"
+        ].subscription_resolver()
+        == 42
+    )
+
+
+def test_assign_subscription_resolver_raises_on_missing_subscription_type():
+    Query = ObjectType("Query", [Field("id", String)])
+    schema = Schema(Query)
+
+    with pytest.raises(ValueError):
+        schema.assign_subscription_resolver("values", lambda *_: 42)
+
+
+def test_assign_subscription_resolver_raises_on_missing_field():
+    Query = ObjectType("Query", [Field("id", String)])
+    Subscription = ObjectType("Subscription", [Field("values", Int)])
+    schema = Schema(Query, subscription_type=Subscription)
+
+    with pytest.raises(ValueError):
+        schema.assign_subscription_resolver("value", lambda *_: 42)
+
+
+def test_assign_subscription_resolver_raises_on_existing_resolver():
+    Query = ObjectType("Query", [Field("id", String)])
+    Subscription = ObjectType("Subscription", [Field("values", Int)])
+    schema = Schema(Query, subscription_type=Subscription)
+
+    schema.assign_subscription_resolver("values", lambda *_: 42)
+
+    with pytest.raises(ValueError):
+        schema.assign_subscription_resolver("values", lambda *_: 42)
