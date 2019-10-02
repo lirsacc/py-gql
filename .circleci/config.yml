@@ -324,7 +324,7 @@ jobs:
                   name: Generating documentation
                   command: |
                       . "venv${PY}/bin/activate"
-                      inv docs -s
+                      inv docs
             - store_artifacts: { path: docs/_build, destination: docs }
 
 workflows:
