@@ -436,7 +436,11 @@ class Executor:
                 parent_value, self.context_value, info, **coerced_args
             )
             return self.unwrap_value(
-                self.map_value(resolved, complete, else_=(ResolverError, fail))
+                self.map_value(
+                    self.unwrap_value(resolved),
+                    complete,
+                    else_=(ResolverError, fail),
+                )
             )
         except ResolverError as err:
             return fail(err)
