@@ -5,7 +5,7 @@ from typing import List
 
 import pytest
 
-from py_gql.exc import SchemaError
+from py_gql.exc import SchemaError, SchemaValidationError
 from py_gql.schema import (
     Argument,
     EnumType,
@@ -101,7 +101,7 @@ def test_reject_non_object_query_type():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert str(exc_info.value) == 'Query must be ObjectType but got "String"'
+    assert 'Query must be ObjectType but got "String"' in str(exc_info.value)
 
 
 def test_reject_non_object_mutation_type():
@@ -113,7 +113,7 @@ def test_reject_non_object_mutation_type():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert str(exc_info.value) == 'Mutation must be ObjectType but got "String"'
+    assert 'Mutation must be ObjectType but got "String"' in str(exc_info.value)
 
 
 def test_reject_non_object_subscription_type():
@@ -125,9 +125,8 @@ def test_reject_non_object_subscription_type():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Subscription must be ObjectType but got "String"'
+    assert 'Subscription must be ObjectType but got "String"' in str(
+        exc_info.value
     )
 
 
@@ -149,9 +148,8 @@ def test_reject_object_without_fields():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Type "IncompleteObject" must define at least one field'
+    assert 'Type "IncompleteObject" must define at least one field' in str(
+        exc_info.value
     )
 
 
@@ -163,10 +161,7 @@ def test_reject_object_with_incorrectly_named_fields():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value) == 'Invalid name "bad-name-with-dashes", '
-        "must match /^[_a-zA-Z][_a-zA-Z0-9]*$/"
-    )
+    assert 'Invalid name "bad-name-with-dashes"' in str(exc_info.value)
 
 
 def test_reject_incorrectly_named_type():
@@ -177,10 +172,7 @@ def test_reject_incorrectly_named_type():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value) == 'Invalid type name "bad-name-with-dashes", '
-        "must match /^[_a-zA-Z][_a-zA-Z0-9]*$/"
-    )
+    assert 'Invalid type name "bad-name-with-dashes"' in str(exc_info.value)
 
 
 def test_accept_field_args_with_correct_names():
@@ -204,10 +196,7 @@ def test_reject_field_args_with_incorrect_names():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Invalid name "bad-arg", must match /^[_a-zA-Z][_a-zA-Z0-9]*$/'
-    )
+    assert 'Invalid name "bad-arg"' in str(exc_info.value)
 
 
 def test_accept_union_type_with_valid_members():
@@ -225,9 +214,8 @@ def test_reject_union_type_with_no_member():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'UnionType "EmptyUnion" must at least define one member'
+    assert 'UnionType "EmptyUnion" must at least define one member' in str(
+        exc_info.value
     )
 
 
@@ -238,9 +226,8 @@ def test_reject_union_type_with_duplicate_members():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'UnionType "BadUnion" can only include type "TypeA" once'
+    assert 'UnionType "BadUnion" can only include type "TypeA" once' in str(
+        exc_info.value
     )
 
 
@@ -252,8 +239,8 @@ def test_reject_union_type_with_non_object_members():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'UnionType "BadUnion" expects object types but got "SomeScalar"'
+        'UnionType "BadUnion" expects object types but got "SomeScalar"'
+        in str(exc_info.value)
     )
 
 
@@ -278,9 +265,8 @@ def test_reject_input_type_with_no_fields():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Type "EmptyInput" must define at least one field'
+    assert 'Type "EmptyInput" must define at least one field' in str(
+        exc_info.value
     )
 
 
@@ -296,9 +282,8 @@ def test_reject_input_type_with_incorectly_typed_fields():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Expected input type for field "f" on "BadInput" '
-        'but got "SomeObject"'
+        'Expected input type for field "f" on "BadInput" '
+        'but got "SomeObject"' in str(exc_info.value)
     )
 
 
@@ -307,9 +292,8 @@ def test_reject_enum_type_with_no_values():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'EnumType "EmptyEnum" must at least define one value'
+    assert 'EnumType "EmptyEnum" must at least define one value' in str(
+        exc_info.value
     )
 
 
@@ -318,10 +302,7 @@ def test_reject_enum_value_with_incorrect_name():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Invalid name "#value", must match /^[_a-zA-Z][_a-zA-Z0-9]*$/'
-    )
+    assert 'Invalid name "#value"' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("type_", output_types, ids=lambda t: "type = %s" % t)
@@ -339,9 +320,8 @@ def test_reject_non_output_type_as_object_fields(type_):
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Expected output type for field "f" on "Query" but got "%s"' % type_
-    )
+        'Expected output type for field "f" on "Query" but got "%s"' % type_
+    ) in str(exc_info.value)
 
 
 def test_reject_object_implementing_same_interface_twice():
@@ -356,8 +336,8 @@ def test_reject_object_implementing_same_interface_twice():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value) == 'Type "SomeObject" mut only implement interface '
-        '"SomeInterface" once'
+        'Type "SomeObject" mut only implement interface "SomeInterface" once'
+        in str(exc_info.value)
     )
 
 
@@ -378,10 +358,9 @@ def test_reject_interface_fields_with_non_output_type(type_):
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Expected output type for field "f" on "BadInterface" '
+        'Expected output type for field "f" on "BadInterface" '
         'but got "%s"' % type_
-    )
+    ) in str(exc_info.value)
 
 
 def test_reject_interface_with_no_field():
@@ -390,9 +369,8 @@ def test_reject_interface_with_no_field():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value)
-        == 'Type "BadInterface" must define at least one field'
+    assert 'Type "BadInterface" must define at least one field' in str(
+        exc_info.value
     )
 
 
@@ -419,10 +397,9 @@ def test_reject_argument_with_non_input_type(type_):
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Expected input type for argument "badArg" on "BadObject.f" '
+        'Expected input type for argument "badArg" on "BadObject.f" '
         'but got "%s"' % type_
-    )
+    ) in str(exc_info.value)
 
 
 @pytest.mark.parametrize("type_", input_types, ids=lambda t: "type = %s" % t)
@@ -476,10 +453,9 @@ def test_reject_input_object_with_non_input_type(type_):
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Expected input type for field "f" on "BadInput" '
+        'Expected input type for field "f" on "BadInput" '
         'but got "%s"' % type_
-    )
+    ) in str(exc_info.value)
 
 
 def test_reject_input_object_with_no_field():
@@ -490,8 +466,8 @@ def test_reject_input_object_with_no_field():
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
-    assert (
-        str(exc_info.value) == 'Type "BadInput" must define at least one field'
+    assert 'Type "BadInput" must define at least one field' in str(
+        exc_info.value
     )
 
 
@@ -536,9 +512,8 @@ def test_reject_object_missing_interface_field():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Interface field "SomeInterface.f" is not implemented '
-        'by type "SomeObject"'
+        'Interface field "SomeInterface.f" is not implemented '
+        'by type "SomeObject"' in str(exc_info.value)
     )
 
 
@@ -550,9 +525,8 @@ def test_reject_object_with_incorrectly_typed_interface_field():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Interface field "SomeInterface.f" expects type "String" '
-        'but "SomeObject.f" is type "Int"'
+        'Interface field "SomeInterface.f" expects type "String" '
+        'but "SomeObject.f" is type "Int"' in str(exc_info.value)
     )
 
 
@@ -585,8 +559,8 @@ def test_reject_object_fields_with_missing_interface_argument():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value) == 'Interface field argument "IFace.f.arg" is not '
-        'provided by "Obj.f"'
+        'Interface field argument "IFace.f.arg" is not provided by "Obj.f"'
+        in str(exc_info.value)
     )
 
 
@@ -602,8 +576,8 @@ def test_reject_object_fields_with_incorrectly_typed_interface_argument():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value) == 'Interface field argument "IFace.f.arg" expects '
-        'type "String" but "Obj.f.arg" is type "Int"'
+        'Interface field argument "IFace.f.arg" expects '
+        'type "String" but "Obj.f.arg" is type "Int"' in str(exc_info.value)
     )
 
 
@@ -620,10 +594,9 @@ def test_reject_object_which_implements_interface_along_with_required_args():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Object field argument "SomeObject.f.arg" is of required '
+        'Object field argument "SomeObject.f.arg" is of required '
         'type "String!" but is not provided by interface field "IFace.f"'
-    )
+    ) in str(exc_info.value)
 
 
 def test_accept_object_with_list_interface_list_field():
@@ -645,9 +618,8 @@ def test_accept_object_with_non_list_interface_list_field():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Interface field "IFace.f" expects type "[String]" but '
-        '"SomeObject.f" is type "String"'
+        'Interface field "IFace.f" expects type "[String]" but '
+        '"SomeObject.f" is type "String"' in str(exc_info.value)
     )
 
 
@@ -662,9 +634,8 @@ def test_accept_object_with_list_interface_non_list_field():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Interface field "IFace.f" expects type "String" but '
-        '"SomeObject.f" is type "[String]"'
+        'Interface field "IFace.f" expects type "String" but '
+        '"SomeObject.f" is type "[String]"' in str(exc_info.value)
     )
 
 
@@ -687,11 +658,46 @@ def test_reject_object_with_null_interface_non_null_field():
         validate_schema(schema)
 
     assert (
-        str(exc_info.value)
-        == 'Interface field "IFace.f" expects type "String!" but '
-        '"SomeObject.f" is type "String"'
+        'Interface field "IFace.f" expects type "String!" but '
+        '"SomeObject.f" is type "String"' in str(exc_info.value)
     )
 
 
 def test_starwars_schema_is_valid(starwars_schema):
     validate_schema(starwars_schema)
+
+
+def test_github_schema_is_valid(github_schema):
+    validate_schema(github_schema)
+
+
+def test_collects_multiple_errors():
+    iface = InterfaceType("IFace", [Field("f", ListType(String))])
+    object_type = ObjectType(
+        "SomeObject",
+        [
+            Field("f", String),
+            Field("__f", lambda: empty_union),
+            Field("g", lambda: bad_name_union),
+        ],
+        interfaces=[iface],
+    )
+
+    bad_name_union = UnionType("#BadNameUnion", [object_type])
+
+    empty_union = UnionType("EmptyUnion", [])
+
+    schema = _single_type_schema(object_type)
+
+    with pytest.raises(SchemaValidationError) as exc_info:
+        validate_schema(schema)
+
+    assert set([str(e) for e in exc_info.value.errors]) == set(
+        [
+            'Invalid name "__f".',
+            'Interface field "IFace.f" expects type "[String]" but "SomeObject.f" '
+            'is type "String"',
+            'UnionType "EmptyUnion" must at least define one member',
+            'Invalid type name "#BadNameUnion"',
+        ]
+    )

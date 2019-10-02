@@ -5,6 +5,7 @@ import os
 
 import pytest
 
+from py_gql import build_schema
 from py_gql.execution import (
     AsyncIOExecutor,
     BlockingExecutor,
@@ -30,6 +31,11 @@ def starwars_schema():
     from ._star_wars import StarWarsSchema
 
     return StarWarsSchema
+
+
+@pytest.fixture
+def github_schema(fixture_file):
+    return build_schema(fixture_file("github-schema.graphql"))
 
 
 @pytest.fixture

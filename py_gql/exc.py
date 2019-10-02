@@ -198,6 +198,17 @@ class SchemaError(GraphQLError):
     pass
 
 
+class SchemaValidationError(SchemaError):
+    def __init__(self, errors: Sequence[SchemaError]):
+        super().__init__("Invalid schema: %d errors" % len(errors))
+        self.errors = errors
+
+    def __str__(self) -> str:
+        if len(self.errors) == 1:
+            return str(self.errors[0])
+        return ",\n".join([str(err) for err in self.errors])
+
+
 class UnknownType(SchemaError, KeyError):
     pass
 
