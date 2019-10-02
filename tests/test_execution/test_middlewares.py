@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import inspect
 from typing import List
 
 import pytest
@@ -64,7 +65,9 @@ async def test_async_path_collector(starwars_schema):
 
         async def __call__(self, next_, root, ctx, info, **args):
             self.log.append("> %s" % stringify_path(info.path))
-            res = await next_(root, ctx, info, **args)
+            res = next_(root, ctx, info, **args)
+            if inspect.isawaitable(res):
+                res = await res
             self.log.append("< %s" % stringify_path(info.path))
             return res
 

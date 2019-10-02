@@ -119,11 +119,13 @@ def subscribe(
         on_execution_end()
         return response_stream
 
-    return executor.map_value(
-        create_source_event_stream(
-            executor, root_type, operation, initial_value
-        ),
-        _on_stream_created,
+    return executor.ensure_wrapped(
+        executor.map_value(
+            create_source_event_stream(
+                executor, root_type, operation, initial_value
+            ),
+            _on_stream_created,
+        )
     )
 
 
@@ -188,13 +190,15 @@ def execute_subscription_event(
     executor.clear_errors()
 
     return executor.map_value(
-        executor.execute_fields(
-            root_type,
-            event,
-            [],
-            executor.collect_fields(
-                root_type, operation.selection_set.selections
-            ),
+        executor.unwrap_value(
+            executor.execute_fields(
+                root_type,
+                event,
+                [],
+                executor.collect_fields(
+                    root_type, operation.selection_set.selections
+                ),
+            )
         ),
         lambda data: GraphQLResult(data=data, errors=executor.errors),
     )

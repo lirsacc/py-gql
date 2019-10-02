@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# REVIEW: This is likely suboptimal and create too many wrapping Future
-# instances.
-
 import functools
 from concurrent.futures import (
     CancelledError,
@@ -24,6 +21,16 @@ from typing import (
 
 from .executor import Executor
 
+
+def _is_future_fast(value, cache={}, __isinstance=isinstance, __future=Future):
+    t = type(value)
+    try:
+        return cache[t]
+    except KeyError:
+        res = cache[t] = __isinstance(value, __future)
+        return res
+
+
 T = TypeVar("T")
 G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
@@ -34,8 +41,17 @@ Resolver = Callable[..., Any]
 
 class ThreadPoolExecutor(Executor):
     @staticmethod
+    def ensure_wrapped(value):
+        if _is_future_fast(value):
+            return value
+
+        outer = Future()  # type: ignore
+        outer.set_result(value)
+        return outer
+
+    @staticmethod
     def map_value(value, then, else_=None):
-        return chain(unwrap_future(value), then, else_)
+        return chain(value, then, else_)
 
     @staticmethod
     def gather_values(values):
@@ -63,8 +79,9 @@ class ThreadPoolExecutor(Executor):
 
 
 def unwrap_future(maybe_future):
-    outer = Future()  # type: ignore
-    if isinstance(maybe_future, Future):
+    if _is_future_fast(maybe_future):
+
+        outer = Future()  # type: ignore
 
         def cb(f):
             try:
@@ -74,19 +91,18 @@ def unwrap_future(maybe_future):
             except Exception as err:
                 outer.set_exception(err)
             else:
-                if isinstance(r, Future):
+                if _is_future_fast(r):
                     r.add_done_callback(cb)
                 else:
                     outer.set_result(r)
 
         maybe_future.add_done_callback(cb)
-    else:
-        outer.set_result(maybe_future)
+        return outer
 
-    return outer
+    return maybe_future
 
 
-def gather_futures(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
+def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
     """ Concurrently collect multiple Futures. This is based on `asyncio.gather`.
 
     If all futures in the ``source`` sequence complete successfully, the result
@@ -108,8 +124,25 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
     pending = []  # type: List[Future[T]]
     result = []  # type: List[MaybeFuture[T]]
 
+    pending_append = pending.append
+    result_append = result.append
+
     source_values = list(source)
     target_count = len(source_values)
+
+    for maybe_future in source_values:
+        if not _is_future_fast(maybe_future):
+            result_append(maybe_future)
+            done += 1
+        else:
+            pending_append(cast("Future[T]", maybe_future))
+            result_append(maybe_future)
+
+    if target_count == 0:
+        return []
+
+    if not pending:
+        return cast(List[T], result)
 
     # TODO: This is not used internally and is mostly here for completeness
     # but we could drop it.
@@ -129,55 +162,67 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "Future[List[T]]":
             return
 
         if done == target_count:
-            res = [v.result() if isinstance(v, Future) else v for v in result]
-            outer.set_result(res)
+            outer.set_result(
+                cast(
+                    "List[T]",
+                    [
+                        cast("Future[T]", v).result()
+                        if _is_future_fast(v)
+                        else v
+                        for v in result
+                    ],
+                )
+            )
 
     outer = Future()  # type: Future[List[T]]
     outer.add_done_callback(handle_cancel)
 
-    for maybe_future in source_values:
-        if not isinstance(maybe_future, Future):
-            result.append(maybe_future)
-            done += 1
-        else:
-            pending.append(maybe_future)
-            result.append(maybe_future)
-            maybe_future.add_done_callback(on_finish)
-
-    if target_count == 0:
-        outer.set_result([])
-    elif not pending:
-        outer.set_result(cast(List[T], result))
+    for f in pending:
+        f.add_done_callback(on_finish)
 
     return outer
 
 
 def chain(
-    source: "Future[T]",
+    source: "MaybeFuture[T]",
     then: Callable[[T], G],
     else_: Optional[
         Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], G]]
     ] = None,
-) -> "Future[G]":
-    target = Future()  # type: Future[G]
+) -> "MaybeFuture[G]":
 
-    def on_finish(f: "Future[T]") -> None:
+    if not _is_future_fast(source):
         try:
-            res = then(f.result())
-        except CancelledError:
-            target.cancel()
+            res = then(cast(T, source))
         except Exception as err:
             if else_ is not None:
                 exc_type, cb = else_
                 if isinstance(err, exc_type):
-                    target.set_result(cb(err))  # type: ignore
+                    return cb(err)  # type: ignore
+            raise
+        else:
+            return res
+    else:
+
+        target = Future()  # type: Future[G]
+
+        def on_finish(f: "Future[T]") -> None:
+            try:
+                res = then(f.result())
+            except CancelledError:
+                target.cancel()
+            except Exception as err:
+                if else_ is not None:
+                    exc_type, cb = else_
+                    if isinstance(err, exc_type):
+                        target.set_result(cb(err))  # type: ignore
+                    else:
+                        target.set_exception(err)
                 else:
                     target.set_exception(err)
             else:
-                target.set_exception(err)
-        else:
-            target.set_result(res)
+                target.set_result(res)
 
-    source.add_done_callback(on_finish)
+        cast("Future[T]", source).add_done_callback(on_finish)
 
-    return target
+        return target

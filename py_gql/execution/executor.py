@@ -65,10 +65,17 @@ class Executor:
     """
 
     # -------------------------------------------------------------------------
-    # These static methods should likely be re-implemented in order to build
-    # custom executors. See to AsyncIOExecutor and ThreadPoolExecutor for
+    # These methods & properties should likely be re-implemented in order to
+    # build custom executors. See to AsyncIOExecutor and ThreadPoolExecutor for
     # reference.
     # -------------------------------------------------------------------------
+
+    supports_subscriptions = False
+
+    @staticmethod
+    def ensure_wrapped(value: Any) -> Any:
+        return value
+
     @staticmethod
     def gather_values(values: Iterable[Any]) -> Any:
         return values
@@ -94,8 +101,6 @@ class Executor:
 
     def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
         return resolver
-
-    supports_subscriptions = False
 
     @staticmethod
     def map_stream(source_stream: Any, map_value: Callable[[Any], Any]) -> Any:
@@ -423,15 +428,18 @@ class Executor:
 
         try:
             coerced_args = self.argument_values(field_definition, node)
+        except CoercionError as err:
+            return fail(err)
+
+        try:
             resolved = resolver(
                 parent_value, self.context_value, info, **coerced_args
             )
-        except (CoercionError, ResolverError) as err:
-            return fail(err)
-        else:
-            return self.map_value(
-                resolved, complete, else_=(ResolverError, fail)
+            return self.unwrap_value(
+                self.map_value(resolved, complete, else_=(ResolverError, fail))
             )
+        except ResolverError as err:
+            return fail(err)
 
     def _iterate_fields(
         self, parent_type: ObjectType, fields: GroupedFields
@@ -454,10 +462,8 @@ class Executor:
         pending = []
 
         for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            resolved = self.unwrap_value(
-                self.resolve_field(
-                    parent_type, root, field_def, nodes, path + [key]
-                )
+            resolved = self.resolve_field(
+                parent_type, root, field_def, nodes, path + [key]
             )
 
             keys.append(key)
@@ -475,30 +481,28 @@ class Executor:
         path: ResponsePath,
         fields: GroupedFields,
     ) -> Any:
-        args = []
-        done = []  # type: List[Tuple[str, Any]]
+        resolved_fields = OrderedDict()  # type: Dict[str, Any]
 
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            # Needed because closures. Might be a better way to do this without
-            # resorting to inlining deferred_serial.
-            args.append((key, field_def, nodes, path + [key]))
+        args = [
+            (key, field_def, nodes, path + [key])
+            for key, field_def, nodes in self._iterate_fields(
+                parent_type, fields
+            )
+        ]
 
         def _next():
             try:
                 k, f, n, p = args.pop(0)
             except IndexError:
-                return OrderedDict(done)
+                return resolved_fields
             else:
 
                 def cb(value):
-                    done.append((k, value))
+                    resolved_fields[k] = value
                     return _next()
 
                 return self.map_value(
-                    self.unwrap_value(
-                        self.resolve_field(parent_type, root, f, n, p)
-                    ),
-                    cb,
+                    self.resolve_field(parent_type, root, f, n, p), cb
                 )
 
         return _next()
@@ -541,6 +545,7 @@ class Executor:
         info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
+
         if isinstance(field_type, NonNullType):
             return self.complete_non_nullable_value(
                 field_type.type, nodes, path, info, resolved_value

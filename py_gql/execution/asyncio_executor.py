@@ -19,30 +19,84 @@ T = TypeVar("T")
 G = TypeVar("G")
 
 
+def _isawaitable_fast(value, cache={}, __isawaitable=isawaitable):
+    # This is faster than the default isawaitable which is benefitial for the
+    # hot loops required when resolving large objects.
+    t = type(value)
+    try:
+        return cache[t]
+    except KeyError:
+        res = cache[t] = __isawaitable(value)
+        return res
+
+
 class AsyncIOExecutor(Executor):
     """
     Executor implementation to work Python's asyncio.
     """
 
-    @staticmethod
-    async def gather_values(values):
-        pending = []
-        pending_idx = []
-        done = []
-        for index, value in enumerate(values):
-            if isawaitable(value):
-                pending.append(value)
-                pending_idx.append(index)
-            done.append(value)
+    supports_subscriptions = True
 
-        for index, awaited in zip(pending_idx, await asyncio.gather(*pending)):
-            done[index] = awaited
+    @staticmethod
+    def ensure_wrapped(value):
+        if _isawaitable_fast(value):
+            return value
+
+        async def _make_awaitable():
+            return value
+
+        return _make_awaitable()
+
+    @staticmethod
+    def gather_values(values):
+
+        pending = []  # type: ignore
+        pending_idx = []  # type: ignore
+        done = []  # type: ignore
+
+        pending_append = pending.append
+        pending_idx_append = pending_idx.append
+        done_append = done.append
+        has_pending = False
+
+        for index, value in enumerate(values):
+            if _isawaitable_fast(value):
+                has_pending = True
+                pending_append(value)
+                pending_idx_append(index)
+
+            done_append(value)
+
+        if has_pending:
+
+            async def _await_values():
+                for i, awaited in zip(
+                    pending_idx, await asyncio.gather(*pending)
+                ):
+                    done[i] = awaited
+                return done
+
+            return _await_values()
+
         return done
 
     @staticmethod
-    async def map_value(value, then, else_=None):
+    def map_value(value, then, else_=None):
+
+        if _isawaitable_fast(value):
+
+            async def _await_value():
+                try:
+                    return then(await value)
+                except Exception as err:
+                    if else_ and isinstance(err, else_[0]):
+                        return else_[1](err)
+                    raise
+
+            return _await_value()
+
         try:
-            return then(await unwrap_coro(value))
+            return then(value)
         except Exception as err:
             if else_ and isinstance(err, else_[0]):
                 return else_[1](err)
@@ -50,9 +104,18 @@ class AsyncIOExecutor(Executor):
 
     @staticmethod
     def unwrap_value(value):
-        return unwrap_coro(value)
+        if _isawaitable_fast(value):
 
-    supports_subscriptions = True
+            async def _await_value():
+                cur = await value
+                while _isawaitable_fast(cur):
+                    cur = await cur
+
+                return cur
+
+            return _await_value()
+
+        return value
 
     @staticmethod
     def map_stream(
@@ -71,13 +134,6 @@ class AsyncIOExecutor(Executor):
             return resolver
 
         return base
-
-
-async def unwrap_coro(maybe_coro):
-    if isawaitable(maybe_coro):
-        return await unwrap_coro(await maybe_coro)
-
-    return maybe_coro
 
 
 # We cannot use async generators in order to support Python 3.5.

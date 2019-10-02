@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 
+from collections.abc import Mapping
 from typing import Any
 
 from .wrappers import ResolveInfo
 
 
 def default_resolver(
-    root: Any, context: Any, info: ResolveInfo, **args: Any
+    root: Any,
+    context: Any,
+    info: ResolveInfo,
+    __isinstance: Any = isinstance,
+    __getattr: Any = getattr,
+    __callable: Any = callable,
+    __mapping_cls: Any = Mapping,
+    **args: Any,
 ) -> Any:
     """ Default resolver used during query execution.
 
@@ -41,11 +49,11 @@ def default_resolver(
 
     field_value = (
         root.get(field_name, None)
-        if isinstance(root, dict)
-        else getattr(root, field_name, None)
+        if __isinstance(root, __mapping_cls)
+        else __getattr(root, field_name, None)
     )
 
-    if callable(field_value):
+    if __callable(field_value):
         return field_value(context, info, **args)
     else:
         return field_value

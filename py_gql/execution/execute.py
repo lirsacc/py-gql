@@ -129,14 +129,18 @@ def execute(
         on_execution_end()
         return GraphQLResult(data=data, errors=executor.errors)
 
-    return executor.map_value(
-        exe_fn(
-            root_type,
-            initial_value,
-            [],
-            executor.collect_fields(
-                root_type, operation.selection_set.selections
+    return executor.ensure_wrapped(
+        executor.map_value(
+            executor.unwrap_value(
+                exe_fn(
+                    root_type,
+                    initial_value,
+                    [],
+                    executor.collect_fields(
+                        root_type, operation.selection_set.selections
+                    ),
+                )
             ),
-        ),
-        _on_finish,
+            _on_finish,
+        )
     )
