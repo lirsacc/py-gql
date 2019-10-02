@@ -24,7 +24,6 @@ from ..exc import (
     CoercionError,
     GraphQLLocatedError,
     GraphQLResponseError,
-    MultiCoercionError,
     ResolverError,
     ScalarSerializationError,
     UnknownEnumValue,
@@ -177,14 +176,10 @@ class Executor:
         path: Optional[ResponsePath] = None,
         node: Optional[_ast.Node] = None,
     ) -> None:
-        if isinstance(err, MultiCoercionError):
-            for child_err in err.errors:
-                self.add_error(child_err)
-        else:
-            if node:
-                if not err.nodes:
-                    err.nodes = [node]
-            err.path = path if path is not None else err.path
+        if node:
+            if not err.nodes:
+                err.nodes = [node]
+        err.path = path if path is not None else err.path
         self._errors.append(err)
 
     @property
