@@ -36,7 +36,12 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 LazySeq = Lazy[Sequence[T]]
-Resolver = Callable[[Any], Any]
+
+# NOTE: Resolver supports keyword arguments for field arguments but we can't
+# express this without mypy_extensions.
+Resolver = Callable[[Any, Any, "ResolveInfo"], Any]
+
+TypeResolver = Callable[[Any, Any, "ResolveInfo"], "Union[ObjectType, str]"]
 
 _UNSET = object()
 
@@ -971,9 +976,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         fields: LazySeq[Field],
-        resolve_type: Optional[
-            Callable[[Any, Any, "ResolveInfo"], Union["ObjectType", str]]
-        ] = None,
+        resolve_type: Optional[TypeResolver] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[
@@ -1135,9 +1138,7 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         types: LazySeq[ObjectType],
-        resolve_type: Optional[
-            Callable[[Any, Any, "ResolveInfo"], Union[ObjectType, str]]
-        ] = None,
+        resolve_type: Optional[TypeResolver] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]
