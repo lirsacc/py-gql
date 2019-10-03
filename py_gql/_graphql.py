@@ -114,7 +114,7 @@ def process_graphql_query(
     def _abort(*args, **kwargs):
         # Make sure the value is wrapped similarly to the execution result to
         # make it easier for consumers.
-        return executor_cls.unwrap_value(
+        return executor_cls.ensure_wrapped(
             _on_end(GraphQLResult(*args, **kwargs))
         )
 
