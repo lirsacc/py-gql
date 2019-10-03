@@ -5,14 +5,39 @@ import asyncio
 
 import pytest
 
-from py_gql._graphql import graphql, graphql_blocking
+from py_gql._graphql import graphql, graphql_blocking, process_graphql_query
 from py_gql.exc import ResolverError, SchemaError
+from py_gql.execution import ThreadPoolExecutor
 from py_gql.schema import Schema, String
 from py_gql.sdl import build_schema
 
 
-def test_it_correctly_identifies_r2_d2_as_the_hero_sync(starwars_schema):
-    result = graphql_blocking(
+async def _execute_query_blocking(*args, **kwargs):
+    return graphql_blocking(*args, **kwargs)
+
+
+async def _execute_query_async(*args, **kwargs):
+    return await graphql(*args, **kwargs)
+
+
+async def _execute_query_threaded(*args, **kwargs):
+    return process_graphql_query(
+        *args, executor_cls=ThreadPoolExecutor, **kwargs
+    ).result()
+
+
+_with_execution_strategies = pytest.mark.parametrize(
+    "execute_query",
+    [_execute_query_blocking, _execute_query_async, _execute_query_threaded],
+)
+
+
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_it_correctly_identifies_r2_d2_as_the_hero_sync(
+    starwars_schema, execute_query
+):
+    result = await execute_query(
         starwars_schema,
         """
         query HeroNameQuery {
@@ -26,22 +51,11 @@ def test_it_correctly_identifies_r2_d2_as_the_hero_sync(starwars_schema):
 
 
 @pytest.mark.asyncio
-async def test_it_correctly_identifies_r2_d2_as_the_hero_async(starwars_schema):
-    result = await graphql(
-        starwars_schema,
-        """
-        query HeroNameQuery {
-            hero {
-            name
-            }
-        }
-        """,
-    )
-    assert result.response() == {"data": {"hero": {"name": "R2-D2"}}}
-
-
-def test_correct_response_on_syntax_error_1(starwars_schema):
-    assert graphql_blocking(starwars_schema, "").response() == {
+@_with_execution_strategies
+async def test_correct_response_on_syntax_error_1(
+    execute_query, starwars_schema
+):
+    assert (await execute_query(starwars_schema, "")).response() == {
         "errors": [
             {
                 "message": "Unexpected <EOF> (1:1):\n  1:\n    ^\n",
@@ -51,7 +65,11 @@ def test_correct_response_on_syntax_error_1(starwars_schema):
     }
 
 
-def test_correct_response_on_syntax_error_2(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_syntax_error_2(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameQuery {{
         hero {
@@ -60,7 +78,7 @@ def test_correct_response_on_syntax_error_2(starwars_schema):
     }
     """
 
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
                 "message": """Expected Name but found "{" (2:26):
@@ -76,7 +94,11 @@ def test_correct_response_on_syntax_error_2(starwars_schema):
     }
 
 
-def test_correct_response_on_validation_errors(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_validation_errors(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameAndFriendsQuery($hero: Droid) {
         hero {
@@ -93,7 +115,7 @@ def test_correct_response_on_validation_errors(starwars_schema):
         friends { name }
     }
     """
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
                 "locations": [{"column": 35, "line": 2}],
@@ -112,7 +134,11 @@ def test_correct_response_on_validation_errors(starwars_schema):
     }
 
 
-def test_correct_response_on_argument_validation_error(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_argument_validation_error(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameQuery {
         luke: human {
@@ -120,7 +146,7 @@ def test_correct_response_on_argument_validation_error(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
                 "message": (
@@ -133,7 +159,11 @@ def test_correct_response_on_argument_validation_error(starwars_schema):
     }
 
 
-def test_correct_response_on_execution_error(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_execution_error(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameAndFriendsQuery {
         hero {
@@ -150,7 +180,7 @@ def test_correct_response_on_execution_error(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
                 "message": "Operation name is required when document contains "
@@ -161,7 +191,11 @@ def test_correct_response_on_execution_error(starwars_schema):
     }
 
 
-def test_correct_response_on_execution_error_2(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_execution_error_2(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameAndFriendsQuery {
         hero {
@@ -178,15 +212,19 @@ def test_correct_response_on_execution_error_2(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(
-        starwars_schema, query, operation_name="Foo"
+    assert (
+        await execute_query(starwars_schema, query, operation_name="Foo")
     ).response() == {
         "errors": [{"message": 'No operation "Foo" in document'}],
         "data": None,
     }
 
 
-def test_correct_response_on_execution_error_3(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_execution_error_3(
+    execute_query, starwars_schema
+):
     query = """
     mutation  {
         hero {
@@ -197,13 +235,17 @@ def test_correct_response_on_execution_error_3(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [{"message": "Schema doesn't support mutation operation"}],
         "data": None,
     }
 
 
-def test_correct_response_on_variables_error(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_variables_error(
+    execute_query, starwars_schema
+):
     query = """
     query ($episode: Episode!, $human: String!) {
         hero(episode: $episode) {
@@ -214,8 +256,10 @@ def test_correct_response_on_variables_error(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(
-        starwars_schema, query, variables={"episode": 42, "id": 42}
+    assert (
+        await execute_query(
+            starwars_schema, query, variables={"episode": 42, "id": 42}
+        )
     ).response() == {
         "errors": [
             {
@@ -237,7 +281,11 @@ def test_correct_response_on_variables_error(starwars_schema):
     }
 
 
-def test_correct_response_on_resolver_error(starwars_schema):
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_correct_response_on_resolver_error(
+    execute_query, starwars_schema
+):
     query = """
     query HeroNameQuery {
         mainHero: hero {
@@ -246,7 +294,7 @@ def test_correct_response_on_resolver_error(starwars_schema):
         }
     }
     """
-    assert graphql_blocking(starwars_schema, query).response() == {
+    assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
                 "message": "secretBackstory is secret.",
@@ -259,10 +307,12 @@ def test_correct_response_on_resolver_error(starwars_schema):
     }
 
 
-def test_raises_if_invalid_schema_is_provided():
+@pytest.mark.asyncio
+@_with_execution_strategies
+async def test_raises_if_invalid_schema_is_provided(execute_query):
     schema = Schema(String)  # type: ignore
     with pytest.raises(SchemaError) as exc_info:
-        graphql_blocking(schema, "{ field }")
+        await execute_query(schema, "{ field }")
     assert str(exc_info.value) == 'Query must be ObjectType but got "String"'
 
 
