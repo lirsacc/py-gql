@@ -11,10 +11,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.5", "3.6", "3.7", "3.8-rc"]
+        python: ["3.5", "3.6", "3.7", "3.8"]
+        include:
+          - python: "3.5"
+            docker-image: "python:3.5-buster"
+          - python: "3.6"
+            docker-image: "python:3.6-buster"
+          - python: "3.7"
+            docker-image: "python:3.7-buster"
+          - python: "3.8"
+            docker-image: "python:3.8-rc-buster"
 
     container:
-      image: python:${{ matrix.python }}-buster
+      image: ${{ matrix.docker-image }}
 
     steps:
       - uses: actions/checkout@v1
@@ -56,7 +65,7 @@ jobs:
           inv benchmark
 
       - name: Test with Cython
-        if: matrix.python != '3.8-rc'
+        if: matrix.python != '3.8' || matrix.python != 'pypy'
         run: |
           pip install --cache-dir .pip-cache cython
           pip install -v -e .
