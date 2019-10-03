@@ -39,7 +39,7 @@ def clean(ctx, include_cython_files=False):
 
 @invoke.task()
 def benchmark(ctx,):
-    """ Run benchmarks. """
+    """ Run benchmarks """
     ctx.run(
         _join(
             [
@@ -183,7 +183,7 @@ def fmt(ctx, files=None):
 
 @invoke.task(pre=[invoke.call(black, check=True), flake8, mypy, test])
 def check(ctx):
-    """ Run all checks. """
+    """ Run all checks (formatting, lint, typecheck and tests) """
     pass
 
 
