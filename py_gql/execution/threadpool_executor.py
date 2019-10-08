@@ -61,8 +61,6 @@ class ThreadPoolExecutor(Executor):
     def unwrap_value(value):
         return unwrap_future(value)
 
-    __slots__ = Executor.__slots__ + ("_inner",)
-
     def __init__(
         # fmt: off
         self,

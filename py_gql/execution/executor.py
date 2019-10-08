@@ -153,25 +153,6 @@ class Executor:
 
     # -------------------------------------------------------------------------
 
-    __slots__ = (
-        "schema",
-        "document",
-        "variables",
-        "fragments",
-        "operation",
-        "context_value",
-        "_grouped_fields",
-        "_fragment_type_applies",
-        "_field_defs",
-        "_argument_values",
-        "_resolver_cache",
-        "_errors",
-        "_default_resolver",
-        "_middlewares",
-        "_instrumentation",
-        "_disable_introspection",
-    )
-
     def __init__(
         # fmt: off
         self,
