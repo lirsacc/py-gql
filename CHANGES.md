@@ -1,27 +1,26 @@
-# Changelog
+Changelog
+=========
 
-## Unreleased
+Unreleased
+----------
 
 ### Breaking Changes & Deprecations
 
 - `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
-- `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracing`.
+- `Tracer` has been replaced by the more general concept of `Instrumentation` which is now backing `ApolloTracer`.
 - `Directive` is not a subclass of `GraphQLType` anymore.
 - It is no longer possible to override specified directives and types when creating a schema.
-- Dropped `is_abstract_type`, `is_composite_type` and `is_leaf_type`: use the `GraphQLAbstractType`, `GraphQLCompositeType`, and `GraphQLLeafType` directly instead.
-- Dropped `ObjectTye.is_type_of` option for concrete type resolution, use `resolve_type` instead.
+- Dropped `is_abstract_type`, `is_composite_type` and `is_leaf_type`: use instance checks against `GraphQLAbstractType`, `GraphQLCompositeType`, and `GraphQLLeafType` directly instead.
+- Dropped `ObjectType.is_type_of` option for concrete type resolution, use `(UnionType|InterfaceType).resolve_type` instead.
 
-### Updated / Added
+### Added
 
-- (Re) add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
-- Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor`.
-- Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor`.
-- Clarify that specified schema directives do not need to be applied manually.
+- Add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
+- `py_gql.lang.Visitor` now supports modifying the nodes inline; this supports the implementation of some common AST transformers.
+- Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor` to canonicalise queries from a server's perspective.
+- Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor` to support interacting with common convetions in the wider GraphQL ecosystem.
 - Extended the tracer concept into `Instrumentation` which supports overriding runtime values as well as observing execution stages.
-- `resolve_type` now receives the current context value and `ResolveInfo`.
-
-#### Subscription support
-
+- `(UnionType|InterfaceType).resolve_type` now receives the current resolution data value and `ResolveInfo`.
 - Basic subscription support has been added through `py_gql.execution.subscribe`. It's not well documented yet is subject to change. For now refer to the _starlette-ws-subsriptions_ example.
 
 ### Fixed
@@ -29,11 +28,12 @@
 - Fix a bug where selection set indentation was not correct when using `ASTPrinter`.
 - Do not import `typing.Deque` outside of type checking context to ensure compatibility with versions `<= 3.5.3`.
 
-## 0.3.2
+## [0.3.2](https://github.com/lirsacc/py-gql/releases/tag/0.3.2) - 2019-05-01
 
 Docs & dev update.
 
-## 0.3.0
+[0.3.0](https://github.com/lirsacc/py-gql/releases/tag/0.3.0) - 2019-05-01
+--------------------------------------------------------------------------
 
 ### Breaking Changes
 
@@ -55,7 +55,8 @@ Docs & dev update.
 - Fix link in the description of the `UUID` scalar type.
 - Fix bug in `Executor.complete_value` which lead to incorrectly ignoring fragment when applied on types implementing an interface.
 
-## 0.2.0
+[0.2.0](https://github.com/lirsacc/py-gql/releases/tag/0.2.0) - 2019-04-18
+--------------------------------------------------------------------------
 
 This release follow some extensive internal refactor and legwork in order to make `py_gql` easier to improve and extend moving forward.
 
@@ -75,6 +76,7 @@ This release follow some extensive internal refactor and legwork in order to mak
 - Implementing custom `py_gql.execution.Executor` is a bit more involved in order to simplify the implementations of the execution layer.
 - `py_gql.utilities.diff_schema` added to compare schemas for compatibility.
 
-## 0.1.0
+0.1.0
+-----
 
 Initial release.
