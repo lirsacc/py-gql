@@ -59,8 +59,24 @@ E = TypeVar("E", bound=Exception)
 
 
 class Executor:
-    """
-    Default executor class (synchronous).
+    """Core executor class.
+
+    This is the core executor class implementing all of the operations necessary
+    to fulfill a GraphQL query or mutation.
+
+    By default, this executor assumes resolver are blocking and isn't
+    particularly optimised but provides various hooks to implement custom
+    executors that back on different runtime.
+    `py_gql.execution.BlockingExecutor`, `py_gql.execution.AsyncIOExecutor` and
+    `py_gql.execution.ThreadPoolExecutor` are provided by default and optimised
+    for their respective runtimes and can serve as a base for implementing such
+    custom executors.
+
+    This implementation and the available override hooks assumes that most
+    runtime can be supported by handling values wrapped in a _container type_
+    (such as a coroutine or a Future) and orchestrating the various relevant
+    callbacks correctly. As such, most of the semantics will be described in
+    these term and draw parallel to standard asyncio concepts.
     """
 
     # -------------------------------------------------------------------------
@@ -69,14 +85,25 @@ class Executor:
     # reference.
     # -------------------------------------------------------------------------
 
+    #: Sentinel value indicating supports for subscription semantics.
     supports_subscriptions = False
 
     @staticmethod
     def ensure_wrapped(value: Any) -> Any:
+        """Ensure values are wrapped in the necessary container type.
+
+        This is essentially used after execution has finished to make sure the
+        final value conforms to the expected types (e.g. coroutines) and avoid
+        consumers having to typecheck them needlessly.
+        """
         return value
 
     @staticmethod
     def gather_values(values: Iterable[Any]) -> Any:
+        """Group multiple wrapped values inside a single wrapped value.
+
+        This is equivalent to the `asyncio.gather` semantics.
+        """
         return values
 
     @staticmethod
@@ -87,6 +114,11 @@ class Executor:
             Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], Any]]
         ] = None,
     ) -> Any:
+        """Execute a callback on a wrapped value, potentially catching exceptions.
+
+        This is used internally to orchestrate callbacks and should be treated
+        similarly to `await` semantics the `map` in Future combinators.
+        """
         try:
             return then(value)
         except Exception as err:
@@ -96,14 +128,28 @@ class Executor:
 
     @staticmethod
     def unwrap_value(value):
-        return value
+        """Recursively traverse wrapped values.
 
-    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
-        return resolver
+        Given that resolution across the graph can span multiple level, this is
+        used to support resolved values depending on deeper values (such as
+        object fields).
+        """
+        return value
 
     @staticmethod
     def map_stream(source_stream: Any, map_value: Callable[[Any], Any]) -> Any:
         raise NotImplementedError()
+
+    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
+        """Make sure your resolvers are compatible with the runtime.
+
+        For instance, this could be making sure that non coroutine functions are
+        executed inside a thread so blocking I/O doesn't block the event loop.
+
+        This is specific to both the runtime and a caller resolver
+        implementations and should be overriden liberally to suit the use case.
+        """
+        return resolver
 
     # -------------------------------------------------------------------------
 
@@ -184,10 +230,11 @@ class Executor:
 
     @property
     def errors(self) -> List[GraphQLResponseError]:
-        """ All field errors collected during query execution. """
+        """All field errors collected during query execution."""
         return self._errors[:]
 
     def clear_errors(self) -> None:
+        """Clear any collected error from the current executor instance."""
         self._errors[:] = []
 
     def does_fragment_type_apply(
@@ -195,7 +242,7 @@ class Executor:
         object_type: ObjectType,
         fragment: Union[_ast.InlineFragment, _ast.FragmentDefinition],
     ) -> bool:
-        """ Determine if a fragment is applicable to the given type. """
+        """Determine if a fragment is applicable to the given type."""
         type_condition = fragment.type_condition
         if not type_condition:
             return True
