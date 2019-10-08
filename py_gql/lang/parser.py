@@ -3,9 +3,9 @@
 import collections
 import functools as ft
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
-    Deque,
     List,
     Optional,
     Tuple,
@@ -87,6 +87,15 @@ SCHEMA_DEFINITIONS_KEYWORDS = frozenset(
 )
 
 OPERATION_TYPES_KEYWORDS = frozenset(["query", "mutation", "subscription"])
+
+
+if TYPE_CHECKING:
+    # typing.Deque was only included in Python 3.5.4 and given that some pretty
+    # used distros such as debian stretch still default to 3.5.3 it is worth
+    # special-casing this. It will break when running mypy under these
+    # conditions but that's an acceptable tradeoff.
+    from typing import Deque
+
 
 Kind = Type[Token]
 K = TypeVar("K", bound=Kind)

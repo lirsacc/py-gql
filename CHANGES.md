@@ -27,6 +27,7 @@
 ### Fixed
 
 - Fix a bug where selection set indentation was not correct when using `ASTPrinter`.
+- Do not import `typing.Deque` outside of type checking context to ensure compatibility with versions `<= 3.5.3`.
 
 ## 0.3.2
 
