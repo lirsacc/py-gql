@@ -44,7 +44,11 @@ from ..schema import (
     Schema,
     SkipDirective,
     UnionType,
-    introspection as _introspection,
+)
+from ..schema.introspection import (
+    SCHEMA_INTROSPECTION_FIELD,
+    TYPE_INTROSPECTION_FIELD,
+    TYPE_NAME_INTROSPECTION_FIELD,
 )
 from ..utilities import coerce_argument_values, directive_arguments
 from .default_resolver import default_resolver as _default_resolver
@@ -338,11 +342,11 @@ class Executor:
                     return None
 
                 elif name == "__schema" and is_query_type:
-                    cache[key] = _introspection.schema_field
+                    cache[key] = SCHEMA_INTROSPECTION_FIELD
                 elif name == "__type" and is_query_type:
-                    cache[key] = _introspection.type_field
+                    cache[key] = TYPE_INTROSPECTION_FIELD
                 elif name == "__typename":
-                    cache[key] = _introspection.type_name_field
+                    cache[key] = TYPE_NAME_INTROSPECTION_FIELD
                 else:
                     raise RuntimeError(
                         "Invalid state: introspection type in the wrong position."

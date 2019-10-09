@@ -449,14 +449,14 @@ INTROPSPECTION_TYPES = (
     __TypeKind__,
 )
 
-schema_field = Field(
+SCHEMA_INTROSPECTION_FIELD = Field(
     "__schema",
     NonNullType(__Schema__),
     description="Access the current type schema of this server.",
     resolver=lambda p, c, info: info.schema,
 )
 
-type_field = Field(
+TYPE_INTROSPECTION_FIELD = Field(
     "__type",
     __Type__,
     description="Request the type information of a single type.",
@@ -465,7 +465,7 @@ type_field = Field(
 )
 
 
-type_name_field = Field(
+TYPE_NAME_INTROSPECTION_FIELD = Field(
     "__typename",
     NonNullType(String),
     description="The name of the current Object type at runtime.",

@@ -22,7 +22,11 @@ from ..schema import (
     nullable_type,
     unwrap_type,
 )
-from ..schema.introspection import schema_field, type_field, type_name_field
+from ..schema.introspection import (
+    SCHEMA_INTROSPECTION_FIELD,
+    TYPE_INTROSPECTION_FIELD,
+    TYPE_NAME_INTROSPECTION_FIELD,
+)
 
 T = TypeVar("T")
 
@@ -43,16 +47,16 @@ def _or_none(value: T, predicate: Callable[[T], bool] = bool) -> Optional[T]:
 def _get_field_def(schema, parent_type, field):
     name = field.name.value
     if parent_type is schema.query_type:
-        if name == schema_field.name:
-            return schema_field
-        if name == type_field.name:
-            return type_field
+        if name == SCHEMA_INTROSPECTION_FIELD.name:
+            return SCHEMA_INTROSPECTION_FIELD
+        if name == TYPE_INTROSPECTION_FIELD.name:
+            return TYPE_INTROSPECTION_FIELD
 
     if (
         isinstance(parent_type, GraphQLCompositeType)
-        and name == type_name_field.name
+        and name == TYPE_NAME_INTROSPECTION_FIELD.name
     ):
-        return type_name_field
+        return TYPE_NAME_INTROSPECTION_FIELD
 
     if isinstance(parent_type, (ObjectType, InterfaceType)):
         return parent_type.field_map.get(name, None)
