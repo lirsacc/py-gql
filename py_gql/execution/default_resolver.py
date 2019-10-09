@@ -18,34 +18,34 @@ def default_resolver(
     **args: Any
     # fmt: on
 ) -> Any:
-    """ Default resolver used during query execution.
+    """Default resolver used during query execution.
 
     This resolver looks up the value from the ``root`` in the
     following lookup order:
 
-    1. If ``root`` is a dict subcass:
+    - If ``root`` is a dict subcass:
 
-        1. If the field name is present and non callable, return it
-        2. If the field name is present and callable, return the result of
-           calling it like a normal resolver (i.e. with the same arguments
-           that were passed to this function)
+        - If the field name is present and non callable, return it
+        - If the field name is present and callable, return the result of
+            calling it passing in ``(context, info, **args)``.
 
-    2. If ``root`` has an attribute corresponding to the field name:
+    - If ``root`` has an attribute corresponding to the field name:
 
-        1.  If the attribute is non callable, return it
-        2. If the attribute is callable, treat it like a method of
-           ``root`` and call it passing in ``(context, info, **args)``
+        - If the attribute is non callable, return it
+        - If the attribute is callable, treat it like a method and return the
+            result of calling it passing in ``(context, info, **args)``.
 
-    3. Return ``None``
+    - Return ``None``.
 
     Args:
-        root: Value of the resolved parent node
-        context: User provided context value
-        info (py_gql.execution.ResolveInfo): Resolution context
-        **args: Coerced field arguments
+        root: Value of the resolved parent node.
+        context: User provided context value.
+        info (py_gql.execution.ResolveInfo): Resolution context.
+        **args: Coerced field arguments.
 
     Returns:
-        Resolved value
+        Resolved value.
+
     """
     field_name = info.field_definition.name
 
