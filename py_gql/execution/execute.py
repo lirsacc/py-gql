@@ -27,7 +27,7 @@ def execute(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
-    executor_args: Optional[Mapping[str, Any]] = None
+    executor_kwargs: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
     """
@@ -76,10 +76,10 @@ def execute(
             **Must** be a subclass of `py_gql.execution.Executor`.
 
             This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_args` will
+            type of values you'll get out of this function. `executor_kwargs` will
             be passed on class instantiation as keyword arguments.
 
-        executor_args: Extra executor arguments.
+        executor_kwargs: Extra executor arguments.
 
     Returns:
         Execution result.
@@ -108,7 +108,7 @@ def execute(
         instrumentation=instrumentation,
         disable_introspection=disable_introspection,
         middlewares=middlewares,
-        **(executor_args or {}),
+        **(executor_kwargs or {}),
     )
 
     if operation.operation == "query":

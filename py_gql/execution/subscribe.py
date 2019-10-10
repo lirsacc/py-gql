@@ -26,7 +26,7 @@ def subscribe(
     context_value: Optional[Any] = None,
     instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
-    executor_args: Optional[Mapping[str, Any]] = None
+    executor_kwargs: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
     """
@@ -59,10 +59,10 @@ def subscribe(
             **Must** be a subclass of `py_gql.execution.Executor`.
 
             This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_args` will
+            type of values you'll get out of this function. `executor_kwargs` will
             be passed on class instantiation as keyword arguments.
 
-        executor_args: Extra executor arguments.
+        executor_kwargs: Extra executor arguments.
 
     Returns:
         An iterator over subscription results.
@@ -102,7 +102,7 @@ def subscribe(
         # Enforce no middlewares for subscriptions.
         # TODO: This should work somehow but needs more work.
         middlewares=[],
-        **(executor_args or {}),
+        **(executor_kwargs or {}),
     )
 
     _on_event = ft.partial(

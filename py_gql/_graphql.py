@@ -37,7 +37,7 @@ def process_graphql_query(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
-    executor_args: Optional[Mapping[str, Any]] = None
+    executor_kwargs: Optional[Mapping[str, Any]] = None
     # fmt: on
 ) -> Any:
     """
@@ -91,10 +91,10 @@ def process_graphql_query(
             **Must** be a subclass of `py_gql.execution.Executor`.
 
             This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_args` will
+            type of values you'll get out of this function. `executor_kwargs` will
             be passed on class instantiation as keyword arguments.
 
-        executor_args: Extra executor arguments.
+        executor_kwargs: Extra executor arguments.
 
     Returns:
         Execution result.
@@ -163,7 +163,7 @@ def process_graphql_query(
                 middlewares=middlewares,
                 disable_introspection=disable_introspection,
                 executor_cls=executor_cls,
-                executor_args=executor_args,
+                executor_kwargs=executor_kwargs,
             ),
             _on_end,
         )
