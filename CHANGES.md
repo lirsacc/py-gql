@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+[0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
+--------------------------------------------------------------------------
+
 ### Breaking Changes & Deprecations
 
 - `py_gql.builders` has been moved to `py_gql.sdl` and `build_schema_ignoring_extensions` has been removed.
@@ -28,7 +31,8 @@ Unreleased
 - Fix a bug where selection set indentation was not correct when using `ASTPrinter`.
 - Do not import `typing.Deque` outside of type checking context to ensure compatibility with versions `<= 3.5.3`.
 
-## [0.3.2](https://github.com/lirsacc/py-gql/releases/tag/0.3.2) - 2019-05-01
+[0.3.2](https://github.com/lirsacc/py-gql/releases/tag/0.3.2) - 2019-05-01
+--------------------------------------------------------------------------
 
 Docs & dev update.
 
