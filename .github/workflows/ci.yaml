@@ -43,7 +43,7 @@ jobs:
           pip freeze
 
       - name: Check formatting
-        if: matrix.python == '3.7'
+        if: matrix.python != '3.5'
         run: |
           inv black --check
 
@@ -60,7 +60,6 @@ jobs:
           inv test -v --coverage --junit --no-bail
 
       - name: Check benchmarks run
-        if: matrix.python == '3.7'
         run: |
           inv benchmark
 
@@ -72,6 +71,5 @@ jobs:
           inv clean
 
       - name: Build docs
-        if: matrix.python == '3.7'
         run: |
           inv docs
