@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import functools as ft
-from typing import Any, Callable, Mapping, Optional, Type
+from typing import Any, Callable, Mapping, Optional, Type, cast
 
 from ..exc import ExecutionError
 from ..lang import ast as _ast
@@ -109,14 +109,14 @@ def subscribe(
         execute_subscription_event, executor, root_type, operation
     )
 
-    on_execution_end = instrumentation.on_execution()
+    instrumentation.on_execution_start()
 
     # MapSourceToResponseEvent
     # Needs to be mapped to support async subscription resolvers.
     def _on_stream_created(source_stream):
         response_stream = executor.map_stream(source_stream, _on_event)
 
-        on_execution_end()
+        cast(Instrumentation, instrumentation).on_execution_end()
         return response_stream
 
     return executor.ensure_wrapped(

@@ -65,7 +65,7 @@ class BlockingExecutor(Executor):
             nodes,
         )
 
-        on_field_end = self._instrumentation.on_field(
+        self._instrumentation.on_field_start(
             parent_value, self.context_value, info
         )
 
@@ -78,7 +78,9 @@ class BlockingExecutor(Executor):
             self.add_error(err, path, node)
             return None
         finally:
-            on_field_end()
+            self._instrumentation.on_field_end(
+                parent_value, self.context_value, info
+            )
 
         return self.complete_value(
             field_definition.type, nodes, path, info, resolved

@@ -109,7 +109,7 @@ def process_graphql_query(
 
     instrumentation = instrumentation or Instrumentation()
 
-    on_query_end = instrumentation.on_query()
+    instrumentation.on_query_start()
 
     def _abort(*args, **kwargs):
         # Make sure the value is wrapped similarly to the execution result to
@@ -119,32 +119,28 @@ def process_graphql_query(
         )
 
     def _on_end(result: GraphQLResult) -> GraphQLResult:
-        on_query_end()
-        return cast(Instrumentation, instrumentation).instrument_result(result)
+        cast(Instrumentation, instrumentation).on_query_end()
+        return cast(Instrumentation, instrumentation).transform_result(result)
 
     if isinstance(document, str):
-        on_parse_end = instrumentation.on_parse()
+        instrumentation.on_parsing_start()
         try:
             ast = parse(document)
         except GraphQLSyntaxError as err:
             return _abort(errors=[err])
         finally:
-            on_parse_end()
+            instrumentation.on_parsing_end()
     else:
         ast = document
 
     try:
-        ast = instrumentation.instrument_ast(ast)
+        ast = instrumentation.transform_ast(ast)
     except GraphQLResponseError as err:
         return _abort(errors=[err])
 
-    on_validate_end = instrumentation.on_validate()
+    instrumentation.on_validation_start()
     validation_result = validate_ast(schema, ast, validators=validators)
-    on_validate_end()
-
-    validation_result = instrumentation.instrument_validation_result(
-        validation_result
-    )
+    instrumentation.on_validation_end()
 
     if not validation_result:
         return _abort(errors=validation_result.errors)

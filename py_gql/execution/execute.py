@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Mapping, Optional, Sequence, Type
+from typing import Any, Callable, Mapping, Optional, Sequence, Type, cast
 
 from ..lang import ast as _ast
 from ..schema import Schema
@@ -123,10 +123,10 @@ def execute(
     else:
         raise AssertionError("Unknown operation type %s." % operation.operation)
 
-    on_execution_end = instrumentation.on_execution()
+    instrumentation.on_execution_start()
 
     def _on_finish(data):
-        on_execution_end()
+        cast(Instrumentation, instrumentation).on_execution_end()
         return GraphQLResult(data=data, errors=executor.errors)
 
     return executor.ensure_wrapped(

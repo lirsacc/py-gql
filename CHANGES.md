@@ -4,6 +4,13 @@ Changelog
 Unreleased
 ----------
 
+### Breaking Changes & Deprecations
+
+- `Instrumentation` has been slightly refactored to be easier to use and use more consistent names:
+    - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
+    - `instrument_validation_result` has been removed as it was confusing to use.
+    - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
+
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------
 

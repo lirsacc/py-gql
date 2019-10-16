@@ -36,7 +36,7 @@ async def test_instrumentation_does_not_raise(executor_cls, starwars_schema):
 
 async def test_instrument_ast(executor_cls, starwars_schema):
     class TestInstrumentation(Instrumentation):
-        def instrument_ast(self, _ast):
+        def transform_ast(self, _ast):
             return parse("query { hero { name } }")
 
     result = await process_request(
@@ -51,7 +51,7 @@ async def test_instrument_ast(executor_cls, starwars_schema):
 
 async def test_instrument_result(executor_cls, starwars_schema):
     class TestInstrumentation(Instrumentation):
-        def instrument_result(self, result):
+        def transform_result(self, result):
             result.data["hero"]["name"] = "Darth Vader"
             return result
 
@@ -76,7 +76,7 @@ async def test_instrument_result(executor_cls, starwars_schema):
     }
 
 
-async def test_multi_instrumentation_stack_ordering(
+async def test_multi_instrumentation_stack_ordering(  # noqa: C901
     executor_cls, starwars_schema
 ):
     class TrackingInstrumentation(Instrumentation):
@@ -84,39 +84,42 @@ async def test_multi_instrumentation_stack_ordering(
             self.prefix = prefix
             self.stack = stack
 
-        def track(self, key):
-            self.stack.append((">", self.prefix, key))
+        def on_query_start(self):
+            self.stack.append((">", self.prefix, "query"))
 
-            def cb():
-                self.stack.append(("<", self.prefix, key))
+        def on_parsing_start(self):
+            self.stack.append((">", self.prefix, "parse"))
 
-            return cb
+        def on_validation_start(self):
+            self.stack.append((">", self.prefix, "validate"))
 
-        def on_query(self):
-            return self.track("query")
+        def on_execution_start(self):
+            self.stack.append((">", self.prefix, "execution"))
 
-        def on_parse(self):
-            return self.track("parse")
+        def on_field_start(self, _root, _context, info):
+            self.stack.append((">", self.prefix, ("field", tuple(info.path))))
 
-        def on_validate(self):
-            return self.track("validate")
+        def on_query_end(self):
+            self.stack.append(("<", self.prefix, "query"))
 
-        def on_execution(self):
-            return self.track("execution")
+        def on_parsing_end(self):
+            self.stack.append(("<", self.prefix, "parse"))
 
-        def on_field(self, _root, _context, info):
-            return self.track(("field", tuple(info.path)))
+        def on_validation_end(self):
+            self.stack.append(("<", self.prefix, "validate"))
 
-        def instrument_ast(self, ast):
-            self.track("instrument_ast")
+        def on_execution_end(self):
+            self.stack.append(("<", self.prefix, "execution"))
+
+        def on_field_end(self, _root, _context, info):
+            self.stack.append(("<", self.prefix, ("field", tuple(info.path))))
+
+        def transform_ast(self, ast):
+            self.stack.append((">", self.prefix, "instrument_ast"))
             return ast
 
-        def instrument_validation_result(self, result):
-            self.track("instrument_validation_result")
-            return result
-
-        def instrument_result(self, result):
-            self.track("instrument_result")
+        def transform_result(self, result):
+            self.stack.append((">", self.prefix, "instrument_result"))
             return result
 
     stack = []  # type: ignore
@@ -153,8 +156,6 @@ async def test_multi_instrumentation_stack_ordering(
             (">", "b", "validate"),
             ("<", "b", "validate"),
             ("<", "a", "validate"),
-            (">", "a", "instrument_validation_result"),
-            (">", "b", "instrument_validation_result"),
             (">", "a", "execution"),
             (">", "b", "execution"),
             ("<", "b", "execution"),

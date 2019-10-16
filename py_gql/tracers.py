@@ -48,41 +48,35 @@ class TimingTracer(Instrumentation):
         self.validation_end = None
         self.validation_start = None
 
-    def on_query(self):
+    def on_query_start(self):
         self.start = datetime.datetime.utcnow()
-        return self.on_query_end
 
     def on_query_end(self):
         self.end = datetime.datetime.utcnow()
 
-    def on_execution(self):
+    def on_execution_start(self):
         self.query_start = datetime.datetime.utcnow()
-        return self.on_execution_end
 
     def on_execution_end(self):
         self.query_end = datetime.datetime.utcnow()
 
-    def on_parse(self):
+    def on_parsing_start(self):
         self.parse_start = datetime.datetime.utcnow()
-        return self.on_parse_end
 
-    def on_parse_end(self):
+    def on_parsing_end(self):
         self.parse_end = datetime.datetime.utcnow()
 
-    def on_validate(self):
+    def on_validation_start(self):
         self.validation_start = datetime.datetime.utcnow()
-        return self.on_validate_end
 
-    def on_validate_end(self):
+    def on_validation_end(self):
         self.validation_end = datetime.datetime.utcnow()
 
-    def on_field(self, _root, _ctx, info):
+    def on_field_start(self, _root, _ctx, info):
         self.fields[tuple(info.path)] = FieldTiming(info)
 
-        def on_field_end():
-            self.fields[tuple(info.path)].end = datetime.datetime.utcnow()
-
-        return on_field_end
+    def on_field_end(self, _root, _ctx, info):
+        self.fields[tuple(info.path)].end = datetime.datetime.utcnow()
 
 
 class ApolloTracer(TimingTracer, GraphQLExtension):
