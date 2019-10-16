@@ -19,6 +19,12 @@ references:
               environment:
                   PY: 37
 
+    docker-python38: &docker-python38
+        docker:
+            - image: circleci/python:3.8
+              environment:
+                  PY: 38
+
     workspace: &workspace
         attach_workspace:
             at: .
@@ -30,19 +36,21 @@ references:
         keys:
             - py35-deps-{{ arch }}-{{ checksum ".py-cache" }}
             - py35-deps-{{ arch }}
-            - py35-deps-
 
     read-cache-python-36: &read-cache-python-36
         keys:
             - py36-deps-{{ arch }}-{{ checksum ".py-cache" }}
             - py36-deps-{{ arch }}
-            - py36-deps-
 
     read-cache-python-37: &read-cache-python-37
         keys:
             - py37-deps-{{ arch }}-{{ checksum ".py-cache" }}
             - py37-deps-{{ arch }}
-            - py37-deps-
+
+    read-cache-python-38: &read-cache-python-38
+        keys:
+            - py38-deps-{{ arch }}-{{ checksum ".py-cache" }}
+            - py38-deps-{{ arch }}
 
     write-cache-python-35: &write-cache-python-35
         key: py35-deps-{{ arch }}-{{ checksum ".py-cache" }}
@@ -52,6 +60,9 @@ references:
 
     write-cache-python-37: &write-cache-python-37
         key: py37-deps-{{ arch }}-{{ checksum ".py-cache" }}
+
+    write-cache-python-38: &write-cache-python-38
+        key: py38-deps-{{ arch }}-{{ checksum ".py-cache" }}
 
     deps: &deps
         run:
@@ -142,7 +153,7 @@ jobs:
             - run:
                   name: Creating cachekey(s)
                   command: |
-                      echo 2 >.py-cache
+                      echo 3 >.py-cache
                       cat dev-requirements*.txt >> .py-cache
                       cat test-requirements*.txt >> .py-cache
                       cat requirements*.txt >> .py-cache
@@ -193,6 +204,20 @@ jobs:
                   paths: venv37
                   root: .
 
+    deps-38:
+        <<: *docker-python38
+        <<: *workdir
+        steps:
+            - *workspace
+            - restore_cache: *read-cache-python-38
+            - *deps
+            - save_cache:
+                  <<: *write-cache-python-37
+                  paths: ~/.cache/pip
+            - persist_to_workspace:
+                  paths: venv38
+                  root: .
+
     check-35:
         <<: *docker-python35
         <<: *workdir
@@ -214,9 +239,11 @@ jobs:
         steps:
             - *workspace
             - restore_cache: *read-cache-python-36
+            - *check-formatting
             - *flake8
             - *mypy
             - *test
+            - *run-benchmarks
             - *collect-tests
             - *store-tests
             - persist_to_workspace:
@@ -238,6 +265,23 @@ jobs:
             - *store-tests
             - persist_to_workspace:
                   paths: test-results/python37
+                  root: .
+
+    check-38:
+        <<: *docker-python38
+        <<: *workdir
+        steps:
+            - *workspace
+            - restore_cache: *read-cache-python-38
+            - *check-formatting
+            - *flake8
+            - *mypy
+            - *test
+            - *run-benchmarks
+            - *collect-tests
+            - *store-tests
+            - persist_to_workspace:
+                  paths: test-results/python38
                   root: .
 
     test-35-cython:
@@ -264,12 +308,20 @@ jobs:
             - restore_cache: *read-cache-python-37
             - *run-tests-cython
 
-    collect-tests:
-        <<: *docker-python37
+    test-38-cython:
+        <<: *docker-python38
         <<: *workdir
         steps:
             - *workspace
-            - restore_cache: *read-cache-python-37
+            - restore_cache: *read-cache-python-38
+            - *run-tests-cython
+
+    collect-tests:
+        <<: *docker-python38
+        <<: *workdir
+        steps:
+            - *workspace
+            - restore_cache: *read-cache-python-38
             - run:
                   name: Collect test results across Python versions
                   command: |
@@ -308,18 +360,15 @@ jobs:
                       cd ${results}/
                       pip install -U coveralls
                       coveralls
-            - save_cache:
-                  <<: *write-cache-python-37
-                  paths: ~/.cache/pip
             - *store-tests
             - store_artifacts: { path: test-results, destination: . }
 
     docs:
-        <<: *docker-python37
+        <<: *docker-python38
         <<: *workdir
         steps:
             - *workspace
-            - restore_cache: *read-cache-python-36
+            - restore_cache: *read-cache-python-38
             - run:
                   name: Generating documentation
                   command: |
@@ -334,43 +383,22 @@ workflows:
         jobs:
             - checkout
 
-            - deps-35:
-                  requires:
-                      - checkout
-            - check-35:
-                  requires:
-                      - deps-35
+            - deps-35: { requires: [checkout] }
+            - check-35: { requires: [deps-35] }
+            - test-35-cython: { requires: [check-35] }
 
-            - deps-36:
-                  requires:
-                      - checkout
-            - check-36:
-                  requires:
-                      - deps-36
+            - deps-36: { requires: [checkout] }
+            - check-36: { requires: [deps-36] }
+            - test-36-cython: { requires: [check-36] }
 
-            - deps-37:
-                  requires:
-                      - checkout
-            - check-37:
-                  requires:
-                      - deps-37
+            - deps-37: { requires: [checkout] }
+            - check-37: { requires: [deps-37] }
+            - test-37-cython: { requires: [check-37] }
 
-            - test-35-cython:
-                  requires:
-                      - check-35
-            - test-36-cython:
-                  requires:
-                      - check-36
-            - test-37-cython:
-                  requires:
-                      - check-37
+            - deps-38: { requires: [checkout] }
+            - check-38: { requires: [deps-38] }
+            - test-38-cython: { requires: [check-38] }
 
-            - collect-tests:
-                  requires:
-                      - check-35
-                      - check-36
-                      - check-37
+            - collect-tests: { requires: [check-35, check-36, check-37] }
 
-            - docs:
-                  requires:
-                      - collect-tests
+            - docs: { requires: [collect-tests] }
