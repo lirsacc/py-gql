@@ -20,7 +20,7 @@ jobs:
           - python: "3.7"
             docker-image: "python:3.7-buster"
           - python: "3.8"
-            docker-image: "python:3.8-rc-buster"
+            docker-image: "python:3.8-buster"
 
     container:
       image: ${{ matrix.docker-image }}
@@ -65,7 +65,6 @@ jobs:
           inv benchmark
 
       - name: Test with Cython
-        if: matrix.python != '3.8' || matrix.python != 'pypy'
         run: |
           pip install --cache-dir .pip-cache cython
           pip install -v -e .
