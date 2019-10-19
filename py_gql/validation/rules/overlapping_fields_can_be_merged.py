@@ -1,12 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple, TypeVar
+from typing import (
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
 from ..._utils import OrderedDict, deduplicate, flatten
 from ...exc import UnknownType
 from ...lang import ast as _ast
 from ...schema import (
     Field,
+    GraphQLCompositeType,
     GraphQLLeafType,
     GraphQLType,
     InterfaceType,
@@ -116,7 +127,9 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
 
     def enter_selection_set(self, node):
         conflicts = find_conflicts_within_selection_set(
-            self.ctx, node, self.type_info.parent_type
+            self.ctx,
+            node,
+            cast(GraphQLCompositeType, self.type_info.parent_type),
         )  # type: List[Conflict]
 
         for response_name, reason, locs in conflicts:

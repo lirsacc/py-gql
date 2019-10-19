@@ -16,6 +16,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from .._string_utils import stringify_path
@@ -638,7 +639,7 @@ class Executor:
                         % (runtime_type, stringify_path(path), field_type)
                     )
             else:
-                runtime_type = field_type
+                runtime_type = cast(ObjectType, field_type)
 
             return self.execute_fields(
                 runtime_type,

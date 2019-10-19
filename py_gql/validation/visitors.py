@@ -1,18 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from typing import List, Mapping, Optional, Sequence, TypeVar
+from typing import List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 from .._utils import DefaultOrderedDict, OrderedDict, deduplicate
 from ..exc import ValidationError
 from ..lang import ast as _ast
 from ..lang.visitor import DispatchingVisitor
-from ..schema import Schema
+from ..schema import EnumType, InputObjectType, ScalarType, Schema
 from ..utilities import TypeInfoVisitor
 
 T = TypeVar("T")
 N = TypeVar("N", bound=_ast.Node)
 MMap = Mapping[str, Mapping[str, T]]
 LMap = Mapping[str, List[T]]
+
+
+VariableUsages = MMap[
+    Tuple[
+        _ast.Variable,
+        Optional[Union[EnumType, ScalarType, InputObjectType]],
+        Optional[Union[_ast.Argument, _ast.Field]],
+    ]
+]
 
 
 class ValidationVisitor(DispatchingVisitor):
@@ -70,20 +79,16 @@ class VariablesCollector(ValidationVisitor):
         self._op = None
         self._op_variables = DefaultOrderedDict(
             OrderedDict
-        )  # type: MMap[_ast.Variable]
+        )  # type: VariableUsages
         self._op_defined_variables = DefaultOrderedDict(
             OrderedDict
         )  # type: MMap[_ast.VariableDefinition]
-        self._op_fragments = DefaultOrderedDict(
-            list
-        )  # type: LMap[_ast.FragmentSpread]
+        self._op_fragments = DefaultOrderedDict(list)  # type: LMap[str]
         self._fragment = None
         self._fragment_variables = DefaultOrderedDict(
             OrderedDict
-        )  # type: MMap[_ast.Variable]
-        self._fragment_fragments = DefaultOrderedDict(
-            list
-        )  # type: LMap[_ast.FragmentSpread]
+        )  # type: VariableUsages
+        self._fragment_fragments = DefaultOrderedDict(list)  # type: LMap[str]
         self._in_var_def = False
 
     def enter_operation_definition(self, node):
@@ -107,9 +112,9 @@ class VariablesCollector(ValidationVisitor):
 
     def enter_variable_definition(self, node):
         self._in_var_def = True
-        name = node.variable.name.value
         if self._op is not None:
-            self._op_defined_variables[self._op][name] = node
+            name = node.variable.name.value
+            self._op_defined_variables[self._op][name] = node  # type: ignore
 
     def leave_variable_definition(self, _node):
         self._in_var_def = False
@@ -121,13 +126,13 @@ class VariablesCollector(ValidationVisitor):
         if self._in_var_def:
             pass
         elif self._op is not None:
-            self._op_variables[self._op][var] = (
+            self._op_variables[self._op][var] = (  # type: ignore
                 node,
                 input_type,
                 input_value_def,
             )
         elif self._fragment is not None:
-            self._fragment_variables[self._fragment][var] = (
+            self._fragment_variables[self._fragment][var] = (  # type: ignore
                 node,
                 input_type,
                 input_value_def,

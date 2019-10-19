@@ -4,7 +4,7 @@ Collection of useful tracers implementations.
 """
 
 import datetime
-from typing import Any, Dict, Tuple, Union, cast
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
 from ._utils import OrderedDict
 from .execution import GraphQLExtension, Instrumentation, ResolveInfo
@@ -12,12 +12,18 @@ from .execution import GraphQLExtension, Instrumentation, ResolveInfo
 __all__ = ("TimingTracer", "ApolloTracer")
 
 
-def _ns(start: datetime.datetime, end: datetime.datetime) -> int:
-    return int((end - start).total_seconds() * 1e9)
+def _ns(
+    start: Optional[datetime.datetime], end: Optional[datetime.datetime]
+) -> Optional[int]:
+    return (
+        int((end - start).total_seconds() * 1e9)
+        if (end is not None and start is not None)
+        else None
+    )
 
 
-def _rfc3339(ts: datetime.datetime) -> str:
-    return ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+def _rfc3339(ts: Optional[datetime.datetime]) -> Optional[str]:
+    return ts.strftime("%Y-%m-%dT%H:%M:%S.%fZ") if ts is not None else None
 
 
 class FieldTiming:
@@ -26,7 +32,7 @@ class FieldTiming:
     def __init__(self, info: ResolveInfo):
         self.info = info
         self.start = datetime.datetime.utcnow()
-        self.end = None
+        self.end = None  #  type: Optional[datetime.datetime]
 
 
 class TimingTracer(Instrumentation):
@@ -39,14 +45,14 @@ class TimingTracer(Instrumentation):
         self.fields = (
             OrderedDict()
         )  # type: Dict[Tuple[Union[str, int]], FieldTiming]
-        self.start = None
-        self.end = None
-        self.parse_end = None
-        self.parse_start = None
-        self.query_end = None
-        self.query_start = None
-        self.validation_end = None
-        self.validation_start = None
+        self.start = None  # type: Optional[datetime.datetime]
+        self.end = None  # type: Optional[datetime.datetime]
+        self.parse_end = None  # type: Optional[datetime.datetime]
+        self.parse_start = None  # type: Optional[datetime.datetime]
+        self.query_end = None  # type: Optional[datetime.datetime]
+        self.query_start = None  # type: Optional[datetime.datetime]
+        self.validation_end = None  # type: Optional[datetime.datetime]
+        self.validation_start = None  # type: Optional[datetime.datetime]
 
     def on_query_start(self):
         self.start = datetime.datetime.utcnow()
@@ -72,11 +78,13 @@ class TimingTracer(Instrumentation):
     def on_validation_end(self):
         self.validation_end = datetime.datetime.utcnow()
 
-    def on_field_start(self, _root, _ctx, info):
-        self.fields[tuple(info.path)] = FieldTiming(info)
+    def on_field_start(self, _root: Any, _ctx: Any, info: ResolveInfo) -> None:
+        self.fields[tuple(info.path)] = FieldTiming(info)  # type: ignore
 
-    def on_field_end(self, _root, _ctx, info):
-        self.fields[tuple(info.path)].end = datetime.datetime.utcnow()
+    def on_field_end(self, _root: Any, _ctx: Any, info: ResolveInfo) -> None:
+        self.fields[
+            tuple(info.path)  # type: ignore
+        ].end = datetime.datetime.utcnow()  # type: ignore
 
 
 class ApolloTracer(TimingTracer, GraphQLExtension):

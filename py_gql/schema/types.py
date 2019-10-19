@@ -65,31 +65,6 @@ class GraphQLType:
         return id(self)
 
 
-class GraphQLAbstractType:
-    """
-    These types may describe the parent context of a selection set and indicate
-    that the value will be of a concrete ObjectType.
-    """
-
-    pass
-
-
-class GraphQLCompositeType:
-    """
-    These types may describe the parent context of a selection set.
-    """
-
-    pass
-
-
-class GraphQLLeafType:
-    """
-    These types may describe types which may be leaf values.
-    """
-
-    pass
-
-
 class NamedType(GraphQLType):
     """
     Named type base class.
@@ -109,6 +84,31 @@ class NamedType(GraphQLType):
 
     def __repr__(self) -> str:
         return "%s(%s at %d)" % (self.__class__.__name__, self.name, id(self))
+
+
+class GraphQLAbstractType(NamedType):
+    """
+    These types may describe the parent context of a selection set and indicate
+    that the value will be of a concrete ObjectType.
+    """
+
+    pass
+
+
+class GraphQLCompositeType(NamedType):
+    """
+    These types may describe the parent context of a selection set.
+    """
+
+    pass
+
+
+class GraphQLLeafType(NamedType):
+    """
+    These types may describe types which may be leaf values.
+    """
+
+    pass
 
 
 class NonNullType(GraphQLType):

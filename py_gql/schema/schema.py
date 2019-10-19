@@ -2,7 +2,7 @@
 """ Schema definition. """
 
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
@@ -338,16 +338,16 @@ class Schema:
         if isinstance(rhs, GraphQLAbstractType) and isinstance(
             lhs, GraphQLAbstractType
         ):
-            rhs_types = self.get_possible_types(cast(GraphQLAbstractType, rhs))
-            lhs_types = self.get_possible_types(cast(GraphQLAbstractType, lhs))
+            rhs_types = self.get_possible_types(rhs)
+            lhs_types = self.get_possible_types(lhs)
             return any((t in lhs_types for t in rhs_types))
 
         return (
             isinstance(rhs, GraphQLAbstractType)
-            and self.is_possible_type(cast(GraphQLAbstractType, rhs), lhs)
+            and self.is_possible_type(rhs, lhs)
         ) or (
             isinstance(lhs, GraphQLAbstractType)
-            and self.is_possible_type(cast(GraphQLAbstractType, lhs), rhs)
+            and self.is_possible_type(lhs, rhs)
         )
 
     def to_string(

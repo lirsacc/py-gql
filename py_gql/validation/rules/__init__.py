@@ -10,7 +10,7 @@ These rules are **all** used by default when calling
 """
 
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, cast
 
 from ..._string_utils import infer_suggestions, quoted_options_list
 from ..._utils import OrderedDict, deduplicate
@@ -193,7 +193,7 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
             if not isinstance(type_, GraphQLCompositeType):
                 self.add_error(
                     'Fragment cannot condition on non composite type "%s".'
-                    % type_.name,
+                    % type_,
                     [node.type_condition],
                 )
                 raise SkipNode()
@@ -203,7 +203,7 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
         if not isinstance(type_, GraphQLCompositeType):
             self.add_error(
                 'Fragment "%s" cannot condition on non composite type "%s".'
-                % (node.name.value, type_.name),
+                % (node.name.value, type_),
                 [node.type_condition],
             )
             raise SkipNode()
@@ -216,15 +216,19 @@ class VariablesAreInputTypesChecker(ValidationVisitor):
     """
 
     def enter_variable_definition(self, node):
-        try:
-            type_ = self.schema.get_type_from_literal(node.type)
-        except UnknownType:
-            type_ = None
-        if not is_input_type(type_):
+        def _err():
             self.add_error(
                 'Variable "$%s" must be input type' % node.variable.name.value,
                 [node],
             )
+
+        try:
+            type_ = self.schema.get_type_from_literal(node.type)
+        except UnknownType:
+            _err()
+        else:
+            if not is_input_type(type_):
+                _err()
 
 
 class ScalarLeafsChecker(ValidationVisitor):
@@ -237,7 +241,10 @@ class ScalarLeafsChecker(ValidationVisitor):
         type_ = self.type_info.type
 
         if (
-            isinstance(unwrap_type(type_), GraphQLLeafType)
+            isinstance(
+                unwrap_type(type_) if type_ is not None else None,
+                GraphQLLeafType,
+            )
             and node.selection_set
         ):
             self.add_error(
@@ -247,7 +254,10 @@ class ScalarLeafsChecker(ValidationVisitor):
             )
 
         if (
-            isinstance(unwrap_type(type_), GraphQLCompositeType)
+            isinstance(
+                unwrap_type(type_) if type_ is not None else None,
+                GraphQLCompositeType,
+            )
             and not node.selection_set
         ):
             self.add_error(
@@ -520,7 +530,7 @@ class UniqueVariableNamesChecker(ValidationVisitor):
         self._variables = set()  # type: Set[str]
 
     def leave_operation_definition(self, _node):
-        self._variables = None
+        self._variables.clear()
 
     def enter_variable_definition(self, node):
         name = node.variable.name.value
@@ -541,8 +551,8 @@ class NoUndefinedVariablesChecker(VariablesCollector):
         for op, fragments in self._op_fragments.items():
             defined = self._op_defined_variables[op]
             for fragment in deduplicate(fragments):
-                fragment_variables = self._fragment_variables[fragment].items()
-                for var, (node, _, _) in fragment_variables:
+                fragment_vars = self._fragment_variables[fragment]
+                for var, (node, _, _) in fragment_vars.items():
                     if var not in defined:
                         self.add_error(
                             'Variable "$%s" from fragment "%s" is not defined '
@@ -664,7 +674,7 @@ class KnownDirectivesChecker(ValidationVisitor):
                 "query": "QUERY",
                 "mutation": "MUTATION",
                 "subscription": "SUBSCRIPTION",
-            }.get(ancestor.operation, "QUERY")
+            }.get(cast(_ast.OperationDefinition, ancestor).operation, "QUERY")
 
         if kind is _ast.InputValueDefinition:
             parent = self._ancestors[-2]

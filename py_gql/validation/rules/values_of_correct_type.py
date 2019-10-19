@@ -9,6 +9,7 @@ from ...lang.visitor import SkipNode
 from ...schema import (
     EnumType,
     InputObjectType,
+    NamedType,
     NonNullType,
     ScalarType,
     unwrap_type,
@@ -28,7 +29,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
 
     def _report_bad_value(
         self,
-        input_type: InputObjectType,
+        input_type: NamedType,
         node: _ast.Node,
         extra: Optional[str] = None,
     ) -> None:
@@ -77,7 +78,11 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
             self._report_bad_value(input_type, node)
 
     def enter_enum_value(self, node):
-        input_type = unwrap_type(self.type_info.input_type)
+        input_type = (
+            unwrap_type(self.type_info.input_type)
+            if self.type_info.input_type is not None
+            else None
+        )
         if not input_type:
             return
 
@@ -90,7 +95,11 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 self._report_bad_value(input_type, node)
 
     def enter_object_value(self, node):
-        named_type = unwrap_type(self.type_info.input_type)
+        named_type = (
+            unwrap_type(self.type_info.input_type)
+            if self.type_info.input_type is not None
+            else None
+        )
         if not isinstance(named_type, InputObjectType):
             self._check_scalar(node)
             raise SkipNode()
@@ -105,7 +114,11 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 )
 
     def enter_object_field(self, node):
-        parent_type = unwrap_type(self.type_info.parent_input_type)
+        parent_type = (
+            unwrap_type(self.type_info.parent_input_type)
+            if self.type_info.parent_input_type is not None
+            else None
+        )
         field_type = self.type_info.input_type
         if field_type is None and isinstance(parent_type, InputObjectType):
             suggestions = infer_suggestions(
