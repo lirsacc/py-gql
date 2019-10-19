@@ -137,6 +137,7 @@ async def test_AsyncIOExecutor_ensure_wrapped_awaitable():
 
     awaitable = a()
     assert AsyncIOExecutor.ensure_wrapped(awaitable) is awaitable
+    assert await awaitable == 42
 
 
 @pytest.mark.asyncio
