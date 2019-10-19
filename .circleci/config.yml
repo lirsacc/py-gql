@@ -399,6 +399,6 @@ workflows:
             - check-38: { requires: [deps-38] }
             - test-38-cython: { requires: [check-38] }
 
-            - collect-tests: { requires: [check-35, check-36, check-37] }
+            - collect-tests: { requires: [check-35, check-36, check-37, check-38] }
 
             - docs: { requires: [collect-tests] }
