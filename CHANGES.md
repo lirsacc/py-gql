@@ -10,6 +10,9 @@ Unreleased
     - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
     - `instrument_validation_result` has been removed as it was confusing to use.
     - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
+- Support for safely removing types from `Schema` instances:
+    - Returning `None` from `SchemaVisitor` methods will now signal that the type should be removed.
+    - `fix_type_references` will remove forward references from types that have been removed from the schema (e.g. field and directive arguments).
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------

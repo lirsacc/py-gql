@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Schema definition. """
 
+import copy
 from collections import defaultdict
 from typing import (
     Any,
@@ -535,6 +536,32 @@ class Schema:
             return func
 
         return decorator
+
+    def clone(self) -> "Schema":
+        cloned = Schema(
+            query_type=self.query_type,
+            mutation_type=self.mutation_type,
+            subscription_type=self.subscription_type,
+            nodes=self.nodes,
+        )
+
+        cloned._replace_types_and_directives(
+            types={
+                t.name: copy.copy(t)
+                for t in self.types.values()
+                if (
+                    t not in SPECIFIED_SCALAR_TYPES
+                    and t not in INTROPSPECTION_TYPES
+                )
+            },
+            directives={
+                d.name: copy.copy(d)
+                for d in self.directives.values()
+                if d not in SPECIFIED_DIRECTIVES
+            },
+        )
+
+        return cloned
 
 
 def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
