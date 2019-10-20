@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from typing import cast
 
+from .._utils import map_and_filter
 from .schema import Schema
-from .schema_visitor import SchemaVisitor
+from .schema_visitor import Optional, SchemaVisitor
 from .types import (
     Argument,
     Field,
     GraphQLType,
     InputField,
-    InterfaceType,
     ListType,
     NamedType,
     NonNullType,
@@ -21,43 +21,60 @@ class _HealSchemaVisitor(SchemaVisitor):
     def __init__(self, schema: Schema):
         self._schema = schema
 
-    def _healed(self, original: GraphQLType) -> GraphQLType:
+    def _healed(self, original: GraphQLType) -> Optional[GraphQLType]:
         if isinstance(original, NonNullType):
-            return NonNullType(self._healed(original.type))
+            inner = self._healed(original.type)
+            return NonNullType(inner) if inner is not None else None
         elif isinstance(original, ListType):
-            return ListType(self._healed(original.type))
+            inner = self._healed(original.type)
+            return ListType(inner) if inner is not None else None
         else:
-            return self._schema.types.get(
-                cast(NamedType, original).name, cast(NamedType, original)
-            )
+            return self._schema.types.get(cast(NamedType, original).name, None)
 
-    def on_object(self, object_type: ObjectType) -> ObjectType:
+    def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
         updated = cast(ObjectType, super().on_object(object_type))
-        updated.interfaces = [
-            cast(InterfaceType, self._healed(i)) for i in updated.interfaces
-        ]
+        updated.interfaces = map_and_filter(
+            self._healed, updated.interfaces  # type: ignore
+        )
         return updated
 
-    def on_field_definition(self, field: Field) -> Field:
+    def on_field_definition(self, field: Field) -> Optional[Field]:
         updated = cast(Field, super().on_field_definition(field))
-        updated.type = self._healed(updated.type)
+        new_type = self._healed(updated.type)
+
+        if new_type is None:
+            return None
+
+        updated.type = new_type
         return updated
 
-    def on_argument_definition(self, argument: Argument) -> Argument:
+    def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
         updated = cast(Argument, super().on_argument_definition(argument))
-        updated.type = self._healed(updated.type)
+        new_type = self._healed(updated.type)
+
+        if new_type is None:
+            return None
+
+        updated.type = new_type
         return updated
 
-    def on_union(self, union: UnionType) -> UnionType:
+    def on_union(self, union: UnionType) -> Optional[UnionType]:
         updated = cast(UnionType, super().on_union(union))
-        updated.types = [
-            cast(ObjectType, self._healed(i)) for i in updated.types
-        ]
+        updated.types = map_and_filter(
+            self._healed, updated.types  # type: ignore
+        )
         return updated
 
-    def on_input_field_definition(self, field: InputField) -> InputField:
+    def on_input_field_definition(
+        self, field: InputField
+    ) -> Optional[InputField]:
         updated = cast(InputField, super().on_input_field_definition(field))
-        updated.type = self._healed(updated.type)
+        new_type = self._healed(updated.type)
+
+        if new_type is None:
+            return None
+
+        updated.type = new_type
         return updated
 
 

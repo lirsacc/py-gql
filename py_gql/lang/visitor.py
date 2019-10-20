@@ -4,7 +4,7 @@ Visitors provide abstractions for traversing and transforming a GraphQL AST.
 """
 
 import functools
-from typing import Callable, List, Optional, Sequence, TypeVar, Union
+from typing import Optional, TypeVar, Union
 
 from .._utils import classdispatch, map_and_filter
 from ..exc import GraphQLError
@@ -22,10 +22,6 @@ __all__ = (
     "DispatchingVisitor",
     "ParallelVisitor",
 )
-
-
-def _visit_seq(func: Callable[[T], Optional[T]], seq: Sequence[T]) -> List[T]:
-    return list(map_and_filter(func, seq))
 
 
 class SkipNode(GraphQLError):
@@ -152,7 +148,7 @@ class ASTVisitor:
 
     @_visit_method
     def _visit_document(self, document: _ast.Document) -> _ast.Document:
-        document.definitions = _visit_seq(
+        document.definitions = map_and_filter(
             self._visit_definition, document.definitions
         )
         return document
@@ -187,10 +183,10 @@ class ASTVisitor:
     def _visit_operation_definition(
         self, definition: _ast.OperationDefinition
     ) -> _ast.OperationDefinition:
-        definition.variable_definitions = _visit_seq(
+        definition.variable_definitions = map_and_filter(
             self._visit_variable_definition, definition.variable_definitions
         )
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         definition.selection_set = self._visit_selection_set(
@@ -202,7 +198,7 @@ class ASTVisitor:
     def _visit_fragment_definition(
         self, definition: _ast.FragmentDefinition
     ) -> _ast.FragmentDefinition:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         definition.selection_set = self._visit_selection_set(
@@ -227,7 +223,7 @@ class ASTVisitor:
 
     @_visit_method
     def _visit_directive(self, directive: _ast.Directive) -> _ast.Directive:
-        directive.arguments = _visit_seq(
+        directive.arguments = map_and_filter(
             self._visit_argument, directive.arguments
         )
         return directive
@@ -241,7 +237,7 @@ class ASTVisitor:
     def _visit_selection_set(
         self, selection_set: _ast.SelectionSet
     ) -> _ast.SelectionSet:
-        selection_set.selections = _visit_seq(
+        selection_set.selections = map_and_filter(
             self._visit_selection, selection_set.selections
         )
         return selection_set
@@ -258,8 +254,10 @@ class ASTVisitor:
 
     @_visit_method
     def _visit_field(self, field: _ast.Field) -> _ast.Field:
-        field.arguments = _visit_seq(self._visit_argument, field.arguments)
-        field.directives = _visit_seq(self._visit_directive, field.directives)
+        field.arguments = map_and_filter(self._visit_argument, field.arguments)
+        field.directives = map_and_filter(
+            self._visit_directive, field.directives
+        )
         if field.selection_set is not None:
             field.selection_set = self._visit_selection_set(field.selection_set)
         return field
@@ -277,7 +275,7 @@ class ASTVisitor:
     def _visit_inline_fragment(
         self, fragment: _ast.InlineFragment
     ) -> _ast.InlineFragment:
-        fragment.directives = _visit_seq(
+        fragment.directives = map_and_filter(
             self._visit_directive, fragment.directives
         )
         fragment.selection_set = self._visit_selection_set(
@@ -299,9 +297,11 @@ class ASTVisitor:
     @_visit_method
     def _visit_value(self, value: _ast.Value) -> _ast.Value:
         if isinstance(value, _ast.ObjectValue):
-            value.fields = _visit_seq(self._visit_object_field, value.fields)
+            value.fields = map_and_filter(
+                self._visit_object_field, value.fields
+            )
         elif isinstance(value, _ast.ListValue):
-            value.values = _visit_seq(self._visit_input_value, value.values)
+            value.values = map_and_filter(self._visit_input_value, value.values)
         return value
 
     @_visit_method
@@ -313,10 +313,10 @@ class ASTVisitor:
     def _visit_schema_definition(
         self, definition: Union[_ast.SchemaDefinition, _ast.SchemaExtension]
     ) -> Union[_ast.SchemaDefinition, _ast.SchemaExtension]:
-        definition.operation_types = _visit_seq(
+        definition.operation_types = map_and_filter(
             self._visit_operation_type_definition, definition.operation_types
         )
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         return definition
@@ -333,7 +333,7 @@ class ASTVisitor:
         self,
         definition: Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension],
     ) -> Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         return definition
@@ -343,13 +343,13 @@ class ASTVisitor:
         self,
         definition: Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension],
     ) -> Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]:
-        definition.interfaces = _visit_seq(
+        definition.interfaces = map_and_filter(
             self._visit_type, definition.interfaces
         )
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
-        definition.fields = _visit_seq(
+        definition.fields = map_and_filter(
             self._visit_field_definition, definition.fields
         )
         return definition
@@ -361,10 +361,10 @@ class ASTVisitor:
             _ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension
         ],
     ) -> Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
-        definition.fields = _visit_seq(
+        definition.fields = map_and_filter(
             self._visit_field_definition, definition.fields
         )
         return definition
@@ -374,20 +374,20 @@ class ASTVisitor:
         self,
         definition: Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension],
     ) -> Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
-        definition.types = _visit_seq(self._visit_type, definition.types)
+        definition.types = map_and_filter(self._visit_type, definition.types)
         return definition
 
     @_visit_method
     def _visit_enum_type_definition(
         self, definition: Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]
     ) -> Union[_ast.EnumTypeDefinition, _ast.EnumTypeExtension]:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
-        definition.values = _visit_seq(
+        definition.values = map_and_filter(
             self._visit_enum_value_definition, definition.values
         )
         return definition
@@ -399,10 +399,10 @@ class ASTVisitor:
             _ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension
         ],
     ) -> Union[_ast.InputObjectTypeDefinition, _ast.InputObjectTypeExtension]:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
-        definition.fields = _visit_seq(
+        definition.fields = map_and_filter(
             self._visit_input_value_definition, definition.fields
         )
         return definition
@@ -412,10 +412,10 @@ class ASTVisitor:
         self, definition: _ast.FieldDefinition
     ) -> _ast.FieldDefinition:
         definition.type = self._visit_type(definition.type)
-        definition.arguments = _visit_seq(
+        definition.arguments = map_and_filter(
             self._visit_input_value_definition, definition.arguments
         )
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         return definition
@@ -427,7 +427,7 @@ class ASTVisitor:
         definition.type = self._visit_type(definition.type)
         if definition.default_value is not None:
             self._visit_input_value(definition.default_value)
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         return definition
@@ -436,7 +436,7 @@ class ASTVisitor:
     def _visit_enum_value_definition(
         self, definition: _ast.EnumValueDefinition
     ) -> _ast.EnumValueDefinition:
-        definition.directives = _visit_seq(
+        definition.directives = map_and_filter(
             self._visit_directive, definition.directives
         )
         return definition
@@ -445,7 +445,7 @@ class ASTVisitor:
     def _visit_directive_definition(
         self, definition: _ast.DirectiveDefinition
     ) -> _ast.DirectiveDefinition:
-        definition.arguments = _visit_seq(
+        definition.arguments = map_and_filter(
             self._visit_input_value_definition, definition.arguments
         )
         return definition

@@ -76,7 +76,7 @@ def test_replace_interface_in_implementers(schema: Schema) -> None:
         ],
     )
 
-    schema._replace_types_and_directives([NewObject])
+    schema._replace_types_and_directives({"Object": NewObject})
 
     assert (
         cast(ObjectType, schema.get_type("Person")).interfaces[0]
@@ -96,7 +96,7 @@ def test_replace_type_in_union(schema: Schema) -> None:
         interfaces=[cast(InterfaceType, schema.types["Object"])],
     )
 
-    schema._replace_types_and_directives([NewPerson])
+    schema._replace_types_and_directives({"Person": NewPerson})
 
     assert cast(ObjectType, schema.get_type("Person")) is NewPerson
 
