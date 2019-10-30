@@ -14,7 +14,6 @@ Resolver = Callable[..., Any]
 
 
 def execute(
-    # fmt: off
     schema: Schema,
     document: _ast.Document,
     *,
@@ -28,7 +27,6 @@ def execute(
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
     executor_kwargs: Optional[Mapping[str, Any]] = None
-    # fmt: on
 ) -> Any:
     """
     Execute a GraphQL query or mutation against a schema.

@@ -753,7 +753,7 @@ def test_it_parses_github_schema(fixture_file):
 
 
 def test_it_does_not_parses_kitchen_sink_when_allow_type_system_is_false(
-    fixture_file
+    fixture_file,
 ):
     with pytest.raises(UnexpectedToken):
         parse(

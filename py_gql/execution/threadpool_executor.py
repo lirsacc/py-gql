@@ -62,12 +62,10 @@ class ThreadPoolExecutor(Executor):
         return unwrap_future(value)
 
     def __init__(
-        # fmt: off
         self,
         *args: Any,
         inner_executor: Optional[_ThreadPoolExecutor] = None,
         **kwargs: Any
-        # fmt: on
     ):
         super().__init__(*args, **kwargs)
         self._inner = inner_executor or _ThreadPoolExecutor()

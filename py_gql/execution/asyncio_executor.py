@@ -124,12 +124,10 @@ class AsyncIOExecutor(Executor):
         return AsyncMap(source_stream, map_value)
 
     def __init__(
-        # fmt: off
         self,
         *args: Any,
         execute_blocking_resolvers_in_thread: bool = True,
         **kwargs: Any
-        # fmt: on
     ):
         super().__init__(*args, **kwargs)
         self._execute_blocking_resolvers_in_thread = (

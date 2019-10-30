@@ -97,7 +97,7 @@ async def test_it_evaluates_mutations_serially(executor_cls):
 
 
 async def test_it_evaluates_mutations_correctly_even_when_some_mutation_fails(
-    executor_cls
+    executor_cls,
 ):
     doc = """
         mutation M {

@@ -624,7 +624,7 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
 
 
 def test_disallows_differing_return_type_nullability_despite_no_overlap(
-    schema_2
+    schema_2,
 ):
     run_test(
         OverlappingFieldsCanBeMergedChecker,

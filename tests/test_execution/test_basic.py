@@ -92,7 +92,7 @@ async def test_raises_if_no_operation_is_provided(executor_cls):
 
 
 async def test_raises_if_no_operation_name_is_provided_along_multiple_operations(
-    executor_cls
+    executor_cls,
 ):
     schema = create_test_schema(String)
     with pytest.raises(ExecutionError) as exc_info:
@@ -421,7 +421,7 @@ fragment articleFields on Article {
 
 
 async def test_executes_library_query_correctly_without_validation(
-    executor_cls
+    executor_cls,
 ):
     await assert_execution(
         _LIBRARY_SCHEMA,

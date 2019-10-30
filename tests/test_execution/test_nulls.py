@@ -104,7 +104,7 @@ async def test_nulls_tree_of_nullable_fields(executor_cls):
 
 # Depending on scheduling the errors can be in a different order
 async def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
-    executor_cls
+    executor_cls,
 ):
 
     await assert_execution(

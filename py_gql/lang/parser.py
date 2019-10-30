@@ -1171,7 +1171,7 @@ class Parser:
         )
 
     def parse_input_object_type_definition(
-        self
+        self,
     ) -> _ast.InputObjectTypeDefinition:
         """
         InputObjectTypeDefinition : \
@@ -1365,7 +1365,7 @@ class Parser:
         )
 
     def parse_input_object_type_extension(
-        self
+        self,
     ) -> _ast.InputObjectTypeExtension:
         """
         InputObjectTypeExtension : \

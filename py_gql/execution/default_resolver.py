@@ -7,7 +7,6 @@ from .wrappers import ResolveInfo
 
 
 def default_resolver(
-    # fmt: off
     root: Any,
     context: Any,
     info: ResolveInfo,
@@ -16,7 +15,6 @@ def default_resolver(
     __callable: Any = callable,
     __mapping_cls: Any = Mapping,
     **args: Any
-    # fmt: on
 ) -> Any:
     """Default resolver used during query execution.
 

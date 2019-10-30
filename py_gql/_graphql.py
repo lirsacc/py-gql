@@ -23,7 +23,6 @@ from .validation import ValidationVisitor, validate_ast
 
 
 def process_graphql_query(
-    # fmt: off
     schema: Schema,
     document: Union[str, Document],
     *,
@@ -38,7 +37,6 @@ def process_graphql_query(
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
     executor_kwargs: Optional[Mapping[str, Any]] = None
-    # fmt: on
 ) -> Any:
     """
     Main GraphQL entrypoint encapsulating query processing from start to
@@ -170,7 +168,6 @@ def process_graphql_query(
 
 
 async def graphql(
-    # fmt: off
     schema: Schema,
     document: Union[str, Document],
     *,
@@ -182,7 +179,6 @@ async def graphql(
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
-    # fmt: on
 ) -> GraphQLResult:
     """
     Same as `process_graphql_query` but enforcing usage of AsyncIO.
@@ -209,7 +205,6 @@ async def graphql(
 
 
 def graphql_blocking(
-    # fmt: off
     schema: Schema,
     document: Union[str, Document],
     *,
@@ -221,7 +216,6 @@ def graphql_blocking(
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
-    # fmt: on
 ) -> GraphQLResult:
     """
     Same as `process_graphql_query` but enforcing usage of sync resolvers.

@@ -16,7 +16,6 @@ Resolver = Callable[..., Any]
 
 
 def subscribe(
-    # fmt: off
     schema: Schema,
     document: _ast.Document,
     *,
@@ -27,7 +26,6 @@ def subscribe(
     instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
     executor_kwargs: Optional[Mapping[str, Any]] = None
-    # fmt: on
 ) -> Any:
     """
     Execute a GraphQL subscription against a schema and return the appropriate

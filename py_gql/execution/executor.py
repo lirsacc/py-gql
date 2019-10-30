@@ -159,7 +159,6 @@ class Executor:
     # -------------------------------------------------------------------------
 
     def __init__(
-        # fmt: off
         self,
         schema: Schema,
         document: _ast.Document,
@@ -170,7 +169,6 @@ class Executor:
         instrumentation: Optional[Instrumentation] = None,
         disable_introspection: bool = False,
         **_: Any
-        # fmt: on
     ):
         self.schema = schema
         self.document = document

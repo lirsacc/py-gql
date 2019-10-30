@@ -26,13 +26,11 @@ __all__ = ("build_schema", "extend_schema")
 
 
 def build_schema(
-    # fmt: off
     document: Union[_ast.Document, str],
     *,
     ignore_extensions: bool = False,
     additional_types: Optional[List[NamedType]] = None,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
-    # fmt: on
 ) -> Schema:
     """ Build an executable schema from a GraphQL document.
 
@@ -92,11 +90,9 @@ def build_schema(
 
 
 def build_schema_ignoring_extensions(
-    # fmt: off
     document: Union[_ast.Document, str],
     *,
     additional_types: Optional[List[NamedType]] = None
-    # fmt: on
 ) -> Schema:
     """ Build an executable schema from an SDL-based schema definition ignoring
     extensions. """
@@ -154,14 +150,12 @@ def build_schema_ignoring_extensions(
 
 
 def extend_schema(
-    # fmt: off
     schema: Schema,
     document: Union[_ast.Document, str],
     *,
     additional_types: Optional[List[NamedType]] = None,
     strict: bool = True,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
-    # fmt: on
 ) -> Schema:
     """ Extend an existing Schema according to a GraphQL document (adding new
     types and directives + extending known types).
@@ -287,7 +281,7 @@ def extend_schema(
 
 
 def _collect_definitions(
-    document: _ast.Document
+    document: _ast.Document,
 ) -> Tuple[
     Optional[_ast.SchemaDefinition],
     Dict[str, _ast.TypeDefinition],
