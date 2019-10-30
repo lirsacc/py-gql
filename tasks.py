@@ -162,6 +162,7 @@ def black(ctx, check=False, files=None):
             [
                 "black",
                 "--check" if check else None,
+                "--target-version py35",
                 (
                     "%s tests examples setup.py tasks.py" % PACKAGE
                     if not files
