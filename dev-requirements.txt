@@ -4,7 +4,8 @@ invoke ~= 1.1
 
 -r test-requirements.txt
 
-black; python_version >= "3.6"
+# Fixed version as black updates can break change formatting and break CI
+black == 19.10b0; python_version >= "3.6"
 
 flake8 ~= 3.6
 
