@@ -3,13 +3,9 @@
 Simple mutations example: incrementing and decrementing a global counter.
 """
 
-from py_gql import graphql_blocking
-from py_gql.schema.build import build_schema
+from py_gql import build_schema, graphql_blocking
 
 ROOT = {"counter": 0}
-
-
-# 1. Define an executable schema that defines your API
 
 
 schema = build_schema(
@@ -48,8 +44,8 @@ assert graphql_blocking(schema, "{ counte }", root=ROOT).response() == {
     "errors": [
         {
             "message": (
-                'Cannot query field "counte" on type "Query", '
-                'did you mean "counter"?'
+                'Cannot query field "counte" on type "Query". Did you '
+                'mean "counter"?'
             ),
             "locations": [{"line": 1, "column": 3}],
         }

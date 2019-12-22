@@ -10,6 +10,7 @@ from ..utilities import coerce_variable_values
 from .executor import Executor
 from .get_operation import get_operation_with_type
 from .instrumentation import Instrumentation
+from .runtime import SubscriptionEnabledRuntime
 from .wrappers import GraphQLResult, ResolveInfo
 
 Resolver = Callable[..., Any]
@@ -25,7 +26,7 @@ def subscribe(
     context_value: Optional[Any] = None,
     instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
-    executor_kwargs: Optional[Mapping[str, Any]] = None
+    runtime: SubscriptionEnabledRuntime
 ) -> Any:
     """
     Execute a GraphQL subscription against a schema and return the appropriate
@@ -56,26 +57,9 @@ def subscribe(
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
 
-            This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_kwargs` will
-            be passed on class instantiation as keyword arguments.
-
-        executor_kwargs: Extra executor arguments.
-
     Returns:
         An iterator over subscription results.
-
-    Warning:
-        The returned value will depend on the executor class. They ususually
-        return a type wrapping the `GraphQLResult` object such as
-        `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
-        `graphql_blocking` for example usage.
     """
-    if not executor_cls.supports_subscriptions:
-        raise RuntimeError(
-            'Executor class "%r" doesn\'t support subscriptions.' % executor_cls
-        )
-
     instrumentation = instrumentation or Instrumentation()
 
     operation, root_type = get_operation_with_type(
@@ -88,7 +72,7 @@ def subscribe(
     if operation.operation != "subscription":
         raise RuntimeError(
             "`subscribe` does not support %s operation, "
-            "use the `eecute` helper." % operation.operation
+            "use the `execute` helper." % operation.operation
         )
 
     executor = executor_cls(
@@ -100,8 +84,14 @@ def subscribe(
         # Enforce no middlewares for subscriptions.
         # TODO: This should work somehow but needs more work.
         middlewares=[],
-        **(executor_kwargs or {}),
+        runtime=runtime,
     )
+
+    if not isinstance(runtime, SubscriptionEnabledRuntime):
+        raise RuntimeError(
+            "Runtime of type '%s' doesn't support subscriptions."
+            % type(runtime)
+        )
 
     _on_event = ft.partial(
         execute_subscription_event, executor, root_type, operation
@@ -112,13 +102,13 @@ def subscribe(
     # MapSourceToResponseEvent
     # Needs to be mapped to support async subscription resolvers.
     def _on_stream_created(source_stream):
-        response_stream = executor.map_stream(source_stream, _on_event)
+        response_stream = runtime.map_stream(source_stream, _on_event)
 
         cast(Instrumentation, instrumentation).on_execution_end()
         return response_stream
 
-    return executor.ensure_wrapped(
-        executor.map_value(
+    return runtime.ensure_wrapped(
+        runtime.map_value(
             create_source_event_stream(
                 executor, root_type, operation, initial_value
             ),
@@ -166,6 +156,7 @@ def create_source_event_stream(
         executor.variables,
         executor.fragments,
         nodes,
+        executor.runtime,
     )
 
     coerced_args = executor.argument_values(field_def, node)
@@ -187,8 +178,8 @@ def execute_subscription_event(
     # of the caches while isolating the errors.
     executor.clear_errors()
 
-    return executor.map_value(
-        executor.unwrap_value(
+    return executor.runtime.map_value(
+        executor.runtime.unwrap_value(
             executor.execute_fields(
                 root_type,
                 event,

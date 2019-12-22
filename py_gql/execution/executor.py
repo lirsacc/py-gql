@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import functools
 from typing import (
     Any,
     Callable,
@@ -10,20 +9,16 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
 )
 
 from .._string_utils import stringify_path
-from .._utils import OrderedDict, is_iterable
+from .._utils import OrderedDict, apply_middlewares, is_iterable
 from ..exc import (
     CoercionError,
-    GraphQLLocatedError,
-    GraphQLResponseError,
     ResolverError,
     ScalarSerializationError,
     UnknownEnumValue,
@@ -35,29 +30,17 @@ from ..schema import (
     GraphQLAbstractType,
     GraphQLCompositeType,
     GraphQLType,
-    IncludeDirective,
     InterfaceType,
     ListType,
     NonNullType,
     ObjectType,
     ScalarType,
     Schema,
-    SkipDirective,
     UnionType,
 )
-from ..schema.introspection import (
-    SCHEMA_INTROSPECTION_FIELD,
-    TYPE_INTROSPECTION_FIELD,
-    TYPE_NAME_INTROSPECTION_FIELD,
-)
-from ..utilities import (
-    coerce_argument_values,
-    collect_fields,
-    directive_arguments,
-)
-from .default_resolver import default_resolver as _default_resolver
 from .instrumentation import Instrumentation
-from .wrappers import GroupedFields, ResolveInfo, ResponsePath
+from .runtime import Runtime
+from .wrappers import ExecutionContext, GroupedFields, ResolveInfo, ResponsePath
 
 Resolver = Callable[..., Any]
 
@@ -66,100 +49,14 @@ G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
 
 
-class Executor:
+class Executor(ExecutionContext):
     """Core executor class.
 
     This is the core executor class implementing all of the operations necessary
     to fulfill a GraphQL query or mutation.
-
-    By default, this executor assumes resolver are blocking and isn't
-    particularly optimised but provides various hooks to implement custom
-    executors that back on different runtime.
-    `py_gql.execution.BlockingExecutor`, `py_gql.execution.AsyncIOExecutor` and
-    `py_gql.execution.ThreadPoolExecutor` are provided by default and optimised
-    for their respective runtimes and can serve as a base for implementing such
-    custom executors.
-
-    This implementation and the available override hooks assumes that most
-    runtime can be supported by handling values wrapped in a _container type_
-    (such as a coroutine or a Future) and orchestrating the various relevant
-    callbacks correctly. As such, most of the semantics will be described in
-    these term and draw parallel to standard asyncio concepts.
     """
 
-    # -------------------------------------------------------------------------
-    # These methods & properties should likely be re-implemented in order to
-    # build custom executors. See to AsyncIOExecutor and ThreadPoolExecutor for
-    # reference.
-    # -------------------------------------------------------------------------
-
-    #: Sentinel value indicating supports for subscription semantics.
-    supports_subscriptions = False
-
-    @staticmethod
-    def ensure_wrapped(value: Any) -> Any:
-        """Ensure values are wrapped in the necessary container type.
-
-        This is essentially used after execution has finished to make sure the
-        final value conforms to the expected types (e.g. coroutines) and avoid
-        consumers having to typecheck them needlessly.
-        """
-        return value
-
-    @staticmethod
-    def gather_values(values: Iterable[Any]) -> Any:
-        """Group multiple wrapped values inside a single wrapped value.
-
-        This is equivalent to the `asyncio.gather` semantics.
-        """
-        return values
-
-    @staticmethod
-    def map_value(
-        value: Any,
-        then: Callable[[Any], Any],
-        else_: Optional[
-            Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], Any]]
-        ] = None,
-    ) -> Any:
-        """Execute a callback on a wrapped value, potentially catching exceptions.
-
-        This is used internally to orchestrate callbacks and should be treated
-        similarly to `await` semantics the `map` in Future combinators.
-        """
-        try:
-            return then(value)
-        except Exception as err:
-            if else_ and isinstance(err, else_[0]):
-                return else_[1](err)  # type: ignore
-            raise
-
-    @staticmethod
-    def unwrap_value(value):
-        """Recursively traverse wrapped values.
-
-        Given that resolution across the graph can span multiple level, this is
-        used to support resolved values depending on deeper values (such as
-        object fields).
-        """
-        return value
-
-    @staticmethod
-    def map_stream(source_stream: Any, map_value: Callable[[Any], Any]) -> Any:
-        raise NotImplementedError()
-
-    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
-        """Make sure your resolvers are compatible with the runtime.
-
-        For instance, this could be making sure that non coroutine functions are
-        executed inside a thread so blocking I/O doesn't block the event loop.
-
-        This is specific to both the runtime and a caller resolver
-        implementations and should be overriden liberally to suit the use case.
-        """
-        return resolver
-
-    # -------------------------------------------------------------------------
+    __slots__ = ExecutionContext.__slots__ + ("_instrumentation", "runtime",)
 
     def __init__(
         self,
@@ -167,141 +64,45 @@ class Executor:
         document: _ast.Document,
         variables: Dict[str, Any],
         context_value: Any,
-        default_resolver: Optional[Resolver] = None,
+        *,
         middlewares: Optional[Sequence[Callable[..., Any]]] = None,
         instrumentation: Optional[Instrumentation] = None,
         disable_introspection: bool = False,
-        **_: Any
+        default_resolver: Optional[Resolver] = None,
+        runtime: Optional[Runtime] = None
     ):
-        self.schema = schema
-        self.document = document
-        self.variables = variables
-        self.fragments = {
-            f.name.value: f
-            for f in document.definitions
-            if isinstance(f, _ast.FragmentDefinition)
-        }
-        self.context_value = context_value
-
-        self._default_resolver = default_resolver or _default_resolver
-
-        self._errors = []  # type: List[GraphQLResponseError]
-
-        # Caches
-        self._grouped_fields = (
-            {}
-        )  # type: Dict[Tuple[str, Tuple[_ast.Selection, ...]], GroupedFields]
-        self._fragment_type_applies = (
-            {}
-        )  # type: Dict[Tuple[str, _ast.Type], bool]
-        self._field_defs = {}  # type: Dict[Tuple[str, str], Optional[Field]]
-        self._argument_values = (
-            {}
-        )  # type: Dict[Tuple[Field, _ast.Field], Dict[str, Any]]
-        self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
-        self._middlewares = middlewares or []
+        super().__init__(
+            schema,
+            document,
+            variables,
+            context_value,
+            disable_introspection=disable_introspection,
+            default_resolver=default_resolver,
+            middlewares=middlewares,
+        )
         self._instrumentation = instrumentation or Instrumentation()
-        self._disable_introspection = disable_introspection
+        self.runtime = runtime or Runtime()
 
-    def add_error(
-        self,
-        err: Union[GraphQLLocatedError],
-        path: Optional[ResponsePath] = None,
-        node: Optional[_ast.Node] = None,
-    ) -> None:
-        if node:
-            if not err.nodes:
-                err.nodes = [node]
-        err.path = path if path is not None else err.path
-        self._errors.append(err)
-
-    @property
-    def errors(self) -> List[GraphQLResponseError]:
-        """All field errors collected during query execution."""
-        return self._errors[:]
-
-    def clear_errors(self) -> None:
-        """Clear any collected error from the current executor instance."""
-        self._errors[:] = []
-
-    def skip_selection(
-        self, node: Union[_ast.Field, _ast.InlineFragment, _ast.FragmentSpread],
-    ) -> bool:
-        skip = directive_arguments(
-            SkipDirective, node, variables=self.variables
+    def field_resolver(
+        self, parent_type: ObjectType, field_definition: Field
+    ) -> Resolver:
+        base = (
+            field_definition.resolver
+            or parent_type.default_resolver
+            or self._default_resolver
         )
-        include = directive_arguments(
-            IncludeDirective, node, variables=self.variables
-        )
-        skipped = skip is not None and skip["if"]
-        included = include is None or include["if"]
-        return skipped or (not included)
-
-    def collect_fields(
-        self,
-        parent_type: ObjectType,
-        selections: Sequence[_ast.Selection],
-        visited_fragments: Optional[Set[str]] = None,
-    ) -> GroupedFields:
-        """
-        Collect all fields in a selection set, recursively traversing
-        fragments in one single map and conserving definitino order.
-        """
-        cache_key = parent_type.name, tuple(selections)
         try:
-            return self._grouped_fields[cache_key]
+            return self._resolver_cache[base]
         except KeyError:
-            self._grouped_fields[cache_key] = grouped_fields = collect_fields(
-                self.schema,
-                parent_type,
-                selections,
-                self.fragments,
-                _skip=self.skip_selection,
+            wrapped = (
+                self.runtime.wrap_callable(base)
+                if base is not self._default_resolver
+                else base
             )
-
-            self._grouped_fields[cache_key] = grouped_fields
-            return grouped_fields
-
-    def field_definition(
-        self, parent_type: ObjectType, name: str
-    ) -> Optional[Field]:
-        key = parent_type.name, name
-        cache = self._field_defs
-        is_query_type = self.schema.query_type == parent_type
-
-        try:
-            return cache[key]
-        except KeyError:
-            if name in ("__schema", "__type", "__typename"):
-                if self._disable_introspection:
-                    return None
-
-                elif name == "__schema" and is_query_type:
-                    cache[key] = SCHEMA_INTROSPECTION_FIELD
-                elif name == "__type" and is_query_type:
-                    cache[key] = TYPE_INTROSPECTION_FIELD
-                elif name == "__typename":
-                    cache[key] = TYPE_NAME_INTROSPECTION_FIELD
-                else:
-                    raise RuntimeError(
-                        "Invalid state: introspection type in the wrong position."
-                    )
-            else:
-                cache[key] = parent_type.field_map.get(name, None)
-
-            return cache[key]
-
-    def argument_values(
-        self, field_definition: Field, node: _ast.Field
-    ) -> Dict[str, Any]:
-        cache_key = field_definition, node
-        try:
-            return self._argument_values[cache_key]
-        except KeyError:
-            self._argument_values[cache_key] = coerce_argument_values(
-                field_definition, node, self.variables
-            )
-        return self._argument_values[cache_key]
+            if self._middlewares:
+                wrapped = apply_middlewares(wrapped, self._middlewares)
+            self._resolver_cache[base] = wrapped
+            return wrapped
 
     def resolve_type(
         self,
@@ -332,27 +133,6 @@ class Executor:
         else:
             return maybe_type
 
-    def _get_field_resolver(
-        self, parent_type: ObjectType, field_definition: Field
-    ) -> Resolver:
-        base = (
-            field_definition.resolver
-            or parent_type.default_resolver
-            or self._default_resolver
-        )
-        try:
-            return self._resolver_cache[base]
-        except KeyError:
-            wrapped = (
-                self.wrap_field_resolver(base)
-                if base is not self._default_resolver
-                else base
-            )
-            if self._middlewares:
-                wrapped = _apply_middlewares(wrapped, self._middlewares)
-            self._resolver_cache[base] = wrapped
-            return wrapped
-
     def resolve_field(
         self,
         parent_type: ObjectType,
@@ -361,7 +141,7 @@ class Executor:
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
-        resolver = self._get_field_resolver(parent_type, field_definition)
+        resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
             field_definition,
@@ -371,6 +151,7 @@ class Executor:
             self.variables,
             self.fragments,
             nodes,
+            self.runtime,
         )
 
         self._instrumentation.on_field_start(
@@ -401,9 +182,9 @@ class Executor:
             resolved = resolver(
                 parent_value, self.context_value, info, **coerced_args
             )
-            return self.unwrap_value(
-                self.map_value(
-                    self.unwrap_value(resolved),
+            return self.runtime.unwrap_value(
+                self.runtime.map_value(
+                    self.runtime.unwrap_value(resolved),
                     complete,
                     else_=(ResolverError, fail),
                 )
@@ -442,7 +223,9 @@ class Executor:
         def _collect(done):
             return OrderedDict(zip(keys, done))
 
-        return self.map_value(self.gather_values(pending), _collect)
+        return self.runtime.map_value(
+            self.runtime.gather_values(pending), _collect
+        )
 
     def execute_fields_serially(
         self,
@@ -471,7 +254,7 @@ class Executor:
                     resolved_fields[k] = value
                     return _next()
 
-                return self.map_value(
+                return self.runtime.map_value(
                     self.resolve_field(parent_type, root, f, n, p), cb
                 )
 
@@ -485,7 +268,7 @@ class Executor:
         info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
-        return self.gather_values(
+        return self.runtime.gather_values(
             [
                 self.complete_value(
                     inner_type, nodes, path + [index], info, entry
@@ -502,7 +285,7 @@ class Executor:
         info: ResolveInfo,
         resolved_value: Any,
     ) -> Any:
-        return self.map_value(
+        return self.runtime.map_value(
             self.complete_value(inner_type, nodes, path, info, resolved_value),
             lambda r: self._handle_non_nullable_value(nodes, path, r),
         )
@@ -609,16 +392,3 @@ def _subselections(nodes: Iterable[_ast.Field]) -> Iterator[_ast.Selection]:
         if field.selection_set:
             for selection in field.selection_set.selections:
                 yield selection
-
-
-def _apply_middlewares(
-    func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
-) -> Callable[..., Any]:
-    tail = func
-    for mw in reversed(middlewares):
-        if not callable(mw):
-            raise TypeError("Middleware should be a callable")
-
-        tail = functools.partial(mw, tail)
-
-    return tail

@@ -6,8 +6,6 @@ import pytest
 from py_gql.exc import ResolverError
 from py_gql.schema import Argument, Field, Int, ObjectType, Schema
 
-from ._test_utils import assert_execution
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -71,7 +69,7 @@ schema = Schema(
 )
 
 
-async def test_it_evaluates_mutations_serially(executor_cls):
+async def test_it_evaluates_mutations_serially(assert_execution):
     await assert_execution(
         schema,
         """
@@ -84,7 +82,6 @@ async def test_it_evaluates_mutations_serially(executor_cls):
         }
         """,
         initial_value=Root(6),
-        executor_cls=executor_cls,
         expected_data={
             "first": {"theNumber": 1},
             "second": {"theNumber": 2},
@@ -97,7 +94,7 @@ async def test_it_evaluates_mutations_serially(executor_cls):
 
 
 async def test_it_evaluates_mutations_correctly_even_when_some_mutation_fails(
-    executor_cls,
+    assert_execution,
 ):
     doc = """
         mutation M {
@@ -111,7 +108,6 @@ async def test_it_evaluates_mutations_correctly_even_when_some_mutation_fails(
         schema,
         doc,
         initial_value=Root(6),
-        executor_cls=executor_cls,
         expected_data={
             "first": {"theNumber": 1},
             "second": None,

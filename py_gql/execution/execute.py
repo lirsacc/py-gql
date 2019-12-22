@@ -8,6 +8,7 @@ from ..utilities import coerce_variable_values
 from .executor import Executor
 from .get_operation import get_operation_with_type
 from .instrumentation import Instrumentation
+from .runtime import Runtime
 from .wrappers import GraphQLResult
 
 Resolver = Callable[..., Any]
@@ -26,7 +27,7 @@ def execute(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
-    executor_kwargs: Optional[Mapping[str, Any]] = None
+    runtime: Optional[Runtime] = None
 ) -> Any:
     """
     Execute a GraphQL query or mutation against a schema.
@@ -73,22 +74,11 @@ def execute(
         executor_cls: Executor class to use.
             **Must** be a subclass of `py_gql.execution.Executor`.
 
-            This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_kwargs` will
-            be passed on class instantiation as keyword arguments.
-
-        executor_kwargs: Extra executor arguments.
-
     Returns:
         Execution result.
-
-    Warning:
-        The returned value will depend on the executor class. They ususually
-        return a type wrapping the `GraphQLResult` object such as
-        `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
-        `graphql_blocking` for example usage.
     """
     instrumentation = instrumentation or Instrumentation()
+    runtime = runtime or Runtime()
 
     operation, root_type = get_operation_with_type(
         schema, document, operation_name
@@ -106,7 +96,7 @@ def execute(
         instrumentation=instrumentation,
         disable_introspection=disable_introspection,
         middlewares=middlewares,
-        **(executor_kwargs or {}),
+        runtime=runtime,
     )
 
     if operation.operation == "query":
@@ -127,9 +117,9 @@ def execute(
         cast(Instrumentation, instrumentation).on_execution_end()
         return GraphQLResult(data=data, errors=executor.errors)
 
-    return executor.ensure_wrapped(
-        executor.map_value(
-            executor.unwrap_value(
+    return runtime.ensure_wrapped(
+        runtime.map_value(
+            runtime.unwrap_value(
                 exe_fn(
                     root_type,
                     initial_value,

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+"""
 
 import functools
-from concurrent.futures import (
-    CancelledError,
-    Future,
-    ThreadPoolExecutor as _ThreadPoolExecutor,
-)
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from typing import (
     Any,
     Callable,
@@ -19,7 +17,39 @@ from typing import (
     cast,
 )
 
-from .executor import Executor
+from .base import Runtime
+
+T = TypeVar("T")
+G = TypeVar("G")
+E = TypeVar("E", bound=Exception)
+
+MaybeFuture = Union["Future[T]", T]
+AnyCallable = Callable[..., Any]
+
+
+class ThreadPoolRuntime(Runtime):
+    def __init__(self, *args, **kwargs):
+        self._inner = ThreadPoolExecutor(*args, **kwargs)
+
+    def ensure_wrapped(self, value):
+        if _is_future_fast(value):
+            return value
+
+        outer = Future()  # type: ignore
+        outer.set_result(value)
+        return outer
+
+    def map_value(self, value, then, else_=None):
+        return chain(value, then, else_)
+
+    def gather_values(self, values):
+        return gather_futures(values)
+
+    def unwrap_value(self, value):
+        return unwrap_future(value)
+
+    def wrap_callable(self, func: AnyCallable) -> AnyCallable:
+        return functools.partial(self._inner.submit, func)
 
 
 def _is_future_fast(value, cache={}, __isinstance=isinstance, __future=Future):
@@ -29,49 +59,6 @@ def _is_future_fast(value, cache={}, __isinstance=isinstance, __future=Future):
     except KeyError:
         res = cache[t] = __isinstance(value, __future)
         return res
-
-
-T = TypeVar("T")
-G = TypeVar("G")
-E = TypeVar("E", bound=Exception)
-
-MaybeFuture = Union["Future[T]", T]
-Resolver = Callable[..., Any]
-
-
-class ThreadPoolExecutor(Executor):
-    @staticmethod
-    def ensure_wrapped(value):
-        if _is_future_fast(value):
-            return value
-
-        outer = Future()  # type: ignore
-        outer.set_result(value)
-        return outer
-
-    @staticmethod
-    def map_value(value, then, else_=None):
-        return chain(value, then, else_)
-
-    @staticmethod
-    def gather_values(values):
-        return gather_futures(values)
-
-    @staticmethod
-    def unwrap_value(value):
-        return unwrap_future(value)
-
-    def __init__(
-        self,
-        *args: Any,
-        inner_executor: Optional[_ThreadPoolExecutor] = None,
-        **kwargs: Any
-    ):
-        super().__init__(*args, **kwargs)
-        self._inner = inner_executor or _ThreadPoolExecutor()
-
-    def wrap_field_resolver(self, resolver: Resolver) -> Resolver:
-        return functools.partial(self._inner.submit, resolver)
 
 
 def unwrap_future(maybe_future):

@@ -1,16 +1,188 @@
 # -*- coding: utf-8 -*-
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
-from ..exc import GraphQLResponseError
-from ..lang import ast as _ast
-from ..schema import Field, ObjectType, Schema
+from ..exc import GraphQLLocatedError, GraphQLResponseError
+from ..lang import ast
+from ..schema import Field, IncludeDirective, ObjectType, Schema, SkipDirective
+from ..schema.introspection import (
+    SCHEMA_INTROSPECTION_FIELD,
+    TYPE_INTROSPECTION_FIELD,
+    TYPE_NAME_INTROSPECTION_FIELD,
+)
+from ..utilities import (
+    coerce_argument_values,
+    collect_fields,
+    directive_arguments,
+)
+from .default_resolver import default_resolver as _default_resolver
+from .runtime import Runtime
 
 _UNSET = object()
 
+Resolver = Callable[..., Any]
 ResponsePath = List[Union[str, int]]
-GroupedFields = Dict[str, List[_ast.Field]]
+GroupedFields = Dict[str, List[ast.Field]]
+
+
+class ExecutionContext:
+    __slots__ = (
+        "schema",
+        "document",
+        "variables",
+        "fragments",
+        "context_value",
+        "_grouped_fields",
+        "_fragment_type_applies",
+        "_field_defs",
+        "_argument_values",
+        "_default_resolver",
+        "_resolver_cache",
+        "_middlewares",
+        "_disable_introspection",
+        "_errors",
+    )
+
+    def __init__(
+        self,
+        schema: Schema,
+        document: ast.Document,
+        variables: Dict[str, Any],
+        context_value: Any,
+        *,
+        disable_introspection: bool = False,
+        default_resolver: Optional[Resolver] = None,
+        middlewares: Optional[Sequence[Callable[..., Any]]] = None
+    ):
+        self.schema = schema
+        self.document = document
+        self.variables = variables
+        self.context_value = context_value
+        self.fragments = document.fragments
+        self._default_resolver = default_resolver or _default_resolver
+        self._disable_introspection = disable_introspection
+        self._middlewares = middlewares or []
+
+        self._errors = []  # type: List[GraphQLResponseError]
+
+        # Caches
+        self._grouped_fields = (
+            {}
+        )  # type: Dict[Tuple[str, Tuple[ast.Selection, ...]], GroupedFields]
+        self._fragment_type_applies = (
+            {}
+        )  # type: Dict[Tuple[str, ast.Type], bool]
+        self._field_defs = {}  # type: Dict[Tuple[str, str], Optional[Field]]
+        self._argument_values = (
+            {}
+        )  # type: Dict[Tuple[Field, ast.Field], Dict[str, Any]]
+        self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
+
+    def add_error(
+        self,
+        err: Union[GraphQLLocatedError],
+        path: Optional[ResponsePath] = None,
+        node: Optional[ast.Node] = None,
+    ) -> None:
+        if node:
+            if not err.nodes:
+                err.nodes = [node]
+        err.path = path if path is not None else err.path
+        self._errors.append(err)
+
+    @property
+    def errors(self) -> List[GraphQLResponseError]:
+        """All field errors collected during query execution."""
+        return self._errors[:]
+
+    def clear_errors(self) -> None:
+        """Clear any collected error from the current executor instance."""
+        self._errors[:] = []
+
+    def skip_selection(
+        self, node: Union[ast.Field, ast.InlineFragment, ast.FragmentSpread],
+    ) -> bool:
+        skip = directive_arguments(
+            SkipDirective, node, variables=self.variables
+        )
+        include = directive_arguments(
+            IncludeDirective, node, variables=self.variables
+        )
+        skipped = skip is not None and skip["if"]
+        included = include is None or include["if"]
+        return skipped or (not included)
+
+    def collect_fields(
+        self,
+        parent_type: ObjectType,
+        selections: Sequence[ast.Selection],
+        visited_fragments: Optional[Set[str]] = None,
+    ) -> GroupedFields:
+        """
+        Collect all fields in a selection set, recursively traversing
+        fragments in one single map and conserving definitino order.
+        """
+        cache_key = parent_type.name, tuple(selections)
+        try:
+            return self._grouped_fields[cache_key]
+        except KeyError:
+            self._grouped_fields[cache_key] = grouped_fields = collect_fields(
+                self.schema,
+                parent_type,
+                selections,
+                self.fragments,
+                _skip=self.skip_selection,
+            )
+
+            self._grouped_fields[cache_key] = grouped_fields
+            return grouped_fields
+
+    def field_definition(
+        self, parent_type: ObjectType, name: str
+    ) -> Optional[Field]:
+        key = parent_type.name, name
+        cache = self._field_defs
+        is_query_type = self.schema.query_type == parent_type
+
+        try:
+            return cache[key]
+        except KeyError:
+            if name in ("__schema", "__type", "__typename"):
+                if self._disable_introspection:
+                    return None
+                elif name == "__schema" and is_query_type:
+                    cache[key] = SCHEMA_INTROSPECTION_FIELD
+                elif name == "__type" and is_query_type:
+                    cache[key] = TYPE_INTROSPECTION_FIELD
+                elif name == "__typename":
+                    cache[key] = TYPE_NAME_INTROSPECTION_FIELD
+            else:
+                cache[key] = parent_type.field_map.get(name, None)
+
+            return cache[key]
+
+    def argument_values(
+        self, field_definition: Field, node: ast.Field
+    ) -> Dict[str, Any]:
+        cache_key = field_definition, node
+        try:
+            return self._argument_values[cache_key]
+        except KeyError:
+            self._argument_values[cache_key] = coerce_argument_values(
+                field_definition, node, self.variables
+            )
+        return self._argument_values[cache_key]
 
 
 class ResolveInfo:
@@ -22,6 +194,7 @@ class ResolveInfo:
         "variables",
         "fragments",
         "nodes",
+        "runtime",
     )
 
     def __init__(
@@ -31,8 +204,9 @@ class ResolveInfo:
         parent_type: ObjectType,
         schema: Schema,
         variables: Dict[str, Any],
-        fragments: Dict[str, _ast.FragmentDefinition],
-        nodes: List[_ast.Field],
+        fragments: Dict[str, ast.FragmentDefinition],
+        nodes: List[ast.Field],
+        runtime: Runtime,
     ):
         self.field_definition = field_definition
         self.path = path

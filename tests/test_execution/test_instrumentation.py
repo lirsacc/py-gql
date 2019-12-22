@@ -25,41 +25,34 @@ fragment characterFragment on Character {
 """
 
 
-async def test_instrumentation_does_not_raise(executor_cls, starwars_schema):
+async def test_instrumentation_does_not_raise(
+    assert_execution, starwars_schema
+):
     await process_request(
-        starwars_schema,
-        QUERY,
-        executor_cls=executor_cls,
-        instrumentation=Instrumentation(),
+        starwars_schema, QUERY, instrumentation=Instrumentation(),
     )
 
 
-async def test_instrument_ast(executor_cls, starwars_schema):
+async def test_instrument_ast(assert_execution, starwars_schema):
     class TestInstrumentation(Instrumentation):
         def transform_ast(self, _ast):
             return parse("query { hero { name } }")
 
     result = await process_request(
-        starwars_schema,
-        QUERY,
-        executor_cls=executor_cls,
-        instrumentation=TestInstrumentation(),
+        starwars_schema, QUERY, instrumentation=TestInstrumentation(),
     )
 
     assert result.response() == {"data": {"hero": {"name": "R2-D2"}}}
 
 
-async def test_instrument_result(executor_cls, starwars_schema):
+async def test_instrument_result(assert_execution, starwars_schema):
     class TestInstrumentation(Instrumentation):
         def transform_result(self, result):
             result.data["hero"]["name"] = "Darth Vader"
             return result
 
     result = await process_request(
-        starwars_schema,
-        QUERY,
-        executor_cls=executor_cls,
-        instrumentation=TestInstrumentation(),
+        starwars_schema, QUERY, instrumentation=TestInstrumentation(),
     )
 
     assert result.response() == {
@@ -77,7 +70,7 @@ async def test_instrument_result(executor_cls, starwars_schema):
 
 
 async def test_multi_instrumentation_stack_ordering(  # noqa: C901
-    executor_cls, starwars_schema
+    assert_execution, starwars_schema
 ):
     class TrackingInstrumentation(Instrumentation):
         def __init__(self, prefix, stack):
@@ -129,10 +122,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
     )
 
     await process_request(
-        starwars_schema,
-        QUERY,
-        executor_cls=executor_cls,
-        instrumentation=instrumentation,
+        starwars_schema, QUERY, instrumentation=instrumentation,
     )
 
     # Non blocking executor could lead to different ordering across fields so

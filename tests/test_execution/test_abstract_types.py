@@ -14,8 +14,6 @@ from py_gql.schema import (
     UnionType,
 )
 
-from ._test_utils import assert_execution
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -47,7 +45,9 @@ class Person:
 # RuntimeError will interupt resolution and coroutines will remain unawaited
 # which is fine as we want this to crash.
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
+async def test_type_resolution_on_interface_yields_useful_error(
+    assert_execution,
+):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
@@ -102,7 +102,6 @@ async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
             ... on Cat { meows }
         }
         }""",
-        executor_cls=executor_cls,
         expected_exc=(
             RuntimeError,
             (
@@ -116,7 +115,7 @@ async def test_type_resolution_on_interface_yields_useful_error(executor_cls):
 # RuntimeError will interupt resolution and coroutines will remain unawaited
 # which is fine as we want this to crash.
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-async def test_type_resolution_on_union_yields_useful_error(executor_cls):
+async def test_type_resolution_on_union_yields_useful_error(assert_execution):
     """ Different from ref implementation -> this should never happen
     so we crash """
 
@@ -166,7 +165,6 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
             ... on Cat { meows, name }
         }
         }""",
-        executor_cls=executor_cls,
         expected_exc=(
             RuntimeError,
             (
@@ -177,7 +175,7 @@ async def test_type_resolution_on_union_yields_useful_error(executor_cls):
     )
 
 
-async def test_type_resolution_supports_strings(executor_cls):
+async def test_type_resolution_supports_strings(assert_execution):
     def _resolve_pet_type(value, *_):
         return type(value).__name__
 
@@ -224,11 +222,10 @@ async def test_type_resolution_supports_strings(executor_cls):
             ... on Cat { meows }
         }
         }""",
-        executor_cls=executor_cls,
     )
 
 
-async def test_type_resolution_supports_object_attribute(executor_cls):
+async def test_type_resolution_supports_object_attribute(assert_execution):
     PetType = InterfaceType("Pet", [Field("name", String)])
 
     DogType = ObjectType(
@@ -284,7 +281,6 @@ async def test_type_resolution_supports_object_attribute(executor_cls):
             ... on Cat { meows }
         }
         }""",
-        executor_cls=executor_cls,
     )
 
 
@@ -331,7 +327,9 @@ _LIZ = Person("Liz", None, None)
 _JOHN = Person("John", [_GARFIELD, _ODIE], [_LIZ, _ODIE])
 
 
-async def test_it_can_introspect_on_union_and_intersection_types(executor_cls):
+async def test_it_can_introspect_on_union_and_intersection_types(
+    assert_execution,
+):
     await assert_execution(
         _SCHEMA,
         """
@@ -356,7 +354,6 @@ async def test_it_can_introspect_on_union_and_intersection_types(executor_cls):
             }
         }
         """,
-        executor_cls=executor_cls,
         expected_data={
             "Named": {
                 "enumValues": None,
@@ -384,7 +381,7 @@ async def test_it_can_introspect_on_union_and_intersection_types(executor_cls):
     )
 
 
-async def test_it_executes_union_types(executor_cls):
+async def test_it_executes_union_types(assert_execution):
     # This is an *invalid* query, but it should be an *executable* query.
     await assert_execution(
         _SCHEMA,
@@ -408,12 +405,11 @@ async def test_it_executes_union_types(executor_cls):
                 {"__typename": "Dog", "name": "Odie", "woofs": True},
             ],
         },
-        executor_cls=executor_cls,
         initial_value=_JOHN,
     )
 
 
-async def test_it_executes_union_types_using_inline_fragments(executor_cls):
+async def test_it_executes_union_types_using_inline_fragments(assert_execution):
     # This is the valid version of the query in the above test.
     await assert_execution(
         _SCHEMA,
@@ -429,7 +425,6 @@ async def test_it_executes_union_types_using_inline_fragments(executor_cls):
         }
         """,
         initial_value=_JOHN,
-        executor_cls=executor_cls,
         expected_data={
             "__typename": "Person",
             "name": "John",
@@ -441,7 +436,7 @@ async def test_it_executes_union_types_using_inline_fragments(executor_cls):
     )
 
 
-async def test_it_executes_interface_types(executor_cls):
+async def test_it_executes_interface_types(assert_execution):
     # This is an *invalid* query, but it should be an *executable* query.
     await assert_execution(
         _SCHEMA,
@@ -458,7 +453,6 @@ async def test_it_executes_interface_types(executor_cls):
         }
         """,
         initial_value=_JOHN,
-        executor_cls=executor_cls,
         expected_data={
             "__typename": "Person",
             "friends": [
@@ -470,7 +464,9 @@ async def test_it_executes_interface_types(executor_cls):
     )
 
 
-async def test_it_executes_interface_types_using_inline_fragments(executor_cls):
+async def test_it_executes_interface_types_using_inline_fragments(
+    assert_execution,
+):
     # This is the valid version of the query in the above test.
     await assert_execution(
         _SCHEMA,
@@ -487,7 +483,6 @@ async def test_it_executes_interface_types_using_inline_fragments(executor_cls):
         }
         """,
         initial_value=_JOHN,
-        executor_cls=executor_cls,
         expected_data={
             "__typename": "Person",
             "friends": [
@@ -499,7 +494,9 @@ async def test_it_executes_interface_types_using_inline_fragments(executor_cls):
     )
 
 
-async def test_it_allows_fragment_conditions_to_be_abstract_types(executor_cls):
+async def test_it_allows_fragment_conditions_to_be_abstract_types(
+    assert_execution,
+):
     await assert_execution(
         _SCHEMA,
         """
@@ -524,7 +521,6 @@ async def test_it_allows_fragment_conditions_to_be_abstract_types(executor_cls):
         }
         """,
         initial_value=_JOHN,
-        executor_cls=executor_cls,
         expected_data={
             "__typename": "Person",
             "friends": [

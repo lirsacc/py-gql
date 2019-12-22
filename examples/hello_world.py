@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from py_gql import build_schema, graphql_blocking
 
 schema = build_schema(

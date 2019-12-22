@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""
+"""
 
 import asyncio
 import functools as ft
@@ -9,36 +11,33 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Optional,
     TypeVar,
 )
 
-from .executor import Executor
+from .base import SubscriptionEnabledRuntime
 
 Resolver = Callable[..., Any]
 T = TypeVar("T")
 G = TypeVar("G")
 
 
-def _isawaitable_fast(value, cache={}, __isawaitable=isawaitable):
-    # This is faster than the default isawaitable which is benefitial for the
-    # hot loops required when resolving large objects.
-    t = type(value)
-    try:
-        return cache[t]
-    except KeyError:
-        res = cache[t] = __isawaitable(value)
-        return res
-
-
-class AsyncIOExecutor(Executor):
+class AsyncIORuntime(SubscriptionEnabledRuntime):
     """
     Executor implementation to work Python's asyncio.
     """
 
-    supports_subscriptions = True
+    def __init__(
+        self,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        execute_blocking_resolvers_in_thread: bool = True,
+    ):
+        self.loop = loop or asyncio.get_event_loop()
+        self._execute_blocking_resolvers_in_thread = (
+            execute_blocking_resolvers_in_thread
+        )
 
-    @staticmethod
-    def ensure_wrapped(value):
+    def ensure_wrapped(self, value):
         if _isawaitable_fast(value):
             return value
 
@@ -47,8 +46,7 @@ class AsyncIOExecutor(Executor):
 
         return _make_awaitable()
 
-    @staticmethod
-    def gather_values(values):
+    def gather_values(self, values):
 
         pending = []  # type: ignore
         pending_idx = []  # type: ignore
@@ -80,8 +78,7 @@ class AsyncIOExecutor(Executor):
 
         return done
 
-    @staticmethod
-    def map_value(value, then, else_=None):
+    def map_value(self, value, then, else_=None):
 
         if _isawaitable_fast(value):
 
@@ -102,8 +99,7 @@ class AsyncIOExecutor(Executor):
                 return else_[1](err)
             raise
 
-    @staticmethod
-    def unwrap_value(value):
+    def unwrap_value(self, value):
         if _isawaitable_fast(value):
 
             async def _await_value():
@@ -117,37 +113,27 @@ class AsyncIOExecutor(Executor):
 
         return value
 
-    @staticmethod
     def map_stream(
-        source_stream: AsyncIterator[T], map_value: Callable[[T], Awaitable[G]]
+        self,
+        source_stream: AsyncIterator[T],
+        map_value: Callable[[T], Awaitable[G]],
     ) -> AsyncIterable[G]:
         return AsyncMap(source_stream, map_value)
 
-    def __init__(
-        self,
-        *args: Any,
-        execute_blocking_resolvers_in_thread: bool = True,
-        **kwargs: Any
-    ):
-        super().__init__(*args, **kwargs)
-        self._execute_blocking_resolvers_in_thread = (
-            execute_blocking_resolvers_in_thread
-        )
-
-    def wrap_field_resolver(self, base: Resolver) -> Resolver:
+    def wrap_callable(self, func: Callable[..., Any]) -> Callable[..., Any]:
         if (
             self._execute_blocking_resolvers_in_thread
-            and not iscoroutinefunction(base)
+            and not iscoroutinefunction(func)
         ):
 
-            async def resolver(*args, **kwargs):
-                return await asyncio.get_event_loop().run_in_executor(
-                    None, ft.partial(base, *args, **kwargs)
+            async def wrapped(*args, **kwargs):
+                return await self.loop.run_in_executor(
+                    None, ft.partial(func, *args, **kwargs)
                 )
 
-            return resolver
+            return wrapped
 
-        return base
+        return func
 
 
 # We cannot use async generators in order to support Python 3.5.
@@ -165,3 +151,14 @@ class AsyncMap:
         return await self.map_value(
             await type(self.source_stream).__anext__(self.source_stream)
         )
+
+
+def _isawaitable_fast(value, cache={}, __isawaitable=isawaitable):
+    # This is faster than the default isawaitable which is benefitial for the
+    # hot loops required when resolving large objects.
+    t = type(value)
+    try:
+        return cache[t]
+    except KeyError:
+        res = cache[t] = __isawaitable(value)
+        return res

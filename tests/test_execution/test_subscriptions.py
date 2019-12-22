@@ -5,7 +5,8 @@ import asyncio
 import pytest
 
 from py_gql.exc import ExecutionError, ResolverError
-from py_gql.execution import AsyncIOExecutor, subscribe
+from py_gql.execution import subscribe
+from py_gql.execution.runtime import AsyncIORuntime, Runtime
 from py_gql.lang import parse
 from py_gql.schema import (
     Argument,
@@ -52,7 +53,7 @@ class AsyncCounter:
 
 
 @pytest.mark.asyncio
-async def test_raises_on_unsupported_executor_class():
+async def test_raises_on_unsupported_runtime():
     schema = subscription_schema(
         Field(
             "counter",
@@ -64,13 +65,21 @@ async def test_raises_on_unsupported_executor_class():
     )
 
     with pytest.raises(RuntimeError):
-        subscribe(schema, parse("subscription { counter(delay: 0.001) }"))
+        subscribe(
+            schema,
+            parse("subscription { counter(delay: 0.001) }"),
+            runtime=Runtime(),  # type: ignore
+        )
 
 
 @pytest.mark.asyncio
 async def test_raises_on_unsupported_operations(starwars_schema):
     with pytest.raises(RuntimeError):
-        subscribe(starwars_schema, parse("query { counter(delay: 0.001) }"))
+        subscribe(
+            starwars_schema,
+            parse("query { counter(delay: 0.001) }"),
+            runtime=AsyncIORuntime(),
+        )
 
 
 @pytest.mark.asyncio
@@ -91,7 +100,7 @@ async def test_raises_on_multiple_fields(starwars_schema):
             parse(
                 "subscription { counter(delay: 0.001), other: counter(delay: 0.001) }"
             ),
-            executor_cls=AsyncIOExecutor,
+            runtime=AsyncIORuntime(),
         )
 
 
@@ -111,7 +120,7 @@ async def test_raises_on_invalid_fields(starwars_schema):
         subscribe(
             schema,
             parse("subscription { counter_foo(delay: 0.001) }"),
-            executor_cls=AsyncIOExecutor,
+            runtime=AsyncIORuntime(),
         )
 
 
@@ -130,7 +139,7 @@ async def test_raises_on_missing_subscription_resolver(starwars_schema):
         subscribe(
             schema,
             parse("subscription { counter(delay: 0.001) }"),
-            executor_cls=AsyncIOExecutor,
+            runtime=AsyncIORuntime(),
         )
 
 
@@ -152,7 +161,7 @@ async def test_simple_counter_subscription():
     response_stream = await subscribe(
         schema,
         parse("subscription { counter(delay: 0.001) }"),
-        executor_cls=AsyncIOExecutor,
+        runtime=AsyncIORuntime(),
     )
 
     assert [{"data": {"counter": x}} for x in range(1, 11)] == [
@@ -179,7 +188,7 @@ async def test_async_subscription_resolver():
     response_stream = await subscribe(
         schema,
         parse("subscription { counter(delay: 0.001) }"),
-        executor_cls=AsyncIOExecutor,
+        runtime=AsyncIORuntime(),
     )
 
     assert [{"data": {"counter": x}} for x in range(1, 11)] == [
@@ -207,7 +216,7 @@ async def test_simple_counter_subscription_with_error():
     response_stream = await subscribe(
         schema,
         parse("subscription { counter(delay: 0.001) }"),
-        executor_cls=AsyncIOExecutor,
+        runtime=AsyncIORuntime(),
     )
 
     assert [

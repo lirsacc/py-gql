@@ -17,15 +17,13 @@ class BlockingExecutor(Executor):
     Executor implementation optimised for synchronous, blocking execution.
 
     Warning:
-        This is aimed to be used internally to optimised the blocking execution
+        This is aimed to be used internally to optimise the blocking execution
         case while keeping the base `Executor` class as generic as possible by
-        side-stepping some of the checks and lifts that need to happen when
-        working with wrapping type such as Awaitable. It overrides much more of
-        the base class than should be necessary to implement custom executors and
-        should not be taken as an example.
+        side-stepping some of the operations that need to happen when working
+        with arbitrary wrapper types such as Awaitable, as a result this
+        overrides much more of the base class than should be necessary to
+        implement custom executors and should not be taken as an example.
     """
-
-    supports_subscriptions = False
 
     def execute_fields(
         self,
@@ -53,7 +51,7 @@ class BlockingExecutor(Executor):
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
-        resolver = self._get_field_resolver(parent_type, field_definition)
+        resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
             field_definition,
@@ -63,6 +61,7 @@ class BlockingExecutor(Executor):
             self.variables,
             self.fragments,
             nodes,
+            self.runtime,
         )
 
         self._instrumentation.on_field_start(

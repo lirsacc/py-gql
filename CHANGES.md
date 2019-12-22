@@ -10,6 +10,7 @@ Unreleased
     - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
     - `instrument_validation_result` has been removed as it was confusing to use.
     - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
+- Runtime specific concepts have been extracted from `Executor` into a separate `Runtime` class which is now passed in on execution. For most purposes, `Executor` should not be implemented moving forward, use `Runtime` instead.
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------

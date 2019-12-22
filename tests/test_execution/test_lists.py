@@ -14,8 +14,6 @@ from py_gql.schema import (
     String,
 )
 
-from ._test_utils import assert_execution
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -23,11 +21,12 @@ pytestmark = pytest.mark.asyncio
 async def run_test(
     test_type,
     test_data,
+    *,
+    assert_execution,
     expected_data=None,
     expected_errors=None,
-    executor_cls=None,
     expected_exc=None,
-    expected_msg=None,
+    expected_msg=None
 ):
 
     data = {"test": test_data}
@@ -44,7 +43,6 @@ async def run_test(
         schema,
         "{ nest { test } }",
         initial_value=data,
-        executor_cls=executor_cls,
         expected_data=(
             {"nest": {"test": expected_data}}
             if expected_data is not None
@@ -81,21 +79,24 @@ _FRUITS = ["apple", "banana", "apple", "coconut"]
     ],
 )
 async def test_it_accepts_iterables_for_list_type(
-    executor_cls, iterable, result
+    assert_execution, iterable, result
 ):
     await run_test(
-        ListType(String), lazy(iterable), result, [], executor_cls=executor_cls
+        ListType(String),
+        lazy(iterable),
+        expected_data=result,
+        assert_execution=assert_execution,
     )
 
 
 @pytest.mark.parametrize("not_iterable", ["apple", 42, object()])
 async def test_it_raises_on_non_iterable_value_for_list_type(
-    executor_cls, not_iterable
+    assert_execution, not_iterable
 ):
     await run_test(
         ListType(String),
         not_iterable,
-        executor_cls=executor_cls,
+        assert_execution=assert_execution,
         expected_exc=RuntimeError,
         expected_msg=(
             'Field "nest.test" is a list type and resolved value should '
@@ -117,8 +118,15 @@ async def test_it_raises_on_non_iterable_value_for_list_type(
         pytest.param(_lazy(None), None, id="[T], callable, null"),
     ],
 )
-async def test_nullable_list_of_nullable_items(executor_cls, data, expected):
-    await run_test(ListType(Int), data, expected, executor_cls=executor_cls)
+async def test_nullable_list_of_nullable_items(
+    assert_execution, data, expected
+):
+    await run_test(
+        ListType(Int),
+        data,
+        expected_data=expected,
+        assert_execution=assert_execution,
+    )
 
 
 @pytest.mark.parametrize(
@@ -135,10 +143,13 @@ async def test_nullable_list_of_nullable_items(executor_cls, data, expected):
     ],
 )
 async def test_non_nullable_list_of_nullable_items_ok(
-    executor_cls, data, expected
+    assert_execution, data, expected
 ):
     await run_test(
-        NonNullType(ListType(Int)), data, expected, executor_cls=executor_cls
+        NonNullType(ListType(Int)),
+        data,
+        expected_data=expected,
+        assert_execution=assert_execution,
     )
 
 
@@ -153,14 +164,13 @@ async def test_non_nullable_list_of_nullable_items_ok(
     ],
 )
 async def test_non_nullable_list_of_nullable_items_fail(
-    executor_cls, data, expected_err
+    assert_execution, data, expected_err
 ):
     await run_test(
         NonNullType(ListType(Int)),
         data,
-        None,
-        [expected_err],
-        executor_cls=executor_cls,
+        expected_errors=[expected_err],
+        assert_execution=assert_execution,
     )
 
 
@@ -174,10 +184,13 @@ async def test_non_nullable_list_of_nullable_items_fail(
     ],
 )
 async def test_nullable_list_of_non_nullable_items_ok(
-    executor_cls, data, expected
+    assert_execution, data, expected
 ):
     await run_test(
-        ListType(NonNullType(Int)), data, expected, executor_cls=executor_cls
+        ListType(NonNullType(Int)),
+        data,
+        expected_data=expected,
+        assert_execution=assert_execution,
     )
 
 
@@ -195,12 +208,11 @@ async def test_nullable_list_of_non_nullable_items_ok(
     ],
 )
 async def test_nullable_list_of_non_nullable_items_fail(
-    executor_cls, data, expected_err
+    assert_execution, data, expected_err
 ):
     await run_test(
         ListType(NonNullType(Int)),
         data,
-        None,
-        [expected_err],
-        executor_cls=executor_cls,
+        expected_errors=[expected_err],
+        assert_execution=assert_execution,
     )

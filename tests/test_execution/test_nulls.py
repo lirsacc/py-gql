@@ -5,8 +5,6 @@ import pytest
 from py_gql.exc import ResolverError
 from py_gql.schema import Field, NonNullType, ObjectType, Schema, String
 
-from ._test_utils import assert_execution
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -23,32 +21,29 @@ NullNonNullDataType = ObjectType(
 NullAndNonNullSchema = Schema(NullNonNullDataType)
 
 
-async def test_nulls_nullable_field(executor_cls):
+async def test_nulls_nullable_field(assert_execution):
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalar }",
         initial_value=dict(scalar=None),
-        executor_cls=executor_cls,
         expected_data={"scalar": None},
     )
 
 
-async def test_nulls_lazy_nullable_field(executor_cls):
+async def test_nulls_lazy_nullable_field(assert_execution):
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalar }",
         initial_value=dict(scalar=lambda *_: None),
-        executor_cls=executor_cls,
         expected_data={"scalar": None},
     )
 
 
-async def test_nulls_and_report_error_on_non_nullable_field(executor_cls):
+async def test_nulls_and_report_error_on_non_nullable_field(assert_execution):
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalarNonNull }",
         initial_value=dict(scalarNonNull=None),
-        executor_cls=executor_cls,
         expected_data={"scalarNonNull": None},
         expected_errors=[
             ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
@@ -56,12 +51,13 @@ async def test_nulls_and_report_error_on_non_nullable_field(executor_cls):
     )
 
 
-async def test_nulls_and_report_error_on_lazy_non_nullable_field(executor_cls):
+async def test_nulls_and_report_error_on_lazy_non_nullable_field(
+    assert_execution,
+):
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalarNonNull }",
         initial_value=dict(scalarNonNull=lambda *_: None),
-        executor_cls=executor_cls,
         expected_data={"scalarNonNull": None},
         expected_errors=[
             ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
@@ -69,7 +65,7 @@ async def test_nulls_and_report_error_on_lazy_non_nullable_field(executor_cls):
     )
 
 
-async def test_nulls_tree_of_nullable_fields(executor_cls):
+async def test_nulls_tree_of_nullable_fields(assert_execution):
     await assert_execution(
         NullAndNonNullSchema,
         """
@@ -91,7 +87,6 @@ async def test_nulls_tree_of_nullable_fields(executor_cls):
                 "nested": {"scalar": None, "nested": None},
             }
         },
-        executor_cls=executor_cls,
         expected_data={
             "nested": {
                 "nested": {"nested": None, "scalar": None},
@@ -104,7 +99,7 @@ async def test_nulls_tree_of_nullable_fields(executor_cls):
 
 # Depending on scheduling the errors can be in a different order
 async def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
-    executor_cls,
+    assert_execution,
 ):
 
     await assert_execution(
@@ -129,7 +124,6 @@ async def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
             "nestedNonNull": None,
             "nested": {"scalarNonNull": None, "nestedNonNull": None},
         },
-        executor_cls=executor_cls,
         expected_data={
             "nested": {"nestedNonNull": None, "scalarNonNull": None},
             "nestedNonNull": None,
@@ -154,7 +148,7 @@ async def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
     )
 
 
-async def test_nulls_out_errored_subtrees(raiser, executor_cls):
+async def test_nulls_out_errored_subtrees(raiser, assert_execution):
     root = dict(
         sync="sync",
         callable_error=raiser(ResolverError, "callable_error"),
@@ -188,7 +182,6 @@ async def test_nulls_out_errored_subtrees(raiser, executor_cls):
             resolver,
         }""",
         initial_value=root,
-        executor_cls=executor_cls,
         expected_data={
             "sync": "sync",
             "callable_error": None,

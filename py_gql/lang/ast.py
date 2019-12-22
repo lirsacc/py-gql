@@ -177,6 +177,14 @@ class Document(Node):
         self.source = source
         self.loc = loc
 
+    @property
+    def fragments(self) -> Dict[str, "FragmentDefinition"]:
+        return {
+            f.name.value: f
+            for f in self.definitions
+            if isinstance(f, FragmentDefinition)
+        }
+
 
 class OperationDefinition(SupportDirectives, ExecutableDefinition):
     __slots__ = (

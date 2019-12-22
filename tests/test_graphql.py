@@ -7,7 +7,7 @@ import pytest
 
 from py_gql._graphql import graphql, graphql_blocking, process_graphql_query
 from py_gql.exc import ResolverError, SchemaError
-from py_gql.execution import ThreadPoolExecutor
+from py_gql.execution.runtime import ThreadPoolRuntime
 from py_gql.schema import Schema, String
 from py_gql.sdl import build_schema
 
@@ -22,7 +22,7 @@ async def _execute_query_async(*args, **kwargs):
 
 async def _execute_query_threaded(*args, **kwargs):
     return process_graphql_query(
-        *args, executor_cls=ThreadPoolExecutor, **kwargs
+        *args, runtime=ThreadPoolRuntime(), **kwargs
     ).result()
 
 

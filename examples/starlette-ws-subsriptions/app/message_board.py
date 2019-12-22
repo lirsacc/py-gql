@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Simple database for our message board example.
-A more complete example would use a real database.
 """
 
 import datetime

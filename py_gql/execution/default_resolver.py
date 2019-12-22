@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .wrappers import ResolveInfo
+if TYPE_CHECKING:
+    from .wrappers import ResolveInfo
 
 
 def default_resolver(
     root: Any,
     context: Any,
-    info: ResolveInfo,
+    info: "ResolveInfo",
     __isinstance: Any = isinstance,
     __getattr: Any = getattr,
     __callable: Any = callable,

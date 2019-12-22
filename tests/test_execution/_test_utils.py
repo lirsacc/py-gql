@@ -25,7 +25,7 @@ def create_test_schema(field_or_type):
         return Schema(ObjectType("Query", [field_or_type]))
 
 
-def assert_result_match(
+def assert_execution_result(
     result: GraphQLResult,
     expected_data: Any = None,
     expected_errors: Optional[List[ExpectedError]] = None,
@@ -93,7 +93,7 @@ def assert_sync_execution(
     else:
         result = execute(schema, doc, **kwargs)
         assert not isawaitable(result) and isinstance(result, GraphQLResult)
-        assert_result_match(result, expected_data, expected_errors)
+        assert_execution_result(result, expected_data, expected_errors)
 
 
 async def assert_execution(
@@ -126,7 +126,7 @@ async def assert_execution(
     else:
         result = await _execute()
         assert isinstance(result, GraphQLResult)
-        assert_result_match(result, expected_data, expected_errors)
+        assert_execution_result(result, expected_data, expected_errors)
 
 
 async def process_request(

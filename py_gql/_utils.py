@@ -2,6 +2,7 @@
 """ Some generic laguage level utilities for internal use. """
 
 import collections
+import functools
 import sys
 from typing import (
     AbstractSet,
@@ -13,6 +14,7 @@ from typing import (
     Mapping,
     MutableMapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -306,3 +308,33 @@ def classdispatch(
         raise TypeError(value.__class__)
 
     return impl(value, *args, **kwargs)
+
+
+def apply_middlewares(
+    func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
+) -> Callable[..., Any]:
+    """Apply a list of middlewares to a source function.
+
+    - Middlewares must be structured as: ``middleware(next, *args, **kwargs)``
+      and call the next middleware inline.
+
+    >>> def square(x): return x ** 2
+    >>> def double(next, x): return next(x * 2)
+    >>> def substract_one(next, x): return next(x - 1)
+
+    >>> final = apply_middlewares(square, [double, substract_one])
+
+    >>> final(2)  # ((2 - 1) * 2) ^ 2
+    4
+
+    >>> final(10)  # ((10 - 1) * 2) ^ 2
+    324
+    """
+    tail = func
+    for mw in middlewares:
+        if not callable(mw):
+            raise TypeError("Middleware should be a callable")
+
+        tail = functools.partial(mw, tail)
+
+    return tail

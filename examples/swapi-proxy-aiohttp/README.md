@@ -15,7 +15,7 @@ Data is fetched live from <https://swapi.co>.
 
 ```.bash
 pip install -r requirements.txt
-adev runserver -p 5000 --app-factory init app.server
+adev runserver -p 5000 --app-factory init app/server.py
 ```
 
 You can then open <http://localhost:5000/graphiql> to run queries interactively.

@@ -10,7 +10,6 @@ import requests
 
 from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.execution import ThreadPoolExecutor
 
 from . import swapi
 
@@ -65,7 +64,7 @@ def nested_list_resolver(key, resource):
         if obj is None:
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
-        return ThreadPoolExecutor.gather_values(
+        return info.runtime.gather_values(
             [
                 ctx["global_executor"].submit(swapi.fetch_one, resource, id)
                 for id in ids

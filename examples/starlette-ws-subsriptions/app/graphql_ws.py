@@ -14,7 +14,8 @@ from typing import Any, Dict, Optional
 from starlette.websockets import WebSocket
 
 from py_gql.exc import ExecutionError, GraphQLResponseError, GraphQLSyntaxError
-from py_gql.execution import AsyncIOExecutor, execute, get_operation, subscribe
+from py_gql.execution import execute, get_operation, subscribe
+from py_gql.execution.runtime import AsyncIORuntime
 from py_gql.lang import parse
 from py_gql.schema import Schema
 
@@ -95,7 +96,7 @@ class GraphQLWSHandler:
                     operation_name=operation_name,
                     context_value=self.context,
                     initial_value=self.root,
-                    executor_cls=AsyncIOExecutor,
+                    runtime=AsyncIORuntime(),
                 )
             except GraphQLResponseError as err:
                 await self.send(
@@ -123,7 +124,7 @@ class GraphQLWSHandler:
                     operation_name=operation_name,
                     context_value=self.context,
                     initial_value=self.root,
-                    executor_cls=AsyncIOExecutor,
+                    runtime=AsyncIORuntime(),
                 )
             except GraphQLResponseError as err:
                 await self.send(

@@ -9,13 +9,13 @@ from .exc import (
     VariablesCoercionError,
 )
 from .execution import (
-    AsyncIOExecutor,
     BlockingExecutor,
     Executor,
     GraphQLResult,
     Instrumentation,
     execute,
 )
+from .execution.runtime import AsyncIORuntime, Runtime
 from .lang import parse
 from .lang.ast import Document
 from .schema import Schema
@@ -36,7 +36,7 @@ def process_graphql_query(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     executor_cls: Type[Executor] = Executor,
-    executor_kwargs: Optional[Mapping[str, Any]] = None
+    runtime: Optional[Runtime] = None
 ) -> Any:
     """
     Main GraphQL entrypoint encapsulating query processing from start to
@@ -92,8 +92,6 @@ def process_graphql_query(
             type of values you'll get out of this function. `executor_kwargs` will
             be passed on class instantiation as keyword arguments.
 
-        executor_kwargs: Extra executor arguments.
-
     Returns:
         Execution result.
 
@@ -106,13 +104,14 @@ def process_graphql_query(
     schema.validate()
 
     instrumentation = instrumentation or Instrumentation()
+    runtime = runtime or Runtime()
 
     instrumentation.on_query_start()
 
     def _abort(*args, **kwargs):
         # Make sure the value is wrapped similarly to the execution result to
         # make it easier for consumers.
-        return executor_cls.ensure_wrapped(
+        return cast(Runtime, runtime).ensure_wrapped(
             _on_end(GraphQLResult(*args, **kwargs))
         )
 
@@ -144,22 +143,24 @@ def process_graphql_query(
         return _abort(errors=validation_result.errors)
 
     try:
-        return executor_cls.map_value(
-            execute(
-                schema,
-                ast,
-                operation_name=operation_name,
-                variables=variables,
-                initial_value=root,
-                context_value=context,
-                default_resolver=default_resolver,
-                instrumentation=instrumentation,
-                middlewares=middlewares,
-                disable_introspection=disable_introspection,
-                executor_cls=executor_cls,
-                executor_kwargs=executor_kwargs,
-            ),
-            _on_end,
+        return runtime.unwrap_value(
+            runtime.map_value(
+                execute(
+                    schema,
+                    ast,
+                    operation_name=operation_name,
+                    variables=variables,
+                    initial_value=root,
+                    context_value=context,
+                    default_resolver=default_resolver,
+                    instrumentation=instrumentation,
+                    middlewares=middlewares,
+                    disable_introspection=disable_introspection,
+                    executor_cls=executor_cls,
+                    runtime=runtime,
+                ),
+                _on_end,
+            )
         )
     except VariablesCoercionError as err:
         return _abort(data=None, errors=err.errors)
@@ -199,7 +200,7 @@ async def graphql(
             default_resolver=default_resolver,
             instrumentation=instrumentation,
             middlewares=middlewares,
-            executor_cls=AsyncIOExecutor,
+            runtime=AsyncIORuntime(),
         ),
     )
 

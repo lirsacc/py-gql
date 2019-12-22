@@ -4,14 +4,12 @@ import pytest
 
 from py_gql.lang import parse
 
-from ._test_utils import assert_execution
-
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
 async def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
-    starwars_schema, executor_cls
+    starwars_schema, assert_execution
 ):
     await assert_execution(
         starwars_schema,
@@ -25,12 +23,11 @@ async def test_it_correctly_identifies_r2_d2_as_the_hero_of_the_star_wars_saga(
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"hero": {"name": "R2-D2", "id": "2001"}},
     )
 
 
-async def test_id_and_friends_of_r2_d2(starwars_schema, executor_cls):
+async def test_id_and_friends_of_r2_d2(starwars_schema, assert_execution):
     await assert_execution(
         starwars_schema,
         parse(
@@ -46,7 +43,6 @@ async def test_id_and_friends_of_r2_d2(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "hero": {
                 "id": "2001",
@@ -61,7 +57,9 @@ async def test_id_and_friends_of_r2_d2(starwars_schema, executor_cls):
     )
 
 
-async def test_the_friends_of_friends_of_r2_d2(starwars_schema, executor_cls):
+async def test_the_friends_of_friends_of_r2_d2(
+    starwars_schema, assert_execution
+):
     await assert_execution(
         starwars_schema,
         parse(
@@ -80,7 +78,6 @@ async def test_the_friends_of_friends_of_r2_d2(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "hero": {
                 "name": "R2-D2",
@@ -120,7 +117,7 @@ async def test_the_friends_of_friends_of_r2_d2(starwars_schema, executor_cls):
     )
 
 
-async def test_luke_skywalker_using_id(starwars_schema, executor_cls):
+async def test_luke_skywalker_using_id(starwars_schema, assert_execution):
     await assert_execution(
         starwars_schema,
         parse(
@@ -132,7 +129,6 @@ async def test_luke_skywalker_using_id(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"human": {"name": "Luke Skywalker"}},
     )
 
@@ -146,7 +142,7 @@ async def test_luke_skywalker_using_id(starwars_schema, executor_cls):
     ],
 )
 async def test_generic_query_using_id_and_variable(
-    starwars_schema, executor_cls, id_, expected
+    starwars_schema, assert_execution, id_, expected
 ):
     await assert_execution(
         starwars_schema,
@@ -160,12 +156,11 @@ async def test_generic_query_using_id_and_variable(
             """
         ),
         variables={"someId": id_},
-        executor_cls=executor_cls,
         expected_data={"human": expected},
     )
 
 
-async def test_changing_key_with_alias(starwars_schema, executor_cls):
+async def test_changing_key_with_alias(starwars_schema, assert_execution):
     await assert_execution(
         starwars_schema,
         parse(
@@ -177,12 +172,13 @@ async def test_changing_key_with_alias(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"luke": {"name": "Luke Skywalker"}},
     )
 
 
-async def test_same_root_field_multiple_aliases(starwars_schema, executor_cls):
+async def test_same_root_field_multiple_aliases(
+    starwars_schema, assert_execution
+):
     await assert_execution(
         starwars_schema,
         parse(
@@ -199,7 +195,6 @@ async def test_same_root_field_multiple_aliases(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "luke": {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
             "leia": {"name": "Leia Organa", "homePlanet": "Alderaan"},
@@ -208,7 +203,7 @@ async def test_same_root_field_multiple_aliases(starwars_schema, executor_cls):
 
 
 async def test_use_of_fragment_to_avoid_duplicate_content(
-    starwars_schema, executor_cls
+    starwars_schema, assert_execution
 ):
     await assert_execution(
         starwars_schema,
@@ -222,7 +217,6 @@ async def test_use_of_fragment_to_avoid_duplicate_content(
             fragment HumanFragment on Human { name homePlanet }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "luke": {"name": "Luke Skywalker", "homePlanet": "Tatooine"},
             "leia": {"name": "Leia Organa", "homePlanet": "Alderaan"},
@@ -243,17 +237,14 @@ async def test_use_of_fragment_to_avoid_duplicate_content(
         ),
     ],
 )
-async def test_introspection(starwars_schema, executor_cls, query, result):
+async def test_introspection(starwars_schema, assert_execution, query, result):
     await assert_execution(
-        starwars_schema,
-        parse(query),
-        expected_data=result,
-        executor_cls=executor_cls,
+        starwars_schema, parse(query), expected_data=result,
     )
 
 
 async def test_error_on_accessing_secret_backstory(
-    starwars_schema, executor_cls
+    starwars_schema, assert_execution
 ):
     await assert_execution(
         starwars_schema,
@@ -267,7 +258,6 @@ async def test_error_on_accessing_secret_backstory(
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"hero": {"name": "R2-D2", "secretBackstory": None}},
         expected_errors=[
             ("secretBackstory is secret.", (103, 118), "hero.secretBackstory")
@@ -276,7 +266,7 @@ async def test_error_on_accessing_secret_backstory(
 
 
 async def test_error_on_accessing_secret_backstory_in_a_list(
-    starwars_schema, executor_cls
+    starwars_schema, assert_execution
 ):
     await assert_execution(
         starwars_schema,
@@ -293,7 +283,6 @@ async def test_error_on_accessing_secret_backstory_in_a_list(
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "hero": {
                 "friends": [
@@ -316,7 +305,7 @@ async def test_error_on_accessing_secret_backstory_in_a_list(
 
 
 async def test_error_on_accessing_secret_backstory_through_alias(
-    starwars_schema, executor_cls
+    starwars_schema, assert_execution
 ):
     await assert_execution(
         starwars_schema,
@@ -330,7 +319,6 @@ async def test_error_on_accessing_secret_backstory_through_alias(
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"mainHero": {"name": "R2-D2", "story": None}},
         expected_errors=[
             ("secretBackstory is secret.", (113, 135), "mainHero.story")
@@ -338,7 +326,7 @@ async def test_error_on_accessing_secret_backstory_through_alias(
     )
 
 
-async def test_error_on_missing_argument(starwars_schema, executor_cls):
+async def test_error_on_missing_argument(starwars_schema, assert_execution):
     await assert_execution(
         starwars_schema,
         parse(
@@ -350,7 +338,6 @@ async def test_error_on_missing_argument(starwars_schema, executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={"luke": None},
         expected_errors=[
             (

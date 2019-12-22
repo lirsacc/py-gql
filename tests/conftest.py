@@ -6,12 +6,6 @@ import os
 import pytest
 
 from py_gql import build_schema
-from py_gql.execution import (
-    AsyncIOExecutor,
-    BlockingExecutor,
-    Executor,
-    ThreadPoolExecutor,
-)
 
 
 @pytest.fixture
@@ -49,10 +43,3 @@ def raiser():
         return _raiser
 
     return factory
-
-
-@pytest.fixture(
-    params=[Executor, BlockingExecutor, AsyncIOExecutor, ThreadPoolExecutor]
-)
-def executor_cls(request):
-    yield request.param

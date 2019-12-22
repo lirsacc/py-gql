@@ -22,13 +22,13 @@ from py_gql.schema import (
     String,
 )
 
-from ._test_utils import assert_execution, create_test_schema
+from ._test_utils import create_test_schema
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 
-async def test_raises_on_missing_operation(starwars_schema, executor_cls):
+async def test_raises_on_missing_operation(starwars_schema, assert_execution):
     with pytest.raises(ExecutionError) as exc_info:
         await assert_execution(
             starwars_schema,
@@ -40,34 +40,31 @@ async def test_raises_on_missing_operation(starwars_schema, executor_cls):
                 ...a
             }
             """,
-            executor_cls=executor_cls,
         )
 
     assert "Expected at least one operation" in str(exc_info.value)
 
 
-async def test_uses_inline_operation_if_no_name_is_provided(executor_cls):
+async def test_uses_inline_operation_if_no_name_is_provided(assert_execution):
     await assert_execution(
         create_test_schema(String),
         "{ test }",
         initial_value={"test": "foo"},
         expected_data={"test": "foo"},
-        executor_cls=executor_cls,
     )
 
 
-async def test_uses_only_operation_if_no_name_is_provided(executor_cls):
+async def test_uses_only_operation_if_no_name_is_provided(assert_execution):
     schema = create_test_schema(String)
     await assert_execution(
         schema,
         "query Example { test }",
         initial_value={"test": "foo"},
         expected_data={"test": "foo"},
-        executor_cls=executor_cls,
     )
 
 
-async def test_uses_named_operation_if_name_is_provided(executor_cls):
+async def test_uses_named_operation_if_name_is_provided(assert_execution):
     schema = create_test_schema(String)
     await assert_execution(
         schema,
@@ -75,32 +72,27 @@ async def test_uses_named_operation_if_name_is_provided(executor_cls):
         initial_value={"test": "foo"},
         operation_name="Example1",
         expected_data={"test": "foo"},
-        executor_cls=executor_cls,
     )
 
 
-async def test_raises_if_no_operation_is_provided(executor_cls):
+async def test_raises_if_no_operation_is_provided(assert_execution):
     schema = create_test_schema(String)
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
         await assert_execution(
-            schema,
-            "fragment Example on Query { test }",
-            executor_cls=executor_cls,
+            schema, "fragment Example on Query { test }",
         )
     assert str(exc_info.value) == "Expected at least one operation definition"
 
 
 async def test_raises_if_no_operation_name_is_provided_along_multiple_operations(
-    executor_cls,
+    assert_execution,
 ):
     schema = create_test_schema(String)
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
         await assert_execution(
-            schema,
-            "query Example { test } query OtherExample { test }",
-            executor_cls=executor_cls,
+            schema, "query Example { test } query OtherExample { test }",
         )
     assert str(exc_info.value) == (
         "Operation name is required when document contains multiple "
@@ -108,19 +100,18 @@ async def test_raises_if_no_operation_name_is_provided_along_multiple_operations
     )
 
 
-async def test_raises_if_unknown_operation_name_is_provided(executor_cls):
+async def test_raises_if_unknown_operation_name_is_provided(assert_execution):
     schema = create_test_schema(String)
     with pytest.raises(ExecutionError) as exc_info:
         await assert_execution(
             schema,
             "query Example { test } query OtherExample { test }",
             operation_name="Foo",
-            executor_cls=executor_cls,
         )
     assert str(exc_info.value) == 'No operation "Foo" in document'
 
 
-async def test_it_raises_if_operation_type_is_not_supported(executor_cls):
+async def test_it_raises_if_operation_type_is_not_supported(assert_execution):
     with pytest.raises(ExecutionError) as exc_info:
         await assert_execution(
             Schema(
@@ -128,13 +119,12 @@ async def test_it_raises_if_operation_type_is_not_supported(executor_cls):
             ),
             "{ test }",
             initial_value={"test": "foo"},
-            executor_cls=executor_cls,
         )
     assert str(exc_info.value) == "Schema doesn't support query operation"
 
 
 async def test_uses_mutation_schema_for_mutation_operation(
-    mocker, executor_cls
+    mocker, assert_execution
 ):
     query = mocker.Mock(return_value="foo")
     mutation = mocker.Mock(return_value="foo")
@@ -150,16 +140,13 @@ async def test_uses_mutation_schema_for_mutation_operation(
     )
 
     await assert_execution(
-        schema,
-        parse("mutation M { test }"),
-        executor_cls=executor_cls,
-        expected_data={"test": "foo"},
+        schema, parse("mutation M { test }"), expected_data={"test": "foo"},
     )
     assert not query.call_count
     assert mutation.call_count == 1
 
 
-async def test_forwarded_resolver_arguments(mocker, executor_cls):
+async def test_forwarded_resolver_arguments(mocker, assert_execution):
 
     resolver = mocker.Mock(return_value="foo")
     context = mocker.Mock()
@@ -176,7 +163,6 @@ async def test_forwarded_resolver_arguments(mocker, executor_cls):
         context_value=context,
         initial_value=root,
         variables={"var": 123},
-        executor_cls=executor_cls,
     )
 
     if isawaitable(result):
@@ -196,7 +182,7 @@ async def test_forwarded_resolver_arguments(mocker, executor_cls):
     assert args == {"arg": "123"}
 
 
-async def test_merge_of_parallel_fragments(executor_cls):
+async def test_merge_of_parallel_fragments(assert_execution):
     T = ObjectType(
         "Type",
         [
@@ -226,7 +212,6 @@ async def test_merge_of_parallel_fragments(executor_cls):
             }
             """
         ),
-        executor_cls=executor_cls,
         expected_data={
             "a": "Apple",
             "b": "Banana",
@@ -240,7 +225,9 @@ async def test_merge_of_parallel_fragments(executor_cls):
     )
 
 
-async def test_full_response_path_is_included_on_error(raiser, executor_cls):
+async def test_full_response_path_is_included_on_error(
+    raiser, assert_execution
+):
     A = ObjectType(
         "A",
         [
@@ -273,7 +260,6 @@ async def test_full_response_path_is_included_on_error(raiser, executor_cls):
             }
         }
         """,
-        executor_cls=executor_cls,
         expected_data={
             "nullableA": {
                 "aliasedA": {"nonNullA": {"anotherA": {"raises": None}}}
@@ -289,7 +275,7 @@ async def test_full_response_path_is_included_on_error(raiser, executor_cls):
     )
 
 
-async def test_it_does_not_include_illegal_fields(mocker, executor_cls):
+async def test_it_does_not_include_illegal_fields(mocker, assert_execution):
     """ ...even if you skip validation """
 
     root = {
@@ -307,7 +293,6 @@ async def test_it_does_not_include_illegal_fields(mocker, executor_cls):
         """,
         initial_value=root,
         expected_data={},
-        executor_cls=executor_cls,
     )
 
     root["thisIsIllegalDontIncludeMe"].assert_not_called()
@@ -421,13 +406,12 @@ fragment articleFields on Article {
 
 
 async def test_executes_library_query_correctly_without_validation(
-    executor_cls,
+    assert_execution,
 ):
     await assert_execution(
         _LIBRARY_SCHEMA,
         # This is an *invalid* query, but it should be an *executable* query.
         _LIBRARY_QUERY,
-        executor_cls=executor_cls,
         expected_data={
             "article": {
                 "author": {
@@ -531,7 +515,7 @@ async def test_result_is_ordered_according_to_query():
     ]
 
 
-async def test_custom_scalar(executor_cls):
+async def test_custom_scalar(assert_execution):
 
     Email = RegexType(
         "Email", r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
@@ -549,7 +533,6 @@ async def test_custom_scalar(executor_cls):
             bar
         }
         """,
-        executor_cls=executor_cls,
         initial_value={
             "foo": "aff929fe-25a1-5e3d-8634-4c122f38d596",
             "bar": "gujwar@gagiv.kg",
@@ -561,13 +544,12 @@ async def test_custom_scalar(executor_cls):
     )
 
 
-async def test_invalid_scalar(executor_cls):
+async def test_invalid_scalar(assert_execution):
     schema = Schema(ObjectType("Query", [Field("field", Int)]))
 
     await assert_execution(
         schema,
         "{ field }",
-        executor_cls=executor_cls,
         initial_value={"field": "aff929fe-25a1"},
         expected_exc=(
             RuntimeError,
@@ -580,7 +562,7 @@ async def test_invalid_scalar(executor_cls):
 
 
 async def test_spreading_fragments_with_interfaces(
-    executor_cls, starwars_schema
+    assert_execution, starwars_schema
 ):
     # Fragment should spread in all 3 cases:
     # - Spread Implementer { ... on Interface }
@@ -617,7 +599,6 @@ async def test_spreading_fragments_with_interfaces(
             id
         }
         """,
-        executor_cls=executor_cls,
         expected_data={
             "hero": {
                 "id": "2001",
