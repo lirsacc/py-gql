@@ -8,7 +8,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Mapping,
     Optional,
     Sequence,
     Set,
@@ -51,7 +50,11 @@ from ..schema.introspection import (
     TYPE_INTROSPECTION_FIELD,
     TYPE_NAME_INTROSPECTION_FIELD,
 )
-from ..utilities import coerce_argument_values, directive_arguments
+from ..utilities import (
+    coerce_argument_values,
+    collect_fields,
+    directive_arguments,
+)
 from .default_resolver import default_resolver as _default_resolver
 from .instrumentation import Instrumentation
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
@@ -221,47 +224,18 @@ class Executor:
         """Clear any collected error from the current executor instance."""
         self._errors[:] = []
 
-    def does_fragment_type_apply(
-        self,
-        object_type: ObjectType,
-        fragment: Union[_ast.InlineFragment, _ast.FragmentDefinition],
+    def skip_selection(
+        self, node: Union[_ast.Field, _ast.InlineFragment, _ast.FragmentSpread],
     ) -> bool:
-        """Determine if a fragment is applicable to the given type."""
-        type_condition = fragment.type_condition
-        if not type_condition:
-            return True
-
-        cache_key = (object_type.name, type_condition)
-
-        try:
-            return self._fragment_type_applies[cache_key]
-        except KeyError:
-            pass
-
-        fragment_type = self.schema.get_type_from_literal(type_condition)
-        self._fragment_type_applies[cache_key] = applies = (
-            fragment_type == object_type
-        ) or (
-            isinstance(fragment_type, GraphQLAbstractType)
-            and self.schema.is_possible_type(fragment_type, object_type)
+        skip = directive_arguments(
+            SkipDirective, node, variables=self.variables
         )
-
-        return applies
-
-    def _collect_fragment_fields(
-        self,
-        parent_type: ObjectType,
-        fragment: Union[_ast.FragmentDefinition, _ast.InlineFragment],
-        visited_fragments: Set[str],
-        grouped_fields: GroupedFields,
-    ) -> None:
-        fragment_grouped_fields = self.collect_fields(
-            parent_type, fragment.selection_set.selections, visited_fragments
+        include = directive_arguments(
+            IncludeDirective, node, variables=self.variables
         )
-        for key, collected in fragment_grouped_fields.items():
-            if key not in grouped_fields:
-                grouped_fields[key] = []
-            grouped_fields[key].extend(collected)
+        skipped = skip is not None and skip["if"]
+        included = include is None or include["if"]
+        return skipped or (not included)
 
     def collect_fields(
         self,
@@ -277,51 +251,13 @@ class Executor:
         try:
             return self._grouped_fields[cache_key]
         except KeyError:
-            visited_fragments = visited_fragments or set()
-            grouped_fields = OrderedDict()  # type: GroupedFields
-
-            for selection in selections:
-                if isinstance(selection, _ast.Field):
-                    if _skip_selection(selection, self.variables):
-                        continue
-
-                    key = selection.response_name
-                    if key not in grouped_fields:
-                        grouped_fields[key] = []
-                    grouped_fields[key].append(selection)
-
-                elif isinstance(selection, _ast.InlineFragment):
-                    if _skip_selection(selection, self.variables):
-                        continue
-
-                    if not self.does_fragment_type_apply(
-                        parent_type, selection
-                    ):
-                        continue
-
-                    self._collect_fragment_fields(
-                        parent_type,
-                        selection,
-                        visited_fragments,
-                        grouped_fields,
-                    )
-
-                elif isinstance(selection, _ast.FragmentSpread):
-                    if _skip_selection(selection, self.variables):
-                        continue
-
-                    name = selection.name.value
-                    if name in visited_fragments:
-                        continue
-
-                    fragment = self.fragments[name]
-                    if not self.does_fragment_type_apply(parent_type, fragment):
-                        continue
-
-                    self._collect_fragment_fields(
-                        parent_type, fragment, visited_fragments, grouped_fields
-                    )
-                    visited_fragments.add(name)
+            self._grouped_fields[cache_key] = grouped_fields = collect_fields(
+                self.schema,
+                parent_type,
+                selections,
+                self.fragments,
+                _skip=self.skip_selection,
+            )
 
             self._grouped_fields[cache_key] = grouped_fields
             return grouped_fields
@@ -673,17 +609,6 @@ def _subselections(nodes: Iterable[_ast.Field]) -> Iterator[_ast.Selection]:
         if field.selection_set:
             for selection in field.selection_set.selections:
                 yield selection
-
-
-def _skip_selection(
-    node: Union[_ast.Field, _ast.InlineFragment, _ast.FragmentSpread],
-    variables: Mapping[str, Any],
-) -> bool:
-    skip = directive_arguments(SkipDirective, node, variables=variables)
-    include = directive_arguments(IncludeDirective, node, variables=variables)
-    skipped = skip is not None and skip["if"]
-    included = include is None or include["if"]
-    return skipped or (not included)
 
 
 def _apply_middlewares(

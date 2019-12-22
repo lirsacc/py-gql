@@ -13,17 +13,19 @@ from .coerce_value import (
     coerce_variable_values,
     directive_arguments,
 )
+from .collect_fields import collect_fields
 from .introspection_query import introspection_query
 from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
 from .value_from_ast import value_from_ast
 
 __all__ = (
-    "ASTSchemaPrinter",
     "ast_node_from_value",
+    "ASTSchemaPrinter",
     "coerce_argument_values",
     "coerce_value",
     "coerce_variable_values",
+    "collect_fields",
     "directive_arguments",
     "introspection_query",
     "TypeInfoVisitor",
