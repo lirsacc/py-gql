@@ -12,6 +12,11 @@ import invoke
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = "py_gql"
+DEFAULT_TARGETS = (
+    "%s tests examples" % PACKAGE
+    if sys.version >= "3.6"
+    else "%s tests" % PACKAGE
+)
 
 
 def _join(cmd):
@@ -110,7 +115,7 @@ def test(
 
 @invoke.task(iterable=["files"])
 def flake8(ctx, files=None, junit=False):
-    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
+    files = DEFAULT_TARGETS if not files else " ".join(files)
     try:
         ctx.run(
             _join(
@@ -131,7 +136,7 @@ def flake8(ctx, files=None, junit=False):
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
 def mypy(ctx, files=None, junit=False):
-    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
+    files = DEFAULT_TARGETS if not files else " ".join(files)
     ctx.run(
         _join(["mypy", "--junit-xml mypy.junit.xml" if junit else None, files]),
         echo=True,
@@ -146,7 +151,7 @@ def sort_imports(ctx, check=False, files=None):
                 [
                     "isort",
                     (
-                        "-rc %s tests examples setup.py tasks.py" % PACKAGE
+                        "-rc %s setup.py tasks.py" % DEFAULT_TARGETS
                         if not files
                         else " ".join(files)
                     ),
@@ -165,7 +170,7 @@ def black(ctx, check=False, files=None):
                 "black",
                 "--check" if check else None,
                 (
-                    "%s tests examples setup.py tasks.py" % PACKAGE
+                    "%s setup.py tasks.py" % DEFAULT_TARGETS
                     if not files
                     else " ".join(files)
                 ),
