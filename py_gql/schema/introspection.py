@@ -37,8 +37,8 @@ __Schema__ = ObjectType(
             description="A list of all types supported by this server.",
             # Sort as the output should not be determined by the way the schema
             # is built and this is the most logical order.
-            resolver=lambda schema, *_: list(
-                sorted(schema.types.values(), key=lambda t: t.name)
+            resolver=lambda schema, *_: sorted(
+                schema.types.values(), key=lambda t: t.name
             ),
         ),
         Field(
@@ -69,8 +69,8 @@ __Schema__ = ObjectType(
             "directives",
             NonNullType(ListType(NonNullType(__Directive__))),
             description="A list of all directives supported by this server.",
-            resolver=lambda schema, *_: list(
-                sorted(schema.directives.values(), key=lambda d: d.name)
+            resolver=lambda schema, *_: sorted(
+                schema.directives.values(), key=lambda d: d.name
             ),
         ),
     ],
@@ -242,11 +242,8 @@ __Type__ = ObjectType(
             "possibleTypes",
             ListType(NonNullType(__Type__)),
             resolver=lambda type_, _, info, **__: (
-                list(
-                    sorted(
-                        info.schema.get_possible_types(type_),
-                        key=lambda t: t.name,
-                    )
+                sorted(
+                    info.schema.get_possible_types(type_), key=lambda t: t.name,
                 )
                 if isinstance(type_, GraphQLAbstractType)
                 else None
@@ -270,9 +267,7 @@ __Type__ = ObjectType(
             "inputFields",
             ListType(NonNullType(__InputValue__)),
             resolver=lambda type_, *_: (
-                [f for f in type_.fields]
-                if isinstance(type_, InputObjectType)
-                else None
+                type_.fields if isinstance(type_, InputObjectType) else None
             ),
         ),
         Field(

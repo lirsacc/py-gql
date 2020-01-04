@@ -557,12 +557,10 @@ def _find_conflict(
                     for name, reason_, _ in subconflicts
                 ]
             )
-            nodes = list(
-                sorted(
-                    [node_1, node_2]
-                    + list(flatten(nodes for _, _, nodes in subconflicts)),
-                    key=lambda n: n.loc,
-                )
+            nodes = sorted(
+                [node_1, node_2]
+                + list(flatten(nodes for _, _, nodes in subconflicts)),
+                key=lambda n: n.loc,
             )
             return response_name, reason, nodes
 

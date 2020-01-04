@@ -9,7 +9,7 @@ SIZE = 10000
 
 FooType = collections.namedtuple("Object", ["x", "y", "z"])
 
-LIST_OF_INTS = [x for x in range(SIZE)]
+LIST_OF_INTS = range(SIZE)
 LIST_OF_FLOATS = [random.random() for x in range(SIZE)]
 LIST_OF_STRINGS = [str(x) for x in range(SIZE)]
 LIST_OF_BOOLS = [bool(x % 2) for x in range(SIZE)]

@@ -20,7 +20,7 @@ def _join(cmd):
 
 @invoke.task
 def clean(ctx, include_cython_files=False):
-    """ Remove test and compilation artifacts """
+    """Remove test and compilation artifacts."""
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
@@ -39,7 +39,7 @@ def clean(ctx, include_cython_files=False):
 
 @invoke.task()
 def benchmark(ctx,):
-    """ Run benchmarks """
+    """Run benchmarks."""
     ctx.run(
         _join(
             [
@@ -65,8 +65,9 @@ def test(
     junit=False,
     ignore=None,
     parallel=False,
+    watch=False,
 ):
-    """ Run test suite (using: py.test)
+    """Run test suite (using: py.test).
 
     You should be able to run pytest directly but this provides some useful
     shortcuts and defaults.
@@ -90,6 +91,7 @@ def test(
                     if coverage
                     else None,
                     "--junit-xml junit.xml" if junit else None,
+                    "--looponfail" if watch else None,
                     "-vvl --full-trace" if verbose else "-q",
                     "-k %s" % grep if grep else None,
                     "-n auto" if parallel else None,
@@ -108,7 +110,7 @@ def test(
 
 @invoke.task(iterable=["files"])
 def flake8(ctx, files=None, junit=False):
-    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
     try:
         ctx.run(
             _join(
@@ -129,7 +131,7 @@ def flake8(ctx, files=None, junit=False):
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
 def mypy(ctx, files=None, junit=False):
-    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    files = ("%s tests examples" % PACKAGE) if not files else " ".join(files)
     ctx.run(
         _join(["mypy", "--junit-xml mypy.junit.xml" if junit else None, files]),
         echo=True,
@@ -162,7 +164,6 @@ def black(ctx, check=False, files=None):
             [
                 "black",
                 "--check" if check else None,
-                "--target-version py35",
                 (
                     "%s tests examples setup.py tasks.py" % PACKAGE
                     if not files
@@ -176,7 +177,7 @@ def black(ctx, check=False, files=None):
 
 @invoke.task(aliases=["format"], iterable=["files"])
 def fmt(ctx, files=None):
-    """ Run formatters """
+    """Run formatters."""
     with ctx.cd(ROOT):
         sort_imports(ctx, files=files)
         black(ctx, files=files)
@@ -184,13 +185,13 @@ def fmt(ctx, files=None):
 
 @invoke.task(pre=[invoke.call(black, check=True), flake8, mypy, test])
 def check(ctx):
-    """ Run all checks (formatting, lint, typecheck and tests) """
+    """Run all checks (formatting, lint, typecheck and tests)."""
     pass
 
 
 @invoke.task
 def docs(ctx, clean_=True, strict=False, verbose=False):
-    """ Generate documentation """
+    """Generate documentation."""
     with ctx.cd(os.path.join(ROOT, "docs")):
         if clean_:
             ctx.run("rm -rf _build", echo=True)
@@ -212,7 +213,7 @@ def docs(ctx, clean_=True, strict=False, verbose=False):
 
 @invoke.task
 def build(ctx):
-    """ Build source distribution and wheel for upload to PyPI """
+    """Build source distribution and wheel for upload to PyPI."""
     with ctx.cd(ROOT):
         ctx.run("rm -rf dist", echo=True)
         ctx.run("python setup.py sdist bdist_wheel", echo=True)
