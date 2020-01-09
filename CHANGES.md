@@ -7,10 +7,16 @@ Unreleased
 ### Breaking Changes & Deprecations
 
 - `Instrumentation` has been slightly refactored to be easier to use and use more consistent names:
-    - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
-    - `instrument_validation_result` has been removed as it was confusing to use.
-    - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
-- Runtime specific concepts have been extracted from `Executor` into a separate `Runtime` class which is now passed in on execution. For most purposes, `Executor` should not be implemented moving forward, use `Runtime` instead.
+
+  - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
+  - `instrument_validation_result` has been removed as it was confusing to use.
+  - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
+
+- Runtime specific concepts have been extracted from `Executor` into a separate `Runtime` abstract class which is now passed in on execution (instead of the executor class). This was done to separate the resolver execution layer (which library consumer may care about) and the graphql query execution layer (which libreary consumers shouldn't care about) which were implemented in the `Executor` class. The main changes are:
+
+  - `Executor` should not be implemented moving forward, use `Runtime` instead.
+  - The specific methods haven't changed (to make it easy to migrate, they might be revisited later) but they have become actual method instead of staticmethods.
+  - The `Executor.supports_subscriptions` attribute has been replaced by the `SubscriptionRuntime` subclass.
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------

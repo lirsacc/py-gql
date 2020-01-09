@@ -10,7 +10,7 @@ from ..utilities import coerce_variable_values
 from .executor import Executor
 from .get_operation import get_operation_with_type
 from .instrumentation import Instrumentation
-from .runtime import SubscriptionEnabledRuntime
+from .runtime import SubscriptionRuntime
 from .wrappers import GraphQLResult, ResolveInfo
 
 Resolver = Callable[..., Any]
@@ -26,7 +26,7 @@ def subscribe(
     context_value: Optional[Any] = None,
     instrumentation: Optional[Instrumentation] = None,
     executor_cls: Type[Executor] = Executor,
-    runtime: SubscriptionEnabledRuntime
+    runtime: SubscriptionRuntime
 ) -> Any:
     """
     Execute a GraphQL subscription against a schema and return the appropriate
@@ -87,7 +87,7 @@ def subscribe(
         runtime=runtime,
     )
 
-    if not isinstance(runtime, SubscriptionEnabledRuntime):
+    if not isinstance(runtime, SubscriptionRuntime):
         raise RuntimeError(
             "Runtime of type '%s' doesn't support subscriptions."
             % type(runtime)

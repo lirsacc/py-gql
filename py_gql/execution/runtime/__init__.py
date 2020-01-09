@@ -3,12 +3,14 @@
 """
 
 from .asyncio import AsyncIORuntime
-from .base import Runtime, SubscriptionEnabledRuntime
+from .base import Runtime, SubscriptionRuntime
+from .blocking import BlockingRuntime
 from .threadpool import ThreadPoolRuntime
 
 __all__ = (
     "AsyncIORuntime",
+    "BlockingRuntime",
     "Runtime",
-    "SubscriptionEnabledRuntime",
+    "SubscriptionRuntime",
     "ThreadPoolRuntime",
 )

@@ -65,10 +65,7 @@ def nested_list_resolver(key, resource):
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
         return info.runtime.gather_values(
-            [
-                ctx["global_executor"].submit(swapi.fetch_one, resource, id)
-                for id in ids
-            ]
+            [info.runtime.submit(swapi.fetch_one, resource, id) for id in ids]
         )
 
     return resolve

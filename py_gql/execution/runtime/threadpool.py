@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
 
 import functools
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
@@ -22,14 +20,22 @@ from .base import Runtime
 T = TypeVar("T")
 G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
-
 MaybeFuture = Union["Future[T]", T]
-AnyCallable = Callable[..., Any]
 
 
 class ThreadPoolRuntime(Runtime):
+    """Runtime implementation which executes every function passed to it in a
+    thread pool by wrapping :py:class:`concurrent.futures.ThreadPoolExecutor`.
+
+    All init arguments will be forwarded to
+    :py:class:`concurrent.futures.ThreadPoolExecutor`.
+    """
+
     def __init__(self, *args, **kwargs):
         self._inner = ThreadPoolExecutor(*args, **kwargs)
+
+    def submit(self, func, *args, **kwargs):
+        return self._inner.submit(func, *args, **kwargs)
 
     def ensure_wrapped(self, value):
         if _is_future_fast(value):
@@ -48,7 +54,7 @@ class ThreadPoolRuntime(Runtime):
     def unwrap_value(self, value):
         return unwrap_future(value)
 
-    def wrap_callable(self, func: AnyCallable) -> AnyCallable:
+    def wrap_callable(self, func):
         return functools.partial(self._inner.submit, func)
 
 
@@ -86,7 +92,7 @@ def unwrap_future(maybe_future):
 
 
 def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
-    """ Concurrently collect multiple Futures. This is based on `asyncio.gather`.
+    """Concurrently collect multiple Futures. This is based on `asyncio.gather`.
 
     If all futures in the ``source`` sequence complete successfully, the result
     is an aggregate list of returned values. The order of result values
@@ -99,8 +105,8 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
     Cancelling ``gather_futures()`` will attempt to cancel the source futures
     that haven't already completed. If any Future from the ``source`` sequence
     is cancelled, it is treated as if it raised `CancelledError` – the
-    ``gather_futures()`` call is not cancelled in this case. This is to prevent the
-    cancellation of one submitted Future to cause other futures to be
+    ``gather_futures()`` call is not cancelled in this case. This is to prevent
+    the cancellation of one submitted Future to cause other futures to be
     cancelled.
     """
     done = 0
@@ -169,9 +175,7 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
 def chain(
     source: "MaybeFuture[T]",
     then: Callable[[T], G],
-    else_: Optional[
-        Tuple[Union[Type[E], Tuple[Type[E], ...]], Callable[[E], G]]
-    ] = None,
+    else_: Optional[Tuple[Type[E], Callable[[E], G]]] = None,
 ) -> "MaybeFuture[G]":
 
     if not _is_future_fast(source):
@@ -181,7 +185,7 @@ def chain(
             if else_ is not None:
                 exc_type, cb = else_
                 if isinstance(err, exc_type):
-                    return cb(err)  # type: ignore
+                    return cb(err)
             raise
         else:
             return res
@@ -198,7 +202,7 @@ def chain(
                 if else_ is not None:
                     exc_type, cb = else_
                     if isinstance(err, exc_type):
-                        target.set_result(cb(err))  # type: ignore
+                        target.set_result(cb(err))
                     else:
                         target.set_exception(err)
                 else:

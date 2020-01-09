@@ -15,7 +15,7 @@ from .execution import (
     Instrumentation,
     execute,
 )
-from .execution.runtime import AsyncIORuntime, Runtime
+from .execution.runtime import AsyncIORuntime, BlockingRuntime, Runtime
 from .lang import parse
 from .lang.ast import Document
 from .schema import Schema
@@ -104,7 +104,7 @@ def process_graphql_query(
     schema.validate()
 
     instrumentation = instrumentation or Instrumentation()
-    runtime = runtime or Runtime()
+    runtime = runtime or BlockingRuntime()
 
     instrumentation.on_query_start()
 
@@ -143,24 +143,22 @@ def process_graphql_query(
         return _abort(errors=validation_result.errors)
 
     try:
-        return runtime.unwrap_value(
-            runtime.map_value(
-                execute(
-                    schema,
-                    ast,
-                    operation_name=operation_name,
-                    variables=variables,
-                    initial_value=root,
-                    context_value=context,
-                    default_resolver=default_resolver,
-                    instrumentation=instrumentation,
-                    middlewares=middlewares,
-                    disable_introspection=disable_introspection,
-                    executor_cls=executor_cls,
-                    runtime=runtime,
-                ),
-                _on_end,
-            )
+        return runtime.map_value(
+            execute(
+                schema,
+                ast,
+                operation_name=operation_name,
+                variables=variables,
+                initial_value=root,
+                context_value=context,
+                default_resolver=default_resolver,
+                instrumentation=instrumentation,
+                middlewares=middlewares,
+                disable_introspection=disable_introspection,
+                executor_cls=executor_cls,
+                runtime=runtime,
+            ),
+            _on_end,
         )
     except VariablesCoercionError as err:
         return _abort(data=None, errors=err.errors)

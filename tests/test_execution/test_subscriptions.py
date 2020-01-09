@@ -6,7 +6,7 @@ import pytest
 
 from py_gql.exc import ExecutionError, ResolverError
 from py_gql.execution import subscribe
-from py_gql.execution.runtime import AsyncIORuntime, Runtime
+from py_gql.execution.runtime import AsyncIORuntime, BlockingRuntime
 from py_gql.lang import parse
 from py_gql.schema import (
     Argument,
@@ -68,7 +68,7 @@ async def test_raises_on_unsupported_runtime():
         subscribe(
             schema,
             parse("subscription { counter(delay: 0.001) }"),
-            runtime=Runtime(),  # type: ignore
+            runtime=BlockingRuntime(),  # type: ignore
         )
 
 

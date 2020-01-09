@@ -153,24 +153,27 @@ class ExecutionContext:
     ) -> Optional[Field]:
         key = parent_type.name, name
         cache = self._field_defs
-        is_query_type = self.schema.query_type == parent_type
 
         try:
             return cache[key]
         except KeyError:
             if name in ("__schema", "__type", "__typename"):
+                is_query_type = self.schema.query_type is parent_type
                 if self._disable_introspection:
                     return None
                 elif name == "__schema" and is_query_type:
-                    cache[key] = SCHEMA_INTROSPECTION_FIELD
+                    field_def = (
+                        SCHEMA_INTROSPECTION_FIELD
+                    )  # type: Optional[Field]
                 elif name == "__type" and is_query_type:
-                    cache[key] = TYPE_INTROSPECTION_FIELD
+                    field_def = TYPE_INTROSPECTION_FIELD
                 elif name == "__typename":
-                    cache[key] = TYPE_NAME_INTROSPECTION_FIELD
+                    field_def = TYPE_NAME_INTROSPECTION_FIELD
             else:
-                cache[key] = parent_type.field_map.get(name, None)
+                field_def = parent_type.field_map.get(name, None)
 
-            return cache[key]
+            cache[key] = field_def
+            return field_def
 
     def argument_values(
         self, field_definition: Field, node: ast.Field
@@ -179,10 +182,10 @@ class ExecutionContext:
         try:
             return self._argument_values[cache_key]
         except KeyError:
-            self._argument_values[cache_key] = coerce_argument_values(
+            av = self._argument_values[cache_key] = coerce_argument_values(
                 field_definition, node, self.variables
             )
-        return self._argument_values[cache_key]
+            return av
 
 
 class ResolveInfo:
@@ -215,6 +218,7 @@ class ResolveInfo:
         self.variables = variables
         self.fragments = fragments
         self.nodes = nodes
+        self.runtime = runtime
 
 
 class GraphQLExtension:

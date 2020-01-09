@@ -5,15 +5,19 @@
 import pytest
 
 from py_gql.execution import BlockingExecutor, Executor
-from py_gql.execution.runtime import AsyncIORuntime, Runtime, ThreadPoolRuntime
+from py_gql.execution.runtime import (
+    AsyncIORuntime,
+    BlockingRuntime,
+    ThreadPoolRuntime,
+)
 
 from ._test_utils import assert_execution as assert_execution_original
 
 
 @pytest.fixture(
     params=(
-        pytest.param((Executor, Runtime), id="default"),
-        pytest.param((BlockingExecutor, Runtime), id="blocking"),
+        pytest.param((Executor, BlockingRuntime), id="default"),
+        pytest.param((BlockingExecutor, BlockingRuntime), id="blocking"),
         pytest.param((Executor, AsyncIORuntime), id="asyncio"),
         pytest.param((Executor, ThreadPoolRuntime), id="threadpool"),
     )

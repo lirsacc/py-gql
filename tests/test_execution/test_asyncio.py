@@ -4,7 +4,7 @@ Execution tests specific to AsyncIORuntime().
 """
 
 import asyncio
-from typing import Any, Awaitable
+from typing import Any, Awaitable, cast
 
 import pytest
 
@@ -157,8 +157,11 @@ async def test_AsyncIORuntime_gather_values_sync_input():
 
 @pytest.mark.asyncio
 async def test_AsyncIORuntime_gather_values_async_input():
-    assert await AsyncIORuntime().gather_values(
-        [1, AsyncIORuntime().ensure_wrapped(2), 3]
+    assert await cast(
+        Awaitable[int],
+        AsyncIORuntime().gather_values(
+            [1, AsyncIORuntime().ensure_wrapped(2), 3]
+        ),
     ) == [1, 2, 3]
 
 
@@ -168,7 +171,7 @@ async def test_AsyncIORuntime_gather_values_surfaces_errors():
         raise ValueError()
 
     with pytest.raises(ValueError):
-        await AsyncIORuntime().gather_values([a()])
+        AsyncIORuntime().gather_values([a()])
 
 
 @pytest.mark.asyncio
@@ -194,9 +197,13 @@ async def test_AsyncIORuntime_map_value_sync_caught(raiser):
 
 @pytest.mark.asyncio
 async def test_AsyncIORuntime_map_value_async_ok():
+    def cb(x: int) -> int:
+        return x * 2
+
     assert (
-        await AsyncIORuntime().map_value(
-            AsyncIORuntime().ensure_wrapped(42), lambda x: x * 2
+        await cast(
+            Awaitable[int],
+            AsyncIORuntime().map_value(AsyncIORuntime().ensure_wrapped(42), cb),
         )
         == 84
     )

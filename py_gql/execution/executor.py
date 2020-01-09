@@ -39,7 +39,7 @@ from ..schema import (
     UnionType,
 )
 from .instrumentation import Instrumentation
-from .runtime import Runtime
+from .runtime import BlockingRuntime, Runtime
 from .wrappers import ExecutionContext, GroupedFields, ResolveInfo, ResponsePath
 
 Resolver = Callable[..., Any]
@@ -56,7 +56,7 @@ class Executor(ExecutionContext):
     to fulfill a GraphQL query or mutation.
     """
 
-    __slots__ = ExecutionContext.__slots__ + ("_instrumentation", "runtime",)
+    __slots__ = ExecutionContext.__slots__ + ("instrumentation", "runtime",)
 
     def __init__(
         self,
@@ -80,8 +80,8 @@ class Executor(ExecutionContext):
             default_resolver=default_resolver,
             middlewares=middlewares,
         )
-        self._instrumentation = instrumentation or Instrumentation()
-        self.runtime = runtime or Runtime()
+        self.instrumentation = instrumentation or Instrumentation()
+        self.runtime = runtime or BlockingRuntime()
 
     def field_resolver(
         self, parent_type: ObjectType, field_definition: Field
@@ -154,19 +154,19 @@ class Executor(ExecutionContext):
             self.runtime,
         )
 
-        self._instrumentation.on_field_start(
+        self.instrumentation.on_field_start(
             parent_value, self.context_value, info
         )
 
         def fail(err):
             self.add_error(err, path, node)
-            self._instrumentation.on_field_end(
+            self.instrumentation.on_field_end(
                 parent_value, self.context_value, info
             )
             return None
 
         def complete(res):
-            self._instrumentation.on_field_end(
+            self.instrumentation.on_field_end(
                 parent_value, self.context_value, info
             )
             return self.complete_value(
@@ -179,12 +179,16 @@ class Executor(ExecutionContext):
             return fail(err)
 
         try:
-            resolved = resolver(
-                parent_value, self.context_value, info, **coerced_args
-            )
             return self.runtime.unwrap_value(
                 self.runtime.map_value(
-                    self.runtime.unwrap_value(resolved),
+                    self.runtime.unwrap_value(
+                        resolver(
+                            parent_value,
+                            self.context_value,
+                            info,
+                            **coerced_args,
+                        )
+                    ),
                     complete,
                     else_=(ResolverError, fail),
                 )
@@ -236,16 +240,11 @@ class Executor(ExecutionContext):
     ) -> Any:
         resolved_fields = OrderedDict()  # type: Dict[str, Any]
 
-        args = [
-            (key, field_def, nodes, path + [key])
-            for key, field_def, nodes in self._iterate_fields(
-                parent_type, fields
-            )
-        ]
+        args = list(self._iterate_fields(parent_type, fields))
 
         def _next():
             try:
-                k, f, n, p = args.pop(0)
+                k, f, n = args.pop(0)
             except IndexError:
                 return resolved_fields
             else:
@@ -255,7 +254,7 @@ class Executor(ExecutionContext):
                     return _next()
 
                 return self.runtime.map_value(
-                    self.resolve_field(parent_type, root, f, n, p), cb
+                    self.resolve_field(parent_type, root, f, n, path + [k]), cb
                 )
 
         return _next()
@@ -269,12 +268,8 @@ class Executor(ExecutionContext):
         resolved_value: Any,
     ) -> Any:
         return self.runtime.gather_values(
-            [
-                self.complete_value(
-                    inner_type, nodes, path + [index], info, entry
-                )
-                for index, entry in enumerate(resolved_value)
-            ]
+            self.complete_value(inner_type, nodes, path + [index], info, entry)
+            for index, entry in enumerate(resolved_value)
         )
 
     def complete_non_nullable_value(

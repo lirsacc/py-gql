@@ -8,7 +8,7 @@ from ..utilities import coerce_variable_values
 from .executor import Executor
 from .get_operation import get_operation_with_type
 from .instrumentation import Instrumentation
-from .runtime import Runtime
+from .runtime import BlockingRuntime, Runtime
 from .wrappers import GraphQLResult
 
 Resolver = Callable[..., Any]
@@ -78,7 +78,7 @@ def execute(
         Execution result.
     """
     instrumentation = instrumentation or Instrumentation()
-    runtime = runtime or Runtime()
+    runtime = runtime or BlockingRuntime()
 
     operation, root_type = get_operation_with_type(
         schema, document, operation_name
