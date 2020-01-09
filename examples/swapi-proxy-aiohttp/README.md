@@ -13,7 +13,7 @@ Data is fetched live from <https://swapi.co>.
 
 ## Running
 
-```.bash
+```bash
 pip install -r requirements.txt
 adev runserver -p 5000 --app-factory init app/server.py
 ```

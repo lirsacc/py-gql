@@ -22,7 +22,7 @@ Quick links
 Installation
 ------------
 
-```.bash
+```bash
 pip install py-gql
 ```
 
@@ -33,7 +33,7 @@ Usage & Examples
 
 ### Hello World
 
-```.python
+```python
 from py_gql import build_schema, graphql_blocking
 
 schema = build_schema(
@@ -87,7 +87,7 @@ Make sure you are using Python 3.6+ (you can run the tests under 3.5 but `black`
 
 Clone this repo and create a virtualenv before installing the development dependencies:
 
-```.bash
+```bash
 git clone git@github.com:lirsacc/py-gql.git
 python -m venv $WORKON_HOME/py-gql --copies
 pip install -U -r dev-requirements.txt

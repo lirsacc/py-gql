@@ -11,7 +11,7 @@ This example demonstrates:
 
 ## Running
 
-```.bash
+```bash
 pip install -r requirements.txt
 uvicorn --debug --port 5000 app:app
 ```
