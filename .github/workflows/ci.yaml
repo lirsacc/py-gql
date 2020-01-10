@@ -24,6 +24,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Cache deps
+        uses: actions/cache@v1
+        with:
+          path: .pip-cache
+          key: ${{ runner.os }}-python-${{ matrix.python }}-${{ hashFiles('*requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ matrix.python }}-
+            ${{ runner.os }}-python-
+            ${{ runner.os }}-
+
       - name: Dependencies
         run: |
           mkdir -p .pip-cache
