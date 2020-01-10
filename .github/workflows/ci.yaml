@@ -71,5 +71,10 @@ jobs:
           inv clean
 
       - name: Build docs
+        if: matrix.python == '3.8'
         run: |
           inv docs
+
+      - uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
