@@ -175,6 +175,7 @@ async def test_type_resolution_on_union_yields_useful_error(assert_execution):
     )
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_type_resolution_supports_strings(assert_execution):
     def _resolve_pet_type(value, *_):
         return type(value).__name__
@@ -327,6 +328,7 @@ _LIZ = Person("Liz", None, None)
 _JOHN = Person("John", [_GARFIELD, _ODIE], [_LIZ, _ODIE])
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_it_can_introspect_on_union_and_intersection_types(
     assert_execution,
 ):
