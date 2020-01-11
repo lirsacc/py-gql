@@ -1,39 +1,59 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-"""
+# mypy: ignore-errors
 
-import imp
 import itertools
 import os
+import sys
 
 from setuptools import find_packages, setup
 
-ABBOUT = imp.load_source("about", os.path.join(".", "py_gql", "_pkg.py"))
+DIR = os.path.abspath(os.path.dirname(__file__))
+
+try:
+    sys.pypy_version_info
+    PYPY = True
+except AttributeError:
+    PYPY = False
+
+if PYPY or not bool(os.getenv("PY_GQL_USE_CYTHON", False)):
+    CYTHON = False
+else:
+    try:
+        from Cython.Build import cythonize
+    except ImportError:
+        CYTHON = False
+    else:
+        CYTHON = True
 
 
 def run_setup():
 
-    with open("README.md") as f:
+    pkg = {}
+
+    with open(os.path.join(DIR, "py_gql", "_pkg.py")) as f:
+        exec(f.read(), {}, pkg)
+
+    with open(os.path.join(DIR, "README.md")) as f:
         readme = "\n" + f.read()
 
     setup(
-        name=ABBOUT.__title__,
-        version=ABBOUT.__version__,
-        description=ABBOUT.__description__,
+        name=pkg["__title__"],
+        version=pkg["__version__"],
+        description=pkg["__description__"],
         long_description=readme,
         long_description_content_type="text/markdown",
-        author=ABBOUT.__author__,
-        author_email=ABBOUT.__author_email__,
-        url=ABBOUT.__url__,
-        license=ABBOUT.__license__,
+        author=pkg["__author__"],
+        author_email=pkg["__author_email__"],
+        url=pkg["__url__"],
+        license=pkg["__license__"],
         keywords="graphql api",
         zip_safe=False,
         packages=find_packages(
             exclude=("tests", "tests.*", "docs", "examples")
         ),
-        # package_data={},
         install_requires=_split_requirements("requirements.txt"),
+        tests_require=_split_requirements("test-requirements.txt"),
         include_package_data=True,
         python_requires=">=3.5",
         ext_modules=_cython_ext_modules(
@@ -63,34 +83,27 @@ def run_setup():
             "Topic :: Software Development :: Libraries",
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
-        tests_require=_split_requirements("test-requirements.txt"),
     )
 
 
 def _cython_ext_modules(*packages):
-    try:
-        from Cython.Build import cythonize
-    except ImportError:
+    if not CYTHON:
         return []
-    else:
-        enable_linetrace = "CYTHON_TRACE" in os.environ
-        ext_modules = [
-            cythonize(
-                "%s/*.py" % package.replace(".", "/"),
-                compiler_directives={
-                    "embedsignature": True,
-                    "linetrace": enable_linetrace,
-                },
-            )
-            for package in packages
-        ]
-        return list(itertools.chain.from_iterable(ext_modules))
+
+    return list(
+        itertools.chain.from_iterable(
+            [
+                cythonize("%s/*.py" % package.replace(".", "/"))
+                for package in packages
+            ]
+        )
+    )
 
 
 def _split_requirements(*requirements_files):
     req = []
     for requirements_file in requirements_files:
-        with open(requirements_file) as f:
+        with open(os.path.join(DIR, requirements_file)) as f:
             req.extend(
                 [
                     line.strip()

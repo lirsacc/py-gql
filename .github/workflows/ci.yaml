@@ -93,8 +93,7 @@ jobs:
       - name: Test with Cython
         if: matrix.python != 'pypy3'
         run: |
-          pip install --cache-dir .pip-cache cython
-          pip install -v -e .
+          PY_GQL_USE_CYTHON=1 pip install -v -e .
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
           inv clean
 
