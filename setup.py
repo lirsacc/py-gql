@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 # mypy: ignore-errors
 
+import glob
 import itertools
 import os
 import sys
 
-from setuptools import find_packages, setup
+import setuptools
 
 _env = os.environ.get
 
@@ -42,7 +43,7 @@ def run_setup():
     with open(os.path.join(DIR, "README.md")) as f:
         readme = "\n" + f.read()
 
-    setup(
+    setuptools.setup(
         name=pkg["__title__"],
         version=pkg["__version__"],
         description=pkg["__description__"],
@@ -54,7 +55,7 @@ def run_setup():
         license=pkg["__license__"],
         keywords="graphql api",
         zip_safe=False,
-        packages=find_packages(
+        packages=setuptools.find_packages(
             exclude=("tests", "tests.*", "docs", "examples")
         ),
         install_requires=_split_requirements("requirements.txt"),
@@ -85,11 +86,17 @@ def run_setup():
 
 def _ext_modules(*packages):
     if not CYTHON:
-        return []
+        return [
+            setuptools.Extension(f.replace(".c", "").replace("/", "."), [f])
+            for f in itertools.chain.from_iterable(
+                glob.iglob("%s/**/*.c" % package, recursive=True)
+                for package in packages
+            )
+        ]
 
     exts = list(
         itertools.chain.from_iterable(
-            [
+            (
                 cythonize(
                     "%s/**/*.py" % package,
                     exclude=["**/__init__.py"],
@@ -100,7 +107,7 @@ def _ext_modules(*packages):
                     },
                 )
                 for package in packages
-            ]
+            )
         )
     )
 

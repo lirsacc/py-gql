@@ -24,7 +24,7 @@ def _join(cmd):
 
 
 @invoke.task
-def clean(ctx, include_cython_files=False):
+def clean(ctx, include_compiled=False):
     """Remove test and compilation artifacts."""
     with ctx.cd(ROOT):
         ctx.run(
@@ -35,7 +35,7 @@ def clean(ctx, include_cython_files=False):
         )
         ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
-        if include_cython_files:
+        if include_compiled:
             ctx.run(
                 'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
                 echo=True,
@@ -217,8 +217,24 @@ def docs(ctx, clean_=True, strict=False, verbose=False):
 
 
 @invoke.task
-def build(ctx):
-    """Build source distribution and wheel for upload to PyPI."""
+def cythonize(ctx):
+    """Compile Python code to .c files."""
+    import Cython.Build
+
+    with ctx.cd(ROOT):
+        Cython.Build.cythonize(
+            "%s/**/*.py" % PACKAGE,
+            exclude=["**/__init__.py"],
+            compiler_directives={"embedsignature": True, "language_level": 3,},
+        )
+
+
+@invoke.task(pre=[invoke.call(clean, include_compiled=True)])
+def build(ctx, cythonize_module=False):
+    """Build source distribution and wheel."""
+    if cythonize_module:
+        cythonize(ctx)
+
     with ctx.cd(ROOT):
         ctx.run("rm -rf dist", echo=True)
         ctx.run("python setup.py sdist bdist_wheel", echo=True)

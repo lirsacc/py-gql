@@ -27,6 +27,8 @@ sphinx ~= 2.2
 alabaster ~= 0.7
 sphinx-autodoc-typehints ~= 1.8
 
+cython < 3
+
 wheel
 setuptools
 twine
