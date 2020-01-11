@@ -8,6 +8,8 @@ import sys
 
 from setuptools import find_packages, setup
 
+_env = os.environ.get
+
 DIR = os.path.abspath(os.path.dirname(__file__))
 
 try:
@@ -16,7 +18,9 @@ try:
 except AttributeError:
     PYPY = False
 
-if PYPY or not bool(os.getenv("PY_GQL_USE_CYTHON", False)):
+CYTHON_TRACE = 0
+
+if PYPY or not bool(_env("PY_GQL_USE_CYTHON", False)):
     CYTHON = False
 else:
     try:
@@ -25,6 +29,7 @@ else:
         CYTHON = False
     else:
         CYTHON = True
+        CYTHON_TRACE = int(_env("CYTHON_TRACE", "0"))
 
 
 def run_setup():
@@ -56,15 +61,7 @@ def run_setup():
         tests_require=_split_requirements("test-requirements.txt"),
         include_package_data=True,
         python_requires=">=3.5",
-        ext_modules=_cython_ext_modules(
-            "py_gql",
-            "py_gql.lang",
-            "py_gql.validation",
-            "py_gql.validation.rules",
-            "py_gql.utilities",
-            "py_gql.schema",
-            "py_gql.execution",
-        ),
+        ext_modules=_ext_modules("py_gql",),
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
@@ -86,18 +83,32 @@ def run_setup():
     )
 
 
-def _cython_ext_modules(*packages):
+def _ext_modules(*packages):
     if not CYTHON:
         return []
 
-    return list(
+    exts = list(
         itertools.chain.from_iterable(
             [
-                cythonize("%s/*.py" % package.replace(".", "/"))
+                cythonize(
+                    "%s/**/*.py" % package,
+                    exclude=["**/__init__.py"],
+                    compiler_directives={
+                        "embedsignature": True,
+                        "language_level": 3,
+                        "linetrace": CYTHON_TRACE == 1,
+                    },
+                )
                 for package in packages
             ]
         )
     )
+
+    if CYTHON_TRACE:
+        for ext in exts:
+            ext.define_macros.extend([("CYTHON_TRACE", str(CYTHON_TRACE))])
+
+    return exts
 
 
 def _split_requirements(*requirements_files):
