@@ -11,15 +11,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [3.5, 3.6, 3.7, 3.8]
+        python: [3.5, 3.6, 3.7, 3.8, pypy3]
         os: [ubuntu-latest, macos-latest]
         exclude:
+          # Testing on macos mostly to make sure dev doesn't break.
           - os: macos-latest
             python: 3.5
           - os: macos-latest
             python: 3.6
           - os: macos-latest
             python: 3.7
+          - os: macos-latest
+            python: pypy3
 
     steps:
       - uses: actions/checkout@v1
@@ -42,9 +45,19 @@ jobs:
             ${{ runner.os }}-
 
       - name: Dependencies
+        if: matrix.python != 'pypy3'
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade -r dev-requirements.txt
+          python setup.py develop
+
+      # Some dev dependencies don't build under pypy but testing deps and py-gql
+      # should work.
+      - name: Dependencies (PyPy)
+        if: matrix.python == 'pypy3'
+        run: |
+          mkdir -p .pip-cache
+          pip install --cache-dir .pip-cache --upgrade -r test-requirements.txt
           python setup.py develop
 
       - name: (Debug) dependency versions
@@ -54,15 +67,17 @@ jobs:
           pip freeze
 
       - name: Check formatting
-        if: matrix.python != '3.5'
+        if: matrix.python != '3.5' && matrix.python != 'pypy3'
         run: |
           inv black --check
 
       - name: Lint (Flake 8)
+        if: matrix.python != 'pypy3'
         run: |
           inv flake8 --junit
 
       - name: Lint (Mypy)
+        if: matrix.python != 'pypy3'
         run: |
           inv mypy --junit
 
@@ -71,10 +86,12 @@ jobs:
           inv test -v --coverage --junit --no-bail
 
       - name: Check benchmarks run
+        if: matrix.python != 'pypy3'
         run: |
           inv benchmark
 
       - name: Test with Cython
+        if: matrix.python != 'pypy3'
         run: |
           pip install --cache-dir .pip-cache cython
           pip install -v -e .
