@@ -27,7 +27,7 @@ def run_setup():
         author_email=ABBOUT.__author_email__,
         url=ABBOUT.__url__,
         license=ABBOUT.__license__,
-        keywords="graphql",
+        keywords="graphql api",
         zip_safe=False,
         packages=find_packages(
             exclude=("tests", "tests.*", "docs", "examples")
@@ -60,6 +60,7 @@ def run_setup():
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
             "Topic :: Software Development :: Libraries",
+            "Topic :: Software Development :: Libraries :: Python Modules",
         ],
         tests_require=_split_requirements("test-requirements.txt"),
     )
