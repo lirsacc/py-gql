@@ -151,7 +151,10 @@ jobs:
       #   run: inv build-manylinux-wheels --cythonize-module --python 3.8
 
       - name: Generate checksums
-        run: find dist -type f -exec sha256sum "{}" + > dist/checksum.txt
+        run: |
+          cd dist
+          find . -name "*py_gql*"" -type f -exec sha256sum "{}" + > checksum.txt
+          cd ..
 
       - name: Upload dist
         uses: actions/upload-artifact@v1
