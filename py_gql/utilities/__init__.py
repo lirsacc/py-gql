@@ -15,6 +15,7 @@ from .coerce_value import (
 )
 from .collect_fields import collect_fields
 from .introspection_query import introspection_query
+from .schema_transforms import VisibilitySchemaTransform, transform_schema
 from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
 from .value_from_ast import value_from_ast
@@ -28,7 +29,9 @@ __all__ = (
     "collect_fields",
     "directive_arguments",
     "introspection_query",
+    "transform_schema",
     "TypeInfoVisitor",
     "untyped_value_from_ast",
     "value_from_ast",
+    "VisibilitySchemaTransform",
 )
