@@ -226,7 +226,6 @@ def cythonize(ctx):
     with ctx.cd(ROOT):
         Cython.Build.cythonize(
             "%s/**/*.py" % PACKAGE,
-            exclude=["**/__init__.py"],
             compiler_directives={"embedsignature": True, "language_level": 3,},
         )
 

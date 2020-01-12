@@ -99,7 +99,6 @@ def _ext_modules(*packages):
             (
                 cythonize(
                     "%s/**/*.py" % package,
-                    exclude=["**/__init__.py"],
                     compiler_directives={
                         "embedsignature": True,
                         "language_level": 3,
