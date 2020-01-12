@@ -243,7 +243,7 @@ def build(ctx, cythonize_module=False):
 
 
 @invoke.task(iterable=["python"])
-def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=True):
+def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
     """Build and extract a manylinux wheel using the official docker image.
 
     See https://github.com/pypa/manylinux for more information.
