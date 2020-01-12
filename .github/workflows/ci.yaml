@@ -146,10 +146,9 @@ jobs:
       - name: Build base wheel and source distribution
         run: inv build
 
-      # manylinux wheels are not used in releases yet so we keep only one
-      # to confirm they work without wasting time / compute.
-      - name: Build manylinux wheels
-        run: inv build-manylinux-wheels --cythonize-module --python 3.8
+      # manylinux wheels are not used in releases yet
+      # - name: Build manylinux wheels
+      #   run: inv build-manylinux-wheels --cythonize-module --python 3.8
 
       - name: Generate checksums
         run: find dist -type f -exec sha256sum "{}" + > dist/checksum.txt
