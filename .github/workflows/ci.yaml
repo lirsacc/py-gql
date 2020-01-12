@@ -95,7 +95,7 @@ jobs:
         run: |
           PY_GQL_USE_CYTHON=1 python setup.py develop
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
-          inv clean -i
+          inv clean --cython
 
       - name: Build docs
         if: matrix.python == '3.8'

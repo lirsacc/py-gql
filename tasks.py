@@ -24,22 +24,24 @@ def _join(cmd):
 
 
 @invoke.task
-def clean(ctx, include_compiled=False):
+def clean(ctx, cython=False, dist=False):
     """Remove test and compilation artifacts."""
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|.mypy_cache)$" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|.mypy_cache|htmlcov|junit.xml|coverage.xml|tox)$" '
             "| xargs rm -rf",
             echo=True,
         )
-        ctx.run("rm -rf tox .cache htmlcov coverage.xml junit.xml", echo=True)
 
-        if include_compiled:
+        if cython:
             ctx.run(
                 'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
                 echo=True,
             )
+
+        if dist:
+            ctx.run("rm -rf dist")
 
 
 @invoke.task()
@@ -229,7 +231,7 @@ def cythonize(ctx):
         )
 
 
-@invoke.task(pre=[invoke.call(clean, include_compiled=True)])
+@invoke.task
 def build(ctx, cythonize_module=False):
     """Build source distribution and wheel."""
     if cythonize_module:
@@ -238,6 +240,40 @@ def build(ctx, cythonize_module=False):
     with ctx.cd(ROOT):
         ctx.run("rm -rf dist", echo=True)
         ctx.run("python setup.py sdist bdist_wheel", echo=True)
+
+
+@invoke.task(iterable=["python"])
+def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=True):
+    """Build and extract a manylinux wheel using the official docker image.
+
+    See https://github.com/pypa/manylinux for more information.
+    """
+    if not python and not all_:
+        raise invoke.exceptions.Exit("Must define at least one Python version.")
+
+    if all_:
+        python_versions = "35,36,37,38"
+    else:
+        python_versions = ",".join(python)
+
+    if cythonize_module:
+        cythonize(ctx)
+
+    with ctx.cd(ROOT):
+        ctx.run(
+            _join(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "-v $(pwd):/workspace",
+                    "-e PYTHON_VERSIONS=%s" % python_versions,
+                    "quay.io/pypa/manylinux2010_x86_64",
+                    "bash -c /workspace/build-manylinux-wheels.sh",
+                ],
+            ),
+            echo=True,
+        )
 
 
 ns = invoke.Collection.from_module(sys.modules[__name__])
