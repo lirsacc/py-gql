@@ -105,3 +105,50 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+
+    needs:
+      - check
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Cache deps
+        uses: actions/cache@v1
+        with:
+          path: .pip-cache
+          key: ${{ runner.os }}-python-build-deps
+
+      - name: Dependencies
+        run: |
+          mkdir -p .pip-cache
+          pip install --cache-dir .pip-cache --upgrade pip wheel setuptools 'cython<3' 'invoke~=1.1'
+
+      - name: Build base wheel and source distribution
+        run: inv build
+
+      # manylinux wheels are not used in releases yet so we keep only one
+      # to confirm they work without wasting time / compute.
+      - name: Build manylinux wheels
+        run: inv build-manylinux-wheels --cythonize-module --python 3.8
+
+      - name: Generate checksums
+        run: find dist -type f -exec sha256sum "{}" + > dist/checksum.txt
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v1
+        with:
+          name: dist
+          path: dist
