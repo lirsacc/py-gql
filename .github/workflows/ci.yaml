@@ -82,8 +82,14 @@ jobs:
           inv mypy --junit
 
       - name: Test & Coverage
+        if: matrix.python != 'pypy3'
         run: |
           inv test -v --coverage --junit --no-bail
+
+      - name: Test - No Coverage
+        if: matrix.python == 'pypy3'
+        run: |
+          inv test -v --junit --no-bail
 
       - name: Check benchmarks run
         if: matrix.python != 'pypy3'
@@ -103,6 +109,7 @@ jobs:
           inv docs
 
       - uses: codecov/codecov-action@v1
+        if: matrix.python != 'pypy3'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
