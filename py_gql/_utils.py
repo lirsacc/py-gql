@@ -11,6 +11,7 @@ from typing import (
     Hashable,
     Iterable,
     Iterator,
+    List,
     Mapping,
     MutableMapping,
     Optional,
@@ -48,16 +49,13 @@ def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
 
 def map_and_filter(
     func: Callable[[T], Optional[T]], iterable: Iterable[T]
-) -> Iterator[T]:
+) -> List[T]:
     """ Map an  iterable filtering out None.
 
-    >>> list(map_and_filter(lambda x: None if x % 2 else x, range(10)))
+    >>> map_and_filter(lambda x: None if x % 2 else x, range(10))
     [0, 2, 4, 6, 8]
     """
-    for entry in iterable:
-        mapped = func(entry)
-        if mapped is not None:
-            yield mapped
+    return [m for m in (func(e) for e in iterable) if m is not None]
 
 
 def deduplicate(

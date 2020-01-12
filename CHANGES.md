@@ -8,6 +8,11 @@ Unreleased
 
 - Introducing `pyproject.toml` broke Cython integration through build isolation. This is now fixed by always requiring cython as a a build dependency (through `build-system.requires`) and only enabling support behind the `PY_GQL_USE_CYTHON` env variable.
 
+- Support for safely removing types from `Schema` instances:
+
+  - Returning `None` from `SchemaVisitor` methods will now signal that the type should be removed.
+  - `fix_type_references` will remove forward references from types that have been removed from the schema (e.g. field and directive arguments).
+
 ### Breaking Changes & Deprecations
 
 - `Instrumentation` has been slightly refactored to be easier to use and use more consistent names:

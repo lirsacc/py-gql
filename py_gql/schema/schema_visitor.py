@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Optional, TypeVar
+from typing import Dict, Optional, TypeVar
 
 from .._utils import map_and_filter
 from .directives import SPECIFIED_DIRECTIVES
@@ -29,36 +29,39 @@ class SchemaVisitor(object):
     Base class encoding schema traversal and modifications.
 
     Subclass and override the ``on_*`` methods to implement custom behaviour.
+    Do not forget to call the superclass methods as it ususally  encodes how
+    child elements such as field, enum values, etc. are processed.
 
     All methods *must* return the modified value; returning ``None`` will drop
     the respective values from their context, e.g. returning ``None`` from
     :meth:`on_field` will result in the field being dropped from the parent
-    :class:`py_gql.schema.ObjectType`. However, types and directives are
-    **never** from the schema, even if not in use anymore.
+    :class:`py_gql.schema.ObjectType`.
 
-    For most uses cases, do not forget to call the method from the parent class
-    as it ususally encodes how child elements such as field, enum values, etc.
-    are processed.
+    Specified types (scalars, introspection) and directives are ignored.
     """
 
     def on_schema(self, schema: Schema) -> Schema:
         """
-        Process the whole schema. You **should not** override this in most cases.
+        Process the whole schema. You should most likely not need to override
+        this in most cases.
 
         Args:
             schema: Original schema.
         """
-        updated_types = []
-        updated_directives = []
+        updated_types = {}  # type: Dict[str, Optional[NamedType]]
+        updated_directives = {}  # type: Dict[str, Optional[Directive]]
 
         for original_type in schema.types.values():
-            if original_type.name.startswith("__"):
+            if (
+                original_type.name.startswith("__")
+                or original_type in SPECIFIED_SCALAR_TYPES
+            ):
                 continue
 
+            updated = None  # type: Optional[NamedType]
+
             if isinstance(original_type, ObjectType):
-                updated = self.on_object(
-                    original_type
-                )  # type: Optional[NamedType]
+                updated = self.on_object(original_type)
             elif isinstance(original_type, InterfaceType):
                 updated = self.on_interface(original_type)
             elif isinstance(original_type, InputObjectType):
@@ -72,22 +75,19 @@ class SchemaVisitor(object):
             else:
                 raise TypeError(type(original_type))
 
-            if updated is not None and updated is not original_type:
-                updated_types.append(updated)
+            if updated is not original_type:
+                updated_types[original_type.name] = updated
 
         for original_directive in schema.directives.values():
-            updated_directive = self.on_directive(original_directive)
-            if (
-                updated_directive is not None
-                and updated_directive is not original_directive
-            ):
-                updated_directives.append(updated_directive)
+            if original_directive in SPECIFIED_DIRECTIVES:
+                continue
 
-        if not updated_types and not updated_directives:
-            return schema
+            updated_directive = self.on_directive(original_directive)
+
+            if updated_directive is not original_directive:
+                updated_directives[original_directive.name] = updated_directive
 
         schema._replace_types_and_directives(updated_types, updated_directives)
-
         return schema
 
     def on_scalar(self, scalar_type: ScalarType) -> Optional[ScalarType]:
@@ -95,9 +95,6 @@ class SchemaVisitor(object):
         Args:
             scalar: Original type.
         """
-        if scalar_type in SPECIFIED_SCALAR_TYPES:
-            return scalar_type
-
         return scalar_type
 
     def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
@@ -105,8 +102,8 @@ class SchemaVisitor(object):
         Args:
             object_type: Original type.
         """
-        updated_fields = list(
-            map_and_filter(self.on_field_definition, object_type.fields)
+        updated_fields = map_and_filter(
+            self.on_field_definition, object_type.fields
         )
         if updated_fields != object_type.fields:
             object_type.fields = updated_fields
@@ -117,8 +114,8 @@ class SchemaVisitor(object):
         Args:
             field: Original object field.
         """
-        updated_args = list(
-            map_and_filter(self.on_argument_definition, field.arguments)
+        updated_args = map_and_filter(
+            self.on_argument_definition, field.arguments
         )
         if updated_args != field.arguments:
             field.arguments = updated_args
@@ -138,8 +135,8 @@ class SchemaVisitor(object):
         Args:
             interface_type: Original type.
         """
-        updated_fields = list(
-            map_and_filter(self.on_field_definition, interface_type.fields)
+        updated_fields = map_and_filter(
+            self.on_field_definition, interface_type.fields
         )
         if updated_fields != interface_type.fields:
             interface_type.fields = updated_fields
@@ -157,9 +154,7 @@ class SchemaVisitor(object):
         Args:
             enum_type: Original type.
         """
-        updated_values = list(
-            map_and_filter(self.on_enum_value, enum_type.values)
-        )
+        updated_values = map_and_filter(self.on_enum_value, enum_type.values)
         if updated_values != enum_type.values:
             enum_type._set_values(updated_values)
         return enum_type
@@ -178,10 +173,8 @@ class SchemaVisitor(object):
         Args:
             input_object_type: Original type.
         """
-        updated_fields = list(
-            map_and_filter(
-                self.on_input_field_definition, input_object_type.fields
-            )
+        updated_fields = map_and_filter(
+            self.on_input_field_definition, input_object_type.fields
         )
         if updated_fields != input_object_type.fields:
             input_object_type.fields = updated_fields
@@ -196,7 +189,7 @@ class SchemaVisitor(object):
         """
         return field
 
-    def on_directive(self, directive: Directive) -> Directive:
+    def on_directive(self, directive: Directive) -> Optional[Directive]:
         """
         Note:
             This does not correspond to a directive location but is necessary
@@ -205,11 +198,8 @@ class SchemaVisitor(object):
         Args:
             directive: Original directive
         """
-        if directive in SPECIFIED_DIRECTIVES:
-            return directive
-
-        updated_args = list(
-            map_and_filter(self.on_argument_definition, directive.arguments)
+        updated_args = map_and_filter(
+            self.on_argument_definition, directive.arguments
         )
         if updated_args != directive.arguments:
             directive.arguments = updated_args

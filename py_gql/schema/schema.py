@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
 """ Schema definition. """
 
+import copy
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
-from .build_type_map import build_type_map
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import INTROPSPECTION_TYPES
 from .scalars import SPECIFIED_SCALAR_TYPES
@@ -14,12 +23,14 @@ from .types import (
     Directive,
     GraphQLAbstractType,
     GraphQLType,
+    InputObjectType,
     InterfaceType,
     ListType,
     NamedType,
     NonNullType,
     ObjectType,
     UnionType,
+    unwrap_type,
 )
 from .validation import validate_schema
 
@@ -111,11 +122,11 @@ class Schema:
 
         self.directives = _build_directive_map(directives or [])
 
-        self.types = build_type_map(
-            [query_type, mutation_type, subscription_type, *(types or [])],
+        self.types = _build_type_map(
+            [*(types or []), query_type, mutation_type, subscription_type],
             self.directives.values(),
             _type_map=_default_type_map(),
-        )
+        )  # type: Dict[str, NamedType]
 
         self._invalidate_and_rebuild_caches()
 
@@ -137,33 +148,39 @@ class Schema:
 
     def _replace_types_and_directives(
         self,
-        types: Optional[Sequence[NamedType]] = None,
-        directives: Optional[Sequence[Directive]] = None,
+        types: Optional[Dict[str, Optional[NamedType]]] = None,
+        directives: Optional[Dict[str, Optional[Directive]]] = None,
     ) -> None:
         busted_cache = False
 
-        for new_type in types or ():
+        for type_name, new_type in (types or {}).items():
             try:
-                original_type = self.types[new_type.name]
+                original_type = self.types[type_name]
             except KeyError:
                 pass
             else:
-                if original_type in SPECIFIED_SCALAR_TYPES:
+                if (
+                    original_type in SPECIFIED_SCALAR_TYPES
+                    or original_type in INTROPSPECTION_TYPES
+                ):
                     raise SchemaError(
                         "Cannot replace specified type %s" % original_type
                     )
+
+            busted_cache = new_type != original_type
+            if new_type is None:
+                del self.types[type_name]
+            else:
                 if type(original_type) != type(new_type):
                     raise SchemaError(
                         "Cannot replace type %r with a different kind of type %r."
                         % (original_type, new_type)
                     )
+                self.types[type_name] = new_type
 
-            busted_cache = new_type != original_type
-            self.types[new_type.name] = new_type
-
-        for new_directive in directives or ():
+        for directive_name, new_directive in (directives or {}).items():
             try:
-                original_directive = self.directives[new_directive.name]
+                original_directive = self.directives[directive_name]
             except KeyError:
                 pass
             else:
@@ -173,14 +190,17 @@ class Schema:
                         % original_directive
                     )
 
-            self.directives[new_directive.name] = new_directive
+            if new_directive is None:
+                del self.directives[directive_name]
+            else:
+                self.directives[directive_name] = new_directive
 
         if busted_cache:
             # Circular import
             from .fix_type_references import fix_type_references
 
-            self._invalidate_and_rebuild_caches()
             fix_type_references(self)
+            self._invalidate_and_rebuild_caches()
 
     def validate(self):
         """ Check that the schema is valid.
@@ -517,6 +537,32 @@ class Schema:
 
         return decorator
 
+    def clone(self) -> "Schema":
+        cloned = Schema(
+            query_type=self.query_type,
+            mutation_type=self.mutation_type,
+            subscription_type=self.subscription_type,
+            nodes=self.nodes,
+        )
+
+        cloned._replace_types_and_directives(
+            types={
+                t.name: copy.copy(t)
+                for t in self.types.values()
+                if (
+                    t not in SPECIFIED_SCALAR_TYPES
+                    and t not in INTROPSPECTION_TYPES
+                )
+            },
+            directives={
+                d.name: copy.copy(d)
+                for d in self.directives.values()
+                if d not in SPECIFIED_DIRECTIVES
+            },
+        )
+
+        return cloned
+
 
 def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
     directives = {
@@ -554,3 +600,65 @@ def _default_type_map() -> Dict[str, NamedType]:
     types.update({t.name: t for t in SPECIFIED_SCALAR_TYPES})
     types.update({t.name: t for t in INTROPSPECTION_TYPES})
     return types
+
+
+def _build_type_map(
+    types: Iterable[Optional[GraphQLType]],
+    directives: Optional[Iterable[Directive]] = None,
+    _type_map: Optional[Dict[str, NamedType]] = None,
+) -> Dict[str, NamedType]:
+    type_map = (
+        _type_map if _type_map is not None else {}
+    )  # type: Dict[str, NamedType]
+
+    for type_ in types:
+
+        if type_ is None:
+            continue
+
+        child_types = []  # type: List[GraphQLType]
+
+        type_ = unwrap_type(type_)
+
+        if not isinstance(type_, NamedType):
+            raise SchemaError(
+                'Expected NamedType but got "%s" of type %s'
+                % (type_, type(type_))
+            )
+
+        name = type_.name
+
+        if name in type_map:
+            if type_ is not type_map[name]:
+                raise SchemaError('Duplicate type "%s"' % name)
+            continue
+
+        type_map[name] = type_
+
+        if isinstance(type_, UnionType):
+            child_types.extend(type_.types)
+
+        if isinstance(type_, ObjectType):
+            child_types.extend(type_.interfaces)
+
+        if isinstance(type_, (ObjectType, InterfaceType)):
+            for field in type_.fields:
+                child_types.append(field.type)
+                child_types.extend([arg.type for arg in field.arguments or []])
+
+        if isinstance(type_, InputObjectType):
+            for input_field in type_.fields:
+                child_types.append(input_field.type)
+
+        type_map.update(_build_type_map(child_types, _type_map=type_map))
+
+    if directives:
+        directive_types = []  # type: List[GraphQLType]
+        for directive in directives:
+            directive_types.extend(
+                [arg.type for arg in directive.arguments or []]
+            )
+
+        type_map.update(_build_type_map(directive_types, _type_map=type_map))
+
+    return type_map
