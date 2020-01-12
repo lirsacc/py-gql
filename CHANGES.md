@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+### Added
+
+- Added an explicit util to transform schemas (`py_gql.utilities.transform_schema`) backed by `SchemaVisitor`.
+- Added `py_gql.utilities.VisibilitySchemaTransform` to dynamically modify schema entities available to a given query.
+
 ### Fixed
 
 - Introducing `pyproject.toml` broke Cython integration through build isolation. This is now fixed by always requiring cython as a a build dependency (through `build-system.requires`) and only enabling support behind the `PY_GQL_USE_CYTHON` env variable.
