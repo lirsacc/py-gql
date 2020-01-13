@@ -275,6 +275,15 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
         )
 
 
+@invoke.task
+def generate_checksums(ctx):
+    with ctx.cd(os.path.join(ROOT, "dist")):
+        ctx.run(
+            'find . -name "*py_gql*" -type f -exec sha256sum "{}" + >| checksums.txt',
+            echo=True,
+        )
+
+
 ns = invoke.Collection.from_module(sys.modules[__name__])
 
 
