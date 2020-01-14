@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # flake8: noqa
+# mypy: ignore-errors
 """ Development scripts.
 
 You need ``invoke`` installed to run them.
 """
 import os
+import re
 import sys
 
 import invoke
@@ -17,6 +19,8 @@ DEFAULT_TARGETS = (
     if sys.version >= "3.6"
     else "%s tests" % PACKAGE
 )
+
+VALID_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.(dev|a|b|rc)\d+)?$")
 
 
 def _join(cmd):
@@ -279,9 +283,53 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
 def generate_checksums(ctx):
     with ctx.cd(os.path.join(ROOT, "dist")):
         ctx.run(
-            'find . -name "*py_gql*" -type f -exec sha256sum "{}" + >| checksums.txt',
+            'find . -name "*%s*" -type f -exec sha256sum "{}" + >| checksums.txt'
+            % PACKAGE,
             echo=True,
         )
+
+
+@invoke.task
+def update_version(ctx, version, force=False, push=False):
+    """Update version and create relevant git tag."""
+    with ctx.cd(ROOT):
+        if not VALID_VERSION_RE.match(version):
+            raise invoke.exceptions.Exit(
+                "Invalid version format, must match /%s/."
+                % VALID_VERSION_RE.pattern
+            )
+
+        pkg = {}
+
+        with open(os.path.join(PACKAGE, "_pkg.py")) as f:
+            exec(f.read(), {}, pkg)
+
+        local_version = pkg["__version__"]
+
+        if (not force) and local_version >= version:
+            raise invoke.exceptions.Exit(
+                "Must increment the version (current %s)." % local_version
+            )
+
+        with open(os.path.join(PACKAGE, "_pkg.py")) as f:
+            new_file = f.read().replace(local_version, version)
+
+        with open(os.path.join(PACKAGE, "_pkg.py"), "w") as f:
+            f.write(new_file)
+
+        modified = ctx.run("git ls-files -m", hide=True)
+
+        if (not force) and modified.stdout.strip() != "%s/_pkg.py" % PACKAGE:
+            raise invoke.exceptions.Exit(
+                "There are still modified files in your directory. Commit or stash them."
+            )
+
+        ctx.run("git add %s/_pkg.py" % PACKAGE)
+        ctx.run("git commit -m v%s" % version)
+        ctx.run("git tag v%s" % version)
+
+        if push:
+            ctx.run("git push && git push --tags")
 
 
 ns = invoke.Collection.from_module(sys.modules[__name__])
