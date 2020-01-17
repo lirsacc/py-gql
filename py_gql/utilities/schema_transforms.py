@@ -5,7 +5,6 @@ from typing import Optional, TypeVar
 
 from .._utils import map_and_filter
 from ..schema import (
-    SPECIFIED_DIRECTIVES,
     SPECIFIED_SCALAR_TYPES,
     Directive,
     EnumType,
@@ -163,10 +162,6 @@ class VisibilitySchemaTransform(SchemaVisitor):
         return None
 
     def on_directive(self, directive: Directive) -> Optional[Directive]:
-        if (
-            directive
-            and directive not in SPECIFIED_DIRECTIVES
-            and not self.is_directive_visible(directive.name)
-        ):
+        if directive and not self.is_directive_visible(directive.name):
             return None
         return super().on_directive(directive)
