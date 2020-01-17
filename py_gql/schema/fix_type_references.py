@@ -38,8 +38,8 @@ class _HealSchemaVisitor(SchemaVisitor):
         )
         return updated
 
-    def on_field_definition(self, field: Field) -> Optional[Field]:
-        updated = cast(Field, super().on_field_definition(field))
+    def on_field(self, field: Field) -> Optional[Field]:
+        updated = cast(Field, super().on_field(field))
         new_type = self._healed(updated.type)
 
         if new_type is None:
@@ -48,8 +48,8 @@ class _HealSchemaVisitor(SchemaVisitor):
         updated.type = new_type
         return updated
 
-    def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
-        updated = cast(Argument, super().on_argument_definition(argument))
+    def on_argument(self, argument: Argument) -> Optional[Argument]:
+        updated = cast(Argument, super().on_argument(argument))
         new_type = self._healed(updated.type)
 
         if new_type is None:
@@ -65,10 +65,8 @@ class _HealSchemaVisitor(SchemaVisitor):
         )
         return updated
 
-    def on_input_field_definition(
-        self, field: InputField
-    ) -> Optional[InputField]:
-        updated = cast(InputField, super().on_input_field_definition(field))
+    def on_input_field(self, field: InputField) -> Optional[InputField]:
+        updated = cast(InputField, super().on_input_field(field))
         new_type = self._healed(updated.type)
 
         if new_type is None:

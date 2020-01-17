@@ -4,6 +4,7 @@
 import collections
 import functools
 import sys
+import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -22,12 +23,15 @@ from typing import (
     TypeVar,
     Union,
     ValuesView,
+    cast,
 )
 
 T = TypeVar("T")
 G = TypeVar("G")
 H = TypeVar("H", bound=Hashable)
 C = TypeVar("C", bound=Callable[..., T])
+FuncType = Callable[..., Any]
+Fn = TypeVar("Fn", bound=FuncType)
 TType = TypeVar("TType", bound=Type[Any])
 
 Lazy = Union[T, Callable[[], T]]
@@ -336,3 +340,17 @@ def apply_middlewares(
         tail = functools.partial(mw, tail)
 
     return tail
+
+
+def deprecated(reason: str) -> Callable[[Fn], Fn]:
+    def decorator(fn: Fn) -> Fn:
+        @functools.wraps
+        def deprecated_fn(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", DeprecationWarning)
+                warnings.warn(reason, category=DeprecationWarning, stacklevel=2)
+            return fn(*args, **kwargs)
+
+        return cast(Fn, deprecated_fn)
+
+    return decorator

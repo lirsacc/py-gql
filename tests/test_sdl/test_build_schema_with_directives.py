@@ -46,7 +46,7 @@ def wrap_resolver(field_def, func):
 
 def test_simple_field_modifier():
     class UppercaseDirective(SchemaDirective):
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     assert (
@@ -70,7 +70,7 @@ def test_simple_field_modifier():
 
 def test_directive_on_wrong_location():
     class UppercaseDirective(SchemaDirective):
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     with pytest.raises(SDLError) as exc_info:
@@ -108,7 +108,7 @@ def test_field_modifier_using_arguments():
         def __init__(self, args):
             self.exponent = args["exponent"]
 
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     assert (
@@ -133,7 +133,7 @@ def test_field_modifier_using_arguments():
 
 def test_object_modifier_and_field_modifier():
     class UppercaseDirective(SchemaDirective):
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
     class UniqueID(SchemaDirective):
@@ -240,11 +240,11 @@ def test_multiple_directives_applied_in_order():
         def __init__(self, args):
             self.exponent = args["exponent"]
 
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     class PlusOneDirective(SchemaDirective):
-        def on_field_definition(self, field_definition):
+        def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x + 1)
 
     assert (
@@ -309,17 +309,17 @@ def test_input_values():
             self.min = args["min"]
             self.max = args.get("max")
 
-        def on_argument_definition(self, arg):
+        def on_argument(self, arg):
             arg.type = LimitedLengthScalarType.wrap(
                 arg.type, self.min, self.max
             )
             return arg
 
-        def on_input_field_definition(self, field):
-            field.type = LimitedLengthScalarType.wrap(
-                field.type, self.min, self.max
+        def on_input_field(self, input_field):
+            input_field.type = LimitedLengthScalarType.wrap(
+                input_field.type, self.min, self.max
             )
-            return field
+            return input_field
 
     schema = build_schema(
         """

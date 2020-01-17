@@ -180,19 +180,19 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
                 return object_type
         return super().on_object(object_type)
 
-    def on_field_definition(self, field: Field) -> Optional[Field]:
+    def on_field(self, field: Field) -> Optional[Field]:
         for sd in self._collect_schema_directives(field, "FIELD_DEFINITION"):
-            field = sd.on_field_definition(field)  # type: ignore
+            field = sd.on_field(field)  # type: ignore
             if field is None:
                 return None
-        return super().on_field_definition(field)
+        return super().on_field(field)
 
-    def on_argument_definition(self, arg: Argument) -> Optional[Argument]:
+    def on_argument(self, arg: Argument) -> Optional[Argument]:
         for sd in self._collect_schema_directives(arg, "ARGUMENT_DEFINITION"):
-            arg = sd.on_argument_definition(arg)  # type: ignore
+            arg = sd.on_argument(arg)  # type: ignore
             if arg is None:
                 return None
-        return super().on_argument_definition(arg)
+        return super().on_argument(arg)
 
     def on_interface(self, interface: InterfaceType) -> Optional[InterfaceType]:
         for sd in self._collect_schema_directives(interface, "INTERFACE"):
@@ -231,13 +231,11 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
                 return None
         return super().on_input_object(input_object)
 
-    def on_input_field_definition(
-        self, field: InputField
-    ) -> Optional[InputField]:
+    def on_input_field(self, field: InputField) -> Optional[InputField]:
         for sd in self._collect_schema_directives(
             field, "INPUT_FIELD_DEFINITION"
         ):
-            field = sd.on_input_field_definition(field)  # type: ignore
+            field = sd.on_input_field(field)  # type: ignore
             if field is None:
                 return None
-        return super().on_input_field_definition(field)
+        return super().on_input_field(field)

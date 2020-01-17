@@ -2,7 +2,7 @@
 
 from typing import Dict, Optional, TypeVar
 
-from .._utils import map_and_filter
+from .._utils import deprecated, map_and_filter
 from .directives import SPECIFIED_DIRECTIVES
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
@@ -42,11 +42,9 @@ class SchemaVisitor(object):
 
     def on_schema(self, schema: Schema) -> Schema:
         """
-        Process the whole schema. You should most likely not need to override
+        Process the whole schema. Consumers will most likely not need to override
         this in most cases.
 
-        Args:
-            schema: Original schema.
         """
         updated_types = {}  # type: Dict[str, Optional[NamedType]]
         updated_directives = {}  # type: Dict[str, Optional[Directive]]
@@ -91,116 +89,70 @@ class SchemaVisitor(object):
         return schema
 
     def on_scalar(self, scalar_type: ScalarType) -> Optional[ScalarType]:
-        """
-        Args:
-            scalar: Original type.
-        """
         return scalar_type
 
     def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
-        """
-        Args:
-            object_type: Original type.
-        """
-        updated_fields = map_and_filter(
-            self.on_field_definition, object_type.fields
-        )
+        updated_fields = map_and_filter(self.on_field, object_type.fields)
         if updated_fields != object_type.fields:
             object_type.fields = updated_fields
         return object_type
 
-    def on_field_definition(self, field: Field) -> Optional[Field]:
-        """
-        Args:
-            field: Original object field.
-        """
-        updated_args = map_and_filter(
-            self.on_argument_definition, field.arguments
-        )
+    def on_field(self, field: Field) -> Optional[Field]:
+        updated_args = map_and_filter(self.on_argument, field.arguments)
         if updated_args != field.arguments:
             field.arguments = updated_args
         return field
 
-    def on_argument_definition(self, argument: Argument) -> Optional[Argument]:
-        """
-        Args:
-            field: Original argument.
-        """
+    def on_argument(self, argument: Argument) -> Optional[Argument]:
         return argument
 
     def on_interface(
         self, interface_type: InterfaceType
     ) -> Optional[InterfaceType]:
-        """
-        Args:
-            interface_type: Original type.
-        """
-        updated_fields = map_and_filter(
-            self.on_field_definition, interface_type.fields
-        )
+        updated_fields = map_and_filter(self.on_field, interface_type.fields)
         if updated_fields != interface_type.fields:
             interface_type.fields = updated_fields
         return interface_type
 
     def on_union(self, union_type: UnionType) -> Optional[UnionType]:
-        """
-        Args:
-            union_type: Original type.
-        """
         return union_type
 
     def on_enum(self, enum_type: EnumType) -> Optional[EnumType]:
-        """
-        Args:
-            enum_type: Original type.
-        """
         updated_values = map_and_filter(self.on_enum_value, enum_type.values)
         if updated_values != enum_type.values:
             enum_type._set_values(updated_values)
         return enum_type
 
     def on_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
-        """
-        Args:
-            enum_value: Original enum value.
-        """
         return enum_value
 
     def on_input_object(
         self, input_object_type: InputObjectType
     ) -> Optional[InputObjectType]:
-        """
-        Args:
-            input_object_type: Original type.
-        """
         updated_fields = map_and_filter(
-            self.on_input_field_definition, input_object_type.fields
+            self.on_input_field, input_object_type.fields
         )
         if updated_fields != input_object_type.fields:
             input_object_type.fields = updated_fields
         return input_object_type
 
-    def on_input_field_definition(
-        self, field: InputField
-    ) -> Optional[InputField]:
-        """
-        Args:
-            field: Original input object field.
-        """
+    def on_input_field(self, field: InputField) -> Optional[InputField]:
         return field
 
     def on_directive(self, directive: Directive) -> Optional[Directive]:
-        """
-        Note:
-            This does not correspond to a directive location but is necessary
-            to completely cover schema traversal.
-
-        Args:
-            directive: Original directive
-        """
-        updated_args = map_and_filter(
-            self.on_argument_definition, directive.arguments
-        )
+        updated_args = map_and_filter(self.on_argument, directive.arguments)
         if updated_args != directive.arguments:
             directive.arguments = updated_args
         return directive
+
+    on_field_definition = deprecated(
+        "This method has been deprecated, use on_field instead."
+    )(on_field)
+
+    on_input_field_definition = deprecated(
+        "This method has been deprecated, use on_input_field instead."
+    )(on_input_field)
+
+    on_argument_definition = deprecated(
+        "This method has been deprecated, use on_argument instead."
+    )(on_argument)

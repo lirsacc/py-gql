@@ -157,11 +157,9 @@ class VisibilitySchemaTransform(SchemaVisitor):
 
         return self._filter_type(super().on_input_object(input_object_type))
 
-    def on_input_field_definition(
-        self, field: InputField
-    ) -> Optional[InputField]:
+    def on_input_field(self, field: InputField) -> Optional[InputField]:
         if self._is_type_visible(unwrap_type(field.type)):
-            return super().on_input_field_definition(field)
+            return super().on_input_field(field)
         return None
 
     def on_directive(self, directive: Directive) -> Optional[Directive]:
