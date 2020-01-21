@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Common utilities used to transform GraphQL schemas."""
-
 from typing import Optional, TypeVar
 
-from .._utils import map_and_filter
-from ..schema import (
+from ..._utils import map_and_filter
+from ...schema import (
     SPECIFIED_SCALAR_TYPES,
     Directive,
     EnumType,
@@ -14,32 +12,13 @@ from ..schema import (
     NamedType,
     ObjectType,
     ScalarType,
-    Schema,
     SchemaVisitor,
     UnionType,
     unwrap_type,
 )
-from ..schema.fix_type_references import fix_type_references
-from ..schema.introspection import INTROPSPECTION_TYPES
+from ...schema.introspection import INTROPSPECTION_TYPES
 
 TNamedType = TypeVar("TNamedType", bound=NamedType)
-
-
-def transform_schema(schema: Schema, *transforms: SchemaVisitor) -> Schema:
-    """Apply one or more transformations to a schema instance.
-
-    To prevent accidental side effects, this functions creates a deep clone of
-    the schema before applying any transformer.
-    """
-
-    updated = schema.clone()
-
-    for t in transforms:
-        updated = t.on_schema(updated)
-
-    updated = fix_type_references(updated)
-    updated.validate()
-    return updated
 
 
 class VisibilitySchemaTransform(SchemaVisitor):
