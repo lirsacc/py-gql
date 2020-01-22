@@ -45,7 +45,7 @@ __Schema__ = ObjectType(
             "queryType",
             NonNullType(__Type__),
             description="The type that query operations will be rooted at.",
-            resolver=lambda schema, *_: schema.query_type,
+            python_name="query_type",
         ),
         Field(
             "mutationType",
@@ -54,7 +54,7 @@ __Schema__ = ObjectType(
                 "If this server supports mutation, the type that mutation "
                 "operations will be rooted at."
             ),
-            resolver=lambda schema, *_: schema.mutation_type,
+            python_name="mutation_type",
         ),
         Field(
             "subscriptionType",
@@ -63,7 +63,7 @@ __Schema__ = ObjectType(
                 "If this server supports subscription, the type that "
                 "subscription operations will be rooted at."
             ),
-            resolver=lambda schema, *_: schema.subscription_type,
+            python_name="subscription_type",
         ),
         Field(
             "directives",
@@ -97,7 +97,7 @@ __Directive__ = ObjectType(
         Field(
             "args",
             NonNullType(ListType(NonNullType(__InputValue__))),
-            resolver=lambda r, *_, **__: r.arguments,
+            python_name="arguments",
         ),
     ],
 )  # type: ObjectType
@@ -293,16 +293,8 @@ __EnumValue__ = ObjectType(
     fields=lambda: [
         Field("name", NonNullType(String)),
         Field("description", String),
-        Field(
-            "isDeprecated",
-            NonNullType(Boolean),
-            resolver=lambda ev, *_: ev.deprecated,
-        ),
-        Field(
-            "deprecationReason",
-            String,
-            resolver=lambda ev, *_: ev.deprecation_reason,
-        ),
+        Field("isDeprecated", NonNullType(Boolean), python_name="deprecated",),
+        Field("deprecationReason", String, python_name="deprecation_reason"),
     ],
 )  # type: ObjectType
 
@@ -359,19 +351,11 @@ __Field__ = ObjectType(
         Field(
             "args",
             NonNullType(ListType(NonNullType(__InputValue__))),
-            resolver=lambda field, *_: (field.arguments or []),
+            python_name="arguments",
         ),
         Field("type", NonNullType(__Type__)),
-        Field(
-            "isDeprecated",
-            NonNullType(Boolean),
-            resolver=lambda field, *_: field.deprecated,
-        ),
-        Field(
-            "deprecationReason",
-            String,
-            resolver=lambda field, *_: field.deprecation_reason,
-        ),
+        Field("isDeprecated", NonNullType(Boolean), python_name="deprecated"),
+        Field("deprecationReason", String, python_name="deprecation_reason"),
     ],
 )  # type: ObjectType
 
