@@ -2,6 +2,7 @@
 """Common utilities used to transform GraphQL schemas."""
 
 from ...schema import Schema, SchemaVisitor
+from .camel_case import CamelCaseSchemaTransform
 from .visibility import VisibilitySchemaTransform
 
 
@@ -21,4 +22,8 @@ def transform_schema(schema: Schema, *transforms: SchemaVisitor) -> Schema:
     return updated
 
 
-__all__ = ("transform_schema", "VisibilitySchemaTransform")
+__all__ = (
+    "transform_schema",
+    "VisibilitySchemaTransform",
+    "CamelCaseSchemaTransform",
+)
