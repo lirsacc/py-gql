@@ -25,6 +25,8 @@ Unreleased
   - Returning `None` from `SchemaVisitor` methods will now signal that the type should be removed.
   - `fix_type_references` will remove forward references from types that have been removed from the schema (e.g. field and directive arguments).
 
+- `fix_type_references` now correctly updates the `Schema.(query|mutation|subscription)_type` attributes.
+
 ### Breaking Changes & Deprecations
 
 - `Instrumentation` has been slightly refactored to be easier to use and use more consistent names:
