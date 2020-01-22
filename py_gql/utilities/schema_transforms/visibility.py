@@ -33,6 +33,17 @@ class VisibilitySchemaTransform(SchemaVisitor):
         - Directives (is_directive_visible)
         - Input type fields (is_input_field_visible)
 
+    The following elements are affected indirectly:
+
+        - Object fields of a type that is now hidden
+        - Input fields of a type that is now hidden
+        - Arguments of a type that is now hidden
+
+    Warning:
+        Mandatory input fields and arguments being removed could break
+        resolvers if they were not built anticipating this (e.g. expected an
+        argument as a mandatory keyword argument).
+
     This should not allow modifying a schema to be off-spec and as such the
     following elements (or their children) cannot be hidden:
 

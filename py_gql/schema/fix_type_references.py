@@ -85,4 +85,7 @@ def fix_type_references(schema: Schema) -> Schema:
     swapped out but not all of its forward references (e.g. arguments, fields,
     union, etc.) were.
     """
+    # WARN: This will lead to recursive calls until no type needs to be updated
+    # through on_schema calling Schema._replace_types_and_directives which
+    # calls fix_type_references.
     return _HealSchemaVisitor(schema).on_schema(schema)
