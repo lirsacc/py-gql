@@ -9,6 +9,11 @@ Unreleased
 - Added an explicit util to transform schemas (`py_gql.utilities.transform_schema`) backed by `SchemaVisitor`.
 - Added `py_gql.utilities.VisibilitySchemaTransform` to dynamically modify schema entities available to a given query.
 - `py_gql.schema.Argument` and `py_gql.schema.InputField` now inherit from the `py_gql.schema.InputValue` base class. This matches the common language used in the spec and simplifies some internal type handling.
+- Add a custom `python_name` attribute for some schema elements:
+ 
+  - `py_gql.schema.Argument`: when arguments are coerced and passed to a resolver the `python_name` value will be used instead of the exposed argument name.
+  - `py_gql.schema.InputField`: the resulting object will use `python_name` as a key instead of the exposed field name.
+  - `py_gql.schema.Field`: The default resolver will use `python_name` instead of the exposed name when looking the key or attribute in the root object.
 
 ### Fixed
 

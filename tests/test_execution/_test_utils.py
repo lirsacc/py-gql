@@ -18,9 +18,11 @@ ExpectedError = Tuple[str, Tuple[int, int], Optional[str]]
 ExpectedExcDef = Union[Type[Exception], Tuple[Type[Exception], Optional[str]]]
 
 
-def create_test_schema(field_or_type):
+def create_test_schema(field_or_type, **kwargs):
     if isinstance(field_or_type, GraphQLType):
-        return Schema(ObjectType("Query", [Field("test", field_or_type)]))
+        return Schema(
+            ObjectType("Query", [Field("test", field_or_type, **kwargs)])
+        )
     else:
         return Schema(ObjectType("Query", [field_or_type]))
 

@@ -22,7 +22,7 @@ def default_resolver(
     This resolver looks up the value from the ``root`` in the
     following lookup order:
 
-    - If ``root`` is a dict subcass:
+    - If ``root`` is a dict subclass:
 
         - If the field name is present and non callable, return it
         - If the field name is present and callable, return the result of
@@ -36,6 +36,9 @@ def default_resolver(
 
     - Return ``None``.
 
+    If the field defined a custom ``python_name`` attribute, this will be used
+    instead of the field name.
+
     Args:
         root: Value of the resolved parent node.
         context: User provided context value.
@@ -46,7 +49,7 @@ def default_resolver(
         Resolved value.
 
     """
-    field_name = info.field_definition.name
+    field_name = info.field_definition.python_name
 
     field_value = (
         root.get(field_name, None)

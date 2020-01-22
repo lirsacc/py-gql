@@ -209,15 +209,16 @@ class InputValue:
         default_value: Any = _UNSET,
         description: Optional[str] = None,
         node: Optional[_ast.InputValueDefinition] = None,
+        python_name: Optional[str] = None,
     ):
         self.name = name
         self.description = description
         self.has_default_value = default_value is not _UNSET
         self.node = node
-
         self._default_value = default_value
         self._ltype = type_
         self._type = None  # type: Optional[GraphQLType]
+        self.python_name = python_name or name
 
     @property
     def default_value(self) -> Any:
@@ -841,6 +842,7 @@ class Field:
         resolver: Optional[Callable[..., Any]] = None,
         subscription_resolver: Optional[Callable[..., Any]] = None,
         node: Optional[_ast.FieldDefinition] = None,
+        python_name: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -851,9 +853,9 @@ class Field:
         self._source_args = args
         self._args = None  # type: Optional[Sequence[Argument]]
         self.node = node
-
         self._ltype = type_
         self._type = None  # type: Optional[GraphQLType]
+        self.python_name = python_name or name
 
     @property
     def type(self) -> GraphQLType:

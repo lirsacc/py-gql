@@ -5,17 +5,26 @@ from typing import List
 import pytest
 
 from py_gql.exc import CoercionError
-from py_gql.lang import ast as _ast
-from py_gql.schema import Argument, Field, Int, NonNullType
+from py_gql.lang import ast as _ast, parse_value
+from py_gql.schema import (
+    Argument,
+    Field,
+    InputField,
+    InputObjectType,
+    Int,
+    NonNullType,
+)
 from py_gql.utilities import coerce_argument_values
 
 
-def _test_node(argument_value=None):
+def _test_node(argument_value=None, argument_name="foo"):
     if argument_value is None:
         arguments = []  # type: List[_ast.Argument]
     else:
         arguments = [
-            _ast.Argument(name=_ast.Name(value="foo"), value=argument_value)
+            _ast.Argument(
+                name=_ast.Name(value=argument_name), value=argument_value
+            )
         ]
     return _ast.Field(name=_ast.Name(value="test"), arguments=arguments)
 
@@ -100,3 +109,25 @@ def test_provided_unknown_variable_without_default_non_nullable():
         'Argument "foo" of required type "Int!" was provided the missing '
         'variable "$bar"'
     )
+
+
+def test_custom_python_name():
+    arg = Argument("foo", NonNullType(Int), python_name="other_name")
+    field = Field("test", Int, [arg])
+    node = _test_node(_ast.IntValue(value="42"))
+    assert coerce_argument_values(field, node) == {"other_name": 42}
+
+
+def test_custom_python_name_in_input_object():
+    arg = Argument(
+        "foo",
+        NonNullType(
+            InputObjectType(
+                "Foo",
+                [InputField("field", NonNullType(Int), python_name="value")],
+            )
+        ),
+    )
+    field = Field("test", Int, [arg])
+    node = _test_node(parse_value("{ field: 42 }"))
+    assert coerce_argument_values(field, node) == {"foo": {"value": 42}}

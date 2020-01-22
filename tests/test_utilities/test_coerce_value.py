@@ -158,6 +158,17 @@ def test_InputObject_raises_for_unknown_field():
     )
 
 
+def test_InputObject_with_custom_python_name():
+    _test(
+        {"someField": 3},
+        InputObjectType(
+            "TestInputObject",
+            [InputField("someField", Int, python_name="some_field")],
+        ),
+        {"some_field": 3},
+    )
+
+
 def test_ListType_for_single_valid_value():
     _test("1", ListType(Int), [1])
 

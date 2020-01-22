@@ -105,14 +105,15 @@ def _extract_input_object(
     node_fields = {f.name.value: f for f in node.fields}
     for field in type_.fields:
         name = field.name
+        target_name = field.python_name
         if name not in node_fields:
             if field.has_default_value:
-                coerced[name] = field.default_value
+                coerced[target_name] = field.default_value
             elif isinstance(field.type, NonNullType):
                 raise InvalidValue("Missing field %s" % name, [node])
         else:
             value = node_fields[name].value
-            coerced[name] = value_from_ast(value, field.type, variables)
+            coerced[target_name] = value_from_ast(value, field.type, variables)
 
     return coerced
 

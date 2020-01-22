@@ -27,6 +27,28 @@ def test_looks_up_attribute():
     )
 
 
+def test_looks_up_key_with_custom_python_name():
+    assert_sync_execution(
+        create_test_schema(String, python_name="other_name"),
+        "{ test }",
+        initial_value={"other_name": "testValue"},
+        expected_data={"test": "testValue"},
+    )
+
+
+def test_looks_up_attribute_with_custom_python_name():
+    class TestObject:
+        def __init__(self, value):
+            self.other_name = value
+
+    assert_sync_execution(
+        create_test_schema(String, python_name="other_name"),
+        "{ test }",
+        initial_value=TestObject("testValue"),
+        expected_data={"test": "testValue"},
+    )
+
+
 def test_evaluates_methods():
     class Adder:
         def __init__(self, value):

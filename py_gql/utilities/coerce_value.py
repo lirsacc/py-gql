@@ -141,21 +141,24 @@ def _coerce_input_object(
 
     coerced = {}
     errors = []
+
     for field in type_.fields:
-        if field.name not in value:
+        field_name = field.name
+
+        if field_name not in value:
             if isinstance(field.type, NonNullType):
                 errors.append(
                     CoercionError(
                         "Field %s of required type %s was not provided"
-                        % (field.name, field.type),
+                        % (field_name, field.type),
                         node,
-                        value_path=_path(path + [field.name]),
+                        value_path=_path(path + [field_name]),
                     )
                 )
         else:
             try:
-                coerced[field.name] = coerce_value(
-                    value[field.name], field.type, node, path + [field.name]
+                coerced[field.python_name] = coerce_value(
+                    value[field_name], field.type, node, path + [field_name]
                 )
             except MultiCoercionError as err:
                 for child_err in err.errors:
@@ -210,10 +213,11 @@ def coerce_argument_values(
     values = {a.name.value: a for a in node.arguments}
     for arg_def in definition.arguments:
         argname = arg_def.name
+        target_name = arg_def.python_name
         argtype = arg_def.type
         if argname not in values:
             if arg_def.has_default_value:
-                coerced_values[argname] = arg_def.default_value
+                coerced_values[target_name] = arg_def.default_value
             elif isinstance(argtype, NonNullType):
                 raise CoercionError(
                     'Argument "%s" of required type "%s" was not provided'
@@ -225,9 +229,9 @@ def coerce_argument_values(
             if isinstance(arg.value, _ast.Variable):
                 varname = arg.value.name.value
                 if varname in variables:
-                    coerced_values[argname] = variables[varname]
+                    coerced_values[target_name] = variables[varname]
                 elif arg_def.has_default_value:
-                    coerced_values[argname] = arg_def.default_value
+                    coerced_values[target_name] = arg_def.default_value
                 elif isinstance(argtype, NonNullType):
                     raise CoercionError(
                         'Argument "%s" of required type "%s" was provided the '
@@ -236,7 +240,7 @@ def coerce_argument_values(
                     )
             else:
                 try:
-                    coerced_values[argname] = value_from_ast(
+                    coerced_values[target_name] = value_from_ast(
                         arg.value, argtype, variables=variables
                     )
                 except InvalidValue as err:
