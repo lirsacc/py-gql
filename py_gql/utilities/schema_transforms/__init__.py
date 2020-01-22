@@ -2,7 +2,6 @@
 """Common utilities used to transform GraphQL schemas."""
 
 from ...schema import Schema, SchemaVisitor
-from ...schema.fix_type_references import fix_type_references
 from .visibility import VisibilitySchemaTransform
 
 
@@ -18,7 +17,6 @@ def transform_schema(schema: Schema, *transforms: SchemaVisitor) -> Schema:
     for t in transforms:
         updated = t.on_schema(updated)
 
-    updated = fix_type_references(updated)
     updated.validate()
     return updated
 
