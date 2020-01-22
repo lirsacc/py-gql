@@ -9,6 +9,7 @@ from py_gql.schema import (
     Field,
     InputField,
     InputObjectType,
+    Int,
     InterfaceType,
     ListType,
     NonNullType,
@@ -17,8 +18,6 @@ from py_gql.schema import (
     String,
     UnionType,
 )
-
-# NOTE: fix_type_reference is tested through Schema._replace_types_and_directives
 
 
 @pytest.fixture
@@ -104,3 +103,25 @@ def test_replace_type_in_union(schema: Schema) -> None:
 
     assert NewPerson in union_type.types
     assert 2 == len(union_type.types)
+
+
+def test_replace_query_type(schema: Schema) -> None:
+    NewQuery = ObjectType("Query", fields=[Field("some_number", Int)])
+    schema._replace_types_and_directives({"Query": NewQuery})
+    assert schema.query_type is NewQuery
+
+
+def test_replace_mutation_type(schema: Schema) -> None:
+    NewMutation = ObjectType(
+        "Mutation", fields=[Field("update_some_number", Int)],
+    )
+    schema._replace_types_and_directives({"Mutation": NewMutation})
+    assert schema.mutation_type is NewMutation
+
+
+def test_root_type_is_not_created(schema: Schema) -> None:
+    Subscription = ObjectType(
+        "Subscription", fields=[Field("some_number", Int)]
+    )
+    schema._replace_types_and_directives({"Subscription": Subscription})
+    assert schema.subscription_type is None

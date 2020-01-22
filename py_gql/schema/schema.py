@@ -35,6 +35,7 @@ from .types import (
 from .validation import validate_schema
 
 _SPECIFIED_DIRECTIVE_NAMES = [t.name for t in SPECIFIED_DIRECTIVES]
+_PROTECTED_TYPES = SPECIFIED_SCALAR_TYPES + INTROPSPECTION_TYPES
 
 
 Resolver = Callable[..., Any]
@@ -159,24 +160,22 @@ class Schema:
             except KeyError:
                 pass
             else:
-                if (
-                    original_type in SPECIFIED_SCALAR_TYPES
-                    or original_type in INTROPSPECTION_TYPES
-                ):
+                if original_type in _PROTECTED_TYPES:
                     raise SchemaError(
                         "Cannot replace specified type %s" % original_type
                     )
 
-            busted_cache = new_type != original_type
-            if new_type is None:
-                del self.types[type_name]
-            else:
-                if type(original_type) != type(new_type):
-                    raise SchemaError(
-                        "Cannot replace type %r with a different kind of type %r."
-                        % (original_type, new_type)
-                    )
-                self.types[type_name] = new_type
+                busted_cache = new_type != original_type
+
+                if new_type is None:
+                    del self.types[type_name]
+                else:
+                    if type(original_type) != type(new_type):
+                        raise SchemaError(
+                            "Cannot replace type %r with a different kind of type %r."
+                            % (original_type, new_type)
+                        )
+                    self.types[type_name] = new_type
 
         for directive_name, new_directive in (directives or {}).items():
             try:
@@ -194,6 +193,26 @@ class Schema:
                 del self.directives[directive_name]
             else:
                 self.directives[directive_name] = new_directive
+
+        # We can safely ignore the potential type error given that if the type
+        # has been replaced we have checked it matches its old kind above.
+        self.query_type = (
+            self.types.get(self.query_type.name)  # type: ignore
+            if self.query_type
+            else None
+        )
+
+        self.mutation_type = (
+            self.types.get(self.mutation_type.name)  # type: ignore
+            if self.mutation_type
+            else None
+        )
+
+        self.subscription_type = (
+            self.types.get(self.subscription_type.name)  # type: ignore
+            if self.subscription_type
+            else None
+        )
 
         if busted_cache:
             # Circular import
