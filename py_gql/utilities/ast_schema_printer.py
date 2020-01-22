@@ -15,8 +15,8 @@ from ..schema import (
     EnumValue,
     Field,
     GraphQLType,
-    InputField,
     InputObjectType,
+    InputValue,
     InterfaceType,
     ObjectType,
     ScalarType,
@@ -221,12 +221,11 @@ class ASTSchemaPrinter:
     def print_directives(
         self,
         definition: Union[
-            Argument,
             EnumType,
             EnumValue,
             Field,
-            InputField,
             InputObjectType,
+            InputValue,
             InterfaceType,
             ObjectType,
             ScalarType,
@@ -237,7 +236,7 @@ class ASTSchemaPrinter:
         if not self.include_custom_directives:
             return ""
 
-        if isinstance(definition, (Field, Argument, InputField, EnumValue)):
+        if isinstance(definition, (Field, InputValue, EnumValue)):
             directives_nodes = (
                 definition.node.directives
                 if definition.node is not None
@@ -402,9 +401,7 @@ class ASTSchemaPrinter:
                 [self.print_input_value(arg) for arg in args]
             )
 
-    def print_input_value(
-        self, arg_or_inut_field: Union[Argument, InputField]
-    ) -> str:
+    def print_input_value(self, arg_or_inut_field: Union[InputValue]) -> str:
         s = "%s: %s" % (arg_or_inut_field.name, arg_or_inut_field.type)
         if arg_or_inut_field.has_default_value:
             s += " = %s" % print_ast(

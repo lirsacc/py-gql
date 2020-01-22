@@ -12,8 +12,8 @@ from ..schema import (
     EnumValue,
     Field,
     GraphQLCompositeType,
-    InputField,
     InputObjectType,
+    InputValue,
     InterfaceType,
     ListType,
     ObjectType,
@@ -102,8 +102,7 @@ py_gql.schema.ScalarType]]):
         fiel (Optional[py_gql.schema.Field]):
             Current field definition if applicable (when visiting object)
 
-        input_value_def (Optional[Union[py_gql.schema.Argument, \
-                py_gql.schema.InputField]]):
+        input_value_def (Optional[py_gql.schema.InputValue]):
             Current input value definition (e.g. arg def, input field) if applicable
     """
 
@@ -126,9 +125,7 @@ py_gql.schema.ScalarType]]):
         self._parent_type_stack = []  # type: OptList[ObjectType]
         self._input_type_stack = []  # type: OptList[InputType]
         self._field_stack = []  # type: OptList[Field]
-        self._input_value_def_stack = (
-            []
-        )  # type: OptList[Union[Argument, InputField]]
+        self._input_value_def_stack = []  # type: OptList[Union[InputValue]]
 
         self.directive = None  # type: Optional[Directive]
         self.argument = None  # type: Optional[Argument]
@@ -156,7 +153,7 @@ py_gql.schema.ScalarType]]):
         return _peek(self._field_stack)
 
     @property
-    def input_value_def(self) -> Optional[Union[Argument, InputField]]:
+    def input_value_def(self) -> Optional[Union[InputValue]]:
         return _peek(self._input_value_def_stack)
 
     def _get_field_def(self, node):

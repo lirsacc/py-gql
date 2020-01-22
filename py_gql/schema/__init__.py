@@ -38,6 +38,7 @@ from .types import (
     GraphQLType,
     InputField,
     InputObjectType,
+    InputValue,
     InterfaceType,
     ListType,
     NamedType,

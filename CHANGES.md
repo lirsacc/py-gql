@@ -8,6 +8,7 @@ Unreleased
 
 - Added an explicit util to transform schemas (`py_gql.utilities.transform_schema`) backed by `SchemaVisitor`.
 - Added `py_gql.utilities.VisibilitySchemaTransform` to dynamically modify schema entities available to a given query.
+- `py_gql.schema.Argument` and `py_gql.schema.InputField` now inherit from the `py_gql.schema.InputValue` base class. This matches the common language used in the spec and simplifies some internal type handling.
 
 ### Fixed
 

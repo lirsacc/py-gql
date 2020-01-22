@@ -201,47 +201,7 @@ class ListType(GraphQLType):
         self._type = self._ltype = type_
 
 
-class InputField:
-    """
-    Member of an :class:`py_gql.schema.InputObjectType`.
-
-    Warning:
-        As ``None`` is a valid default value, in order to define an argument
-        without any default value, the ``default_value`` argument **must** be
-        omitted.
-
-    Args:
-        name: Field name
-
-        type_: Field type (must be input type)
-
-        default_value: Default value
-
-        description: Field description
-
-        node: Source node used when building type from the SDL
-
-    Attributes:
-        name (str): Field name
-
-        description (Optional[str]): Field description
-
-        has_default_value (bool): ``True`` if default value is set
-
-        default_value (Any):
-            Default value if it was set. Accessing this attribute raises an
-            :py:class:`AttributeError` if default value wasn't set.
-
-        type (GraphQLType): Vaue type.
-
-        required (bool):
-            Whether this field is required (non nullable and does not have
-            any default value)
-
-        node (Optional[py_gql.lang.ast.InputValueDefinition]):
-            Source node used when building type from the SDL
-    """
-
+class InputValue:
     def __init__(
         self,
         name: str,
@@ -290,6 +250,48 @@ class InputField:
         return (
             isinstance(self.type, NonNullType) and self._default_value is _UNSET
         )
+
+
+class InputField(InputValue):
+    """
+    Member of an :class:`py_gql.schema.InputObjectType`.
+
+    Warning:
+        As ``None`` is a valid default value, in order to define an argument
+        without any default value, the ``default_value`` argument **must** be
+        omitted.
+
+    Args:
+        name: Field name
+
+        type_: Field type (must be input type)
+
+        default_value: Default value
+
+        description: Field description
+
+        node: Source node used when building type from the SDL
+
+    Attributes:
+        name (str): Field name
+
+        description (Optional[str]): Field description
+
+        has_default_value (bool): ``True`` if default value is set
+
+        default_value (Any):
+            Default value if it was set. Accessing this attribute raises an
+            :py:class:`AttributeError` if default value wasn't set.
+
+        type (GraphQLType): Vaue type.
+
+        required (bool):
+            Whether this field is required (non nullable and does not have
+            any default value)
+
+        node (Optional[py_gql.lang.ast.InputValueDefinition]):
+            Source node used when building type from the SDL
+    """
 
     def __str__(self) -> str:
         return "InputField(%s: %s)" % (self.name, self.type)
@@ -734,7 +736,7 @@ class ScalarType(GraphQLLeafType, NamedType):
             raise ScalarParsingError(str(err), [node]) from err
 
 
-class Argument:
+class Argument(InputValue):
     """
     Argument definition for use in field or directives.
 
@@ -774,55 +776,6 @@ class Argument:
         node (Optional[py_gql.lang.ast.InputValueDefinition]):
             Source node used when building type from the SDL
     """
-
-    def __init__(
-        self,
-        name: str,
-        type_: Lazy[GraphQLType],
-        default_value: Any = _UNSET,
-        description: Optional[str] = None,
-        node: Optional[_ast.InputValueDefinition] = None,
-    ):
-        self.name = name
-        self.description = description
-        self.has_default_value = default_value is not _UNSET
-        self.node = node
-
-        self._default_value = default_value
-        self._ltype = type_
-        self._type = None  # type: Optional[GraphQLType]
-
-    @property
-    def default_value(self) -> Any:
-        if self._default_value is _UNSET:
-            raise AttributeError("No default value")
-        return self._default_value
-
-    @default_value.setter
-    def default_value(self, value: Any) -> None:
-        self._default_value = value
-        self.has_default_value = True
-
-    @default_value.deleter
-    def default_value(self) -> None:
-        self._default_value = _UNSET
-        self.has_default_value = False
-
-    @property
-    def type(self) -> GraphQLType:
-        if self._type is None:
-            self._type = lazy(self._ltype)
-        return self._type
-
-    @type.setter
-    def type(self, type_: GraphQLType) -> None:
-        self._type = self._ltype = type_
-
-    @property
-    def required(self) -> bool:
-        return (
-            isinstance(self.type, NonNullType) and self._default_value is _UNSET
-        )
 
     def __str__(self) -> str:
         return "Argument(%s: %s)" % (self.name, self.type)
