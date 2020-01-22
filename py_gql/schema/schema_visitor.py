@@ -94,13 +94,30 @@ class SchemaVisitor(object):
     def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
         updated_fields = map_and_filter(self.on_field, object_type.fields)
         if updated_fields != object_type.fields:
-            object_type.fields = updated_fields
+            return ObjectType(
+                object_type.name,
+                updated_fields,
+                interfaces=object_type.interfaces,
+                default_resolver=object_type.default_resolver,
+                description=object_type.description,
+                nodes=object_type.nodes,
+            )
         return object_type
 
     def on_field(self, field: Field) -> Optional[Field]:
         updated_args = map_and_filter(self.on_argument, field.arguments)
         if updated_args != field.arguments:
-            field.arguments = updated_args
+            return Field(
+                field.name,
+                field.type,
+                args=updated_args,
+                description=field.description,
+                deprecation_reason=field.deprecation_reason,
+                resolver=field.resolver,
+                subscription_resolver=field.subscription_resolver,
+                node=field.node,
+                python_name=field.python_name,
+            )
         return field
 
     def on_argument(self, argument: Argument) -> Optional[Argument]:
@@ -111,7 +128,13 @@ class SchemaVisitor(object):
     ) -> Optional[InterfaceType]:
         updated_fields = map_and_filter(self.on_field, interface_type.fields)
         if updated_fields != interface_type.fields:
-            interface_type.fields = updated_fields
+            return InterfaceType(
+                interface_type.name,
+                updated_fields,
+                resolve_type=interface_type.resolve_type,
+                description=interface_type.description,
+                nodes=interface_type.nodes,
+            )
         return interface_type
 
     def on_union(self, union_type: UnionType) -> Optional[UnionType]:
@@ -120,7 +143,12 @@ class SchemaVisitor(object):
     def on_enum(self, enum_type: EnumType) -> Optional[EnumType]:
         updated_values = map_and_filter(self.on_enum_value, enum_type.values)
         if updated_values != enum_type.values:
-            enum_type._set_values(updated_values)
+            return EnumType(
+                enum_type.name,
+                values=updated_values,
+                description=enum_type.description,
+                nodes=enum_type.nodes,
+            )
         return enum_type
 
     def on_enum_value(self, enum_value: EnumValue) -> Optional[EnumValue]:
@@ -133,7 +161,12 @@ class SchemaVisitor(object):
             self.on_input_field, input_object_type.fields
         )
         if updated_fields != input_object_type.fields:
-            input_object_type.fields = updated_fields
+            return InputObjectType(
+                input_object_type.name,
+                updated_fields,
+                description=input_object_type.description,
+                nodes=input_object_type.nodes,
+            )
         return input_object_type
 
     def on_input_field(self, field: InputField) -> Optional[InputField]:
@@ -142,7 +175,13 @@ class SchemaVisitor(object):
     def on_directive(self, directive: Directive) -> Optional[Directive]:
         updated_args = map_and_filter(self.on_argument, directive.arguments)
         if updated_args != directive.arguments:
-            directive.arguments = updated_args
+            return Directive(
+                directive.name,
+                directive.locations,
+                args=updated_args,
+                description=directive.description,
+                node=directive.node,
+            )
         return directive
 
     on_field_definition = deprecated(
