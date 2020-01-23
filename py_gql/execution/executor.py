@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     Optional,
@@ -40,7 +39,12 @@ from ..schema import (
 )
 from .instrumentation import Instrumentation
 from .runtime import BlockingRuntime, Runtime
-from .wrappers import ExecutionContext, GroupedFields, ResolveInfo, ResponsePath
+from .wrappers import (
+    GroupedFields,
+    ResolutionContext,
+    ResolveInfo,
+    ResponsePath,
+)
 
 Resolver = Callable[..., Any]
 
@@ -49,14 +53,14 @@ G = TypeVar("G")
 E = TypeVar("E", bound=Exception)
 
 
-class Executor(ExecutionContext):
+class Executor(ResolutionContext):
     """Core executor class.
 
     This is the core executor class implementing all of the operations necessary
     to fulfill a GraphQL query or mutation.
     """
 
-    __slots__ = ExecutionContext.__slots__ + ("instrumentation", "runtime",)
+    __slots__ = ResolutionContext.__slots__ + ("instrumentation", "runtime",)
 
     def __init__(
         self,
@@ -144,14 +148,7 @@ class Executor(ExecutionContext):
         resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
-            field_definition,
-            path,
-            parent_type,
-            self.schema,
-            self.variables,
-            self.fragments,
-            nodes,
-            self.runtime,
+            field_definition, path, parent_type, nodes, self.runtime, self
         )
 
         self.instrumentation.on_field_start(
@@ -357,7 +354,15 @@ class Executor(ExecutionContext):
                 runtime_type,
                 resolved_value,
                 path,
-                self.collect_fields(runtime_type, tuple(_subselections(nodes))),
+                self.collect_fields(
+                    runtime_type,
+                    [
+                        selection
+                        for field in nodes
+                        if field.selection_set
+                        for selection in field.selection_set.selections
+                    ],
+                ),
             )
 
         raise TypeError(
@@ -379,11 +384,3 @@ class Executor(ExecutionContext):
                 )
             )
         return resolved_value
-
-
-def _subselections(nodes: Iterable[_ast.Field]) -> Iterator[_ast.Selection]:
-    for field in nodes:
-        # TODO: Can this happen provided query document has been validated?
-        if field.selection_set:
-            for selection in field.selection_set.selections:
-                yield selection

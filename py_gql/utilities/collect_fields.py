@@ -1,9 +1,26 @@
 # -*- coding: utf-8 -*-
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 from .._utils import OrderedDict
 from ..lang import ast
-from ..schema import GraphQLAbstractType, ObjectType, Schema
+from ..schema import (
+    GraphQLAbstractType,
+    IncludeDirective,
+    ObjectType,
+    Schema,
+    SkipDirective,
+)
+from ..utilities import directive_arguments
 
 GroupedFields = Dict[str, List[ast.Field]]
 
@@ -17,8 +34,8 @@ def collect_fields(
     object_type: ObjectType,
     selections: Sequence[ast.Selection],
     fragments: Mapping[str, ast.FragmentDefinition],
+    variables: Mapping[str, Any],
     _already_processed_fragments: Optional[Set[str]] = None,
-    _skip: InclueCallable = lambda _: True,
 ) -> GroupedFields:
     """
     """
@@ -27,7 +44,7 @@ def collect_fields(
 
     for selection in selections:
         if isinstance(selection, ast.Field):
-            if _skip(selection):
+            if _skip_selection(selection, variables):
                 continue
 
             key = selection.response_name
@@ -38,19 +55,19 @@ def collect_fields(
             grouped_fields[key].append(selection)
 
         elif isinstance(selection, ast.InlineFragment):
-            if _skip(selection) or not _fragment_type_applies(
-                schema, object_type, selection
-            ):
+            if _skip_selection(
+                selection, variables
+            ) or not _fragment_type_applies(schema, object_type, selection):
                 continue
 
             _collect_fragment_fields(
                 schema,
                 object_type,
                 fragments,
+                variables,
                 selection,
                 grouped_fields,
                 _already_processed_fragments,
-                _skip,
             )
 
         elif isinstance(selection, ast.FragmentSpread):
@@ -58,7 +75,7 @@ def collect_fields(
             fragment = fragments[name]
 
             if (
-                _skip(selection)
+                _skip_selection(selection, variables)
                 or name in _already_processed_fragments
                 or not _fragment_type_applies(schema, object_type, fragment)
             ):
@@ -68,10 +85,10 @@ def collect_fields(
                 schema,
                 object_type,
                 fragments,
+                variables,
                 fragment,
                 grouped_fields,
                 _already_processed_fragments,
-                _skip,
             )
             _already_processed_fragments.add(name)
 
@@ -82,18 +99,18 @@ def _collect_fragment_fields(
     schema: Schema,
     object_type: ObjectType,
     fragments: Mapping[str, ast.FragmentDefinition],
+    variables: Mapping[str, Any],
     fragment: Union[ast.FragmentDefinition, ast.InlineFragment],
     grouped_fields: GroupedFields,
     processed_fragments: Set[str],
-    skip: InclueCallable,
 ) -> None:
     fragment_grouped_fields = collect_fields(
         schema,
         object_type,
         fragment.selection_set.selections,
         fragments,
+        variables,
         processed_fragments,
-        skip,
     )
     for key, collected in fragment_grouped_fields.items():
         if key not in grouped_fields:
@@ -116,3 +133,14 @@ def _fragment_type_applies(
         isinstance(fragment_type, GraphQLAbstractType)
         and schema.is_possible_type(fragment_type, object_type)
     )
+
+
+def _skip_selection(
+    node: Union[ast.Field, ast.InlineFragment, ast.FragmentSpread],
+    variables: Mapping[str, Any],
+) -> bool:
+    skip = directive_arguments(SkipDirective, node, variables=variables)
+    include = directive_arguments(IncludeDirective, node, variables=variables)
+    skipped = skip is not None and skip["if"]
+    included = include is None or include["if"]
+    return skipped or (not included)

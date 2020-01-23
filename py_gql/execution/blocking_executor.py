@@ -54,14 +54,7 @@ class BlockingExecutor(Executor):
         resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
-            field_definition,
-            path,
-            parent_type,
-            self.schema,
-            self.variables,
-            self.fragments,
-            nodes,
-            self.runtime,
+            field_definition, path, parent_type, nodes, self.runtime, self,
         )
 
         self.instrumentation.on_field_start(

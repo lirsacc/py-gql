@@ -15,7 +15,7 @@ from typing import (
 
 from ..exc import GraphQLLocatedError, GraphQLResponseError
 from ..lang import ast
-from ..schema import Field, IncludeDirective, ObjectType, Schema, SkipDirective
+from ..schema import Field, ObjectType, Schema
 from ..schema.introspection import (
     SCHEMA_INTROSPECTION_FIELD,
     TYPE_INTROSPECTION_FIELD,
@@ -36,7 +36,10 @@ ResponsePath = List[Union[str, int]]
 GroupedFields = Dict[str, List[ast.Field]]
 
 
-class ExecutionContext:
+class ResolutionContext:
+    """Information about the current resolution.
+    """
+
     __slots__ = (
         "schema",
         "document",
@@ -110,19 +113,6 @@ class ExecutionContext:
         """Clear any collected error from the current executor instance."""
         self._errors[:] = []
 
-    def skip_selection(
-        self, node: Union[ast.Field, ast.InlineFragment, ast.FragmentSpread],
-    ) -> bool:
-        skip = directive_arguments(
-            SkipDirective, node, variables=self.variables
-        )
-        include = directive_arguments(
-            IncludeDirective, node, variables=self.variables
-        )
-        skipped = skip is not None and skip["if"]
-        included = include is None or include["if"]
-        return skipped or (not included)
-
     def collect_fields(
         self,
         parent_type: ObjectType,
@@ -142,7 +132,7 @@ class ExecutionContext:
                 parent_type,
                 selections,
                 self.fragments,
-                _skip=self.skip_selection,
+                self.variables,
             )
 
             self._grouped_fields[cache_key] = grouped_fields
@@ -193,11 +183,9 @@ class ResolveInfo:
         "field_definition",
         "path",
         "parent_type",
-        "schema",
-        "variables",
-        "fragments",
         "nodes",
         "runtime",
+        "context",
         "_directive_arguments",
     )
 
@@ -206,24 +194,32 @@ class ResolveInfo:
         field_definition: Field,
         path: ResponsePath,
         parent_type: ObjectType,
-        schema: Schema,
-        variables: Dict[str, Any],
-        fragments: Dict[str, ast.FragmentDefinition],
         nodes: List[ast.Field],
         runtime: Runtime,
+        context: ResolutionContext,
     ):
         self.field_definition = field_definition
         self.path = path
         self.parent_type = parent_type
-        self.schema = schema
-        self.variables = variables
-        self.fragments = fragments
         self.nodes = nodes
         self.runtime = runtime
+        self.context = context
 
         self._directive_arguments = (
             {}
         )  # type: Dict[str, Optional[Dict[str, Any]]]
+
+    @property
+    def schema(self) -> Schema:
+        return self.context.schema
+
+    @property
+    def variables(self) -> Dict[str, Any]:
+        return self.context.variables
+
+    @property
+    def fragments(self) -> Dict[str, ast.FragmentDefinition]:
+        return self.context.fragments
 
     def get_directive_arguments(self, name: str) -> Optional[Dict[str, Any]]:
         """Extract arguments for a given directive on the current field.
@@ -242,9 +238,10 @@ class ResolveInfo:
         try:
             return self._directive_arguments[name]
         except KeyError:
-            defn = self.schema.directives[name]
             args = self._directive_arguments[name] = directive_arguments(
-                defn, self.nodes[0], self.variables,
+                self.context.schema.directives[name],
+                self.nodes[0],
+                self.context.variables,
             )
             return args
 
