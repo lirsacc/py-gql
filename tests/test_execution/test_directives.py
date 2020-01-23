@@ -14,7 +14,6 @@ from py_gql.schema import (
     Schema,
     String,
 )
-from py_gql.utilities import directive_arguments
 
 from ._test_utils import assert_sync_execution
 
@@ -135,10 +134,11 @@ async def test_include_and_skip(include, skip, expected):
     )
 
 
-async def test_custom_directive_on_field(mocker):
+async def test_get_directive_arguments_known(mocker):
     CustomDirective = Directive(
         "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
     )
+
     resolver = mocker.Mock(return_value=42)
 
     execute(
@@ -148,7 +148,67 @@ async def test_custom_directive_on_field(mocker):
     )
 
     (_, info), _ = resolver.call_args
-    assert directive_arguments(CustomDirective, info.nodes[0], {}) == {
+
+    assert info.get_directive_arguments("custom") == {
         "a": "foo",
         "b": 42,
     }
+
+
+async def test_get_directive_arguments_known_with_variables(mocker):
+    CustomDirective = Directive(
+        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+    )
+
+    resolver = mocker.Mock(return_value=42)
+
+    execute(
+        Schema(test_type, directives=[CustomDirective]),
+        parse('query ($b: Int!) { a @custom(a: "foo", b: $b) }'),
+        initial_value={"a": resolver},
+        variables={"b": 42},
+    )
+
+    (_, info), _ = resolver.call_args
+
+    assert info.get_directive_arguments("custom") == {
+        "a": "foo",
+        "b": 42,
+    }
+
+
+async def test_get_directive_arguments_missing(mocker):
+    CustomDirective = Directive(
+        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+    )
+
+    resolver = mocker.Mock(return_value=42)
+
+    execute(
+        Schema(test_type, directives=[CustomDirective]),
+        parse("{ a }"),
+        initial_value={"a": resolver},
+    )
+
+    (_, info), _ = resolver.call_args
+
+    assert info.get_directive_arguments("custom") is None
+
+
+async def test_get_directive_arguments_unknown(mocker):
+    CustomDirective = Directive(
+        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+    )
+
+    resolver = mocker.Mock(return_value=42)
+
+    execute(
+        Schema(test_type, directives=[CustomDirective]),
+        parse('{ a @custom(a: "foo", b: 42) }'),
+        initial_value={"a": resolver},
+    )
+
+    (_, info), _ = resolver.call_args
+
+    with pytest.raises(KeyError):
+        info.get_directive_arguments("foo")

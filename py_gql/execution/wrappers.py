@@ -198,6 +198,7 @@ class ResolveInfo:
         "fragments",
         "nodes",
         "runtime",
+        "_directive_arguments",
     )
 
     def __init__(
@@ -219,6 +220,33 @@ class ResolveInfo:
         self.fragments = fragments
         self.nodes = nodes
         self.runtime = runtime
+
+        self._directive_arguments = (
+            {}
+        )  # type: Dict[str, Optional[Dict[str, Any]]]
+
+    def get_directive_arguments(self, name: str) -> Optional[Dict[str, Any]]:
+        """Extract arguments for a given directive on the current field.
+
+        Warning:
+            This method assumes the document has been validated and the
+            definition exists and is valid at this position.
+
+        Args:
+            name: The name of the directive to extract.
+
+        Returns:
+            ``None`` if the directive is not present on the current field and a
+            dictionnary of coerced arguments otherwise.
+        """
+        try:
+            return self._directive_arguments[name]
+        except KeyError:
+            defn = self.schema.directives[name]
+            args = self._directive_arguments[name] = directive_arguments(
+                defn, self.nodes[0], self.variables,
+            )
+            return args
 
 
 class GraphQLExtension:
