@@ -49,20 +49,21 @@ def clean(ctx, cython=False, dist=False):
 
 
 @invoke.task()
-def benchmark(ctx,):
+def benchmark(ctx):
     """Run benchmarks."""
-    ctx.run(
-        _join(
-            [
-                "py.test",
-                "--benchmark-only",
-                "--benchmark-group-by=fullname",
-                "tests/benchmarks",
-            ]
-        ),
-        echo=True,
-        pty=True,
-    )
+    with ctx.cd(ROOT):
+        ctx.run(
+            _join(
+                [
+                    "py.test",
+                    "--benchmark-only",
+                    "--benchmark-group-by=fullname",
+                    "tests/benchmarks",
+                ]
+            ),
+            echo=True,
+            pty=True,
+        )
 
 
 @invoke.task(iterable=["files", "ignore"])
@@ -151,21 +152,20 @@ def mypy(ctx, files=None, junit=False):
 
 @invoke.task(iterable=["files"])
 def sort_imports(ctx, check=False, files=None):
-    with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                [
-                    "isort",
-                    (
-                        "-rc %s setup.py tasks.py" % DEFAULT_TARGETS
-                        if not files
-                        else " ".join(files)
-                    ),
-                    "--check-only" if check else None,
-                ]
-            ),
-            echo=True,
-        )
+    ctx.run(
+        _join(
+            [
+                "isort",
+                (
+                    "-rc %s setup.py tasks.py" % DEFAULT_TARGETS
+                    if not files
+                    else " ".join(files)
+                ),
+                "--check-only" if check else None,
+            ]
+        ),
+        echo=True,
+    )
 
 
 @invoke.task(iterable=["files"])
@@ -197,7 +197,8 @@ def fmt(ctx, files=None):
 @invoke.task(pre=[invoke.call(black, check=True), flake8, mypy, test])
 def check(ctx):
     """Run all checks (formatting, lint, typecheck and tests)."""
-    pass
+    with ctx.cd(ROOT):
+        pass
 
 
 @invoke.task
