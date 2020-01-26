@@ -81,6 +81,11 @@ def run_setup():
             "Topic :: Software Development :: Libraries",
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
+        project_urls={
+            "Bug Reports": "%s/issues" % pkg["__url__"],
+            "Source": pkg["__url__"],
+            "Documentation": "https://py-gql.readthedocs.io/",
+        },
     )
 
 
