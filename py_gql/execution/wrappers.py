@@ -38,8 +38,7 @@ GroupedFields = Dict[str, List[ast.Field]]
 
 
 class ResolutionContext:
-    """Information about the current resolution.
-    """
+    """Information about the current resolution."""
 
     __slots__ = (
         "schema",
@@ -69,11 +68,17 @@ class ResolutionContext:
         default_resolver: Optional[Resolver] = None,
         middlewares: Optional[Sequence[Callable[..., Any]]] = None
     ):
+        #: ~py_gql.schema.Schema: Current schema.
         self.schema = schema
+        #: ~py_gql.lang.ast.Document: Parsed document.
         self.document = document
+        #: Dict[str, Any]: Coerced variables
         self.variables = variables
+        #: Context value
         self.context_value = context_value
+        #: Dict[str, ~ast.FragmentDefinition]: Document fragments
         self.fragments = document.fragments
+
         self._default_resolver = default_resolver or _default_resolver
         self._disable_introspection = disable_introspection
         self._middlewares = middlewares or []
@@ -99,6 +104,7 @@ class ResolutionContext:
         path: Optional[ResponsePath] = None,
         node: Optional[ast.Node] = None,
     ) -> None:
+        """Register an error during the current execution."""
         if node:
             if not err.nodes:
                 err.nodes = [node]
@@ -120,10 +126,6 @@ class ResolutionContext:
         selections: Sequence[ast.Selection],
         visited_fragments: Optional[Set[str]] = None,
     ) -> GroupedFields:
-        """
-        Collect all fields in a selection set, recursively traversing
-        fragments in one single map and conserving definitino order.
-        """
         cache_key = parent_type.name, tuple(selections)
         try:
             return self._grouped_fields[cache_key]
@@ -180,7 +182,11 @@ class ResolutionContext:
 
 
 class ResolveInfo:
-    """Expose information about the field currently being resolved."""
+    """Expose information about the field currently being resolved.
+
+    This is the 3rd positional argument provided to resolver functions and is
+    constructed internally during query execution.
+    """
 
     __slots__ = (
         "field_definition",
@@ -188,7 +194,7 @@ class ResolveInfo:
         "parent_type",
         "nodes",
         "runtime",
-        "context",
+        "_context",
         "_directive_arguments",
     )
 
@@ -201,28 +207,36 @@ class ResolveInfo:
         runtime: Runtime,
         context: ResolutionContext,
     ):
+        #: ~py_gql.schema.Field: Root field being resolved.
         self.field_definition = field_definition
+        #: ~py_gql.execution.ResponsePath: Current traversal path through the query.
         self.path = path
+        #: ~py_gql.schema.ObjectType: Type from which the field is being resolved.
         self.parent_type = parent_type
+        #: ~py_gql.lang.ast.Field: AST nodes extracted from the document.
         self.nodes = nodes
+        #: ~py_gq.execution.runtime.Runtime:Current runtime.
         self.runtime = runtime
-        self.context = context
 
+        self._context = context
         self._directive_arguments = (
             {}
         )  # type: Dict[str, Optional[Dict[str, Any]]]
 
     @property
     def schema(self) -> Schema:
-        return self.context.schema
+        """Current schema."""
+        return self._context.schema
 
     @property
     def variables(self) -> Dict[str, Any]:
-        return self.context.variables
+        """Coerced variables."""
+        return self._context.variables
 
     @property
     def fragments(self) -> Dict[str, ast.FragmentDefinition]:
-        return self.context.fragments
+        """Document fragments."""
+        return self._context.fragments
 
     def get_directive_arguments(self, name: str) -> Optional[Dict[str, Any]]:
         """Extract arguments for a given directive on the current field.
@@ -242,9 +256,9 @@ class ResolveInfo:
             return self._directive_arguments[name]
         except KeyError:
             args = self._directive_arguments[name] = directive_arguments(
-                self.context.schema.directives[name],
+                self._context.schema.directives[name],
                 self.nodes[0],
-                self.context.variables,
+                self._context.variables,
             )
             return args
 
@@ -258,8 +272,8 @@ class ResolveInfo:
         """
         return selected_fields(
             self.nodes[0],
-            fragments=self.context.fragments,
-            variables=self.context.variables,
+            fragments=self._context.fragments,
+            variables=self._context.variables,
             maxdepth=maxdepth,
             pattern=pattern,
         )
@@ -300,7 +314,7 @@ class GraphQLResult:
 
         errors (Optional[Sequence[`GraphQLResponseError`]]):
             The errors part of the response. All errors will be included in the
-            response using :meth:`~GraphQLResponseError.to_dict`.
+            response using :meth:`~py_gql.exc.GraphQLResponseError.to_dict`.
     """
 
     __slots__ = ("data", "errors", "extensions", "_known_extensions")

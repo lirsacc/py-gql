@@ -57,7 +57,8 @@ class Executor(ResolutionContext):
     """Core executor class.
 
     This is the core executor class implementing all of the operations necessary
-    to fulfill a GraphQL query or mutation.
+    to fulfill a GraphQL query or mutation as defined [in the spec](
+    https://spec.graphql.org/June2018/#sec-Execution).
     """
 
     __slots__ = ResolutionContext.__slots__ + ("instrumentation", "runtime",)

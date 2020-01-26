@@ -46,7 +46,7 @@ schema = build_schema(
 
 
 @schema.resolver("Query.hello")
-def resolve_hello(*_, value):
+def resolve_hello(*, value):
     return f"Hello {value}!"
 
 

@@ -35,32 +35,37 @@ def process_graphql_query(
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
-    executor_cls: Type[Executor] = Executor,
-    runtime: Optional[Runtime] = None
+    runtime: Optional[Runtime] = None,
+    executor_cls: Type[Executor] = Executor
 ) -> Any:
     """
     Main GraphQL entrypoint encapsulating query processing from start to
     finish including parsing, validation, variable coercion and execution.
 
+    Warning:
+        The returned value will depend on the ``runtime`` argument. Custom
+        implementations  ususually return a type wrapping the
+        :class:`~py_gql.GraphQLResult` object such as `Awaitable[...]`.
+
     Args:
-        schema: Schema to execute the query against
+        schema: Schema to execute the query against.
 
-        document: The query document
+        document: The query document.
 
-        variables: Raw, JSON decoded variables parsed from the request
+        variables: Raw, JSON decoded variables parsed from the request.
 
         operation_name: Operation to execute
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
 
-        root: Root resolution value passed to top-level resolver
+        root: Root resolution value passed to the top-level resolver.
 
         context: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
             connection, user information, etc.
             Limits on the type(s) used here will depend on your own resolver
-            implementations and the executor class you use. Most thread safe
-            data-structures should work.
+            and the runtime implementations used. Most thread safe data-structures
+            should work with built in runtimes.
 
         validators: Custom validators.
             Setting this will replace the defaults so if you just want to add
@@ -81,25 +86,20 @@ def process_graphql_query(
 
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
-            keeping your API available. Note that this deviates the GraphQL
-            specification and will likely break some clients so use this with
-            caution.
+            keeping your API available. Note that this deviates from the GraphQL
+            specification and will likely break some clients (such as GraphiQL)
+            so use this with caution.
+
+        runtime: Runtime against which to execute field resolvers (defaults to
+            `~py_gql.execution.runtime.BlockingRuntime()`).
 
         executor_cls: Executor class to use.
-            **Must** be a subclass of `py_gql.execution.Executor`.
-
-            This defines how your resolvers are going to be executed and the
-            type of values you'll get out of this function. `executor_kwargs` will
-            be passed on class instantiation as keyword arguments.
+            The executor class defines the implementation of the GraphQL
+            resolution algorithm. This **must** be a subclass of
+            `py_gql.execution.Executor`.
 
     Returns:
         Execution result.
-
-    Warning:
-        The returned value will depend on the executor class. They ususually
-        return a type wrapping the `GraphQLResult` object such as
-        `Awaitable[GraphQLResult]`. You can refer to `graphql_async` or
-        `graphql_blocking` for example usage.
     """
     schema.validate()
 
@@ -180,10 +180,11 @@ async def graphql(
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
     """
-    Same as `process_graphql_query` but enforcing usage of AsyncIO.
+    Wrapper around :func:`~py_gql.process_graphql_query` enforcing usage of
+    :class:`~py_gql.execution.runtime.AsyncIORuntime`.
 
-    Resolvers are expected to be async functions. Sync functions will be
-    executed in a thread.
+    Warning:
+        Blocking (non async) resolvers will block the current thread.
     """
     return cast(
         GraphQLResult,
@@ -217,7 +218,9 @@ def graphql_blocking(
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
     """
-    Same as `process_graphql_query` but enforcing usage of sync resolvers.
+    Wrapper around :func:`process_graphql_query` enforcing usage of blocking
+    resolvers. This uses an optimized :class:`~py_gql.execution.Executor`
+    subclass.
     """
     return cast(
         GraphQLResult,

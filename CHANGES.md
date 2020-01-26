@@ -45,6 +45,7 @@ Unreleased
   - The `Executor.supports_subscriptions` attribute has been replaced by the `SubscriptionRuntime` subclass.
 
 - `SchemaVisitor.(on_field_definition|on_argument_definition|on_input_field_definition)` have become `SchemaVisitor.(on_field|on_argument|on_input_field)` to maintain consistency with other methods.
+- Do not expose `GraphQLExtension` on `py_gql`.
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------

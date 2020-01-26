@@ -26,31 +26,36 @@ def execute(
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
-    executor_cls: Type[Executor] = Executor,
-    runtime: Optional[Runtime] = None
+    runtime: Optional[Runtime] = None,
+    executor_cls: Type[Executor] = Executor
 ) -> Any:
     """
-    Execute a GraphQL query or mutation against a schema.
+    Execute a GraphQL query or mutation against a schema. This assumes the query
+    has been validated beforehand.
 
     Args:
-        schema: Schema to execute the query against
+        schema: Schema to execute the query against.
 
-        document: The query document
+        document: The query document.
 
-        variables: Raw, JSON decoded variables parsed from the request
+        variables: Raw, JSON decoded variables parsed from the request.
 
         operation_name: Operation to execute
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
 
-        initial_value: Root resolution value passed to top-level resolver
+        initial_value: Root resolution value passed to the top-level resolver.
 
-        context_value: Custom application-specific execution context.
+        context: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
             connection, user information, etc.
             Limits on the type(s) used here will depend on your own resolver
-            implementations and the executor class you use. Most thread safe
-            data-structures should work.
+            and the runtime implementations used. Most thread safe data-structures
+            should work with built in runtimes.
+
+        validators: Custom validators.
+            Setting this will replace the defaults so if you just want to add
+            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
 
         default_resolver: Alternative default resolver.
             For field which do not specify a resolver, this will be used instead
@@ -67,15 +72,20 @@ def execute(
 
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
-            keeping your API available. Note that this deviates the GraphQL
-            specification and will likely break some clients so use this with
-            caution.
+            keeping your API available. Note that this deviates from the GraphQL
+            specification and will likely break some clients (such as GraphiQL)
+            so use this with caution.
+
+        runtime: Runtime against which to execute field resolvers (defaults to
+            `~py_gql.execution.runtime.BlockingRuntime()`).
 
         executor_cls: Executor class to use.
-            **Must** be a subclass of `py_gql.execution.Executor`.
+            The executor class defines the implementation of the GraphQL
+            resolution algorithm. This **must** be a subclass of
+            `py_gql.execution.Executor`.
 
     Returns:
-        Execution result.
+        Execution result. Exact type dependant on the runtime.
     """
     instrumentation = instrumentation or Instrumentation()
     runtime = runtime or BlockingRuntime()

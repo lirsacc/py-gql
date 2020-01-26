@@ -23,13 +23,13 @@ schema = build_schema(
 
 
 @schema.resolver("Mutation.increment")
-def inc(root, *_, amount):
+def inc(root, *, amount):
     root["counter"] += amount
     return root["counter"]
 
 
 @schema.resolver("Mutation.decrement")
-def dec(root, *_, amount):
+def dec(root, *, amount):
     root["counter"] -= amount
     return root["counter"]
 

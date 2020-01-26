@@ -3,7 +3,7 @@
 Installation
 ============
 
-- **Python Versions**: :mod:`py_gql` supports CPython 3.5 and newer.
+- **Python Versions**: ``py_gql`` supports CPython 3.5 and newer.
 - **Platforms**: Unix/Posix, MacOS X.
 - **Dependencies**: :mod:`py_gql` has no direct dependency.
 
@@ -17,7 +17,7 @@ To install, run:
 
 .. code::
 
-    pip install py-gql
+    $ pip install py-gql
 
 
 Cython
@@ -30,16 +30,15 @@ Cython
 
 The default pip install should install the universal wheel, however for some
 extra performance in production py-gql's ``setup.py`` can detect the presence
-of `Cython <http://cython.org/>`_ and compile (i.e. cythonize) its own code
-with the system’s default C compiler. This provides significant performance
-improvents almost for free.
+of `Cython <http://cython.org/>`_ and compile (i.e. cythonize) the code in pure
+python mode for significant performance improvements. This requires a C compiler
+to be available on the system.
 
 To benefit from this, run:
 
 .. code::
 
-    pip install cython
-    pip install --no-binary :all: py-gql
+    $ PY_GQL_USE_CYTHON=1 pip install --no-binary :all: py-gql
 
 **Notes**
 
@@ -58,13 +57,13 @@ Installing from source
 
 py-gql's source code is hosted on `Github <https://github.com/lirsacc/py-gql>`_.
 
-You can install the development from source after either cloning locally:
+You can install the development version from source after cloning locally:
 
 .. code::
 
-    git clone git@github.com:lirsacc/py-gql.git py_gql
-    cd py-gql
-    pip install -e .
+    $ git clone git@github.com:lirsacc/py-gql.git py_gql
+    $ cd py-gql
+    $ python setup.py develop
 
 
 Or you can directly install through pip `VCS support
@@ -72,4 +71,4 @@ Or you can directly install through pip `VCS support
 
 .. code::
 
-    pip install git+ssh://git@github.com/lirsacc/py-gql.git@master
+    $ pip install git+ssh://git@github.com/lirsacc/py-gql.git@master

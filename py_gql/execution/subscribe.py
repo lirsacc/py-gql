@@ -25,25 +25,25 @@ def subscribe(
     initial_value: Optional[Any] = None,
     context_value: Optional[Any] = None,
     instrumentation: Optional[Instrumentation] = None,
-    executor_cls: Type[Executor] = Executor,
-    runtime: SubscriptionRuntime
+    runtime: SubscriptionRuntime,
+    executor_cls: Type[Executor] = Executor
 ) -> Any:
     """
     Execute a GraphQL subscription against a schema and return the appropriate
     response stream. This assumes the query has been validated beforehand.
 
     Args:
-        schema: Schema to execute the query against
+        schema: Schema to execute the query against.
 
-        document: The query document
+        document: The query document.
 
-        variables: Raw, JSON decoded variables parsed from the request
+        variables: Raw, JSON decoded variables parsed from the request.
 
         operation_name: Operation to execute
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
 
-        initial_value: Root resolution value passed to top-level resolver
+        initial_value: Root resolution value passed to top-level resolver.
 
         context_value: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
@@ -52,13 +52,20 @@ def subscribe(
             implementations and the executor class you use. Most thread safe
             data-structures should work.
 
-        tracer: Tracer instance.
+        instrumentation: Instrumentation instance.
+            Use :class:`~py_gql.execution.MultiInstrumentation` to compose
+            mutiple instances together.
+
+        runtime: Runtime against which to execute field resolvers (defaults to
+            `~py_gql.execution.runtime.BlockingRuntime()`).
 
         executor_cls: Executor class to use.
-            **Must** be a subclass of `py_gql.execution.Executor`.
+            The executor class defines the implementation of the GraphQL
+            resolution algorithm. This **must** be a subclass of
+            `py_gql.execution.Executor`.
 
     Returns:
-        An iterator over subscription results.
+        An iterator over subscription results. Exact type dependant on the runtime.
     """
     instrumentation = instrumentation or Instrumentation()
 

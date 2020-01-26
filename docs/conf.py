@@ -68,11 +68,12 @@ extensions = [
     "recommonmark",
 ]
 
-autodoc_member_order = "bysource"
+# autodoc_member_order = "bysource"
 autoclass_content = "both"
 set_type_checking_flag = True
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 html_add_permalinks = "#"
+napoleon_use_param = True
 
 # Pygments custom lexer
 from pygments.lexer import RegexLexer

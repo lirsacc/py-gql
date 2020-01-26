@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-This module implements all the exceptions relevant to `py_gql`.
-"""
+"""This module implements all the exceptions exposed by this library."""
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 

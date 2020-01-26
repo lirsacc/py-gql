@@ -18,7 +18,8 @@ Defining your schema
 
 The first step in creating a GraphQL server is defining the types and
 schema that clients will be able to query. The GraphQL schema that we'll
-implement for this example is as follow (using the schema definition language):
+implement for this example is as follow (using the `schema definition language
+<https://github.com/graphql/graphql-spec/pull/90>`_):
 
 
 .. literalinclude:: getting-started/schema.graphql
@@ -35,12 +36,14 @@ Interacting with your data through resolver functions
 -----------------------------------------------------
 
 The schema as defined above isn't going to be very useful unless we have a way
-to interact with our data. By default the runtime looks up fields as dict items
+to interact with our data.
+
+By default the runtime looks up fields as dict items
 and object attributes of the root value you provide during execution. This works
-for simple cases, but it is limited when running dynamic queries
-(such as fetching a character by id like in our schema). In order to implement
-custom field resolution you have to implement custom field resolvers.  This is
-where your business logic and data access should live.
+for simple cases, but it is limited when running dynamic queries (such as
+fetching a character by id like in our schema). In order to implement custom
+field resolution you have to implement custom field resolvers. This is where
+your business logic and data access code should live.
 
 For this example we will use the following JSON dataset:
 
@@ -59,25 +62,26 @@ note that they receive 3 positional arguments:
 - A context value which is where you provide any application specific value such
   as database connections, loggers, etc. In this case the ``db`` part of the
   context will be a mapping for each entry's id to itself.
-- An info object which carries some data about the current execution and which we
-  will not worry about for this example
+- An info object which carries some data about the current execution context
+  and field. We won't worry about it for this example.
 
 While the GraphQL field arguments are passed as keyword arguments.
 
-You will note that we haven't implemented any resolver for the field on the
-``Character`` type. That is because the default behaviour is to look up field of
-dictionnaries and objects which is sufficient here.
+We haven't implemented any resolver for the field on the ``Character`` type.
+That is because the default behaviour is to look up field of dictionnaries and
+objects which is sufficient here.
 
 
 Executing queries against the schema
 ------------------------------------
 
 Now that we have a valid schema, we just need to provide client queries for
-execution. The execution is carried out by :func:`py_gql.graphql_blocking` and
-consistst of 3 steps:
+execution. The execution is carried out by :func:`py_gql.graphql_blocking` (as
+all our resolvers are blocking, for different runtimes such as Python's asyncio
+we'd use :func:`py_gql.graphql`) and consistst of 3 steps:
 
 1. Parsing the client query and validating that it is a correct GraphQL document
-2. Validating the query against the schema to verifying that it can be executed at all
+2. Validating the query against the schema to verify that it can be executed at all
 3. Execute the query and surface any errors or return the data
 
 The return value is an instance of :class:`py_gql.GraphQLResult` which can be
@@ -90,7 +94,7 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
     While the transport and serialization format depend on the application and
     are technically irrelevant to the GraphQL runtime itsefl; it is common
     to expose GraphQL APIs behind an HTTP server, traditionnaly under
-    ``POST /graphql`` and JSON encoded.
+    ``POST /graphql`` and JSON encode the request and response.
 
 .. literalinclude:: getting-started/flask.py
    :language: python
@@ -98,7 +102,7 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
 Pulling together all that we've seen so far you should have a working GraphQL
 server that you can test using any HTTP client.
 
-Using `httpie <https://httpie.org/>`_ for example (note that the response will
+Using `httpie <https://httpie.org/>`_ for example (note that the response might
 be reordered due to how httpie prints json, use ``--pretty=none`` to see the
 raw response):
 
