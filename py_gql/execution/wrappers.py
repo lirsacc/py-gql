@@ -25,6 +25,7 @@ from ..utilities import (
     coerce_argument_values,
     collect_fields,
     directive_arguments,
+    selected_fields,
 )
 from .default_resolver import default_resolver as _default_resolver
 from .runtime import Runtime
@@ -179,6 +180,8 @@ class ResolutionContext:
 
 
 class ResolveInfo:
+    """Expose information about the field currently being resolved."""
+
     __slots__ = (
         "field_definition",
         "path",
@@ -244,6 +247,22 @@ class ResolveInfo:
                 self.context.variables,
             )
             return args
+
+    def selected_fields(
+        self, *, maxdepth: int = 1, pattern: Optional[str] = None
+    ) -> List[str]:
+        """Extract the list of fields selected by the field currently being
+        resolved.
+
+        Refer to :func:`~py_gql.utilities.selected_fields` for documentation.
+        """
+        return selected_fields(
+            self.nodes[0],
+            fragments=self.context.fragments,
+            variables=self.context.variables,
+            maxdepth=maxdepth,
+            pattern=pattern,
+        )
 
 
 class GraphQLExtension:

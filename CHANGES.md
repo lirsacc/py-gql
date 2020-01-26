@@ -17,6 +17,7 @@ Unreleased
   - `py_gql.schema.Field`: The default resolver will use `python_name` instead of the exposed name when looking the key or attribute in the root object.
 
 - Added `ResolveInfo.get_directive_arguments`
+- Added `ResolveInfo.selected_fields` and `utilities.selected_fields`.
 
 ### Fixed
 

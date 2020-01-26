@@ -13,7 +13,11 @@ from .coerce_value import (
     coerce_variable_values,
     directive_arguments,
 )
-from .collect_fields import collect_fields
+from .collect_fields import (
+    collect_fields,
+    collect_fields_untyped,
+    selected_fields,
+)
 from .introspection_query import introspection_query
 from .schema_transforms import VisibilitySchemaTransform, transform_schema
 from .type_info import TypeInfoVisitor
@@ -27,6 +31,8 @@ __all__ = (
     "coerce_value",
     "coerce_variable_values",
     "collect_fields",
+    "collect_fields_untyped",
+    "selected_fields",
     "directive_arguments",
     "introspection_query",
     "transform_schema",
