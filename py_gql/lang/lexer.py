@@ -3,14 +3,6 @@
 Iterable interface for the GraphQL Language lexer.
 """
 
-# [TODO] Review the various `Lexer.read_*` methods as the use of `peek` and
-# `advance` is fairly inconsistent from tweaking the code around to make the
-# tests pass. They could certainly be streamlined / optimised.
-
-# [TODO] Settle on using HEX codes or chars, this make the code a bit
-# inconsistent.
-
-
 from typing import Iterator, List, Optional, Union, cast
 
 from .._string_utils import ensure_unicode, parse_block_string
