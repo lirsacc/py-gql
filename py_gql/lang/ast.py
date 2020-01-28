@@ -232,20 +232,29 @@ class Variable(Node):
         self.loc = loc
 
 
-class VariableDefinition(Node):
-    __slots__ = ("source", "loc", "variable", "type", "default_value")
+class VariableDefinition(SupportDirectives, Node):
+    __slots__ = (
+        "source",
+        "loc",
+        "variable",
+        "type",
+        "default_value",
+        "directives",
+    )
 
     def __init__(
         self,
         variable: Variable,
         type: Type,
         default_value=None,  # type: Optional[Value]
+        directives=None,  # type: Optional[List[Directive]]
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.variable = variable
         self.type = type
         self.default_value = default_value
+        self.directives = directives or []  # type: List[Directive]
         self.source = source
         self.loc = loc
 

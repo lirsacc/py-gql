@@ -52,6 +52,7 @@ DIRECTIVE_LOCATIONS = frozenset(
         "FRAGMENT_DEFINITION",
         "FRAGMENT_SPREAD",
         "INLINE_FRAGMENT",
+        "VARIABLE_DEFINITION",
         # Type System Definitions
         "SCHEMA",
         "SCALAR",
@@ -553,7 +554,7 @@ class Parser:
 
     def parse_variable_definition(self) -> _ast.VariableDefinition:
         """
-        VariableDefinition : Variable : Type DefaultValue?
+        VariableDefinition : Variable : Type DefaultValue? Directives[Const]?
         """
         start = self.peek()
         return _ast.VariableDefinition(
@@ -566,6 +567,7 @@ class Parser:
                 if self.skip(Equals)
                 else None
             ),
+            directives=self.parse_directives(True),
             loc=self._loc(start),
             source=self._source,
         )

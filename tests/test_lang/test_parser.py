@@ -467,3 +467,60 @@ def test_it_parses_inline_fragment_without_type():
             ],
         ),
     )
+
+
+def test_it_parses_variable_definition_with_directives():
+    assert_node_equal(
+        parse("query ($foo: Int @bar @baz) { foo }", no_location=True),
+        _ast.Document(
+            definitions=[
+                _ast.OperationDefinition(
+                    "query",
+                    _ast.SelectionSet(
+                        selections=[_ast.Field(name=_ast.Name(value="foo"),)],
+                    ),
+                    variable_definitions=[
+                        _ast.VariableDefinition(
+                            variable=_ast.Variable(
+                                name=_ast.Name(value="foo"),
+                            ),
+                            type=_ast.NamedType(name=_ast.Name(value="Int"),),
+                            directives=[
+                                _ast.Directive(name=_ast.Name(value="bar")),
+                                _ast.Directive(name=_ast.Name(value="baz")),
+                            ],
+                        )
+                    ],
+                )
+            ],
+        ),
+    )
+
+
+def test_it_parses_variable_definition_with_default_and_directives():
+    assert_node_equal(
+        parse("query ($foo: Int = 42 @bar @baz) { foo }", no_location=True),
+        _ast.Document(
+            definitions=[
+                _ast.OperationDefinition(
+                    "query",
+                    _ast.SelectionSet(
+                        selections=[_ast.Field(name=_ast.Name(value="foo"),)],
+                    ),
+                    variable_definitions=[
+                        _ast.VariableDefinition(
+                            variable=_ast.Variable(
+                                name=_ast.Name(value="foo"),
+                            ),
+                            type=_ast.NamedType(name=_ast.Name(value="Int"),),
+                            default_value=_ast.IntValue(value="42"),
+                            directives=[
+                                _ast.Directive(name=_ast.Name(value="bar")),
+                                _ast.Directive(name=_ast.Name(value="baz")),
+                            ],
+                        )
+                    ],
+                )
+            ],
+        ),
+    )

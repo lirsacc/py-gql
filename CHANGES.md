@@ -19,6 +19,8 @@ Unreleased
 - Added `ResolveInfo.get_directive_arguments`
 - Added `ResolveInfo.selected_fields` and `utilities.selected_fields`.
 
+- Support directives on variable definitions: this adds language support for directives on variable definitions following [graphql/graphql-spec#510](https://github.com/graphql/graphql-spec/pull/510). This is **only** language support so servers don't choke when receiving queries using this feature.
+
 ### Fixed
 
 - Introducing `pyproject.toml` broke Cython integration through build isolation. This is now fixed by always requiring cython as a a build dependency (through `build-system.requires`) and only enabling support behind the `PY_GQL_USE_CYTHON` env variable.

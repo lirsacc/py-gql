@@ -132,10 +132,17 @@ class ASTPrinter:
         )
 
     def print_variable_definition(self, node: _ast.VariableDefinition) -> str:
-        return "%s: %s%s" % (
-            self.print_variable(node.variable),
-            self(node.type),
-            _wrap(" = ", self(node.default_value)),
+        return _join(
+            [
+                "%s: %s%s"
+                % (
+                    self.print_variable(node.variable),
+                    self(node.type),
+                    _wrap(" = ", self(node.default_value)),
+                ),
+                self.print_directives(node),
+            ],
+            " ",
         )
 
     def print_variable_definitions(

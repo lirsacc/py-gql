@@ -403,3 +403,30 @@ def test_custom_indentation_object():
             """
         )
     )
+
+
+def test_variable_definitions():
+    assert (
+        print_ast(
+            parse(
+                """
+                query Query(
+                    $a: ComplexType,
+                    $b: Boolean = false,
+                    $c: String @foo,
+                    $d: Int! = 42 @bar(value: 42)
+                ) {
+                    id
+                }
+                """,
+            )
+        )
+        == dedent(
+            """
+        query Query($a: ComplexType, $b: Boolean = false, $c: String @foo, \
+$d: Int! = 42 @bar(value: 42)) {
+          id
+        }
+        """
+        )
+    )
