@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Test naming is not very 'pythonic' as I tried to keep a close match with the
-# original ones for easy reference. Others were kept while they were specific
-# to the implementation and are kept as skipped.
-
 import pytest
 
 from py_gql.exc import (
@@ -24,19 +20,19 @@ def lex_one(source):
     return val
 
 
-def test_it_disallows_uncommon_control_characters():
+def test_disallow_uncommon_control_characters():
     with pytest.raises(InvalidCharacter) as exc_info:
         lex_one("\u0007")
     assert exc_info.value.position == 1
 
 
-def test_lex_with_trailing_whitespace():
+def test_ignore_trailing_whitespace():
     assert [token.SOF(0, 0), token.Name(1, 4, "foo"), token.EOF(9, 9)] == list(
         Lexer(" foo     ")
     )
 
 
-def test_lex_with_trailing_whitespace_2():
+def test_ignore_trailing_whitespace_2():
     assert [
         token.SOF(0, 0),
         token.Name(1, 4, "foo"),
@@ -44,15 +40,15 @@ def test_lex_with_trailing_whitespace_2():
     ] == list(Lexer(" foo     \n#"))
 
 
-def test_it_accepts_bom_header():
+def test_accept_bom_header():
     assert lex_one("\uFEFF foo") == token.Name(2, 5, "foo")
 
 
-def test_it_accepts_binary_type():
+def test_accept_binary_type():
     assert lex_one(b"foo") == token.Name(0, 3, "foo")
 
 
-def test_it_skips_whitespace_and_comments_1():
+def test_skip_whitespace_and_comments_1():
     assert (
         lex_one(
             """
@@ -66,7 +62,7 @@ def test_it_skips_whitespace_and_comments_1():
     )
 
 
-def test_it_skips_whitespace_and_comments_2():
+def test_skip_whitespace_and_comments_2():
     assert (
         lex_one(
             """
@@ -78,7 +74,7 @@ def test_it_skips_whitespace_and_comments_2():
     )
 
 
-def test_it_skips_whitespace_and_comments_3():
+def test_skip_whitespace_and_comments_3():
     assert lex_one(",,,foo,,,") == token.Name(3, 6, "foo")
 
 
@@ -113,7 +109,7 @@ def test_errors_respect_whitespace():
         ("abc_123", token.Name(0, 7, "abc_123")),
     ],
 )
-def test_it_lexes_name(value, expected):
+def test_name(value, expected):
     assert lex_one(value) == expected
 
 
@@ -135,7 +131,7 @@ def test_it_lexes_name(value, expected):
         ('""', token.String(0, 2, "")),
     ],
 )
-def test_it_lexes_strings(value, expected):
+def test_strings(value, expected):
     assert lex_one(value) == expected
 
 
@@ -163,7 +159,7 @@ def test_it_lexes_strings(value, expected):
         ('"bad \\uXXXF esc"', InvalidEscapeSequence, 6),
     ],
 )
-def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
+def test_useful_string_errors(value, err_cls, expected_positon):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == expected_positon
@@ -208,7 +204,7 @@ def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
         ),
     ],
 )
-def test_it_lexes_block_strings(value, expected):
+def test_block_strings(value, expected):
     assert lex_one(value) == expected
 
 
@@ -221,9 +217,7 @@ def test_it_lexes_block_strings(value, expected):
         ('"""null-byte is not \u0000 end of file"""', InvalidCharacter, 20),
     ],
 )
-def test_it_lex_reports_useful_block_string_errors(
-    value, err_cls, expected_positon
-):
+def test_useful_block_string_errors(value, err_cls, expected_positon):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == expected_positon
@@ -251,7 +245,7 @@ def test_it_lex_reports_useful_block_string_errors(
         ("-1.123e4567", token.Float(0, 11, "-1.123e4567")),
     ],
 )
-def test_it_lexes_numbers(string, expected):
+def test_numbers(string, expected):
     assert lex_one(string) == expected
 
 
@@ -285,7 +279,7 @@ def test_it_lexes_numbers(string, expected):
         ("1.2ß", UnexpectedCharacter, 3),
     ],
 )
-def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):
+def test_useful_number_errors(value, err_cls, expected_positon):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == expected_positon
@@ -310,7 +304,7 @@ def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):
         ("...", token.Ellip(0, 3)),
     ],
 )
-def test_it_lexes_punctuation(string, expected):
+def test_punctuation(string, expected):
     assert lex_one(string) == expected
 
 
@@ -323,13 +317,13 @@ def test_it_lexes_punctuation(string, expected):
         ("\u200b", UnexpectedCharacter, 0),
     ],
 )
-def test_it_lex_reports_useful_unknown_character_error(value, err_cls, pos):
+def test_useful_unknown_character_error(value, err_cls, pos):
     with pytest.raises(err_cls) as exc_info:
         lex_one(value)
     assert exc_info.value.position == pos
 
 
-def test_it_lexes_multiple_tokens():
+def test_multiple_tokens():
     assert (
         list(
             Lexer(
