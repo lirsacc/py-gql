@@ -19,7 +19,9 @@ from py_gql.lang import Lexer, token
 def lex_one(source):
     lexer = Lexer(source)
     assert type(next(lexer)) == token.SOF
-    return next(lexer)
+    val = next(lexer)
+    assert type(next(lexer)) == token.EOF
+    return val
 
 
 def test_it_disallows_uncommon_control_characters():
@@ -104,6 +106,20 @@ def test_errors_respect_whitespace():
 @pytest.mark.parametrize(
     "value,expected",
     [
+        ("abc", token.Name(0, 3, "abc")),
+        ("_abc", token.Name(0, 4, "_abc")),
+        ("abc_", token.Name(0, 4, "abc_")),
+        ("abc123", token.Name(0, 6, "abc123")),
+        ("abc_123", token.Name(0, 7, "abc_123")),
+    ],
+)
+def test_it_lexes_name(value, expected):
+    assert lex_one(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
         ('"simple"', token.String(0, 8, "simple")),
         ('" white space "', token.String(0, 15, " white space ")),
         ('"quote \\""', token.String(0, 10, 'quote "')),
@@ -116,6 +132,7 @@ def test_errors_respect_whitespace():
             '"unicode \\u1234\\u5678\\u90AB\\uCDEF"',
             token.String(0, 34, "unicode \u1234\u5678\u90AB\uCDEF"),
         ),
+        ('""', token.String(0, 2, "")),
     ],
 )
 def test_it_lexes_strings(value, expected):
@@ -126,6 +143,8 @@ def test_it_lexes_strings(value, expected):
     "value, err_cls, expected_positon",
     [
         ('"', NonTerminatedString, 1),
+        ('"""', NonTerminatedString, 3),
+        ('""""', NonTerminatedString, 4),
         ('"no end quote', NonTerminatedString, 13),
         ("'single quotes'", UnexpectedCharacter, 0),
         ('"contains unescaped \u0007 control char"', InvalidCharacter, 20),
@@ -154,6 +173,7 @@ def test_it_lex_reports_useful_string_errors(value, err_cls, expected_positon):
     "value, expected",
     [
         ('"""simple"""', token.BlockString(0, 12, "simple")),
+        ('""""""', token.BlockString(0, 6, "")),
         ('""" white space """', token.BlockString(0, 19, " white space ")),
         (
             '"""contains " quote"""',
@@ -223,6 +243,7 @@ def test_it_lex_reports_useful_block_string_errors(
         ("123E4", token.Float(0, 5, "123E4")),
         ("123e-4", token.Float(0, 6, "123e-4")),
         ("123e+4", token.Float(0, 6, "123e+4")),
+        ("1.2e3", token.Float(0, 5, "1.2e3")),
         ("-123e4", token.Float(0, 6, "-123e4")),
         ("-123E4", token.Float(0, 6, "-123E4")),
         ("-123e-4", token.Float(0, 7, "-123e-4")),
@@ -238,6 +259,7 @@ def test_it_lexes_numbers(string, expected):
     "value, err_cls, expected_positon",
     [
         ("00", UnexpectedCharacter, 1),
+        ("01", UnexpectedCharacter, 1),
         ("+1", UnexpectedCharacter, 0),
         ("1.", UnexpectedEOF, 2),
         ("1.e1", UnexpectedCharacter, 2),
@@ -246,6 +268,21 @@ def test_it_lexes_numbers(string, expected):
         ("-A", UnexpectedCharacter, 1),
         ("1.0e", UnexpectedEOF, 4),
         ("1.0eA", UnexpectedCharacter, 4),
+        ("123.", UnexpectedEOF, 4),
+        ("123e", UnexpectedEOF, 4),
+        ("123E", UnexpectedEOF, 4),
+        ("01.23", UnexpectedCharacter, 1),
+        ("1.2e3.4", UnexpectedCharacter, 7),
+        ("1.23.4", UnexpectedCharacter, 6),
+        ("1.2e3e", UnexpectedCharacter, 5),
+        ("0xF1", UnexpectedCharacter, 1),
+        ("0b10", UnexpectedCharacter, 1),
+        ("123abc", UnexpectedCharacter, 3),
+        ("1_234", UnexpectedCharacter, 1),
+        ("1ß", UnexpectedCharacter, 1),
+        ("1.23f", UnexpectedCharacter, 4),
+        ("1.234_5", UnexpectedCharacter, 5),
+        ("1.2ß", UnexpectedCharacter, 3),
     ],
 )
 def test_it_lex_reports_useful_number_errors(value, err_cls, expected_positon):

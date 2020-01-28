@@ -15,7 +15,6 @@ from typing import Iterator, List, Optional, Union, cast
 
 from .._string_utils import ensure_unicode, parse_block_string
 from ..exc import (
-    GraphQLSyntaxError,
     InvalidCharacter,
     InvalidEscapeSequence,
     NonTerminatedString,
@@ -47,12 +46,14 @@ from .token import (
     Token,
 )
 
-EOL_CHARS = frozenset([0x000A, 0x000D])  # "\n"  # "\r"
+EOL_CHARS = [0x000A, 0x000D]  # "\n"  # "\r"
 
-IGNORED_CHARS = (
-    frozenset([0xFEFF, 0x0009, 0x0020, 0x002C])
-    | EOL_CHARS  # BOM  # \t  # SPACE  # ,
-)
+IGNORED_CHARS = [  # BOM  # \t  # SPACE  # ,
+    0xFEFF,
+    0x0009,
+    0x0020,
+    0x002C,
+] + EOL_CHARS
 
 SYMBOLS = {
     cls.value: cls
@@ -86,14 +87,27 @@ QUOTED_CHARS = {
 
 
 def _unexpected(
-    expected: str, char: str, position: int, source: str
-) -> GraphQLSyntaxError:
+    char: Optional[str],
+    position: int,
+    source: str,
+    expected: Optional[str] = None,
+) -> Union[UnexpectedEOF, UnexpectedCharacter]:
     if char is None:
         return UnexpectedEOF(position - 1, source)
-    else:
+    elif expected is not None:
         return UnexpectedCharacter(
             'Expected "%s" but found "%s"' % (expected, char), position, source
         )
+    else:
+        return UnexpectedCharacter(
+            'Unexpected character "%s"' % char, position, source
+        )
+
+
+def _is_name_start(code):
+    return (
+        code == 0x005F or 0x0041 <= code <= 0x005A or 0x0061 <= code <= 0x007A
+    )
 
 
 class Lexer:
@@ -165,9 +179,7 @@ class Lexer:
             char = self._peek()
             self._position += 1
             if char != ".":
-                raise _unexpected(
-                    ".", cast(str, char), self._position, self._source
-                )
+                raise _unexpected(char, self._position, self._source, ".")
         return Ellip(start, self._position)
 
     def _read_string(self) -> String:
@@ -296,6 +308,17 @@ class Lexer:
 
             self._read_over_integer()
 
+        # Explicit lookahead restrictions.
+        next_char = self._peek()
+        if next_char is not None:
+            next_code = ord(next_char)
+            if _is_name_start(next_code):
+                raise UnexpectedCharacter(
+                    'Unexpected character "%s"' % char,
+                    self._position,
+                    self._source,
+                )
+
         end = self._position
         value = self._source[start:end]
         return (
@@ -312,7 +335,7 @@ class Lexer:
         if code == 0x0030:  # "0"
             self._position += 1
             char = self._peek()
-            if char is not None and ord(char) == 0x0030:
+            if char is not None and (0x0030 <= ord(char) <= 0x0039):
                 raise UnexpectedCharacter(
                     'Unexpected character "%s"' % char,
                     self._position,
@@ -406,11 +429,7 @@ class Lexer:
             return self._read_string()
         elif code == 0x002D or 0x0030 <= code <= 0x0039:
             return self._read_number()
-        elif (
-            code == 0x005F
-            or 0x0041 <= code <= 0x005A
-            or 0x0061 <= code <= 0x007A
-        ):
+        elif _is_name_start(code):
             return self._read_name()
         else:
             raise UnexpectedCharacter(
