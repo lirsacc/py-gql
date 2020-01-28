@@ -128,9 +128,6 @@ class Lexer:
             return None
 
     def _read_over_whitespace(self):
-        """
-        Advance lexer over all ignored characters.
-        """
         pos = self._position
         while True:
             try:
@@ -163,9 +160,6 @@ class Lexer:
         self._position = pos
 
     def _read_ellipsis(self) -> Ellip:
-        """
-        Advance lexer over an ellipsis token (...).
-        """
         start = self._position
         for _ in range(3):
             char = self._peek()
@@ -177,9 +171,6 @@ class Lexer:
         return Ellip(start, self._position)
 
     def _read_string(self) -> String:
-        """
-        Advance lexer over a quoted string.
-        """
         start = self._position
         self._position += 1
         acc = []  # type: List[str]
@@ -205,9 +196,6 @@ class Lexer:
                 acc.append(char)
 
     def _read_block_string(self) -> BlockString:
-        """
-        Advance lexer over a triple quoted block string.
-        """
         start = self._position
         self._position += 3
         acc = []  # type: List[str]
@@ -240,11 +228,6 @@ class Lexer:
                 acc.append(char)
 
     def _read_escape_sequence(self) -> str:
-        """
-        Advance lexer over an escape character.
-
-        Returns: Escaped character value
-        """
         char = self._peek()
         self._position += 1
         if char is None:
@@ -262,11 +245,6 @@ class Lexer:
             )
 
     def _read_escaped_unicode(self) -> str:
-        """
-        Advance lexer over a unicode character.
-
-        Returns: Escaped character value
-        """
         start = self._position
         for _ in range(4):
             char = self._peek()
@@ -291,9 +269,6 @@ class Lexer:
             )
 
     def _read_number(self) -> Union[Integer, Float]:
-        """
-        Advance lexer over a number.
-        """
         start = self._position
         is_float = False
 
@@ -328,9 +303,6 @@ class Lexer:
         )
 
     def _read_over_integer(self):
-        """
-        Advance lexer over an integer.
-        """
         char = self._peek()
         if char is None:
             raise UnexpectedEOF(self._position, self._source)
@@ -350,9 +322,6 @@ class Lexer:
             self._read_over_digits()
 
     def _read_over_digits(self):
-        """
-        Advance lexer over a sequence of digits.
-        """
         char = self._peek()
         if char is None:
             raise UnexpectedEOF(self._position, self._source)
@@ -371,9 +340,6 @@ class Lexer:
                 break
 
     def _read_name(self) -> Name:
-        """
-        Advance lexer over a name ``/[_A-Za-z][A-Za-z0-9_]+/``.
-        """
         start = self._position
         while True:
             char = self._peek()
