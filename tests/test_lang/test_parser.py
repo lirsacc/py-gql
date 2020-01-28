@@ -400,11 +400,6 @@ def test_parse_type_it_parses_nested_types():
     )
 
 
-# Extra tests not in the reference
-# Mostly discovered during testing other parts of the library
-# ------------------------------------------------------------------------------
-
-
 def test_parse_type_it_parses_nested_types_2():
     assert_node_equal(
         parse_type("[MyType!]!"),
