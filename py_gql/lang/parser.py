@@ -218,7 +218,8 @@ class Parser:
 
             Warning:
                 This feature is experimental and may change or be removed
-                in the future.
+                in the future. See https://github.com/graphql/graphql-spec/issues/204
+                for the open spec PR.
 
     """
 
