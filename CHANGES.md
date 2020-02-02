@@ -11,7 +11,7 @@ Unreleased
 - Added `py_gql.utilities.CamelCaseSchemaTransform` to convert between conventions.
 - `py_gql.schema.Argument` and `py_gql.schema.InputField` now inherit from the `py_gql.schema.InputValue` base class. This matches the common language used in the spec and simplifies some internal type handling.
 - Add a custom `python_name` attribute for some schema elements:
- 
+
   - `py_gql.schema.Argument`: when arguments are coerced and passed to a resolver the `python_name` value will be used instead of the exposed argument name.
   - `py_gql.schema.InputField`: the resulting object will use `python_name` as a key instead of the exposed field name.
   - `py_gql.schema.Field`: The default resolver will use `python_name` instead of the exposed name when looking the key or attribute in the root object.
@@ -23,7 +23,7 @@ Unreleased
 
 ### Fixed
 
-- Introducing `pyproject.toml` broke Cython integration through build isolation. This is now fixed by always requiring cython as a a build dependency (through `build-system.requires`) and only enabling support behind the `PY_GQL_USE_CYTHON` env variable.
+- Introducing `pyproject.toml` broke Cython integration through build isolation. The `build-system` block has been dropped for now and cython support hidden behind the `PY_GQL_USE_CYTHON` env variable.
 
 - Support for safely removing types from `Schema` instances:
 
@@ -34,9 +34,9 @@ Unreleased
 
 ### Breaking Changes & Deprecations
 
-- `Instrumentation` has been slightly refactored to be easier to use and use more consistent names:
+- `Instrumentation` has been refactored to be easier to use and use more consistent names:
 
-  - `instrument_*` type hooks are now named `transform_` hooks to reflect their operations better.
+  - `instrument_*` type hooks are now named `transform_` hooks to better reflect their actual usage.
   - `instrument_validation_result` has been removed as it was confusing to use.
   - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
 
