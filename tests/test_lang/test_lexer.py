@@ -120,8 +120,8 @@ def test_name(value, expected):
         ('" white space "', token.String(0, 15, " white space ")),
         ('"quote \\""', token.String(0, 10, 'quote "')),
         (
-            '"escaped \\n\\r\\b\\t\\f"',
-            token.String(0, 20, "escaped \n\r\b\t\f"),
+            '"escaped \\" \\n\\r\\b\\t\\f"',
+            token.String(0, 23, 'escaped " \n\r\b\t\f'),
         ),
         ('"slashes \\\\ \\/"', token.String(0, 15, "slashes \\ /")),
         (

@@ -3,7 +3,8 @@
 Iterable interface for the GraphQL Language lexer.
 """
 
-from typing import Iterator, List, Optional, Union, cast
+from string import ascii_letters
+from typing import Container, Iterator, List, Mapping, Optional, Union
 
 from .._string_utils import ensure_unicode, parse_block_string
 from ..exc import (
@@ -38,14 +39,7 @@ from .token import (
     Token,
 )
 
-EOL_CHARS = [0x000A, 0x000D]  # "\n"  # "\r"
-
-IGNORED_CHARS = [  # BOM  # \t  # SPACE  # ,
-    0xFEFF,
-    0x0009,
-    0x0020,
-    0x002C,
-] + EOL_CHARS
+IGNORED_CHARS = "\n\r\ufeff\t ,"
 
 SYMBOLS = {
     cls.value: cls
@@ -67,39 +61,15 @@ SYMBOLS = {
 }
 
 QUOTED_CHARS = {
-    0x0022: '"',
-    0x005C: "\\",
-    0x002F: "/",
-    0x0062: "\u0008",
-    0x0066: "\u000c",
-    0x006E: "\n",
-    0x0072: "\r",
-    0x0074: "\t",
+    '"': '"',
+    "\\": "\\",
+    "/": "/",
+    "b": "\u0008",
+    "f": "\u000c",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
 }
-
-
-def _unexpected(
-    char: Optional[str],
-    position: int,
-    source: str,
-    expected: Optional[str] = None,
-) -> Union[UnexpectedEOF, UnexpectedCharacter]:
-    if char is None:
-        return UnexpectedEOF(position - 1, source)
-    elif expected is not None:
-        return UnexpectedCharacter(
-            'Expected "%s" but found "%s"' % (expected, char), position, source
-        )
-    else:
-        return UnexpectedCharacter(
-            'Unexpected character "%s"' % char, position, source
-        )
-
-
-def _is_name_start(code):
-    return (
-        code == 0x005F or 0x0041 <= code <= 0x005A or 0x0061 <= code <= 0x007A
-    )
 
 
 class Lexer:
@@ -127,13 +97,9 @@ class Lexer:
         self._started = False
         self._position = 0
 
-    def _peek(self) -> Optional[str]:
-        try:
-            return self._source[self._position]
-        except IndexError:
-            return None
-
-    def _read_over_whitespace(self):
+    def _read_over_whitespace(
+        self, __ignored: Container[str] = IGNORED_CHARS
+    ) -> None:
         pos = self._position
         while True:
             try:
@@ -141,11 +107,9 @@ class Lexer:
             except IndexError:
                 break
 
-            code = ord(char)
-
-            if code in IGNORED_CHARS:
+            if char in __ignored:
                 pos += 1
-            elif code == 0x0023:  # '#'
+            elif char == "#":
                 pos += 1
                 while True:
                     try:
@@ -153,10 +117,7 @@ class Lexer:
                     except IndexError:
                         break
 
-                    code = ord(char)
-                    if (
-                        code >= 0x0020 or code == 0x0009
-                    ) and code not in EOL_CHARS:
+                    if (char >= " " or char == "\t") and char not in "\n\r":
                         pos += 1
                     else:
                         break
@@ -168,10 +129,19 @@ class Lexer:
     def _read_ellipsis(self) -> Ellip:
         start = self._position
         for _ in range(3):
-            char = self._peek()
+            try:
+                char = self._source[self._position]
+            except IndexError:
+                raise UnexpectedEOF(self._position, self._source)
+
             self._position += 1
+
             if char != ".":
-                raise _unexpected(char, self._position, self._source, ".")
+                raise UnexpectedCharacter(
+                    'Expected "." but found "%s"' % char,
+                    self._position,
+                    self._source,
+                )
         return Ellip(start, self._position)
 
     def _read_string(self) -> String:
@@ -179,12 +149,11 @@ class Lexer:
         self._position += 1
         acc = []  # type: List[str]
         while True:
-            char = self._peek()
-
-            if char is None:
+            try:
+                char = self._source[self._position]
+            except IndexError:
                 raise NonTerminatedString("", self._position, self._source)
 
-            code = ord(char)
             self._position += 1
 
             if char == '"':
@@ -192,9 +161,9 @@ class Lexer:
                 return String(start, self._position, value)
             elif char == "\\":
                 acc.append(self._read_escape_sequence())
-            elif code == 0x000A or code == 0x000D:  # \n or \r
+            elif char in "\n\r":
                 raise NonTerminatedString("", self._position - 1, self._source)
-            elif not (code >= 0x0020 or code == 0x0009):
+            elif not (char >= " " or char == "\t"):
                 raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
@@ -205,43 +174,47 @@ class Lexer:
         acc = []  # type: List[str]
 
         while True:
-            char = self._peek()
-
-            if char is None:
+            try:
+                char = self._source[self._position]
+            except IndexError:
                 raise NonTerminatedString("", self._position, self._source)
-
-            code = ord(char)
 
             if self._source[self._position : self._position + 3] == '"""':
                 self._position += 3
-                value = parse_block_string("".join(acc))
-                return BlockString(start, self._position, value)
+                return BlockString(
+                    start, self._position, parse_block_string("".join(acc))
+                )
 
             self._position += 1
 
             if char == "\\":
                 if self._source[self._position : self._position + 3] == '"""':
-                    for _ in range(3):
-                        acc.append(cast(str, self._peek()))
-                        self._position += 1
+                    acc.append('"""')
+                    self._position += 3
                 else:
                     acc.append(char)
-            elif not (code >= 0x0020 or code == 0x0009 or code in EOL_CHARS):
+            elif not (char >= " " or char in "\t\n\r"):
                 raise InvalidCharacter(char, self._position - 1, self._source)
             else:
                 acc.append(char)
 
-    def _read_escape_sequence(self) -> str:
-        char = self._peek()
+    def _read_escape_sequence(
+        self, __quoted_chars: Mapping[str, str] = QUOTED_CHARS
+    ) -> str:
+
+        try:
+            char = self._source[self._position]
+        except IndexError:
+            raise NonTerminatedString("", self._position + 1, self._source)
+
         self._position += 1
-        if char is None:
-            raise NonTerminatedString("", self._position, self._source)
 
-        code = ord(char)
+        try:
+            return __quoted_chars[char]
+        except KeyError:
+            pass
 
-        if code in QUOTED_CHARS:
-            return QUOTED_CHARS[code]
-        elif code == 0x0075:  # unicode character: uXXXX
+        if char == "u":  # unicode character: uXXXX
             return self._read_escaped_unicode()
         else:
             raise InvalidEscapeSequence(
@@ -251,10 +224,13 @@ class Lexer:
     def _read_escaped_unicode(self) -> str:
         start = self._position
         for _ in range(4):
-            char = self._peek()
+            try:
+                char = self._source[self._position]
+            except IndexError:
+                raise NonTerminatedString("", self._position + 1, self._source)
+
             self._position += 1
-            if char is None:
-                raise NonTerminatedString("", self._position, self._source)
+
             if not char.isalnum():
                 break
 
@@ -272,39 +248,56 @@ class Lexer:
                 "\\u%s" % escape, start - 1, self._source
             )
 
-    def _read_number(self) -> Union[Integer, Float]:
+    def _read_number(self) -> Union[Integer, Float]:  # noqa: C901
         start = self._position
         is_float = False
 
-        char = self._peek()
-        if char is not None and ord(char) == 0x002D:  # "-"
+        try:
+            char = self._source[self._position]  # type: Optional[str]
+        except IndexError:
+            char = None
+
+        if char == "-":
             self._position += 1
 
         self._read_over_integer()
 
-        char = self._peek()
+        try:
+            char = self._source[self._position]
+        except IndexError:
+            char = None
 
-        if char is not None and ord(char) == 0x002E:  # "."
+        if char == ".":
             self._position += 1
             is_float = True
             self._read_over_digits()
 
-        char = self._peek()
+        try:
+            char = self._source[self._position]
+        except IndexError:
+            char = None
 
-        if char is not None and ord(char) in (0x0065, 0x0045):  # "e", "E"
+        if char is not None and char in "eE":
             self._position += 1
             is_float = True
-            char = self._peek()
-            if char is not None and ord(char) in (0x002D, 0x002B):  # "-", "+"
+
+            try:
+                char = self._source[self._position]
+            except IndexError:
+                char = None
+
+            if char is not None and char in "+-":
                 self._position += 1
 
             self._read_over_integer()
 
         # Explicit lookahead restrictions.
-        next_char = self._peek()
-        if next_char is not None:
-            next_code = ord(next_char)
-            if _is_name_start(next_code):
+        try:
+            next_char = self._source[self._position]
+        except IndexError:
+            pass
+        else:
+            if next_char == "_" or next_char in ascii_letters:
                 raise UnexpectedCharacter(
                     'Unexpected character "%s"' % char,
                     self._position,
@@ -318,62 +311,64 @@ class Lexer:
         )
 
     def _read_over_integer(self):
-        char = self._peek()
-        if char is None:
+        try:
+            char = self._source[self._position]
+        except IndexError:
             raise UnexpectedEOF(self._position, self._source)
 
-        code = ord(char)
-
-        if code == 0x0030:  # "0"
+        if char == "0":
             self._position += 1
-            char = self._peek()
-            if char is not None and (0x0030 <= ord(char) <= 0x0039):
-                raise UnexpectedCharacter(
-                    'Unexpected character "%s"' % char,
-                    self._position,
-                    self._source,
-                )
+            try:
+                char = self._source[self._position]
+            except IndexError:
+                pass
+            else:
+                if char.isdigit():
+                    raise UnexpectedCharacter(
+                        'Unexpected character "%s"' % char,
+                        self._position,
+                        self._source,
+                    )
         else:
             self._read_over_digits()
 
     def _read_over_digits(self):
-        char = self._peek()
-        if char is None:
+        try:
+            char = self._source[self._position]
+        except IndexError:
             raise UnexpectedEOF(self._position, self._source)
 
-        code = ord(char)
-        if not (0x0030 <= code <= 0x0039):
+        if not (char.isdigit()):
             raise UnexpectedCharacter(
                 'Unexpected character "%s"' % char, self._position, self._source
             )
 
         while True:
-            if char is not None and 0x0030 <= ord(char) <= 0x0039:
+            if char is not None and char.isdigit():
                 self._position += 1
-                char = self._peek()
+                try:
+                    char = self._source[self._position]
+                except IndexError:
+                    break
             else:
                 break
 
-    def _read_name(self) -> Name:
+    def _read_name(
+        self, __ascii_letters: Container[str] = ascii_letters
+    ) -> Name:
         start = self._position
         while True:
-            char = self._peek()
-            if char is None:
+            try:
+                char = self._source[self._position]
+            except IndexError:
                 break
 
-            code = ord(char)
-            if (
-                code == 0x005F
-                or 0x0041 <= code <= 0x005A
-                or 0x0061 <= code <= 0x007A
-                or 0x0030 <= code <= 0x0039
-            ):
+            if char == "_" or char in __ascii_letters or char.isdigit():
                 self._position += 1
             else:
                 break
 
-        value = self._source[start : self._position]
-        return Name(start, self._position, value)
+        return Name(start, self._position, self._source[start : self._position])
 
     def __iter__(self) -> Iterator[Token]:
         return self
@@ -397,15 +392,14 @@ class Lexer:
             return SOF(0, 0)
 
         self._read_over_whitespace()
-        char = self._peek()
 
-        if char is None:
+        try:
+            char = self._source[self._position]
+        except IndexError:
             self._done = True
             return EOF(self._position, self._position)
 
-        code = ord(char)
-
-        if not (code >= 0x0020 or code == 0x0009):
+        if not (char >= " " or char == "\t"):
             self._position += 1
             raise InvalidCharacter(char, self._position, self._source)
 
@@ -419,9 +413,9 @@ class Lexer:
             return self._read_block_string()
         elif char == '"':
             return self._read_string()
-        elif code == 0x002D or 0x0030 <= code <= 0x0039:
+        elif char == "-" or char.isdigit():
             return self._read_number()
-        elif _is_name_start(code):
+        elif char == "_" or char in ascii_letters:
             return self._read_name()
         else:
             raise UnexpectedCharacter(
