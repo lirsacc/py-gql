@@ -174,13 +174,15 @@ async def test_nulls_out_errored_subtrees(raiser, assert_execution):
 
     await assert_execution(
         schema,
-        """{
+        """
+        {
             sync,
             callable_error,
             callable,
             resolver_error,
             resolver,
-        }""",
+        }
+        """,
         initial_value=root,
         expected_data={
             "sync": "sync",

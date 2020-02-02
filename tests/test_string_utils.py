@@ -62,107 +62,80 @@ def test_highlight_location_2():
     )
 
 
-def test_parse_block_string_removes_uniform_indentation_from_a_string():
-    raw_value = "\n".join(
-        ["", "    Hello,", "      World!", "", "    Yours,", "      GraphQL."]
-    )
-    assert parse_block_string(raw_value) == "\n".join(
-        ["Hello,", "  World!", "", "Yours,", "  GraphQL."]
-    )
-
-
-def test_parse_block_string_removes_empty_leading_and_trailing_lines():
-    raw_value = "\n".join(
-        [
-            "",
-            "",
-            "    Hello,",
-            "      World!",
-            "",
-            "    Yours,",
-            "      GraphQL.",
-            "",
-            "",
-        ]
-    )
-
-    assert parse_block_string(raw_value) == "\n".join(
-        ["Hello,", "  World!", "", "Yours,", "  GraphQL."]
-    )
-
-
-def test_parse_block_string_leaves_empty_leading_and_trailing_lines_alone_if_set():
-    raw_value = "\n".join(
-        [
-            "",
-            "",
-            "    Hello,",
-            "      World!",
-            "",
-            "    Yours,",
-            "      GraphQL.",
-            "",
-            "",
-        ]
-    )
-
-    assert parse_block_string(raw_value, False, False) == "\n".join(
-        ["", "", "Hello,", "  World!", "", "Yours,", "  GraphQL.", "", ""]
-    )
-
-
-def test_parse_block_string_removes_blank_leading_and_trailing_lines():
-    raw_value = "\n".join(
-        [
-            "  ",
-            "        ",
-            "    Hello,",
-            "      World!",
-            "",
-            "    Yours,",
-            "      GraphQL.",
-            "        ",
-            "  ",
-        ]
-    )
-
-    assert parse_block_string(raw_value) == "\n".join(
-        ["Hello,", "  World!", "", "Yours,", "  GraphQL."]
-    )
-
-
-def test_parse_block_string_retains_indentation_from_first_line():
-    raw_value = "\n".join(
-        ["    Hello,", "      World!", "", "    Yours,", "      GraphQL."]
-    )
-
-    assert parse_block_string(raw_value) == "\n".join(
-        ["    Hello,", "  World!", "", "Yours,", "  GraphQL."]
-    )
-
-
-def test_parse_block_string_does_not_alter_trailing_spaces():
-    raw_value = "\n".join(
-        [
-            "               ",
-            "    Hello,     ",
-            "      World!   ",
-            "               ",
-            "    Yours,     ",
-            "      GraphQL. ",
-            "               ",
-        ]
-    )
-
-    assert parse_block_string(raw_value) == "\n".join(
-        [
-            "Hello,     ",
-            "  World!   ",
-            "           ",
-            "Yours,     ",
-            "  GraphQL. ",
-        ]
-    )
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        pytest.param(
+            "\n".join(
+                [
+                    "",
+                    "    Hello,",
+                    "      World!",
+                    "",
+                    "    Yours,",
+                    "      GraphQL.",
+                ]
+            ),
+            "\n".join(["Hello,", "  World!", "", "Yours,", "  GraphQL."]),
+            id="Removes uniform indentation from a string",
+        ),
+        pytest.param(
+            "\n".join(
+                [
+                    "  ",
+                    "",
+                    "    Hello,",
+                    "      World!",
+                    "",
+                    "    Yours,",
+                    "      GraphQL.",
+                    "",
+                    "",
+                ]
+            ),
+            "\n".join(["Hello,", "  World!", "", "Yours,", "  GraphQL."]),
+            id="Removes empty leading and trailing lines",
+        ),
+        pytest.param(
+            "\n".join(
+                [
+                    "    Hello,",
+                    "      World!",
+                    "",
+                    "    Yours,",
+                    "      GraphQL.",
+                ]
+            ),
+            "\n".join(["    Hello,", "  World!", "", "Yours,", "  GraphQL."]),
+            id="Retains indentation from first line",
+        ),
+        pytest.param(
+            "\n".join(
+                [
+                    "               ",
+                    "    Hello,     ",
+                    "      World!   ",
+                    "               ",
+                    "    Yours,     ",
+                    "      GraphQL. ",
+                    "               ",
+                ]
+            ),
+            "\n".join(
+                [
+                    "Hello,     ",
+                    "  World!   ",
+                    "           ",
+                    "Yours,     ",
+                    "  GraphQL. ",
+                ]
+            ),
+            id="Does not alter trailing spaces",
+        ),
+    ],
+)
+def test_parse_block_string(value, expected):
+    assert parse_block_string(value) == expected
 
 
 def test_wrapped_lines():

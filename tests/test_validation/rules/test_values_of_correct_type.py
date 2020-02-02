@@ -664,26 +664,26 @@ def test_valid_non_nullable_value(schema, value):
         ),
         pytest.param(
             """
-        {
-          complicatedArgs {
-            multipleReqs(req1: "one")
-          }
-        }
-        """,
+            {
+              complicatedArgs {
+                multipleReqs(req1: "one")
+              }
+            }
+            """,
             ['Expected type Int!, found "one"'],
             [[(45, 50)]],
             id="Incorrect value and missing argument (ProvidedNonNullArguments)",
         ),
         pytest.param(
             """
-         {
-          complicatedArgs {
-            multipleReqs(req1: null)
-          }
-        }
-        """,
+            {
+              complicatedArgs {
+                multipleReqs(req1: null)
+              }
+            }
+            """,
             ["Expected type Int!, found null"],
-            [[(46, 50)]],
+            [[(45, 49)]],
             id="Null value",
         ),
     ],

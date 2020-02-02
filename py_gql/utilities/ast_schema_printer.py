@@ -3,7 +3,7 @@
 
 from typing import Any, Sequence, Union
 
-from .._string_utils import leading_whitespace, wrapped_lines
+from .._string_utils import wrapped_lines
 from .._utils import flatten
 from ..lang import print_ast
 from ..schema import (
@@ -167,7 +167,7 @@ class ASTSchemaPrinter:
             if len(lines) == 1 and len(first) < 70 and not first.endswith('"'):
                 body = first.replace('"""', '\\"""')
             else:
-                has_leading_whitespace = leading_whitespace(first)
+                has_leading_whitespace = len(first) > len(first.lstrip())
                 body = (
                     "\n".join(
                         [

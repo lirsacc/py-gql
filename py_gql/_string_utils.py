@@ -2,6 +2,8 @@
 """ Work with strings """
 
 import re
+import sys
+import textwrap
 from typing import (
     Callable,
     Container,
@@ -14,7 +16,6 @@ from typing import (
 )
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
-LEADING_WS = re.compile(r"^[\t\s]*")
 
 ResponsePath = Sequence[Union[int, str]]
 
@@ -23,25 +24,6 @@ def ensure_unicode(string: Union[str, bytes]) -> str:
     if isinstance(string, bytes):
         return string.decode("utf8")
     return string
-
-
-def leading_whitespace(string: str) -> int:
-    r""" Detect of leading whitespace in a string.
-
-    Args:
-        string (str): Input value
-
-    Returns:
-        int: Length of leading whitespace
-
-    >>> leading_whitespace('  \t  foo')
-    5
-    >>> leading_whitespace('\tfoo')
-    1
-    >>> leading_whitespace('   foo')
-    3
-    """
-    return len(string) - len(LEADING_WS.sub("", string))
 
 
 def is_blank(string: str) -> bool:
@@ -55,54 +37,40 @@ def is_blank(string: str) -> bool:
     return not string.strip()
 
 
-def parse_block_string(
-    raw_string: str,
-    strip_trailing_newlines: bool = True,
-    strip_leading_newlines: bool = True,
-) -> str:
+def parse_block_string(raw_string: str) -> str:
     """ Parse a raw string according to the GraphQL spec's BlockStringValue()
     http://facebook.github.io/graphql/draft/#BlockStringValue() static
-    algorithm. Similar to Coffeescript's block string, Python's docstring trim
+    algorithm. Similar to Coffeescript's block string, Python's inspect.cleandoc
     or Ruby's strip_heredoc.
 
-    Args:
-        raw_string (str): Input value
-        strip_trailing_newlines (bool): Remove trailing newlines
-        strip_leading_newlines (bool): Remove leading newlines
-
-    Returns:
-        str: Block string value
+    Compared to Python's default behaviour, this does not remove leading
+    whitespace from the first line.
     """
-    lines = LINE_SEPARATOR.split(raw_string)
-    common_indent = None
+    lines = raw_string.splitlines()
+
+    common_indent = sys.maxsize
 
     for line in lines[1:]:
-        indent = leading_whitespace(line)
-        if indent < len(line) and (
-            common_indent is None or indent < common_indent
-        ):
-            common_indent = indent
+        inner_len = len(line.lstrip())
+        if inner_len:
+            common_indent = min(common_indent, len(line) - inner_len)
 
-    if common_indent:
-        lines = [
-            line[common_indent:]
-            if (len(line) >= common_indent and i > 0)
-            else line
-            for i, line in enumerate(lines)
-        ]
+    if common_indent < sys.maxsize:
+        for i, line in enumerate(lines[1:]):
+            lines[i + 1] = line[common_indent:]
 
-    if strip_leading_newlines:
-        while lines and is_blank(lines[0]):
-            lines.pop(0)
+    while lines and (not lines[0].lstrip()):
+        lines.pop(0)
 
-    if strip_trailing_newlines:
-        while lines and is_blank(lines[-1]):
-            lines.pop()
+    while lines and (not lines[-1].lstrip()):
+        lines.pop()
 
     return "\n".join(lines)
 
 
-dedent = lambda s: parse_block_string(s, strip_trailing_newlines=False)
+# Kept for compatibility (only used in tests)
+def dedent(raw_string: str) -> str:
+    return textwrap.dedent(raw_string).lstrip()
 
 
 def index_to_loc(body: str, position: int) -> Tuple[int, int]:

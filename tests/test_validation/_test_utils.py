@@ -20,7 +20,6 @@ def assert_validation_result(
     # Prints are here so we can more easily debug when running pytest with -v
     expected_msgs = expected_msgs or []
     expected_locs = expected_locs or []
-
     print(source)
     result = validate_ast(
         schema, parse(dedent(source), allow_type_system=True), checkers
