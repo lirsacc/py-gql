@@ -2,7 +2,6 @@
 import pytest
 
 from py_gql.execution import Instrumentation, MultiInstrumentation
-from py_gql.lang import parse
 
 from ._test_utils import process_request
 
@@ -31,42 +30,6 @@ async def test_instrumentation_does_not_raise(
     await process_request(
         starwars_schema, QUERY, instrumentation=Instrumentation(),
     )
-
-
-async def test_instrument_ast(assert_execution, starwars_schema):
-    class TestInstrumentation(Instrumentation):
-        def transform_ast(self, _ast):
-            return parse("query { hero { name } }")
-
-    result = await process_request(
-        starwars_schema, QUERY, instrumentation=TestInstrumentation(),
-    )
-
-    assert result.response() == {"data": {"hero": {"name": "R2-D2"}}}
-
-
-async def test_instrument_result(assert_execution, starwars_schema):
-    class TestInstrumentation(Instrumentation):
-        def transform_result(self, result):
-            result.data["hero"]["name"] = "Darth Vader"
-            return result
-
-    result = await process_request(
-        starwars_schema, QUERY, instrumentation=TestInstrumentation(),
-    )
-
-    assert result.response() == {
-        "data": {
-            "hero": {
-                "friends": [
-                    {"name": "Luke Skywalker"},
-                    {"name": "Han Solo"},
-                    {"name": "Leia Organa"},
-                ],
-                "name": "Darth Vader",
-            }
-        }
-    }
 
 
 async def test_multi_instrumentation_stack_ordering(  # noqa: C901
@@ -107,14 +70,6 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
         def on_field_end(self, _root, _context, info):
             self.stack.append(("<", self.prefix, ("field", tuple(info.path))))
 
-        def transform_ast(self, ast):
-            self.stack.append((">", self.prefix, "instrument_ast"))
-            return ast
-
-        def transform_result(self, result):
-            self.stack.append((">", self.prefix, "instrument_result"))
-            return result
-
     stack = []  # type: ignore
 
     instrumentation = MultiInstrumentation(
@@ -140,8 +95,6 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", "parse"),
             ("<", "b", "parse"),
             ("<", "a", "parse"),
-            (">", "a", "instrument_ast"),
-            (">", "b", "instrument_ast"),
             (">", "a", "validate"),
             (">", "b", "validate"),
             ("<", "b", "validate"),
@@ -152,8 +105,6 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             ("<", "a", "execution"),
             ("<", "b", "query"),
             ("<", "a", "query"),
-            (">", "a", "instrument_result"),
-            (">", "b", "instrument_result"),
         ]
     )
 

@@ -2,12 +2,7 @@
 
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 
-from .exc import (
-    ExecutionError,
-    GraphQLResponseError,
-    GraphQLSyntaxError,
-    VariablesCoercionError,
-)
+from .exc import ExecutionError, GraphQLSyntaxError, VariablesCoercionError
 from .execution import (
     BlockingExecutor,
     Executor,
@@ -117,7 +112,7 @@ def process_graphql_query(
 
     def _on_end(result: GraphQLResult) -> GraphQLResult:
         cast(Instrumentation, instrumentation).on_query_end()
-        return cast(Instrumentation, instrumentation).transform_result(result)
+        return result
 
     if isinstance(document, str):
         instrumentation.on_parsing_start()
@@ -129,11 +124,6 @@ def process_graphql_query(
             instrumentation.on_parsing_end()
     else:
         ast = document
-
-    try:
-        ast = instrumentation.transform_ast(ast)
-    except GraphQLResponseError as err:
-        return _abort(errors=[err])
 
     instrumentation.on_validation_start()
     validation_result = validate_ast(schema, ast, validators=validators)
