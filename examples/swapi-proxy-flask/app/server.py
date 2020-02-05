@@ -6,11 +6,11 @@ import flask
 
 from py_gql import process_graphql_query
 from py_gql.execution.runtime import ThreadPoolRuntime
+from py_gql.schema.transforms import CamelCaseSchemaTransform, transform_schema
 from py_gql.tracers import ApolloTracer
 
 from .schema import SCHEMA
 
-SCHEMA_SDL = SCHEMA.to_string()
 RUNTIME = ThreadPoolRuntime(max_workers=20)
 
 with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
@@ -18,6 +18,10 @@ with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
 
 
 app = flask.Flask(__name__)
+
+
+CAMEL_CASED_SCHEMA = transform_schema(SCHEMA, CamelCaseSchemaTransform())
+SCHEMA_SDL = CAMEL_CASED_SCHEMA.to_string()
 
 
 @app.route("/sdl")
@@ -33,7 +37,7 @@ def graphql_route():
     tracer = ApolloTracer()
 
     result = process_graphql_query(
-        SCHEMA,
+        CAMEL_CASED_SCHEMA,
         data["query"],
         variables=data.get("variables", {}),
         operation_name=data.get("operation_name"),

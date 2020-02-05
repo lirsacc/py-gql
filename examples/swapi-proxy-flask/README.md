@@ -6,6 +6,7 @@ This example demonstrates:
 - Schema generation from an SDL file
 - Tracer and extension usage
 - Simple [flask](http://flask.pocoo.org) integration with GraphiQL
+- Using schema transforms
 
 Data is fetched live from <https://swapi.co>.
 
