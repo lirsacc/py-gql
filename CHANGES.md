@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+[0.5.0](https://github.com/lirsacc/py-gql/releases/tag/0.5.0) - 2020-02-05
+--------------------------------------------------------------------------
+
 ### Added
 
 - Added `py_gql.schema.transforms` and some useful transformations:
