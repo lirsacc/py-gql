@@ -13,9 +13,9 @@ Note:
 from .validate import (
     SPECIFIED_RULES,
     ValidationResult,
+    Validator,
     default_validator,
     validate_ast,
-    Validator,
 )
 from .visitors import ValidationVisitor, VariablesCollector
 
