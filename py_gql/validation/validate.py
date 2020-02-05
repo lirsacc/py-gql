@@ -76,7 +76,7 @@ def default_validator(
     document: _ast.Document,
     variables: Optional[Dict[str, Any]] = None,
     *,
-    validators: Sequence[Type[ValidationVisitor]] = SPECIFIED_RULES,
+    validators: Sequence[Type[ValidationVisitor]] = SPECIFIED_RULES
 ) -> Iterable[ValidationError]:
     """Default validator implementation.
 
@@ -106,7 +106,7 @@ def validate_ast(
     document: _ast.Document,
     *,
     validators: Optional[Sequence[Validator]] = None,
-    variables: Optional[Dict[str, Any]] = None,
+    variables: Optional[Dict[str, Any]] = None
 ) -> ValidationResult:
     """
     Check that an ast is a valid GraphQL query document by running the parse
