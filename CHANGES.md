@@ -21,6 +21,8 @@ Unreleased
 
 - Support directives on variable definitions: this adds language support for directives on variable definitions following [graphql/graphql-spec#510](https://github.com/graphql/graphql-spec/pull/510). This is **only** language support so servers don't choke when receiving queries using this feature.
 
+- Added `py_gql.utilities.MaxDepthValidationRule`.
+
 ### Fixed
 
 - Introducing `pyproject.toml` broke Cython integration through build isolation. The `build-system` block has been dropped for now and cython support hidden behind the `PY_GQL_USE_CYTHON` env variable.
