@@ -2,8 +2,7 @@
 
 import pytest
 
-from py_gql.sdl import build_schema
-from py_gql.utilities.diff_schema import (
+from py_gql.schema.differ import (
     DirectiveAdded,
     DirectiveArgumentAdded,
     DirectiveArgumentChangedType,
@@ -41,6 +40,7 @@ from py_gql.utilities.diff_schema import (
     TypeRemovedFromUnion,
     diff_schema,
 )
+from py_gql.sdl import build_schema
 
 GROUPED_TEST_CASES = [
     (

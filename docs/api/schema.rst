@@ -185,4 +185,5 @@ Submodules
 ----------
 
 .. toctree::
+    schema.differ.rst
     schema.transforms.rst

@@ -6,7 +6,7 @@ Utilities to compare 2 GraphQL schema for incompatibilities.
 import itertools
 from typing import Dict, Iterator, Optional, Tuple, Type, TypeVar, Union
 
-from ...schema import (
+from .. import (
     SPECIFIED_DIRECTIVES,
     Directive,
     EnumType,

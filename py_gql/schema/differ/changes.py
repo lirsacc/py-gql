@@ -3,7 +3,7 @@
 from enum import IntEnum
 from typing import Any, Type, Union
 
-from ...schema import (
+from .. import (
     Argument,
     Directive,
     EnumType,
