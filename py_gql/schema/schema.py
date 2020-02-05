@@ -18,6 +18,7 @@ from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import INTROPSPECTION_TYPES
+from .resolver_map import ResolverMap
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
@@ -41,7 +42,7 @@ _PROTECTED_TYPES = SPECIFIED_SCALAR_TYPES + INTROPSPECTION_TYPES
 Resolver = Callable[..., Any]
 
 
-class Schema:
+class Schema(ResolverMap):
     """ A GraphQL schema definition.
 
     A GraphQL schema definition. This is the main container for a GraphQL
@@ -100,6 +101,8 @@ class Schema:
         "types",
         "directives",
         "implementations",
+        "resolvers",
+        "subsciptions",
     )
 
     def __init__(
@@ -113,6 +116,7 @@ class Schema:
             List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
         ] = None,
     ):
+        super().__init__()
         self.query_type = query_type
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
@@ -412,149 +416,91 @@ class Schema:
             include_custom_directives=include_custom_directives,
         )(self)
 
-    def assign_resolver(
-        self, fieldpath: str, func: Resolver, allow_override: bool = False
-    ) -> "Schema":
-        """
-        Register a resolver against a type in the schema.
-
-        Args:
-            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
-            func: The resolver function.
-            allow_override:
-                By default this function will raise :py:class:`ValueError` if
-                the field already has a resolver defined. Set this to ``True``
-                to allow overriding.
-
-        Raises:
-            :py:class:`ValueError`:
-
-        Warning:
-            This will update the type inline and as such is expected to be used
-            after having used `py_gql.build_schema`.
-        """
-
-        try:
-            typename, fieldname = fieldpath.split(".")[:2]
-        except ValueError:
-            raise ValueError(
-                'Invalid field path "%s". Field path must of the form '
-                '"{Typename}.{Fieldname}"' % fieldpath
-            )
-
-        object_type = self.get_type(typename)
-
-        if not isinstance(object_type, ObjectType):
-            raise ValueError(
-                'Expected "%s" to be ObjectTye but got %s.'
-                % (typename, object_type.__class__.__name__)
-            )
-
-        try:
-            field = object_type.field_map[fieldname]
-        except KeyError:
-            raise ValueError(
-                'Unknown field "%s" for type "%s".' % (fieldname, typename)
-            )
-        else:
-            if (not allow_override) and field.resolver is not None:
-                raise ValueError(
-                    'Field "%s" of type "%s" already has a resolver.'
-                    % (fieldname, typename)
-                )
-
-            field.resolver = func or field.resolver
-
-        return self
-
-    def resolver(self, fieldpath: str) -> Callable[[Resolver], Resolver]:
-        """
-        Decorator version of :meth:`assign_resolver`.
-
-        .. code-block:: python
-
-            schema = ...
-
-            @schema.resolver("Query.foo")
-            def resolve_foo(obj, ctx, info):
-                return "foo"
-
-        Args:
-            fieldpath: Field path in the form ``{Typename}.{Fieldname}``.
-        """
-
-        def decorator(func: Resolver) -> Resolver:
-            self.assign_resolver(fieldpath, func)
-            return func
-
-        return decorator
-
-    def assign_subscription_resolver(
+    def register_resolver(
         self,
+        typename: str,
         fieldname: str,
-        func: Callable[..., Any],
-        allow_override: bool = False,
+        resolver: Resolver,
+        *,
+        allow_override: bool = False
     ) -> None:
-        """
-        Register a subscription resolver against a field of the schema's
-        subscription type.
+        super().register_resolver(
+            typename, fieldname, resolver, allow_override=allow_override
+        )
 
-        Args:
-            fieldname: Field name.
-            func: The resolver function.
-            allow_override:
-                By default this function will raise :py:class:`ValueError` if
-                the field already has a resolver defined. Set this to ``True``
-                to allow overriding.
-
-        Raises:
-            :py:class:`ValueError`:
-
-        Warning:
-            This will update the type inline and as such is expected to be used
-            after having used `py_gql.build_schema`.
-        """
-
-        if self.subscription_type is None:
-            raise ValueError("Schema doesn't have a subscription type.")
-
-        object_type = self.subscription_type
+        try:
+            object_type = self.types[typename]
+        except KeyError:
+            raise UnknownType(typename)
 
         if not isinstance(object_type, ObjectType):
-            raise ValueError(
-                'Expected "%s" to be ObjectTye but got %s.'
-                % (object_type.name, object_type.__class__.__name__)
+            raise SchemaError(
+                'Cannot assign resolver to %s "%s".'
+                % (object_type.__class__.__name__, typename)
             )
 
         try:
             field = object_type.field_map[fieldname]
         except KeyError:
-            raise ValueError(
-                'Unknown field "%s" for type "%s".'
-                % (fieldname, object_type.name)
+            raise SchemaError(
+                'Cannot assign resolver to unknown field "%s.%s".'
+                % (typename, fieldname)
             )
-        else:
-            if (not allow_override) and field.subscription_resolver is not None:
-                raise ValueError(
-                    'Field "%s" of type "%s" already has a subscription_resolver.'
-                    % (fieldname, object_type.name)
-                )
 
-            field.subscription_resolver = func or field.subscription_resolver
+        if (
+            field.resolver is not None
+            and not allow_override
+            and field.resolver is not resolver
+        ):
+            raise ValueError(
+                'Field "%s" of type "%s" already has a resolver.'
+                % (fieldname, typename)
+            )
 
-    def subscription(self, fieldname):
-        """
-        Decorator version of :meth:`assign_subscription_resolver`.
+        field.resolver = resolver
 
-        Args:
-            fieldname: Field name.
-        """
+    def register_subscription(
+        self,
+        typename: str,
+        fieldname: str,
+        resolver: Resolver,
+        *,
+        allow_override: bool = False
+    ) -> None:
+        super().register_subscription(
+            typename, fieldname, resolver, allow_override=allow_override
+        )
 
-        def decorator(func):
-            self.assign_subscription_resolver(fieldname, func)
-            return func
+        try:
+            object_type = self.types[typename]
+        except KeyError:
+            raise UnknownType(typename)
 
-        return decorator
+        if not isinstance(object_type, ObjectType):
+            raise SchemaError(
+                'Cannot assign subscription to %s "%s".'
+                % (object_type.__class__.__name__, typename)
+            )
+
+        try:
+            field = object_type.field_map[fieldname]
+        except KeyError:
+            raise SchemaError(
+                'Cannot assign subscription to unknown field "%s.%s".'
+                % (typename, fieldname)
+            )
+
+        if (
+            field.subscription_resolver is not None
+            and not allow_override
+            and field.subscription_resolver is not resolver
+        ):
+            raise ValueError(
+                'Field "%s" of type "%s" already has a subscription.'
+                % (fieldname, typename)
+            )
+
+        field.subscription_resolver = resolver
 
     def clone(self) -> "Schema":
         cloned = Schema(
@@ -579,6 +525,8 @@ class Schema:
                 if d not in SPECIFIED_DIRECTIVES
             },
         )
+
+        cloned.merge_resolvers(self)
 
         return cloned
 

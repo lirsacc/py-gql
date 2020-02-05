@@ -14,6 +14,7 @@ from .directives import (
     SkipDirective,
 )
 from .introspection import is_introspection_type
+from .resolver_map import ResolverMap
 from .scalars import (
     ID,
     SPECIFIED_SCALAR_TYPES,

@@ -154,7 +154,7 @@ async def test_simple_counter_subscription():
         )
     )
 
-    @schema.subscription("counter")
+    @schema.subscription("Subscription.counter")
     def counter_subscription(*_, delay):
         return AsyncCounter(delay, 10)
 

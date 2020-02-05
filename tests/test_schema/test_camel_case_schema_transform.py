@@ -55,7 +55,7 @@ def test_default_resolver_still_works(schema: Schema) -> None:
 
 
 def test_custom_resolver_still_works(schema: Schema) -> None:
-    schema.assign_resolver("Query.snake_case_field", lambda *_: 42)
+    schema.register_resolver("Query", "snake_case_field", lambda *_: 42)
     new_schema = transform_schema(schema, CamelCaseSchemaTransform())
     result = graphql_blocking(new_schema, "{ snakeCaseField }", root={})
     assert result and result.response()["data"] == {"snakeCaseField": 42}
@@ -67,7 +67,7 @@ def test_arguments_and_input_fields_are_handled_correctly(
     def resolver(_root, _ctx, _info, *, arg_one, arg_two):
         return arg_one + arg_two["field_one"]
 
-    schema.assign_resolver("Query.field_with_arguments", resolver)
+    schema.register_resolver("Query", "field_with_arguments", resolver)
     new_schema = transform_schema(schema, CamelCaseSchemaTransform())
 
     result = graphql_blocking(

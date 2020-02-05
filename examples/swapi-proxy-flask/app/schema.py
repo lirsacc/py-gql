@@ -141,4 +141,4 @@ with open(os.path.join(os.path.dirname(__file__), "schema.graphql")) as f:
 
 for typename, field_resolvers in RESOLVERS.items():
     for fieldname, resolver in field_resolvers.items():
-        SCHEMA.assign_resolver("%s.%s" % (typename, fieldname), resolver)
+        SCHEMA.register_resolver(typename, fieldname, resolver)
