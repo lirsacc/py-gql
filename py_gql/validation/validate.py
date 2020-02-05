@@ -14,7 +14,7 @@ from typing import (
 
 from ..exc import ValidationError
 from ..lang import ast as _ast
-from ..lang.visitor import ParallelVisitor
+from ..lang.visitor import ChainedVisitor
 from ..schema import Schema
 from ..utilities import TypeInfoVisitor
 from . import rules as _rules
@@ -95,7 +95,7 @@ def default_validator(
 
     # Type info NEEDS to be first to be accurately used inside other validators
     # so when a validator enters node the type stack has already been updated.
-    validator = ParallelVisitor(type_info, *visitors)
+    validator = ChainedVisitor(type_info, *visitors)
     validator.visit(document)
 
     return [error for visitor in visitors for error in visitor.errors]

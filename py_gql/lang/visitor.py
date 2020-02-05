@@ -19,7 +19,7 @@ __all__ = (
     "SkipNode",
     "ASTVisitor",
     "DispatchingVisitor",
-    "ParallelVisitor",
+    "ChainedVisitor",
 )
 
 
@@ -903,11 +903,11 @@ class DispatchingVisitor(ASTVisitor):
         pass
 
 
-class ParallelVisitor(ASTVisitor):
-    """
-    Abstraction to run multiple visitor instances as one.
+class ChainedVisitor(ASTVisitor):
+    """Run multiple visitor instances in sequence.
 
-    - All visitors are run in the order they are defined.
+    - All visitors are run in the order they are defined, with enter being
+      called in order and leave in reverse order.
     - raising :class:`SkipNode` in one of them will prevent any later visitor
       to run.
 

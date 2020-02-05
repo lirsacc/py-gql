@@ -75,7 +75,7 @@ class TypeInfoVisitor(DispatchingVisitor):
 
     Warning:
         When using this alongside other visitors (such as when using
-        :class:`py_gql.lang.visitor.ParallelVisitor`), this visitor **must**
+        :class:`py_gql.lang.visitor.ChainedVisitor`), this visitor **must**
         to be the first one to visit the nodes in order for the information
         provided donwstream to be accurate.
 
