@@ -18,7 +18,6 @@ S = TypeVar("S", bound=_ast.Selection)
 __all__ = (
     "SkipNode",
     "ASTVisitor",
-    "Visitor",
     "DispatchingVisitor",
     "ParallelVisitor",
 )
@@ -916,7 +915,7 @@ class ParallelVisitor(ASTVisitor):
         *visitors: List of visitors to run.
 
     Attributes:
-        visitors (List[Visitor]): Children visitors.
+        visitors (List[ASTVisitor]): Children visitors.
     """
 
     def __init__(self, *visitors: ASTVisitor):
@@ -934,7 +933,3 @@ class ParallelVisitor(ASTVisitor):
     def leave(self, node: N) -> None:
         for v in self.visitors[::-1]:
             v.leave(node)
-
-
-# For backward compatibility
-Visitor = ASTVisitor
