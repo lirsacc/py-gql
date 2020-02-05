@@ -36,7 +36,7 @@ async def resolve_a(*_: Any) -> int:
 
 @schema.resolver("Query.nested")
 async def resolve_nested(*_: Any) -> Awaitable[int]:
-    return resolve_a()  # type: ignore
+    return resolve_a()
 
 
 @schema.resolver("Query.sync_a")
