@@ -19,6 +19,8 @@ with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:
 
 app = flask.Flask(__name__)
 
+# Let the initial order be respected.
+app.config["JSON_SORT_KEYS"] = False
 
 CAMEL_CASED_SCHEMA = transform_schema(SCHEMA, CamelCaseSchemaTransform())
 SCHEMA_SDL = CAMEL_CASED_SCHEMA.to_string()
