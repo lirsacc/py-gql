@@ -178,16 +178,18 @@ def execute_subscription_event(
     # of the caches while isolating the errors.
     executor.clear_errors()
 
-    return executor.runtime.map_value(
-        executor.runtime.unwrap_value(
-            executor.execute_fields(
-                root_type,
-                event,
-                [],
-                executor.collect_fields(
-                    root_type, operation.selection_set.selections
-                ),
-            )
-        ),
-        lambda data: GraphQLResult(data=data, errors=executor.errors),
+    return executor.runtime.ensure_wrapped(
+        executor.runtime.map_value(
+            executor.runtime.unwrap_value(
+                executor.execute_fields(
+                    root_type,
+                    event,
+                    [],
+                    executor.collect_fields(
+                        root_type, operation.selection_set.selections
+                    ),
+                )
+            ),
+            lambda data: GraphQLResult(data=data, errors=executor.errors),
+        )
     )
