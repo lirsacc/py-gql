@@ -38,6 +38,7 @@ def on_startup():
     except Exception:
         logger.info("Creating fresh database")
         app.state.message_board = MessageBoard()
+        app.state.message_board.create_room("Test")
 
 
 @app.on_event("shutdown")

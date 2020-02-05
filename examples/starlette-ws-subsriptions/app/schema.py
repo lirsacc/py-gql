@@ -154,7 +154,7 @@ class NewMessageIterator:
             self.loop.call_soon(self.queue.put_nowait, msg)
 
 
-@schema.subscription("new_message")
+@schema.subscription("Subscription.new_message")
 async def create_messages_subscription(
     _root: Any, board: MessageBoard, _info: Any, room_id: uuid.UUID
 ) -> NewMessageIterator:

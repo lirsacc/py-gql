@@ -35,7 +35,7 @@ class ServerMessage(enum.Enum):
     DATA = enum.auto()
     ERROR = enum.auto()
     COMPLETE = enum.auto()
-    CONNECTION_KEEP_ALIVE = enum.auto()
+    KA = enum.auto()
 
 
 class ConnectionStatus(enum.Enum):
@@ -162,7 +162,7 @@ class GraphQLWSHandler:
 
         async def keepalive():
             while True:
-                await self.send(ServerMessage.CONNECTION_KEEP_ALIVE)
+                await self.send(ServerMessage.KA)
                 await asyncio.sleep(1)
 
         self.keepalive = asyncio.get_event_loop().create_task(keepalive())
@@ -213,7 +213,7 @@ class GraphQLWSHandler:
                     query = msg["payload"]["query"]
                     operation_name = msg["payload"].get("operation_name", None)
                     variables = msg["payload"].get("variables", None)
-                    msg_id = msg["payload"]["id"]
+                    msg_id = msg["id"]
                 except (KeyError, TypeError) as err:
                     await self.send(
                         ServerMessage.CONNECTION_ERROR,
