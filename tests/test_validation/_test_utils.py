@@ -5,6 +5,7 @@ from __future__ import print_function
 from py_gql._string_utils import dedent
 from py_gql.lang import parse
 from py_gql.validation import validate_ast
+from py_gql.validation.validate import SPECIFIED_RULES, default_validator
 
 
 def _ensure_list(value):
@@ -22,7 +23,13 @@ def assert_validation_result(
     expected_locs = expected_locs or []
     print(source)
     result = validate_ast(
-        schema, parse(dedent(source), allow_type_system=True), checkers
+        schema,
+        parse(dedent(source), allow_type_system=True),
+        validators=[
+            lambda s, d, v: default_validator(
+                s, d, v, validators=(checkers or SPECIFIED_RULES)
+            )
+        ],
     )
     errors = result.errors
 

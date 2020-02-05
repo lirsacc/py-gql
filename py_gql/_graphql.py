@@ -14,7 +14,7 @@ from .execution.runtime import AsyncIORuntime, BlockingRuntime, Runtime
 from .lang import parse
 from .lang.ast import Document
 from .schema import Schema
-from .validation import ValidationVisitor, validate_ast
+from .validation import Validator, validate_ast
 
 
 def process_graphql_query(
@@ -25,7 +25,7 @@ def process_graphql_query(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
+    validators: Optional[Sequence[Validator]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
@@ -164,7 +164,7 @@ async def graphql(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
+    validators: Optional[Sequence[Validator]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
@@ -202,7 +202,7 @@ def graphql_blocking(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Type[ValidationVisitor]]] = None,
+    validators: Optional[Sequence[Validator]] = None,
     default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None

@@ -10,13 +10,21 @@ Note:
 
 # flake8: noqa
 
-from .validate import SPECIFIED_RULES, ValidationResult, validate_ast
+from .validate import (
+    SPECIFIED_RULES,
+    ValidationResult,
+    default_validator,
+    validate_ast,
+    Validator,
+)
 from .visitors import ValidationVisitor, VariablesCollector
 
 __all__ = (
-    "ValidationResult",
     "validate_ast",
+    "default_validator",
+    "ValidationResult",
     "ValidationVisitor",
     "VariablesCollector",
+    "Validator",
     "SPECIFIED_RULES",
 )

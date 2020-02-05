@@ -34,6 +34,8 @@ Unreleased
 
 ### Breaking Changes & Deprecations
 
+- `validate_ast` now takes callables with the signature `Callable[[Schema, _ast.Document, Optional[Dict[str, Any]]], Iterable[ValidationError]]` as input for custom validation. This makes it simpler to define custom validation without having to care about the `ValidationVisitor` implementation. To use custom visitor classes as before, `default_validator` can be wrapped (`validator = lambda s, d, v: default_validator(s, d, v, validators=...)`).
+
 - `Instrumentation` has been refactored:
 
   - `instrument_*` type hooks have been renamed as they are better served by consumers wrapping values at call sites.
