@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """ Default directives. """
-from __future__ import unicode_literals
 
 from .scalars import Boolean, String
 from .types import Argument, Directive, NonNullType

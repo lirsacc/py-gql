@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-
 from py_gql._string_utils import dedent
 from py_gql.lang import parse
 from py_gql.validation import validate_ast
