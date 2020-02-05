@@ -4,10 +4,7 @@ import pytest
 
 from py_gql import build_schema
 from py_gql._string_utils import dedent
-from py_gql.utilities.schema_transforms import (
-    VisibilitySchemaTransform,
-    transform_schema,
-)
+from py_gql.schema.transforms import VisibilitySchemaTransform, transform_schema
 
 
 @pytest.fixture

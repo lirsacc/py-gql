@@ -13,4 +13,3 @@ Submodules
 .. toctree::
     utilities.ast_transforms.rst
     utilities.diff_schema.rst
-    utilities.schema_transforms.rst

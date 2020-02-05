@@ -5,10 +5,7 @@ import pytest
 from py_gql import build_schema, graphql_blocking
 from py_gql._string_utils import dedent
 from py_gql.schema import Schema
-from py_gql.utilities.schema_transforms import (
-    CamelCaseSchemaTransform,
-    transform_schema,
-)
+from py_gql.schema.transforms import CamelCaseSchemaTransform, transform_schema
 
 
 @pytest.fixture

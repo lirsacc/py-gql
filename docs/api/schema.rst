@@ -179,3 +179,10 @@ Schema Visitor
 
 .. autoclass:: SchemaVisitor
     :members:
+
+
+Submodules
+----------
+
+.. toctree::
+    schema.transforms.rst
