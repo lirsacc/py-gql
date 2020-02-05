@@ -16,9 +16,8 @@ from ..exc import ValidationError
 from ..lang import ast as _ast
 from ..lang.visitor import ChainedVisitor
 from ..schema import Schema
-from ..utilities import TypeInfoVisitor
 from . import rules as _rules
-from .visitors import ValidationVisitor
+from .visitors import TypeInfoVisitor, ValidationVisitor
 
 Validator = Callable[
     [Schema, _ast.Document, Optional[Dict[str, Any]]], Iterable[ValidationError]

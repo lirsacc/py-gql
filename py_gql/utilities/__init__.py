@@ -20,7 +20,6 @@ from .collect_fields import (
 )
 from .introspection_query import introspection_query
 from .max_depth import MaxDepthValidationRule
-from .type_info import TypeInfoVisitor
 from .untyped_value_from_ast import untyped_value_from_ast
 from .value_from_ast import value_from_ast
 
@@ -35,7 +34,6 @@ __all__ = (
     "selected_fields",
     "directive_arguments",
     "introspection_query",
-    "TypeInfoVisitor",
     "untyped_value_from_ast",
     "value_from_ast",
     "MaxDepthValidationRule",

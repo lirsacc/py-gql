@@ -58,6 +58,8 @@ Unreleased
 
 - The `py_gql.utilities.diff_schema` module has been moved to `py_gql.schema.differ`.
 
+- `TypeInfoVisitor` and `VariablesCollector` are now kept internal to `py_gql.validation.visitors`.
+
 - Fix Lexer greediness. Some edge cases were not handled as expected. This commit adds test cases from the 2 RFCs clarifying the expected behaviour ([graphql/graphql-spec#601](https://github.com/graphql/graphql-spec/pull/601), [graphql/graphql-spec#599](https://github.com/graphql/graphql-spec/pull/599)) and updates the Lexer to match. This is _technically_ a breaking change but most cases were likely to lead to validation errors (e.g. "0xF1" being parsed as [0, xF1] when expecting a list of integers).
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10

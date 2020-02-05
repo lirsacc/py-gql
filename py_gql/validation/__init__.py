@@ -17,14 +17,13 @@ from .validate import (
     default_validator,
     validate_ast,
 )
-from .visitors import ValidationVisitor, VariablesCollector
+from .visitors import ValidationVisitor
 
 __all__ = (
     "validate_ast",
     "default_validator",
     "ValidationResult",
     "ValidationVisitor",
-    "VariablesCollector",
     "Validator",
     "SPECIFIED_RULES",
 )
