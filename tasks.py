@@ -151,7 +151,7 @@ def mypy(ctx, files=None, junit=False):
 
 
 @invoke.task(iterable=["files"])
-def sort_imports(ctx, check=False, files=None):
+def sort_imports(ctx, files=None):
     ctx.run(
         _join(
             [
@@ -161,7 +161,6 @@ def sort_imports(ctx, check=False, files=None):
                     if not files
                     else " ".join(files)
                 ),
-                "--check-only" if check else None,
             ]
         ),
         echo=True,
@@ -169,12 +168,11 @@ def sort_imports(ctx, check=False, files=None):
 
 
 @invoke.task(iterable=["files"])
-def black(ctx, check=False, files=None):
+def black(ctx, files=None):
     ctx.run(
         _join(
             [
                 "black",
-                "--check" if check else None,
                 (
                     "%s setup.py tasks.py" % DEFAULT_TARGETS
                     if not files
@@ -194,7 +192,7 @@ def fmt(ctx, files=None):
         black(ctx, files=files)
 
 
-@invoke.task(pre=[invoke.call(black, check=True), flake8, mypy, test])
+@invoke.task(pre=[flake8, mypy, test])
 def check(ctx):
     """Run all checks (formatting, lint, typecheck and tests)."""
     with ctx.cd(ROOT):
