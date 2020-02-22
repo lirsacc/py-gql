@@ -402,8 +402,8 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
     }
 
 
+# Generating custom enum values
 def test_enum_value_directive():
-    """ generating custom enum values """
 
     # These could be pre-loaded from a database or a config file dynamically
     VALUES = {"RED": "#FF4136", "BLUE": "#0074D9", "GREEN": "#2ECC40"}
@@ -440,9 +440,8 @@ def test_enum_value_directive():
         assert enum.get_name(v) == k
 
 
+# Generating custom enums
 def test_enum_type_directive():
-    """ generating custom enums """
-
     # These could be pre-loaded from a database or a config file dynamically
     VALUES = [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
 

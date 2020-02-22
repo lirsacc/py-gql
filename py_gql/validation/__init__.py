@@ -8,8 +8,6 @@ Note:
     :meth:`py_gql.schema.Schema.validate`.
 """
 
-# flake8: noqa
-
 from .validate import (
     SPECIFIED_RULES,
     ValidationResult,

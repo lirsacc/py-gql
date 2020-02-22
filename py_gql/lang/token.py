@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-All the valid source tokens found in GraphQL documents (as described in `this
-document <http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_) are
-encoded as instances of :class:`Token`.
+Lexer tokens found in GraphQL documents.
+
+All the valid source tokens found in GraphQL documents are encoded as instances
+of :class:`Token` and are described in `this document
+<http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_)
 """
 
 from typing import Any
 
 
 class Token:
-    """ Base token class.
+    """
+    Base token class.
 
     All token instances can be compared by simple equality.
 
@@ -22,6 +25,7 @@ class Token:
         start (int): Starting position for this token (0-indexed)
         end (int): End position for this token (0-indexed)
         value (str): Characters making up this token
+
     """
 
     __slots__ = "start", "end", "value"

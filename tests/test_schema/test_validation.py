@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Test schema validation """
+"""
+Test schema validation.
+"""
 
 from typing import List
 

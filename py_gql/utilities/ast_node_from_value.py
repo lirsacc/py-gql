@@ -28,14 +28,16 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
 
     Args:
         value: Any python value that can be transformed into a node
-
         input_type: Input type used to disambiguate between node types.
 
-    Return:
+    Returns:
         Inferred value node
 
     Raises:
-        :py:class:`ValueError`: when coercion into a node fails
+        ValueError: When coercion into a node fails
+        TypeError: When input_type is not an input type
+
+
     """
     if not is_input_type(input_type):
         raise TypeError('Expected input type but got "%r"' % input_type)
@@ -69,7 +71,7 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
     else:
         # Should never happen if previous precondition have been
         # implemented correctly.
-        raise NotImplementedError()
+        raise TypeError(repr(input_type))
 
     if serialized is None:
         return _ast.NullValue()

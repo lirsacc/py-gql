@@ -11,7 +11,9 @@ AnyFn = Callable[..., Any]
 
 
 class BlockingRuntime(Runtime):
-    """Default runtime implementation which blocks the current thread."""
+    """
+    Default runtime implementation which blocks the current thread.
+    """
 
     def submit(self, fn: AnyFn, *args: Any, **kwargs: Any) -> Any:
         return fn(*args, **kwargs)

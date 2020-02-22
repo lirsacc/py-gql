@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" execution tests related to abstract types (Interface, Union) """
+"""
+Execution tests related to abstract types (Interface, Union).
+"""
 
 import pytest
 
@@ -48,8 +50,7 @@ class Person:
 async def test_type_resolution_on_interface_yields_useful_error(
     assert_execution,
 ):
-    """ Different from ref implementation -> this should never happen
-    so we crash """
+    # WARN: Different from ref implementation -> this should never happen so we crash.
 
     def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
@@ -116,8 +117,7 @@ async def test_type_resolution_on_interface_yields_useful_error(
 # which is fine as we want this to crash.
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_type_resolution_on_union_yields_useful_error(assert_execution):
-    """ Different from ref implementation -> this should never happen
-    so we crash """
+    # WARN: Different from ref implementation -> this should never happen so we crash .
 
     def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(

@@ -9,7 +9,8 @@ from .collect_fields import selected_fields
 
 
 class MaxDepthValidationRule:
-    """Validate that a given document doesn't exceed a given query depth.
+    """
+    Validate that a given document doesn't exceed a given query depth.
 
     Query depth is calculated as nesting levels into object types, traversing
     fragments. For example, given the following document:
@@ -42,6 +43,7 @@ class MaxDepthValidationRule:
         operation_name: If set this will only consider the operation matching the
             provided name, if not this will collect errors for all operation
             definitions.
+
     """
 
     def __init__(self, max_depth: int, *, operation_name: Optional[str] = None):

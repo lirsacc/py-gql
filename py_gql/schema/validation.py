@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Schema validation utility """
+"""
+Schema validation utility
+"""
 
 import re
 from typing import TYPE_CHECKING, List, Set, Union
@@ -28,7 +30,8 @@ RESERVED_NAMES = set(t.name for t in SPECIFIED_SCALAR_TYPES)
 
 
 def validate_schema(schema: "Schema") -> bool:
-    """ Validate a provided GraphQL schema.
+    """
+    Validate a GraphQL schema.
 
     Useful for handling untrusted schemas or during development, but ideally
     you do not need to run this in production when fully controlling the
@@ -42,8 +45,15 @@ def validate_schema(schema: "Schema") -> bool:
         implementation and searching for ``TODO`` comments should give a good
         idea of what's missing.
 
+    Args:
+        schema: Schema to validate.
+
     Raises:
-        :class:`~py_gql.exc.SchemaError` if the schema is invalid.
+        SchemaValidationError: if the schema is invalid.
+
+    Returns:
+        ``True`` if the schema is valid, else ``False``.
+
     """
     validator = SchemaValidator(schema)
     validator()
@@ -56,6 +66,8 @@ def validate_schema(schema: "Schema") -> bool:
 
 def _is_valid_name(name: str) -> bool:
     """
+    Check if a string is a valid name for GraphQL schema elements.
+
     >>> _is_valid_name('foo_bar')
     True
 

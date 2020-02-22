@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Test default validation. """
+"""
+Test default validation.
+"""
 
 from ._test_utils import assert_validation_result
 

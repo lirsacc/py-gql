@@ -42,9 +42,7 @@ class SchemaVisitor(object):
 
     def on_schema(self, schema: Schema) -> Schema:
         """
-        Process the whole schema. Consumers will most likely not need to override
-        this in most cases.
-
+        Process the whole schema.
         """
         updated_types = {}  # type: Dict[str, Optional[NamedType]]
         updated_directives = {}  # type: Dict[str, Optional[Directive]]

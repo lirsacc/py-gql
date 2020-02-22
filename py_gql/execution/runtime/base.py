@@ -9,7 +9,8 @@ AnyFn = Callable[..., Any]
 
 
 class Runtime(abc.ABC):
-    """Runtime base class.
+    """
+    Runtime base class.
 
     A runtime is a way for consumers to implement specific execution primitives
     (especially around I/O considerations).
@@ -21,12 +22,15 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def submit(self, fn: AnyFn, *args: Any, **kwargs: Any) -> Any:
-        """Execute a function through the runtime."""
+        """
+        Execute a function through the runtime.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def ensure_wrapped(self, value: Any) -> Any:
-        """Ensure values are wrapped in the necessary container type.
+        """
+        Ensure values are wrapped in the necessary container type.
 
         This is essentially used after execution has finished to make sure the
         final value conforms to the expected types (e.g. coroutines) and avoid
@@ -36,7 +40,8 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def gather_values(self, values: Iterable[Any]) -> Any:
-        """Group multiple wrapped values inside a single wrapped value.
+        """
+        Group multiple wrapped values inside a single wrapped value.
 
         This is equivalent to the `asyncio.gather` semantics.
         """
@@ -49,7 +54,8 @@ class Runtime(abc.ABC):
         then: Callable[[Any], Any],
         else_: Optional[Tuple[Type[E], Callable[[E], Any]]] = None,
     ) -> Any:
-        """Execute a callback on a wrapped value, potentially catching exceptions.
+        """
+        Execute a callback on a wrapped value, potentially catching exceptions.
 
         This is used internally to orchestrate callbacks and should be treated
         similarly to `await` semantics `map` in Future combinators.
@@ -60,7 +66,8 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def unwrap_value(self, value):
-        """Recursively traverse wrapped values.
+        """
+        Recursively traverse wrapped values.
 
         Given that resolution across the graph can span multiple level, this is
         used to support resolved values depending on deeper values (such as
@@ -70,12 +77,14 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def wrap_callable(self, func: AnyFn) -> AnyFn:
-        """Wrap a function to be called through the executor. """
+        """
+        Wrap a function to be called through the executor. """
         raise NotImplementedError()
 
 
 class SubscriptionRuntime(Runtime):
-    """Subscription runtime base class.
+    """
+    Subscription runtime base class.
 
     By default runtimes are assumed to not support subscriptions which ususally
     require implementing some form of background streams to be useful.
@@ -87,5 +96,6 @@ class SubscriptionRuntime(Runtime):
     def map_stream(
         self, source_stream: Any, map_value: Callable[[Any], Any]
     ) -> Any:
-        """Apply a mapping function to a stream / iterable of values."""
+        """
+        Apply a mapping function to a stream / iterable of values."""
         raise NotImplementedError()

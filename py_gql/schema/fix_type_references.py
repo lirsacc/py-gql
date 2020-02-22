@@ -78,8 +78,7 @@ class _HealSchemaVisitor(SchemaVisitor):
 
 def fix_type_references(schema: Schema) -> Schema:
     """
-    Ensure internal representation of types match the ones in the schema's top
-    level type map.
+    Ensure internal representation of types match the schema's type map.
 
     This is useful after modifying a schema inline where a type may have
     swapped out but not all of its forward references (e.g. arguments, fields,

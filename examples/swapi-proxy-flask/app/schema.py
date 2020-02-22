@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Define the GraphQL schema
+"""
+Define the GraphQL schema
 """
 
 import functools as ft

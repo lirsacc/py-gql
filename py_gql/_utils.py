@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Some generic laguage level utilities for internal use. """
+"""
+Some generic laguage level utilities for internal use.
+"""
 
 import collections
 import functools
@@ -38,13 +40,15 @@ Lazy = Union[T, Callable[[], T]]
 
 
 def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
-    """ Calls a value if callable else returns it.
+    """
+    Call and return a value if callable else return it.
 
     >>> lazy(42)
     42
 
     >>> lazy(lambda: 42)
     42
+
     """
     if callable(maybe_callable):
         return maybe_callable()
@@ -54,10 +58,12 @@ def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
 def map_and_filter(
     func: Callable[[T], Optional[T]], iterable: Iterable[T]
 ) -> List[T]:
-    """ Map an  iterable filtering out None.
+    """
+    Map an iterable filtering out None.
 
     >>> map_and_filter(lambda x: None if x % 2 else x, range(10))
     [0, 2, 4, 6, 8]
+
     """
     return [m for m in (func(e) for e in iterable) if m is not None]
 
@@ -65,7 +71,8 @@ def map_and_filter(
 def deduplicate(
     iterable: Iterable[H], key: Optional[Callable[[H], Hashable]] = None
 ) -> Iterator[H]:
-    """ Deduplicate an iterable.
+    """
+    Deduplicate an iterable.
 
     Args:
         iterable (Iterator[any]): source iterator
@@ -79,6 +86,7 @@ def deduplicate(
 
     >>> list(deduplicate([1, 2, 1, 3, 3], key=lambda x: x % 2))
     [1, 2]
+
     """
     seen = set()  # type: Set[Hashable]
 
@@ -98,7 +106,8 @@ def deduplicate(
 def maybe_first(
     iterable: Iterable[T], default: Optional[T] = None
 ) -> Optional[T]:
-    """ Return the first item in an iterable or None.
+    """
+    Return the first item in an iterable or None.
 
     >>> maybe_first([1, 2, 3])
     1
@@ -108,6 +117,7 @@ def maybe_first(
 
     >>> maybe_first((), 1)
     1
+
     """
     try:
         return next(iter(iterable))
@@ -120,7 +130,9 @@ def find_one(
     predicate: Callable[[T], Any],
     default: Optional[T] = None,
 ) -> Optional[T]:
-    """ Extract first item matching a predicate function in an iterable.
+    """
+    Extract first item matching a predicate function in an iterable.
+
     Returns ``None`` if no entry is found.
 
     >>> find_one([1, 2, 3, 4], lambda x: x == 2)
@@ -128,6 +140,7 @@ def find_one(
 
     >>> find_one([1, 2, 3, 4], lambda x: x == 5) is None
     True
+
     """
     return maybe_first(
         (entry for entry in iterable if predicate(entry)), default=default
@@ -136,21 +149,27 @@ def find_one(
 
 # TODO: Not sure how to type this correctly without recursive types.
 def flatten(lst):
-    """ Recursive flatten (list, tuple) of potentially (lists, tuples)
+    """
+    Recursively flatten iterators, ignoring strings.
+
     `itertools.chain` could be used instead but would flatten all iterables
     including strings which is not ideal.
 
     >>> list(flatten([1, 2, (1, 2, [3])]))
     [1, 2, 1, 2, 3]
 
+    >>> list(flatten([1, 2, ('foo', [3])]))
+    [1, 2, 'foo', 3]
+
     >>> list(flatten([]))
     []
 
     >>> list(flatten([[], []]))
     []
+
     """
     for entry in lst:
-        if type(entry) in (list, tuple):
+        if is_iterable(entry, strings=False):
             for subentry in flatten(entry):
                 yield subentry
         else:
@@ -158,13 +177,14 @@ def flatten(lst):
 
 
 def is_iterable(value: Any, strings: bool = True) -> bool:
-    """ Check if a value is iterable.
+    """
+    Check if a value is iterable.
 
     This does no type comparisons.
     Note that by default strings are iterables too!
 
     Args:
-        value (any): Maybe iterable
+        value (Any): Maybe iterable
         strings (bool): Include strings as iterable, defaults to ``True``
 
     Returns:
@@ -184,6 +204,7 @@ def is_iterable(value: Any, strings: bool = True) -> bool:
 
     >>> is_iterable(False)
     False
+
     """
     try:
         iter(value)
@@ -315,7 +336,8 @@ def classdispatch(
 def apply_middlewares(
     func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
 ) -> Callable[..., Any]:
-    """Apply a list of middlewares to a source function.
+    """
+    Apply a list of middlewares to a source function.
 
     - Middlewares must be structured as: ``middleware(next, *args, **kwargs)``
       and call the next middleware inline.

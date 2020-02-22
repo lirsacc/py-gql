@@ -7,10 +7,15 @@ TResolver = TypeVar("TResolver", bound=Resolver)
 
 
 class ResolverMap:
-    """Colection of resolver that can be used to define resolvers outside of a
-    schema.
+    """
+    Colection of resolver that can be used to define resolvers outside of a schema.
 
     Multiple resolver maps can be merged using :meth:`merge_resolvers`.
+
+    >>> schema = ResolverMap()
+    >>> @schema.resolver("Query.foo")
+    ... def resolve_foo(obj, ctx, info):
+    ...     return "foo"
     """
 
     def __init__(self):
@@ -25,16 +30,18 @@ class ResolverMap:
         *,
         allow_override: bool = False
     ) -> None:
-        """Add a resolver to the current collection.
+        """
+        Register a function as a resolver.
 
         Args:
-            typename:
-            fieldname:
-            resolver:
-            allow_override:
-                By default this function will raise :py:class:`ValueError` if
-                the field already has a resolver defined. Set this to ``True``
-                to allow overriding.
+            typename: Type name
+            fieldname: Field name
+            resolver: Resolver callable
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Raises:
+            ValueError: If the resolver has already been defined and
+                ``allow_override`` was ``False``.
         """
         parent = self.resolvers[typename] = self.resolvers.get(typename, {})
 
@@ -50,18 +57,17 @@ class ResolverMap:
         self, field: str, *, allow_override: bool = False
     ) -> Callable[[TResolver], TResolver]:
         """
-        Decorator version of :meth:`register_resolver`.
-
-        .. code-block:: python
-
-            schema = ...
-
-            @schema.resolver("Query.foo")
-            def resolve_foo(obj, ctx, info):
-                return "foo"
+        Decorate a function to register it as a resolver.
 
         Args:
             field: Field path in the form ``{Typename}.{Fieldname}``.
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Raises:
+            ValueError: If the ``field`` value cannot be parsed.
+
+        Returns:
+            Decorator.
         """
         try:
             typename, fieldname = field.split(".")[:2]
@@ -87,16 +93,18 @@ class ResolverMap:
         *,
         allow_override: bool = False
     ) -> None:
-        """Add a subscription resolver to the current collection.
+        """
+        Register a function as a subscription resolver.
 
         Args:
-            typename:
-            fieldname:
-            resolver:
-            allow_override:
-                By default this function will raise :py:class:`ValueError` if
-                the field already has a resolver defined. Set this to ``True``
-                to allow overriding.
+            typename: Type name
+            fieldname: Field name
+            resolver: Resolver callable
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Raises:
+            ValueError: If the resolver has already been defined and
+                ``allow_override`` was ``False``.
         """
         parent = self.subscriptions[typename] = self.subscriptions.get(
             typename, {}
@@ -113,10 +121,18 @@ class ResolverMap:
     def subscription(
         self, field: str, *, allow_override: bool = False
     ) -> Callable[[TResolver], TResolver]:
-        """Decorator version of :meth:`register_subscription`.
+        """
+        Decorate a function to register it as a subscription resolver.
 
         Args:
             field: Field path in the form ``{Typename}.{Fieldname}``.
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Raises:
+            ValueError: If the ``field`` value cannot be parsed.
+
+        Returns:
+            Decorator.
         """
         try:
             typename, fieldname = field.split(".")[:2]
@@ -137,7 +153,9 @@ class ResolverMap:
     def merge_resolvers(
         self, other: "ResolverMap", *, allow_override: bool = False
     ) -> None:
-        """Combine 2 collections by merging the target into the current instance."""
+        """
+        Combine 2 collections by merging the target into the current instance.
+        """
         for typename, field_resolvers in other.resolvers.items():
             for fieldname, resolver in field_resolvers.items():
                 self.register_resolver(

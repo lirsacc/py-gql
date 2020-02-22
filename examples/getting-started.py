@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Minimal getting started example with Flask.
+"""
+Minimal getting started example with Flask.
 
 To run this, make sure Flask and py_gql are installed and run:
 

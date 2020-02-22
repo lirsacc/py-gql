@@ -30,6 +30,7 @@ class CamelCaseToSnakeCaseVisitor(DispatchingVisitor):
         This only work on the incoming document and usually needs to be paired
         with a post-processing step on the client or before sending out the
         response.
+
     """
 
     def enter_field(self, field: Field) -> Field:
@@ -48,6 +49,7 @@ class SnakeCaseToCamelCaseVisitor(DispatchingVisitor):
         This only work on the incoming document and usually needs to be paired
         with a post-processing step on the client or before sending out the
         response.
+
     """
 
     def enter_field(self, field: Field) -> Field:

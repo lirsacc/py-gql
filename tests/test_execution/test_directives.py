@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" execution tests related to directive handling """
+"""
+Execution tests related to directive handling.
+"""
 
 import pytest
 

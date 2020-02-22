@@ -131,8 +131,7 @@ def diff_schema(
     min_severity: Optional[SchemaChangeSeverity] = None,
 ) -> Iterator[SchemaChange]:
     """
-    Iterate over all changes that can be statically found between `old_schema`
-    and `new_schema`.
+    Iterate over all changes between `old_schema` and `new_schema`.
 
     Some ``BREAKING`` and ``DANGEROUS`` changes could be safe depending on the
     actual queries made by clients of your schema. However it is not possible
@@ -146,6 +145,9 @@ def diff_schema(
         old_schema: Source schema
         new_schema: Updated schema
         min_severity: Set this to filter for changes of a given severity
+
+    Yields:
+        SchemaChange: All detected changes.
     """
     old_schema.validate()
     new_schema.validate()

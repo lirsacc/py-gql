@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Mixed bag of exposed utility functions and classes that are used internally and
-can be useful if you are building custom GraphQL tooling on top of this
-library.
+Mixed bag of exposed utility functions and classes.
+
+These are used internally and can be useful if you are building custom GraphQL
+tooling on top of this library.
 """
 
 from .ast_node_from_value import ast_node_from_value

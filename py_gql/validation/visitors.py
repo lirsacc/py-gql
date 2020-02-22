@@ -84,7 +84,8 @@ def _get_field_def(schema, parent_type, field):
 
 
 class ValidationVisitor(DispatchingVisitor):
-    """ Visitor class used for validating GraphQL documents.
+    """
+    Visitor class used for validating GraphQL documents.
 
     Subclass this to implement custom validators. Use :meth:`add_error` to
     register errors and :class:`py_gql.lang.visitor.SkipNode` to prevent
@@ -112,12 +113,13 @@ class ValidationVisitor(DispatchingVisitor):
     def add_error(
         self, message: str, nodes: Optional[Sequence[_ast.Node]] = None
     ) -> None:
-        """ Register an error
+        """
+        Register an error
 
         Args:
             message (str): Error description
-            nodes (Optional[List[py_gql.lang.ast.Node]]):
-                Nodes where the error comes from
+            nodes (Optional[List[py_gql.lang.ast.Node]]): Nodes where the error
+                originated from.
         """
         self.errors.append(ValidationError(message, nodes))
 
@@ -128,8 +130,7 @@ class ValidationVisitor(DispatchingVisitor):
 
 class VariablesCollector(ValidationVisitor):
     """
-    Custom validation visitor which tracks all variable definitions and
-    usage across the document.
+    Custom validation visitor tracking tracks all variable definitions and usage.
     """
 
     def __init__(self, schema, type_info):
@@ -213,8 +214,7 @@ class VariablesCollector(ValidationVisitor):
 # and it can most likley be improved.
 class TypeInfoVisitor(DispatchingVisitor):
     """
-    Utility visitor that recurisvely track the current types and field
-    definitions while traversing a Document.
+    AST visitor ecurisvely tracking the current types and field definitions.
 
     All tracked types are considered with regards to the provided schema,
     however unknown types and other unexpected errors will be downgraded to
@@ -231,27 +231,15 @@ class TypeInfoVisitor(DispatchingVisitor):
         schema (py_gql.schema.Schema): Reference schema to extract types from
 
     Attributes:
+        type: Current type if applicable.
+        parent_type: Current type if applicable.
+        input_type: Current input type if applicable (when visiting arguments).
+        parent_input_type: Current parent input type if applicable
+            (when visiting input objects).
+        field: Current field definition if applicable (when visiting object).
+        input_value_def: Current input value definition (e.g. arg def, input field)
+            if applicable.
 
-        type (Optional[py_gql.schema.ObjectType]):
-            Current type if applicable
-
-        parent_type (Optional[py_gql.schema.ObjectType]):
-            Current type if applicable_stack, 1)
-
-        input_type (Optional[Union[\
-py_gql.schema.InputObjectType, \
-py_gql.schema.EnumType, \
-py_gql.schema.ScalarType]]):
-            Current input type if applicable (when visiting arguments)
-
-        parent_input_type (Optional[py_gql.schema.InputObjectType]):
-            Current parent input type if applicable (when visiting input objects)
-
-        fiel (Optional[py_gql.schema.Field]):
-            Current field definition if applicable (when visiting object)
-
-        input_value_def (Optional[py_gql.schema.InputValue]):
-            Current input value definition (e.g. arg def, input field) if applicable
     """
 
     __slots__ = (

@@ -37,8 +37,9 @@ class FieldTiming:
 
 class TimingTracer(Instrumentation):
     """
-    Default implementation for tracers that collect GraphQL execution timing
-    using the :py:mod:`datetime` module. All times are collected as UTC.
+    Default implementation for tracers that collect GraphQL execution timing.
+
+    This uses :py:mod:`datetime` module and all times are collected as UTC.
     """
 
     def __init__(self):
@@ -89,11 +90,12 @@ class TimingTracer(Instrumentation):
 
 class ApolloTracer(TimingTracer, GraphQLExtension):
     """
-    Tracer implementation compatible with the `Apollo Tracing
-    <https://github.com/apollographql/apollo-tracing>`_ specification.
+    Tracer implementation compatible with the `Apollo Tracing`_ specification.
 
     This tracers also implements :class:`py_gql.GraphQLExtension` in order to be
     included in the response according to the specification.
+
+    .. _Apollo Tracing: <https://github.com/apollographql/apollo-tracing>
     """
 
     name = "tracing"

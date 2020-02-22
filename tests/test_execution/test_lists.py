@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" execution tests related to list types handling and resolution """
+"""
+Execution tests related to list types handling and resolution.
+"""
 
 import pytest
 

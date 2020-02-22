@@ -44,7 +44,8 @@ _DEFAULT_TYPES_MAP = _default_type_map()
 
 
 class ASTTypeBuilder:
-    """ Build and extend type definitions from AST nodes.
+    """
+    Build and extend type definitions from AST nodes.
 
     Warning:
         Specified types (scalars, introspection and directives) will not be

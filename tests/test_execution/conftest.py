@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
-
 import pytest
 
 from py_gql.execution import BlockingExecutor, Executor

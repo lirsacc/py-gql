@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 """
 The :mod:`py_gql.schema` module exposes all the necessary classes and
 functions for programatically creating, validating and inspecting GraphQL
 schemas against which you can execute queries.
 """
-
-# flake8: noqa
 
 from .directives import (
     SPECIFIED_DIRECTIVES,

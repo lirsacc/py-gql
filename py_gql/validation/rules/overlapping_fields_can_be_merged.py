@@ -495,7 +495,7 @@ def _find_conflict(
     field_2: FieldDef,
 ) -> Optional[Conflict]:
     """
-    Determines if there is a conflict between two particular fields,
+    Determine if there is a conflict between two particular fields,
     including comparing their sub-fields.
     """
     parent_1, node_1, def_1 = field_1
@@ -580,7 +580,6 @@ def _conflicts_between_subselections(
     found via spreading in fragments. Called when determining if conflicts
     exist between the sub-fields of two overlapping fields.
     """
-
     field_map_1, fragments_1 = _fields_and_fragments(ctx, parent_type_1, node_1)
     field_map_2, fragments_2 = _fields_and_fragments(ctx, parent_type_2, node_2)
 

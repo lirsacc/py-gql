@@ -276,7 +276,7 @@ async def test_full_response_path_is_included_on_error(
 
 
 async def test_it_does_not_include_illegal_fields(mocker, assert_execution):
-    """ ...even if you skip validation """
+    # ...even if you skip validation
 
     root = {
         "test": mocker.Mock(return_value="foo"),
@@ -447,10 +447,11 @@ async def test_executes_library_query_correctly_without_validation(
     )
 
 
-# REVIEW: Is that test necessary?
 async def test_result_is_ordered_according_to_query():
-    """ check that deep iteration order of keys in result corresponds to order
-    of appearance in query accounting for fragment use """
+    """
+    Check that deep iteration order of keys in result corresponds to order
+    of appearance in query accounting for fragment use
+    """
     data, _ = execute(_LIBRARY_SCHEMA, parse(_LIBRARY_QUERY))
 
     def _extract_keys_in_order(d):

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-""" tests related to how raw JSON variables are coerced
-and forwared to the execution context """
+"""
+Tests related to how raw JSON variables are coerced and forwared to the
+execution context.
+"""
 
 import json
 

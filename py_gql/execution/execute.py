@@ -30,55 +30,42 @@ def execute(
     executor_cls: Type[Executor] = Executor
 ) -> Any:
     """
-    Execute a GraphQL query or mutation against a schema. This assumes the query
-    has been validated beforehand.
+    Execute a query or mutation against a schema.
+
+    Warning:
+        This assumes the query has been validated beforehand.
 
     Args:
         schema: Schema to execute the query against.
-
         document: The query document.
-
         variables: Raw, JSON decoded variables parsed from the request.
-
         operation_name: Operation to execute
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
-
         initial_value: Root resolution value passed to the top-level resolver.
-
-        context: Custom application-specific execution context.
+        context_value: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
             connection, user information, etc.
             Limits on the type(s) used here will depend on your own resolver
             and the runtime implementations used. Most thread safe data-structures
             should work with built in runtimes.
-
-        validators: Custom validators.
-            Setting this will replace the defaults so if you just want to add
-            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
-
         default_resolver: Alternative default resolver.
             For field which do not specify a resolver, this will be used instead
             of `py_gql.execution.default_resolver`.
-
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
             common logic, they are good canidates for logging, authentication,
             and execution guards.
-
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
             mutiple instances together.
-
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
             keeping your API available. Note that this deviates from the GraphQL
             specification and will likely break some clients (such as GraphiQL)
             so use this with caution.
-
         runtime: Runtime against which to execute field resolvers (defaults to
             `~py_gql.execution.runtime.BlockingRuntime()`).
-
         executor_cls: Executor class to use.
             The executor class defines the implementation of the GraphQL
             resolution algorithm. This **must** be a subclass of
@@ -86,6 +73,9 @@ def execute(
 
     Returns:
         Execution result. Exact type dependant on the runtime.
+
+    Raises:
+        RuntimeError: on invalid operation.
     """
     instrumentation = instrumentation or Instrumentation()
     runtime = runtime or BlockingRuntime()
@@ -119,7 +109,7 @@ def execute(
             "use the `subscribe` helper."
         )
     else:
-        raise AssertionError("Unknown operation type %s." % operation.operation)
+        raise RuntimeError("Unknown operation type %s." % operation.operation)
 
     instrumentation.on_execution_start()
 

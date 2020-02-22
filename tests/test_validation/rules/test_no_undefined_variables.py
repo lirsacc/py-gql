@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Test specified rule in isolation. """
+
 
 from py_gql.validation.rules import NoUndefinedVariablesChecker
 

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Pre-defined scalar types """
+"""
+Pre-defined scalar types.
+"""
 
 import re
 import uuid
@@ -48,8 +50,9 @@ INVALID_NUMERIC = "Int cannot represent non 32-bit signed integer: %s"
 
 
 def coerce_int(maybe_int: Any) -> int:
-    """ Spec compliant int conversion. """
-
+    """
+    Spec compliant int conversion.
+    """
     if isinstance(maybe_int, int):
         numeric = maybe_int
     elif isinstance(maybe_int, float):
@@ -82,7 +85,9 @@ def coerce_int(maybe_int: Any) -> int:
 
 
 def coerce_float(maybe_float: Any) -> float:
-    """ Spec compliant float conversion. """
+    """
+    Spec compliant float conversion.
+    """
     if maybe_float == "":
         raise ValueError(
             "Float cannot represent non numeric value: (empty string)"
@@ -264,8 +269,13 @@ def default_scalar(
         List[Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]]
     ] = None,
 ) -> ScalarType:
-    """ Default noop scalar types used when generating scalars from schema
-    definitions. """
+    """
+    Create a default transparant scalar type.
+
+    This should be used as a stand in for custom scalar when the exact
+    implementation is not known (e.g. when generating a schema). Values will be
+    serialised and parsed as is without any validation.
+    """
     return ScalarType(
         name,
         serialize=_identity,

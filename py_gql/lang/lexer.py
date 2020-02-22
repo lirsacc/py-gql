@@ -86,6 +86,7 @@ class Lexer:
     Args:
         source (Union[str, bytes]): Source string.
             Bytestrings will be converted to unicode.
+
     """
 
     __slots__ = ("_source", "_len", "_done", "_position", "_started")
@@ -375,14 +376,14 @@ class Lexer:
 
     def __next__(self) -> Token:
         """
-        Advance lexer and return the next :class:`py_gql.lang.Token`
-        instance.
+        Advance lexer and return the next :class:`py_gql.lang.Token` instance.
 
         Raises:
-            :class:`~py_gql.exc.UnexpectedEOF`
-            :class:`~py_gql.exc.InvalidCharacter`
-            :class:`~py_gql.exc.UnexpectedCharacter`
-            :class:`~py_gql.exc.NonTerminatedString`
+            UnexpectedEOF
+            InvalidCharacter
+            UnexpectedCharacter
+            NonTerminatedString
+
         """
         if self._done:
             raise StopIteration()

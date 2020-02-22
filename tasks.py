@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# flake8: noqa
 # mypy: ignore-errors
-""" Development scripts.
+"""
+Development scripts.
 
 You need ``invoke`` installed to run them.
 """
@@ -29,11 +29,14 @@ def _join(cmd):
 
 @invoke.task
 def clean(ctx, cython=False, dist=False):
-    """Remove test and compilation artifacts."""
+    """
+    Remove test and compilation artifacts.
+    """
     with ctx.cd(ROOT):
         ctx.run(
             "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|.mypy_cache|htmlcov|junit.xml|coverage.xml|tox)$" '
+            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|'
+            '.mypy_cache|htmlcov|junit.xml|coverage.xml|tox)$" '
             "| xargs rm -rf",
             echo=True,
         )
@@ -50,7 +53,9 @@ def clean(ctx, cython=False, dist=False):
 
 @invoke.task()
 def benchmark(ctx):
-    """Run benchmarks."""
+    """
+    Run benchmarks.
+    """
     with ctx.cd(ROOT):
         ctx.run(
             _join(
@@ -79,12 +84,12 @@ def test(
     parallel=False,
     watch=False,
 ):
-    """Run test suite (using: py.test).
+    """
+    Run test suite (using: py.test).
 
     You should be able to run pytest directly but this provides some useful
     shortcuts and defaults.
     """
-
     ignore = ignore or []
     files = ("%s tests" % PACKAGE) if not files else " ".join(files)
 
@@ -134,7 +139,7 @@ def flake8(ctx, files=None, junit=False):
             ),
             echo=True,
         )
-    except invoke.exceptions.UnexpectedExit as err:
+    except invoke.exceptions.UnexpectedExit:
         raise
     finally:
         if junit:
@@ -186,7 +191,9 @@ def black(ctx, files=None):
 
 @invoke.task(aliases=["format"], iterable=["files"])
 def fmt(ctx, files=None):
-    """Run formatters."""
+    """
+    Run formatters.
+    """
     with ctx.cd(ROOT):
         sort_imports(ctx, files=files)
         black(ctx, files=files)
@@ -194,14 +201,18 @@ def fmt(ctx, files=None):
 
 @invoke.task(pre=[flake8, mypy, test])
 def check(ctx):
-    """Run all checks (formatting, lint, typecheck and tests)."""
+    """
+    Run all checks (formatting, lint, typecheck and tests).
+    """
     with ctx.cd(ROOT):
         pass
 
 
 @invoke.task
 def docs(ctx, clean_=True, strict=False, verbose=False):
-    """Generate documentation."""
+    """
+    Generate documentation.
+    """
     with ctx.cd(os.path.join(ROOT, "docs")):
         if clean_:
             ctx.run("rm -rf _build", echo=True)
@@ -223,19 +234,23 @@ def docs(ctx, clean_=True, strict=False, verbose=False):
 
 @invoke.task
 def cythonize(ctx):
-    """Compile Python code to .c files."""
+    """
+    Compile Python code to .c files.
+    """
     import Cython.Build
 
     with ctx.cd(ROOT):
         Cython.Build.cythonize(
             "%s/**/*.py" % PACKAGE,
-            compiler_directives={"embedsignature": True, "language_level": 3,},
+            compiler_directives={"embedsignature": True, "language_level": 3},
         )
 
 
 @invoke.task
 def build(ctx, cythonize_module=False):
-    """Build source distribution and wheel."""
+    """
+    Build source distribution and wheel.
+    """
     if cythonize_module:
         cythonize(ctx)
 
@@ -246,7 +261,8 @@ def build(ctx, cythonize_module=False):
 
 @invoke.task(iterable=["python"])
 def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
-    """Build and extract a manylinux wheel using the official docker image.
+    """
+    Build and extract a manylinux wheel using the official docker image.
 
     See https://github.com/pypa/manylinux for more information.
     """
@@ -290,7 +306,9 @@ def generate_checksums(ctx):
 
 @invoke.task
 def update_version(ctx, version, force=False, push=False):
-    """Update version and create relevant git tag."""
+    """
+    Update version and create relevant git tag.
+    """
     with ctx.cd(ROOT):
         if not VALID_VERSION_RE.match(version):
             raise invoke.exceptions.Exit(
@@ -320,7 +338,8 @@ def update_version(ctx, version, force=False, push=False):
 
         if (not force) and modified.stdout.strip() != "%s/_pkg.py" % PACKAGE:
             raise invoke.exceptions.Exit(
-                "There are still modified files in your directory. Commit or stash them."
+                "There are still modified files in your directory. "
+                "Commit or stash them."
             )
 
         ctx.run("git add %s/_pkg.py" % PACKAGE)

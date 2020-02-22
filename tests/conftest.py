@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Global fixtures """
+"""
+Global fixtures.
+"""
 
 import os
 
@@ -10,7 +12,9 @@ from py_gql import build_schema
 
 @pytest.fixture
 def fixture_file():
-    """ Helper to load fixture files by name. """
+    """
+    Helper to load fixture files by name.
+    """
 
     def load(name):
         filepath = os.path.join(os.path.dirname(__file__), "fixtures", name)

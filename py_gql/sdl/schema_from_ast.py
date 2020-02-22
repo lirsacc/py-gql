@@ -32,7 +32,8 @@ def build_schema(
     additional_types: Optional[List[NamedType]] = None,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
 ) -> Schema:
-    """ Build an executable schema from a GraphQL document.
+    """
+    Build an executable schema from a GraphQL document.
 
     This includes:
 
@@ -42,9 +43,7 @@ def build_schema(
 
     Args:
         document: SDL document
-
         ignore_extensions: Whether to apply schema and type extensions or not.
-
         additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums, etc.
             - In case of object types, interfaces, etc. the supplied type will
@@ -52,7 +51,6 @@ def build_schema(
             - Extension will be applied to these types. As a result, the
             resulting types may not be the same objects that were provided,
             so users should not rely on type identity.
-
         schema_directives: Schema directive classes.
             Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
             and must either  define a non-null ``definition`` attribute or the
@@ -94,8 +92,9 @@ def build_schema_ignoring_extensions(
     *,
     additional_types: Optional[List[NamedType]] = None
 ) -> Schema:
-    """ Build an executable schema from an SDL-based schema definition ignoring
-    extensions. """
+    """
+    Build an executable schema from an SDL schema definition ignoring extensions.
+    """
     ast = _document_ast(document)
     schema_def, type_defs, directive_defs = _collect_definitions(ast)
 
@@ -157,17 +156,17 @@ def extend_schema(
     strict: bool = True,
     schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
 ) -> Schema:
-    """ Extend an existing Schema according to a GraphQL document (adding new
-    types and directives + extending known types).
+    """
+    Extend an existing Schema according to a GraphQL document
+
+    This adds new types and directives as well as extends known types.
 
     Warning:
         Specified types (scalars, introspection) cannot be replace or extended.
 
     Args:
         schema: Executable schema
-
         document: SDL document
-
         additional_types: User supplied list of types
             Use this to specify some custom implementation for scalar, enums,
             etc.
@@ -176,13 +175,11 @@ def extend_schema(
             - Extension will be applied to these types. As a result, the
             resulting types may not be the same objects that were provided,
             so users should not rely on type identity.
-
         strict: Enable strict mode.
             In strict mode, unknown extension targets, overriding type and
             overriding the schema definition will raise an
             :class:`ExtensionError`. Disable strict mode will silently ignore
             such errors.
-
         schema_directives: Schema directive classes.
             Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
             and must either  define a non-null ``definition`` attribute or the
@@ -195,10 +192,10 @@ def extend_schema(
                 compliance with the specification.
 
     Returns:
-        py_gql.schema.Schema: Executable schema
+        Schema: Executable schema
 
     Raises:
-        py_gql.exc.SDLError:
+        ExtensionError: If applying an extension fails.
 
     """
     ast = _document_ast(document)

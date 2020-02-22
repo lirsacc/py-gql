@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Utilities to validate Python values against a schema / types """
+"""
+Utilities to validate Python values against a schema / types.
+"""
 
 import json
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -45,7 +47,8 @@ def coerce_value(
     node: Optional[_ast.Node] = None,
     path: Optional[Path] = None,
 ) -> Any:
-    """ Coerce a Python value given a GraphQL Type.
+    """
+    Coerce a Python value given a GraphQL Type.
 
     Args:
         value: Value to coerce
@@ -58,7 +61,8 @@ def coerce_value(
         The coerced value
 
     Raises:
-        :class:`~py_gql.exc.CoercionError`: if coercion fails
+        CoercionError: if coercion fails
+
     """
     if path is None:
         path = []
@@ -188,24 +192,20 @@ def coerce_argument_values(
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
-    Prepare a dict of argument values given a field or directive definition and
-    a field or directive node.
+    Prepare a dict of argument values given a definition and a node.
 
     Args:
-        definition:
-            Field or Directive definition from which to extract argument definitions.
-
+        definition: Field or Directive definition from which to extract argument
+            definitions.
         node: Parse node
-
         variables: Coerced variable values
 
     Returns:
         Coerced arguments
 
     Raises:
-        :class:`~py_gql.exc.CoercionError`:
-            if any argument value fails to coerce, required argument is
-            missing, etc.
+        CoercionError: If any argument fails to coerce, is missing, etc.
+
     """
     variables = {} if variables is None else variables
     coerced_values = {}
@@ -259,14 +259,11 @@ def directive_arguments(
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
-    Extract directive argument given a field or directive node and a directive
-    definition.
+    Extract directive argument given node and a directive definition.
 
     Args:
         definition: Directive definition from which to extract arguments
-
         node: Parse node
-
         variables: Coerced variable values
 
     Returns:
@@ -274,9 +271,8 @@ def directive_arguments(
         on the node.
 
     Raises:
-        :class:`~py_gql.exc.CoercionError`:
-            if any directive argument value fails to coerce, required argument
-            is missing, etc.
+        CoercionError: If any argument fails to coerce, is missing, etc.
+
     """
     directive = find_one(
         node.directives, lambda d: d.name.value == definition.name
@@ -295,6 +291,8 @@ def coerce_variable_values(  # noqa: C901
     variables: Mapping[str, Any],
 ) -> Dict[str, Any]:
     """
+    Validate and extract variables from arbitrary JSON objects.
+
     Prepare an object map of variable values of the correct type based on
     the provided operation definition and arbitrary JSON input. If the input
     cannot be parsed to match the variable definitions, an ExecutionError will
@@ -305,17 +303,15 @@ def coerce_variable_values(  # noqa: C901
 
     Args:
         schema: GraphQL Schema to consider
-
         operation: Operation definition containing the variable definitions
-
         variables: Provided raw variables
 
     Returns:
         Coerced variables
 
     Raises:
-        :class:`~py_gql.exc.VariablesCoercionError`:
-            if any variable cannot be coerced.
+        VariablesCoercionError: If any variable cannot be coerced.
+
     """
     coerced, errors = {}, []
 

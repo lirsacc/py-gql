@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
-""" tests related to introspection queries """
-
 import json
 
 from py_gql.schema import (

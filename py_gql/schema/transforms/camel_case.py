@@ -6,8 +6,8 @@ from ...schema import Argument, Field, InputField, SchemaVisitor
 
 
 class CamelCaseSchemaTransform(SchemaVisitor):
-    """Rename schema elements to camel case from the usual snake case convention
-    found in Python code.
+    """
+    Rename schema elements to camel case from Python's snake case convention.
 
     This is a common convention in GraphQL projects which are usually consumed
     by web clients written in Javascript where camel case is the standard

@@ -24,8 +24,11 @@ MaybeFuture = Union["Future[T]", T]
 
 
 class ThreadPoolRuntime(Runtime):
-    """Runtime implementation which executes every function passed to it in a
-    thread pool by wrapping :py:class:`concurrent.futures.ThreadPoolExecutor`.
+    """
+    Runtime implementation which executes in a thread pool.
+
+    This offloads every function passed to it in a thread pool by wrapping
+    :py:class:`concurrent.futures.ThreadPoolExecutor`.
 
     All init arguments will be forwarded to
     :py:class:`concurrent.futures.ThreadPoolExecutor`.
@@ -92,7 +95,8 @@ def unwrap_future(maybe_future):
 
 
 def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
-    """Concurrently collect multiple Futures. This is based on `asyncio.gather`.
+    """
+    Concurrently collect multiple Futures. This is based on `asyncio.gather`.
 
     If all futures in the ``source`` sequence complete successfully, the result
     is an aggregate list of returned values. The order of result values

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Test the main entry point """
+"""
+Test the main entry point.
+"""
 
 import asyncio
 

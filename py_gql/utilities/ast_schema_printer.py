@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Export schema as SDL. """
+"""
+Export schema as SDL.
+"""
 
 from typing import Any, Sequence, Union
 
@@ -56,6 +58,7 @@ class ASTSchemaPrinter:
             This applies only to directive locations and not directive
             definitions as they could be relevant to clients regardless of their
             use in the schema.
+
     """
 
     __slots__ = (
@@ -132,13 +135,6 @@ class ASTSchemaPrinter:
     def print_description(
         self, definition: Any, depth: int = 0, first_in_block: bool = True
     ) -> str:
-        """ Format an object description according to current configuration.
-
-        Args:
-            definitions: Described object
-            depth: Level of indentation
-            first_in_block:
-        """
         if not self.include_descriptions or not definition.description:
             return ""
 

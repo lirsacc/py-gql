@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Work with strings """
 
 import re
 import sys
@@ -26,25 +25,24 @@ def ensure_unicode(string: Union[str, bytes]) -> str:
     return string
 
 
-def is_blank(string: str) -> bool:
-    """
-    Args:
-        string (str): Input value
-
-    Returns:
-        bool: Whether the string is blank
-    """
-    return not string.strip()
-
-
 def parse_block_string(raw_string: str) -> str:
-    """ Parse a raw string according to the GraphQL spec's BlockStringValue()
-    http://facebook.github.io/graphql/draft/#BlockStringValue() static
-    algorithm. Similar to Coffeescript's block string, Python's inspect.cleandoc
-    or Ruby's strip_heredoc.
+    """
+    Parse a block string.
+
+    Parsing is done according to the GraphQL spec's BlockStringValue()
+    http://facebook.github.io/graphql/draft/#BlockStringValue() static algorithm.
+    This is similar to Coffeescript's block string, Python's inspect.cleandoc or
+    Ruby's strip_heredoc.
 
     Compared to Python's default behaviour, this does not remove leading
     whitespace from the first line.
+
+    Args:
+        raw_string (str): Input string.
+
+    Returns:
+        str: Parsed block string.
+
     """
     lines = raw_string.splitlines()
 
@@ -74,7 +72,8 @@ def dedent(raw_string: str) -> str:
 
 
 def index_to_loc(body: str, position: int) -> Tuple[int, int]:
-    r""" Get the (line number, column number) tuple from a zero-indexed offset.
+    r"""
+    Get the (line number, column number) tuple from a zero-indexed offset.
 
     Args:
         body (str): Source string
@@ -84,7 +83,7 @@ def index_to_loc(body: str, position: int) -> Tuple[int, int]:
         Tuple[int, int]: (line number, column number)
 
     Raises:
-        :py:class:`IndexError`: if ``position`` is out of bounds
+        IndexError: if ``position`` is out of bounds
 
     >>> index_to_loc("ab\ncd\ne", 0)
     (1, 1)
@@ -102,6 +101,7 @@ def index_to_loc(body: str, position: int) -> Tuple[int, int]:
     Traceback (most recent call last):
         ...
     IndexError: 42
+
     """
     if not body and not position:
         return (1, 1)
@@ -122,7 +122,8 @@ def index_to_loc(body: str, position: int) -> Tuple[int, int]:
 
 
 def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
-    r""" Get the zero-indexed offset from a (lineno, col) tuple.
+    r"""
+    Get the zero-indexed offset from a (lineno, col) tuple.
 
     Args:
         body: Source string
@@ -132,7 +133,7 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
         int: 0-indexed position of the character
 
     Raises:
-        :py:class:`IndexError`: if ``loc`` is out of bounds
+        IndexError: if ``loc`` is out of bounds
 
     >>> loc_to_index("ab\ncd\ne", (1, 1))
     0
@@ -153,6 +154,7 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
     Traceback (most recent call last):
         ...
     IndexError: 6:7
+
     """
     if not body and loc == (1, 1):
         return 0
@@ -170,7 +172,8 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
 
 
 def highlight_location(body: str, position: int, delta: int = 2) -> str:
-    """ Nicely format a highlited view of a position into a source string.
+    """
+    Nicely format a highlited view of a position into a source string.
 
     Args:
         body (str): Source string
@@ -179,6 +182,7 @@ def highlight_location(body: str, position: int, delta: int = 2) -> str:
 
     Returns:
         str: Formatted view
+
     """
     # REVIEW: There must be a more readable way to write this
     line, col = index_to_loc(body, position)
@@ -217,6 +221,8 @@ def _split_words_with_boundaries(
     string: str, word_boundaries: Container[str]
 ) -> Iterator[str]:
     """
+    Split a string around given separators, conserving the separators.
+
     >>> list(_split_words_with_boundaries("ab cd -ef_gh", " -_"))
     ['ab', ' ', 'cd', ' ', '-', 'ef', '_', 'gh']
     """
@@ -237,7 +243,8 @@ def _split_words_with_boundaries(
 def wrapped_lines(
     lines: Iterable[str], max_len: int, word_boundaries: Container[str] = " -_"
 ) -> Iterator[str]:
-    """ Wrap provided lines to a given length.
+    """
+    Wrap provided lines to a given length.
 
     Lines that are under ``max_len`` are left as is, otherwise this splits
     them based on the specified word boundaries and yields parts of the line
@@ -250,6 +257,7 @@ def wrapped_lines(
 
     Yields:
         str: The next wrapped line
+
     """
     for line in lines:
         if len(line) <= max_len:
@@ -270,7 +278,8 @@ def wrapped_lines(
 
 
 def levenshtein(s1: str, s2: str) -> int:
-    """ Compute the Levenshtein edit distance between 2 strings.
+    """
+    Compute the Levenshtein edit distance between 2 strings.
 
     Args:
         s1 (str): First string
@@ -278,6 +287,7 @@ def levenshtein(s1: str, s2: str) -> int:
 
     Returns:
         int: Computed edit distance
+
     """
     if len(s1) < len(s2):
         return levenshtein(s2, s1)
@@ -303,18 +313,19 @@ def infer_suggestions(
     options: Iterable[str],
     distance: Callable[[str, str], int] = levenshtein,
 ) -> List[str]:
-    """ Extract the most similar entries to an input string given multiple
-    options and a distance function.
+    """
+    Extract the most similar entries to an input string given a list of options.
 
     Args:
         candidate (str): Input string
         options (Iterator[str]): Possible options
-        distance (callable):
-            Distance function, must have the signature ``(s1, s2) -> int``
-            where the more similar the inputs are, the lower the result is.
+        distance (callable): Distance function.
+            Must have the signature ``(s1, s2) -> int`` where the more similar
+            the inputs are, the lower the result is.
 
     Returns:
         Most similar options sorted by similarity (most similar to least similar)
+
     """
     distances = []
     half = len(candidate) / 2
@@ -327,7 +338,8 @@ def infer_suggestions(
 
 
 def quoted_options_list(options: Sequence[str]) -> str:
-    """ Quote a list of possible strings.
+    """
+    Quote a list of possible strings.
 
     Args:
         options (Iterator[str]): Possible options
@@ -346,6 +358,7 @@ def quoted_options_list(options: Sequence[str]) -> str:
 
     >>> quoted_options_list(['foo', 'bar', 'baz'])
     '"foo", "bar" or "baz"'
+
     """
     if not options:
         return ""
@@ -360,7 +373,8 @@ def quoted_options_list(options: Sequence[str]) -> str:
 
 
 def stringify_path(path: ResponsePath) -> str:
-    """ Concatenate traversal path into a string.
+    """
+    Concatenate traversal path into a string.
 
     >>> stringify_path(['foo', 0, 'bar'])
     'foo[0].bar'
@@ -373,6 +387,7 @@ def stringify_path(path: ResponsePath) -> str:
 
     >>> stringify_path([])
     ''
+
     """
     path_str = ""
     for entry in path:
@@ -385,6 +400,8 @@ def stringify_path(path: ResponsePath) -> str:
 
 def snakecase_to_camelcase(value: str) -> str:
     """
+    Convert a string from camelCase to snake_case.
+
     >>> snakecase_to_camelcase('')
     ''
 
@@ -396,6 +413,7 @@ def snakecase_to_camelcase(value: str) -> str:
 
     >>> snakecase_to_camelcase('fooBarBaz')
     'fooBarBaz'
+
     """
     if not value:
         return value
@@ -406,6 +424,8 @@ def snakecase_to_camelcase(value: str) -> str:
 
 def camelcase_to_snakecase(value: str) -> str:
     """
+    Convert a string from snake_case to camelCase.
+
     >>> camelcase_to_snakecase('')
     ''
 
@@ -417,6 +437,7 @@ def camelcase_to_snakecase(value: str) -> str:
 
     >>> camelcase_to_snakecase('foo_bar_baz')
     'foo_bar_baz'
+
     """
     value = re.sub(r"[\-\.\s]", "_", value)
 

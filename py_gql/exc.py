@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""This module implements all the exceptions exposed by this library."""
+"""
+This module implements all the exceptions exposed by this library.
+"""
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
@@ -14,8 +16,9 @@ from .lang import ast as _ast
 
 class GraphQLError(Exception):
     """
-    Base GraphQL exception from which all other inherit. You should prefer
-    using one of its subclasses most of the time.
+    Base GraphQL exception from which all other inherit.
+
+    You should prefer using one of its subclasses most of the time.
     """
 
     def __init__(self, message: str = ""):
@@ -28,8 +31,7 @@ class GraphQLError(Exception):
 
 class GraphQLResponseError(GraphQLError):
     """
-    Implementors of this are suitable for usage in GraphQL responses and
-    exposing to end users.
+    Errors suitable for use in responses and being exposed to end users.
 
     See `the relevant part of the spec
     <https://graphql.github.io/graphql-spec/June2018/#sec-Errors>`_ for more
@@ -38,11 +40,10 @@ class GraphQLResponseError(GraphQLError):
 
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the exception to a dictionnary that can be serialized to
-        JSON and exposed in a GraphQL response.
+        Convert the exception to a dictionnary.
 
-        Returns:
-            JSON serializable representation of the error.
+        The return value should be serializable to JSON for usein a GraphQL
+        response.
         """
         raise NotImplementedError()
 
@@ -60,6 +61,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
         message (str): Explanatory message
         position (int): 0-indexed position locating the syntax error
         source (str): Source string from which the syntax error originated
+
     """
 
     def __init__(self, message: str, position: int, source: str):
@@ -71,8 +73,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
     @property
     def highlighted(self) -> str:
         """
-        str: Message followed by a view of the source document pointing at
-        the exact location of the error.
+        Message followed by the detailed location location of the error.
         """
         if self._highlighted is not None:
             return self._highlighted
@@ -102,9 +103,12 @@ class UnexpectedCharacter(GraphQLSyntaxError):
 
 class UnexpectedEOF(GraphQLSyntaxError):
     """
+    Document terminated before parsing could finish.
+
     Args:
         position: 0-indexed position locating the syntax error
         source: Source string from which the syntax error originated
+
     """
 
     def __init__(self, position: int, source: str):
@@ -125,8 +129,7 @@ class UnexpectedToken(GraphQLSyntaxError):
 
 class GraphQLLocatedError(GraphQLResponseError):
     """
-    Response error that can be traced back to specific position(s) and
-    parse node(s) in the source document.
+    Response error that can be traced back to specific position(s) and node(s).
 
     Args:
         message: Explanatory message
@@ -138,6 +141,7 @@ class GraphQLLocatedError(GraphQLResponseError):
         nodes (List[py_gql.lang.ast.Node]): Nodes relevant to the exception
         path (Optional[Sequence[Union[int, str]]]):
             Location of the error during execution
+
     """
 
     def __init__(
@@ -224,6 +228,7 @@ class ExecutionError(GraphQLResponseError):
 
     Attributes:
         message (str): Explanatory message
+
     """
 
     def to_dict(self) -> Dict[str, Any]:
@@ -247,6 +252,7 @@ class VariablesCoercionError(GraphQLError):
 
     Attributes:
         errors (Sequence[VariableCoercionError]): Wrapped errors
+
     """
 
     def __init__(self, errors: Sequence[VariableCoercionError]):
@@ -279,6 +285,7 @@ class MultiCoercionError(CoercionError):
 
     Attributes:
         errors (Sequence[CoercionError]): Wrapped errors
+
     """
 
     def __init__(self, errors: Sequence[CoercionError]):
@@ -336,15 +343,13 @@ class ResolverError(GraphQLLocatedError):
 
 class SDLError(GraphQLLocatedError):
     """
-    Error that occured when parsing and / or applying a schema definition
-    document (SDL).
+    Any error that occured while interpreting a schema definition document.
     """
 
 
 class ExtensionError(SDLError):
     """
-    Error that occured when applying a schema or type extension node
-    to an existing schema.
+    Error that occured when applying an extension node.
     """
 
 

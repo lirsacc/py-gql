@@ -55,9 +55,10 @@ SPECIFIED_RULES = (
 
 class ValidationResult:
     """
-    Encode validation result by wrapping a collection of
-    :class:`~py_gql.exc.ValidationError`. Instances are iterable and falsy
-    when they contain at least one error.
+    Wrap a collection of :class:`~py_gql.exc.ValidationError`.
+
+    Instances are iterable and falsy when they contain at least one validation
+    error.
     """
 
     def __init__(self, errors: Optional[List[ValidationError]] = None):
@@ -77,17 +78,19 @@ def default_validator(
     *,
     validators: Sequence[Type[ValidationVisitor]] = SPECIFIED_RULES
 ) -> Iterable[ValidationError]:
-    """Default validator implementation.
+    """
+    Validate a GraphQL document using a collection of :class:`ValidationVisitor`.
 
-    This uses a chain of :class:`~py_gql.validation.ValidationVisitor` classes
-    and collect all errors by passing the document through all visitors in order.
-    This is helpful as visitors can rely on previous visitors having filtered out
-    invalid nodes.
+    This is the default validator implementation and uses a chain of
+    :class:`~py_gql.validation.ValidationVisitor` classes, collecting all errors
+    by passing the document through all visitors in order.
+
+    The ordering allows visitors to rely on previous visitors having filtered
+    out invalid nodes.
 
     In order to use this with :func:`~py_gql.validation.validate_ast` and custom
     visitor classes a lambda or partial should be created.
     """
-
     type_info = TypeInfoVisitor(schema)
 
     visitors = [cls(schema, type_info) for cls in validators]
@@ -108,8 +111,9 @@ def validate_ast(
     variables: Optional[Dict[str, Any]] = None
 ) -> ValidationResult:
     """
-    Check that an ast is a valid GraphQL query document by running the parse
-    tree through a list of :class:`~py_gql.validation.ValidationVisitor` given a
+    Check that an ast is a valid GraphQL query document.
+
+    This runs the parse tree through a list of validation callables given a
     :class:`~py_gql.schema.Schema` instance.
 
     Warning:
@@ -118,17 +122,15 @@ def validate_ast(
         unexpectedly if that's not the case.
 
     Args:
-        schema:
-            Schema to validate against (for known types, directives, etc.).
-
+        schema: Schema to validate against (for known types, directives, etc.).
         document: The parse tree root.
-
-        validators:
-            List of validator callables to use. Defaults to the rules defined in
-            the specificaton.
+        validators: List of validator callables to use.
+            Defaults to the rules defined in the specificaton.
+        variables: Raw, JSON decoded variables parsed from the request.
 
     Returns:
         Validation result wrapping any validatione error that occured.
+
     """
     if validators is None:
         validators = [default_validator]

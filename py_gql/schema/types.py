@@ -88,6 +88,8 @@ class NamedType(GraphQLType):
 
 class GraphQLAbstractType(NamedType):
     """
+    Abstract types.
+
     These types may describe the parent context of a selection set and indicate
     that the value will be of a concrete ObjectType.
     """
@@ -97,6 +99,8 @@ class GraphQLAbstractType(NamedType):
 
 class GraphQLCompositeType(NamedType):
     """
+    Composite types.
+
     These types may describe the parent context of a selection set.
     """
 
@@ -105,6 +109,8 @@ class GraphQLCompositeType(NamedType):
 
 class GraphQLLeafType(NamedType):
     """
+    Lead types.
+
     These types may describe types which may be leaf values.
     """
 
@@ -552,10 +558,10 @@ class EnumType(GraphQLLeafType, NamedType):
             name: Name of the value to extract
 
         Returns:
-            :class:`py_gql.schema.EnumValue`: The corresponding EnumValue
+            :class:`py_gql.schema.EnumValue`: The corresponding EnumValue.
 
         Raises:
-            :class:`~py_gql.exc.UnknownEnumValue` when the name is unknown
+            UnknownEnumValue: when the name is unknown.
         """
         try:
             return self._values[name].value
@@ -575,7 +581,7 @@ class EnumType(GraphQLLeafType, NamedType):
             :class:`py_gql.schema.EnumValue`: The corresponding EnumValue
 
         Raises:
-            :class:`~py_gql.exc.UnknownEnumValue` when the value is unknown
+            UnknownEnumValue: when the value is unknown
         """
         try:
             return self._reverse_values[value].name
@@ -684,7 +690,8 @@ class ScalarType(GraphQLLeafType, NamedType):
             JSON scalar
 
         Raises:
-            ScalarParsingError:
+            ScalarSerializationError: when the type's serializer fail with
+                ValueError or TypeError (other exceptions bubble up).
         """
         try:
             return self._serialize(value)
@@ -702,7 +709,8 @@ class ScalarType(GraphQLLeafType, NamedType):
             Python level value
 
         Raises:
-            ScalarParsingError:
+            ScalarParsingError: when the type's parser fail with
+                ValueError or TypeError (other exceptions bubble up).
         """
         try:
             return self._parse(value)
@@ -718,13 +726,15 @@ class ScalarType(GraphQLLeafType, NamedType):
         Transform an AST node in a valid Python value
 
         Args:
-            value: Parse node
+            node: Parse node
+            variables: Raw, JSON decoded variables parsed from the request
 
         Returns:
             Python level value
 
         Raises:
-            ScalarParsingError:
+            ScalarParsingError: when the type's parser fail with
+                ValueError or TypeError (other exceptions bubble up).
         """
         try:
             try:
@@ -787,8 +797,7 @@ class Argument(InputValue):
 
 class Field:
     """
-    Member of an :class:`py_gql.schema.ObjectType` or
-    :class:`py_gql.schema.InterfaceType`.
+    Member of a composite type.
 
     Args:
         name: Field name
@@ -1181,14 +1190,22 @@ class Directive:
 
 
 def is_input_type(type_: GraphQLType) -> bool:
-    """ These types may be used as input types for arguments and directives. """
+    """
+    Check if a type is an input type.
+
+    These types may be used as input types for arguments and directives.
+    """
     return isinstance(
         unwrap_type(type_), (ScalarType, EnumType, InputObjectType)
     )
 
 
 def is_output_type(type_: GraphQLType) -> bool:
-    """ These types may be used as output types as the result of fields. """
+    """
+    Check if a type is an output type.
+
+    These types may be used as output types as the result of fields.
+    """
     return isinstance(
         unwrap_type(type_),
         (ScalarType, EnumType, ObjectType, InterfaceType, UnionType),
@@ -1196,8 +1213,8 @@ def is_output_type(type_: GraphQLType) -> bool:
 
 
 def unwrap_type(type_: GraphQLType) -> NamedType:
-    """ Recursively extract type for a potentially wrapping type like
-    :class:`ListType` or :class:`NonNullType`.
+    """
+    Recursively extract type from a wrapping type like `ListType` or `NonNullType`.
 
     >>> from py_gql.schema import Int, NonNullType, ListType
     >>> unwrap_type(NonNullType(ListType(NonNullType(Int)))) is Int
@@ -1209,7 +1226,8 @@ def unwrap_type(type_: GraphQLType) -> NamedType:
 
 
 def nullable_type(type_: GraphQLType) -> GraphQLType:
-    """ Extract nullable type from a potentially non nulllable one.
+    """
+    Extract nullable type from a potentially non nulllable one.
 
     >>> from py_gql.schema import Int, NonNullType
     >>> nullable_type(NonNullType(Int)) is Int

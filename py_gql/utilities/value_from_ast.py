@@ -20,8 +20,7 @@ def value_from_ast(
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Any:
     """
-    Convert an ast value node into a valid python value while validating against
-    a given type.
+    Convert an ast Value node into a valid python value given a schema type.
 
     Warning:
         No validation is done with regard to the variable values which are
@@ -36,14 +35,10 @@ def value_from_ast(
         Extracted value
 
     Raises:
-        :py:class:`TypeError`:
-            when node is not a value node
+        TypeError: when node is not a value node
+        InvalidValue: if the value cannot be converted
+        UnknownVariable: if a variable is required and doesn't exist
 
-        :`~py_gql.exc.InvalidValue`:
-            if the value cannot be converted
-
-        :`~py_gql.exc.UnknownVariable`:
-            if a variable is required and doesn't exist
     """
     if isinstance(node, _ast.Variable):
         return _extract_variable(node, type_, variables)

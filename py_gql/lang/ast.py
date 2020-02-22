@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-GraphQL AST representations corresponding to the `GraphQL language elements
-<http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language>`_.
+GraphQL AST representations corresponding to the GraphQL language elements.
+
+See: http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
 """
 
 import copy
@@ -68,8 +69,7 @@ class Node:
 
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the current node and all of its children to a JSON serializable
-        format.
+        Convert the current node and all of its children to a JSON serializable format.
 
         This is mostly useful for testing and when you need to convert nodes to
         JSON such as interop with other languages, printing and serialisation.
@@ -84,6 +84,7 @@ class Node:
 
         Returns:
             Dict[str, Any]: Converted value
+
         """
         return cast(Dict[str, Any], _ast_to_json(self))
 

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" generic mutations handling tests """
+"""
+Generic mutations handling tests.
+"""
 
 import pytest
 

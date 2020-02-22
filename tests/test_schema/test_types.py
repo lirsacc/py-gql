@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-""" Test type definition classes """
+"""
+Test type definition classes.
+"""
 
 import enum
 import re

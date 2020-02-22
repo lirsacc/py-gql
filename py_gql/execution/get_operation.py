@@ -10,19 +10,21 @@ from ..schema import ObjectType, Schema
 def get_operation(
     document: _ast.Document, operation_name: Optional[str] = None
 ) -> _ast.OperationDefinition:
-    """ Extract relevant operation from a parsed document.
+    """
+    Extract relevant operation from a parsed document.
 
     In case the ``operation_name`` argument is null, the document is
     expected to contain only one operation which will be extracted.
 
     Args:
         document: Parsed document
-        opeation_name: Operation to extract
+        operation_name: Operation to extract
 
-    Returns: Relevant operation definition
+    Returns:
+        Relevant operation definition
 
     Raises:
-        :py:class:`InvalidOperationError`: No relevant operation can be found.
+        InvalidOperationError: No relevant operation can be found.
     """
     operations = [
         definition
@@ -57,19 +59,20 @@ def get_operation_with_type(
     document: _ast.Document,
     operation_name: Optional[str] = None,
 ) -> Tuple[_ast.OperationDefinition, ObjectType]:
-    """ Extract relevant operation from a parsed document and the corresponding
-    ObjectType from the schema.
+    """
+    Extract relevant operation from a parsed document and ObjectType.
 
     Args:
         schema: Schema
         document: Parsed document
-        opeation_name: Operation to extract
+        operation_name: Operation to extract
 
-    Returns: Relevant operation definition and object type
+    Returns:
+        Relevant operation definition and object type
 
     Raises:
-        :py:class:`InvalidOperationError`: No relevant operation can be found
-            or there is no related type.
+        InvalidOperationError: when no relevant operation can be found or there
+            is no related type.
     """
     operation = get_operation(document, operation_name)
 

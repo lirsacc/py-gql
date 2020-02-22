@@ -8,19 +8,18 @@ from . import ast as _ast
 
 
 class ASTPrinter:
-    """ String formatter for ast node.
+    """
+    String formatter for ast node.
 
     Args:
         indent (Union[str, int]): Indent character or number of spaces
-
-        include_descriptions (bool):
-            If ``True`` include descriptions as leading block strings in the
-            output. Only relevant for SDL nodes.
-
+        include_descriptions (bool): If ``True`` include descriptions as
+            leading block strings in the output. Only relevant for SDL nodes.
         use_legacy_comment_descriptions: Control how descriptions are formatted.
             Set to ``True`` for the old standard (use comments) which will be
             compatible with most GraphQL parsers while the default settings is
             to use block strings and is part of the most recent specification.
+
     """
 
     __slots__ = (
@@ -43,14 +42,15 @@ class ASTPrinter:
             self.indent = indent
 
     def __call__(self, node: Optional[_ast.Node]) -> str:  # noqa: C901
-        """ Converts an AST into a string, using a set of reasonable
-        formatting rules.
+        """
+        Convert an AST node into a string, using reasonable formatting rules.
 
         Args:
             node (py_gql.lang.ast.Node): Input node
 
         Returns:
             str: Formatted value for the provided node
+
         """
         if node is None:
             return ""
@@ -564,20 +564,18 @@ def _block_string(value: str, indent: str, is_description: bool = False) -> str:
 def print_ast(
     node: _ast.Node, indent: int = 2, include_descriptions: bool = True
 ) -> str:
-    """ Converts an AST node into a valid GraphQL string, using a set of
-    reasonable formatting rules.
+    """
+    Convert an AST node into a string, using reasonable formatting rules.
 
     Args:
-        node (py_gql.lanf.ast.Node): Node to format.
-
-        indent (Union[str, int]): Indent character or number of spaces
-
-        include_descriptions (bool):
-            If ``True`` include descriptions as leading block strings in the
-            output. Only relevant for SDL nodes.
+        node (py_gql.lang.ast.Node): Node to format.
+        indent (int): Indent character or number of spaces.
+        include_descriptions (bool): If ``True`` include descriptions as leading
+            block strings in the output. Only relevant for SDL nodes.
 
     Returns:
         str:
+
     """
     return ASTPrinter(indent=indent, include_descriptions=include_descriptions)(
         node

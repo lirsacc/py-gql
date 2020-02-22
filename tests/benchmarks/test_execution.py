@@ -18,23 +18,23 @@ LIST_OF_DICTS = [{"x": x, "y": x, "z": x} for x in range(SIZE)]
 
 schema = py_gql.build_schema(
     """
-type Foo {
-    x: Int,
-    y: Int,
-    z: Int,
-}
+    type Foo {
+        x: Int,
+        y: Int,
+        z: Int,
+    }
 
-type Query {
-    list_of_ints: [Int],
-    list_of_floats: [Float],
-    list_of_string_ids: [ID],
-    list_of_int_ids: [ID],
-    list_of_strings: [String],
-    list_of_bools: [Boolean],
-    list_of_objects: [Foo],
-    list_of_dicts: [Foo],
-}
-"""
+    type Query {
+        list_of_ints: [Int],
+        list_of_floats: [Float],
+        list_of_string_ids: [ID],
+        list_of_int_ids: [ID],
+        list_of_strings: [String],
+        list_of_bools: [Boolean],
+        list_of_objects: [Foo],
+        list_of_dicts: [Foo],
+    }
+    """
 )
 
 

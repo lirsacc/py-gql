@@ -21,13 +21,12 @@ def untyped_value_from_ast(
         variables: Variables mapping
 
     Returns:
-        any: Extracted value
+        Extracted value
 
     Raises:
+        TypeError: when node is not a value node
+        UnknownVariable: if a variable is required and doesn't exist
 
-        :py:class:``TypeError``: when node is not a value node
-        :class:`~py_gql.exc.UnknownVariable`:
-            if a variable is required and doesn't exist
     """
     if isinstance(node, _ast.NullValue):
         return None

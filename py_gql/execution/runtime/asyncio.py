@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-"""
-
 import asyncio
 import functools as ft
 from inspect import isawaitable, iscoroutinefunction

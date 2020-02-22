@@ -42,8 +42,6 @@ def collect_fields(
     variables: Mapping[str, Any],
     _seen_fragments: Optional[Set[str]] = None,
 ) -> GroupedFields:
-    """
-    """
     _seen_fragments = _seen_fragments or set()
     grouped_fields = OrderedDict()  # type: GroupedFields
 
@@ -112,8 +110,6 @@ def collect_fields_untyped(
     variables: Mapping[str, Any],
     _seen_fragments: Optional[Set[str]] = None,
 ) -> GroupedFields:
-    """
-    """
     _seen_fragments = _seen_fragments or set()
     grouped_fields = OrderedDict()  # type: GroupedFields
 
@@ -214,8 +210,8 @@ def selected_fields(
     pattern: Optional[Union[str, Pattern]] = None,
     _path: Optional[List[str]] = None
 ) -> List[str]:
-    """Extract a list of fieldpaths from an object field and provided
-    fragments.
+    """
+    Extract a list of fieldpaths from an object field and provided fragments.
 
     If ``maxdepth`` is 0 or higher than 1, subfields will be traversed
     recursively and exposed as a ``/`` separated path. For example,
@@ -245,8 +241,12 @@ def selected_fields(
         pattern: Filter string used to control which fields are returned.
             If this is passed as a string, it will be compiled into a regex
             through the :py:mod:`fnmatch` module.
-    """
+        _path: Already traversed path, used for recursing.
 
+    Returns:
+        List of selected fieldpaths.
+
+    """
     if field.selection_set is None:
         return []
 

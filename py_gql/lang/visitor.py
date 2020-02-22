@@ -25,11 +25,8 @@ __all__ = (
 
 class SkipNode(GraphQLError):
     """
-    Raise this to short-circuit traversal and ignore the node and all its
-    children.
+    Raise this to short-circuit traversal and ignore the node and all its children.
     """
-
-    pass
 
 
 def _visit_method(method):
@@ -53,29 +50,32 @@ def _visit_method(method):
 
 class ASTVisitor:
     """
-    Base visitor class used to build complex AST tarversal and trnsform
-    behaviours.
+    Base visitor class encoding AST tarversal and transforms behaviours.
     """
 
     def enter(self, node: N) -> Optional[N]:
         """
+        Process an AST node.
+
         Implement this for the main visiting behaviour (i.e. before a node's
         children have been visited).
 
-        Return ``None`` to delete the node from
-        it's parent context or raise :class:`SkipNode` to prevent any further
-        processing (children do not get visited and `leave` doesn't get
-        called for that node).
+        Return ``None`` to delete the node from it's parent context or raise
+        :class:`SkipNode` to prevent any further processing (children do not get
+        visited and `leave` doesn't get called for that node).
         """
         return node
 
     def leave(self, node: N) -> None:
         """
+        Cleanup after processing an AST node and its children.
+
         Implement this if you need behaviour to run after a node's children
         have been visited.
 
         This is called with the corresponding value returned by :meth:`enter`.
         In case you modify the node, this will be called on the modified node.
+
         This doesn't run if :meth:`enter` returned ``None`` or raised
         :class:`SkipNode`.
         """
@@ -94,6 +94,7 @@ class ASTVisitor:
             In general you should not override this method as this is where
             tarversal of a node's children and orchestration around :meth:`enter`
             and :meth:`leave` is encoded.
+
         """
         return classdispatch(
             node,
@@ -904,7 +905,8 @@ class DispatchingVisitor(ASTVisitor):
 
 
 class ChainedVisitor(ASTVisitor):
-    """Run multiple visitor instances in sequence.
+    """
+    Run multiple visitor instances in sequence.
 
     - All visitors are run in the order they are defined, with enter being
       called in order and leave in reverse order.
@@ -916,6 +918,7 @@ class ChainedVisitor(ASTVisitor):
 
     Attributes:
         visitors (List[ASTVisitor]): Children visitors.
+
     """
 
     def __init__(self, *visitors: ASTVisitor):

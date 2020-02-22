@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Validation rules defined in `this section
-<http://facebook.github.io/graphql/June2018/#sec-Validation>`_ of the
-specification.
+Validation rules defined in `the specification`_.
 
-These rules are **all** used by default when calling
-`~py_gql.validation.validate` and accessible together as
-`~py_gql.validatin.SPECIFIED_RULES`.
+.. _the specification: http://facebook.github.io/graphql/June2018/#sec-Validation
 """
 
 from collections import defaultdict

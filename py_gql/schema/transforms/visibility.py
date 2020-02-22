@@ -22,7 +22,8 @@ TNamedType = TypeVar("TNamedType", bound=NamedType)
 
 
 class VisibilitySchemaTransform(SchemaVisitor):
-    """Remove elements from a schema.
+    """
+    Remove elements from a schema.
 
     User should subclass this and override the various visibility hooks.
 

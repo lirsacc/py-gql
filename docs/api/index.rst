@@ -9,7 +9,7 @@ rendered automatically from the code.
 .. warning::
     Some parts of the generation are not working properly and there might be
     some rough edges here and there. Mostly around linking to defintion from
-    type hints and through imported modules as well as ordering.
+    type hints.
 
 .. toctree::
     :maxdepth: 4

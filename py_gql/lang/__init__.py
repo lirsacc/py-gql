@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-The :mod:`py_gql.lang` module is responsible for parsing and operating on
-the GraphQL language and source files.
+py_gql.lang
+
+The :mod:`py_gql.lang` module is responsible for parsing and operating on the
+GraphQL language and source files.
 
 You can refer to the `relevant part of the spec
 <https://graphql.github.io/graphql-spec/June2018/#sec-Language>`_ for more
 information.
 """
-
-# flake8: noqa
 
 # REVIEW: Lexer and Parser are both custom implemetations for now. It may be
 # useful to evaluate using parser generators (PEG, Lark, etc.) in order to not

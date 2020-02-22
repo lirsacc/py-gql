@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Schema Directives
-~~~~~~~~~~~~~~~~~
 
 This is largely based on the way Apollo and graphql-tools implement it,
 borrowing the same idea of using visitors and treating the schema as graph.
@@ -93,12 +92,14 @@ def apply_schema_directives(
 
     Args:
         schema: Schema to modify
-
-        schema_directives:
-            Dict of directive name to corredponsing
+        schema_directives: Dict of directive name to corredponsing
             :class:`~py_gql.schema.SchemaDirective` implementation. The directive
             must either be defined in the schema or the class implement the
             `definition` attribute.
+
+    Returns:
+        Modified schema.
+
     """
     return _SchemaDirectivesApplicationVisitor(
         schema.directives, schema_directives

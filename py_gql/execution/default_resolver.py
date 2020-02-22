@@ -17,10 +17,11 @@ def default_resolver(
     __mapping_cls: Any = Mapping,
     **args: Any
 ) -> Any:
-    """Default resolver used during query execution.
+    """
+    Resolve a field from dictionnaries or objects.
 
-    This resolver looks up the value from the ``root`` in the
-    following lookup order:
+    This is the default resolver used during query execution and looks up the
+    value from the ``root`` in the following lookup order:
 
     - If ``root`` is a dict subclass:
 

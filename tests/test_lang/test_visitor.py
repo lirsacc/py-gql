@@ -59,13 +59,13 @@ def test_it_processes_nodes_in_the_correct_order():
 
 
 def test_it_allows_early_exit():
-    """ interrupt processing by raising """
     ast = parse("{ a { b { c { d { e } } } } }", no_location=True)
 
     class _Visitor(Tracker):
         def enter(self, node):
             n = super(_Visitor, self).enter(node)
             if n and isinstance(n, _ast.Field) and n.name.value == "b":
+                # Interrupt processing by raising.
                 raise SkipNode()
             return n
 

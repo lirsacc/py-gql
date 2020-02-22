@@ -34,8 +34,11 @@ def process_graphql_query(
     executor_cls: Type[Executor] = Executor
 ) -> Any:
     """
-    Main GraphQL entrypoint encapsulating query processing from start to
-    finish including parsing, validation, variable coercion and execution.
+    Execute a GraphQL query.
+
+    This is the main GraphQL entrypoint encapsulating query processing from
+    start to finish including parsing, validation, variable coercion and
+    execution.
 
     Warning:
         The returned value will depend on the ``runtime`` argument. Custom
@@ -44,50 +47,38 @@ def process_graphql_query(
 
     Args:
         schema: Schema to execute the query against.
-
         document: The query document.
-
         variables: Raw, JSON decoded variables parsed from the request.
-
         operation_name: Operation to execute
             If specified, the operation with the given name will be executed.
             If not, this executes the single operation without disambiguation.
-
         root: Root resolution value passed to the top-level resolver.
-
         context: Custom application-specific execution context.
             Use this to pass in anything your resolvers require like database
             connection, user information, etc.
             Limits on the type(s) used here will depend on your own resolver
             and the runtime implementations used. Most thread safe data-structures
             should work with built in runtimes.
-
         validators: Custom validators.
             Setting this will replace the defaults so if you just want to add
             some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
-
         default_resolver: Alternative default resolver.
             For field which do not specify a resolver, this will be used instead
             of `py_gql.execution.default_resolver`.
-
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
             common logic, they are good canidates for logging, authentication,
             and execution guards.
-
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
             mutiple instances together.
-
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
             keeping your API available. Note that this deviates from the GraphQL
             specification and will likely break some clients (such as GraphiQL)
             so use this with caution.
-
         runtime: Runtime against which to execute field resolvers (defaults to
             `~py_gql.execution.runtime.BlockingRuntime()`).
-
         executor_cls: Executor class to use.
             The executor class defines the implementation of the GraphQL
             resolution algorithm. This **must** be a subclass of
@@ -95,6 +86,7 @@ def process_graphql_query(
 
     Returns:
         Execution result.
+
     """
     schema.validate()
 
@@ -170,11 +162,14 @@ async def graphql(
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
     """
-    Wrapper around :func:`~py_gql.process_graphql_query` enforcing usage of
-    :class:`~py_gql.execution.runtime.AsyncIORuntime`.
+    Execute a GraphQL query on the AsyncIO runtime.
+
+    This is a wrapper around :func:`~py_gql.process_graphql_query` enforcing
+    usage of :class:`~py_gql.execution.runtime.AsyncIORuntime`.
 
     Warning:
         Blocking (non async) resolvers will block the current thread.
+
     """
     return cast(
         GraphQLResult,
@@ -208,6 +203,8 @@ def graphql_blocking(
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
     """
+    Execute a GraphQL query in the current thread.
+
     Wrapper around :func:`process_graphql_query` enforcing usage of blocking
     resolvers. This uses an optimized :class:`~py_gql.execution.Executor`
     subclass.

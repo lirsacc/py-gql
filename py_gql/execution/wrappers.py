@@ -38,7 +38,9 @@ GroupedFields = Dict[str, List[ast.Field]]
 
 
 class ResolutionContext:
-    """Information about the current resolution."""
+    """
+    Information about the current resolution.
+    """
 
     __slots__ = (
         "schema",
@@ -104,7 +106,9 @@ class ResolutionContext:
         path: Optional[ResponsePath] = None,
         node: Optional[ast.Node] = None,
     ) -> None:
-        """Register an error during the current execution."""
+        """
+        Register an error during the current execution.
+        """
         if node:
             if not err.nodes:
                 err.nodes = [node]
@@ -113,11 +117,15 @@ class ResolutionContext:
 
     @property
     def errors(self) -> List[GraphQLResponseError]:
-        """All field errors collected during query execution."""
+        """
+        All field errors collected during query execution.
+        """
         return self._errors[:]
 
     def clear_errors(self) -> None:
-        """Clear any collected error from the current executor instance."""
+        """
+        Clear any collected error from the current executor instance.
+        """
         self._errors[:] = []
 
     def collect_fields(
@@ -182,7 +190,8 @@ class ResolutionContext:
 
 
 class ResolveInfo:
-    """Expose information about the field currently being resolved.
+    """
+    Expose information about the field currently being resolved.
 
     This is the 3rd positional argument provided to resolver functions and is
     constructed internally during query execution.
@@ -224,22 +233,29 @@ class ResolveInfo:
         )  # type: Dict[str, Optional[Dict[str, Any]]]
 
     @property
-    def schema(self) -> Schema:
-        """Current schema."""
+    def schema(self) -> Schema:  # noqa: D401
+        """
+        Current schema.
+        """
         return self._context.schema
 
     @property
     def variables(self) -> Dict[str, Any]:
-        """Coerced variables."""
+        """
+        Coerced variables.
+        """
         return self._context.variables
 
     @property
     def fragments(self) -> Dict[str, ast.FragmentDefinition]:
-        """Document fragments."""
+        """
+        Document fragments.
+        """
         return self._context.fragments
 
     def get_directive_arguments(self, name: str) -> Optional[Dict[str, Any]]:
-        """Extract arguments for a given directive on the current field.
+        """
+        Extract arguments for a given directive on the current field.
 
         Warning:
             This method assumes the document has been validated and the
@@ -265,8 +281,8 @@ class ResolveInfo:
     def selected_fields(
         self, *, maxdepth: int = 1, pattern: Optional[str] = None
     ) -> List[str]:
-        """Extract the list of fields selected by the field currently being
-        resolved.
+        """
+        Extract the list of fields selected by the field currently being resolved.
 
         Refer to :func:`~py_gql.utilities.selected_fields` for documentation.
         """
@@ -280,31 +296,32 @@ class ResolveInfo:
 
 
 class GraphQLExtension:
-    """ Encode a GraphQL response extension.
+    """
+    Encode a GraphQL response extension.
 
     Use in conjonction with :meth:`GraphQLResult.add_extension` to encode the
     response alongside an execution result.
     """
 
-    def payload(self):
+    def payload(self) -> Dict[str, Any]:
         """
-        Returns:
-            Any: Extension payload; **must** be JSON serialisable.
+        Return the extension payload.
         """
         raise NotImplementedError()
 
     @property
     def name(self) -> str:
         """
-        Returns:
-            Name of the extension used as the key in the response.
+        Return the name of the extension used as the key in the response.
         """
         raise NotImplementedError()
 
 
 class GraphQLResult:
     """
-    Wrapper encoding the behaviour described in the `Response
+    Operation response.
+
+    This wrapper encodes the behaviour described in the `Response
     <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
     specification.
 
@@ -337,10 +354,11 @@ class GraphQLResult:
         return iter((self.data, self.errors))
 
     def add_extension(self, ext):
-        """ Add an extensions to the result.
+        """
+        Add an extensions to the result.
 
         Args:
-            Extension instance
+            ext: Extension instance
 
         Raises:
             ValueError: Extension with the same name has already been added
@@ -350,7 +368,9 @@ class GraphQLResult:
         self.extensions[ext.name] = ext
 
     def response(self) -> Dict[str, Any]:
-        """ Generate an ordered response dict. """
+        """
+        Generate an ordered response dict.
+        """
         d = {}
         if self.errors:
             d["errors"] = [error.to_dict() for error in self.errors]
@@ -363,9 +383,13 @@ class GraphQLResult:
         return d
 
     def json(self, **kw: Any) -> str:
-        """ Encode response as JSON using the standard lib ``json`` module.
+        """
+        Encode response as JSON using the standard lib :py:mod:`json` module.
 
         Args:
             **kw: Keyword args passed to to ``json.dumps``
+
+        Returns:
+            str: JSON serialized response.
         """
         return json.dumps(self.response(), **kw)

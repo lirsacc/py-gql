@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Schema definition. """
 
 import copy
 from collections import defaultdict
@@ -43,7 +42,8 @@ Resolver = Callable[..., Any]
 
 
 class Schema(ResolverMap):
-    """ A GraphQL schema definition.
+    """
+    A GraphQL schema definition.
 
     A GraphQL schema definition. This is the main container for a GraphQL
     schema and its related types.
@@ -226,7 +226,8 @@ class Schema(ResolverMap):
             self._invalidate_and_rebuild_caches()
 
     def validate(self):
-        """ Check that the schema is valid.
+        """
+        Check that the schema is valid.
 
         Raises:
             :class:`~py_gql.exc.SchemaError` if the schema is invalid.
@@ -243,11 +244,10 @@ class Schema(ResolverMap):
             name: Requested type name
 
         Returns:
-            py_gql.schema.Type: Type instance
+            py_gql.schema.NamedType: Type instance
 
         Raises:
-            :class:`~py_gql.exc.UnknownType`:
-                if ``default`` is not set and the type is not found
+            UnknownType: if ``default`` is not set and the type is not found.
 
         """
         try:
@@ -263,8 +263,7 @@ class Schema(ResolverMap):
 
     def get_type_from_literal(self, ast_node: _ast.Type) -> GraphQLType:
         """
-        Given an AST node describing a type, return a corresponding
-        :class:`py_gql.schema.Type` instance.
+        Return a :class:`py_gql.schema.Type` instance for an AST type node.
 
         For example, if provided the parsed AST node for ``[User]``,
         a :class:`py_gql.schema.ListType` instance will be returned, containing
@@ -299,9 +298,14 @@ class Schema(ResolverMap):
         Get the possible implementations of an abstract type.
 
         Args:
-            type_: Abstract type to check.
+            abstract_type: Abstract type to check.
 
-        Returns: List of possible implementations.
+        Raises:
+            TypeError: when the input type is not an abstract type.
+
+        Returns:
+            List of possible types.
+
         """
         if abstract_type in self._possible_types:
             return self._possible_types[abstract_type]
@@ -332,12 +336,11 @@ class Schema(ResolverMap):
 
     def is_subtype(self, type_, super_type):
         """
-        Provided a type and a super type, return true if the first type is
-        either equal or a subset of the second super type (covariant).
+        Check if a type is either equal or a subset of a super type (covariant).
 
         Args:
-            type_ (py_gql.schema.Type):
-            super_type (py_gql.schema.Type):
+            type_ (py_gql.schema.Type): Target type.
+            super_type (py_gql.schema.Type): Super type.
 
         Returns:
             bool:
@@ -367,8 +370,9 @@ class Schema(ResolverMap):
 
     def types_overlap(self, rhs: GraphQLType, lhs: GraphQLType) -> bool:
         """
-        Provided two composite types, determine if they "overlap". Two
-        composite types overlap when the Sets of possible concrete types for
+        Determine if two composite types "overlap".
+
+        Two composite types overlap when the Sets of possible concrete types for
         each intersect.
 
         This is often used to determine if a fragment of a given type could

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-""" GaphQL types related to introspection queries that
-should be present in all spec compliant servers. """
+"""
+GaphQL types related to introspection queries.
+
+These should be present in all spec compliant servers.
+"""
 import json
 from typing import Optional, Union
 
