@@ -72,11 +72,6 @@ jobs:
           pip --version
           pip freeze
 
-      - name: Check formatting
-        if: matrix.python != '3.5' && matrix.python != 'pypy3'
-        run: |
-          inv black --check
-
       - name: Lint (Flake 8)
         if: matrix.python != 'pypy3'
         run: |
