@@ -36,6 +36,14 @@ def test_empty_schema():
     assert print_schema(Schema()) == ""
 
 
+class CustomDirective(SchemaDirective):
+    definition = Directive(
+        "custom",
+        args=[Argument("arg", NonNullType(String))],
+        locations=Directive.SCHEMA_LOCATONS,
+    )
+
+
 @pytest.mark.parametrize(
     "type_, opts, expected",
     [
@@ -479,9 +487,6 @@ def test_introspection_schema_comments(fixture_file):
 
 
 def test_custom_directive_from_sdl_are_included_if_set():
-    class CustomDirective(SchemaDirective):
-        pass
-
     sdl = """
     schema @custom(arg: "SCHEMA") {
         query: Query
@@ -522,13 +527,11 @@ without: Int\
     union Union @custom(arg: "UNION") = Query
     """
 
-    schema = build_schema(sdl, schema_directives={"custom": CustomDirective})
+    schema = build_schema(sdl, schema_directives=(CustomDirective,))
     assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
 
 
 def test_custom_directives_from_sdl_are_included_if_set_to_True():
-    class CustomDirective(SchemaDirective):
-        pass
 
     sdl = """
     schema @custom(arg: "SCHEMA") {
@@ -570,8 +573,24 @@ without: Int\
     union Union @custom(arg: "UNION") = Query
     """
 
-    schema = build_schema(sdl, schema_directives={"custom": CustomDirective})
+    schema = build_schema(sdl, schema_directives=(CustomDirective,))
     assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
+
+
+class CustomDirective1(SchemaDirective):
+    definition = Directive(
+        "custom1",
+        args=[Argument("arg", NonNullType(Int))],
+        locations=("SCHEMA",),
+    )
+
+
+class CustomDirective2(SchemaDirective):
+    definition = Directive(
+        "custom2",
+        args=[Argument("arg", NonNullType(Int))],
+        locations=("SCHEMA",),
+    )
 
 
 def test_custom_directives_whitelist():
@@ -592,11 +611,7 @@ def test_custom_directives_whitelist():
     """
 
     schema = build_schema(
-        sdl,
-        schema_directives={
-            "custom1": CustomDirective,
-            "custom2": CustomDirective,
-        },
+        sdl, schema_directives=(CustomDirective1, CustomDirective2,),
     )
     assert print_schema(
         schema, include_custom_directives=["custom1"]

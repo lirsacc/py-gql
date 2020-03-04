@@ -20,7 +20,11 @@ from typing import (
 from .._utils import Lazy, lazy
 from ..exc import ScalarParsingError, ScalarSerializationError, UnknownEnumValue
 from ..lang import ast as _ast
-from ..lang.parser import DIRECTIVE_LOCATIONS
+from ..lang.parser import (
+    DIRECTIVE_LOCATIONS,
+    RUNTIME_DIRECTIVE_LOCATIONS,
+    SCHEMA_DIRECTIVE_LOCATONS,
+)
 
 if TYPE_CHECKING:
     from ..execution.wrappers import ResolveInfo  # noqa: F401
@@ -1164,10 +1168,14 @@ class Directive:
             Source node used when building type from the SDL
     """
 
+    ALL_LOCATIONS = DIRECTIVE_LOCATIONS
+    RUNTIME_LOCATIONS = RUNTIME_DIRECTIVE_LOCATIONS
+    SCHEMA_LOCATONS = SCHEMA_DIRECTIVE_LOCATONS
+
     def __init__(
         self,
         name: str,
-        locations: List[str],
+        locations: Sequence[str],
         args: Optional[List[Argument]] = None,
         description: Optional[str] = None,
         node: Optional[_ast.DirectiveDefinition] = None,

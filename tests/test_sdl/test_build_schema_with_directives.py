@@ -11,6 +11,7 @@ from py_gql._string_utils import dedent
 from py_gql.exc import ScalarParsingError, SDLError
 from py_gql.execution import default_resolver
 from py_gql.schema import (
+    Directive,
     EnumType,
     EnumValue,
     Field,
@@ -46,6 +47,8 @@ def wrap_resolver(field_def, func):
 
 def test_simple_field_modifier():
     class UppercaseDirective(SchemaDirective):
+        definition = "upper"
+
         def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
@@ -59,7 +62,7 @@ def test_simple_field_modifier():
                     foo: String @upper
                 }
                 """,
-                schema_directives={"upper": UppercaseDirective},
+                schema_directives=(UppercaseDirective,),
             ),
             "{ foo }",
             root={"foo": "lowerCase"},
@@ -70,6 +73,8 @@ def test_simple_field_modifier():
 
 def test_directive_on_wrong_location():
     class UppercaseDirective(SchemaDirective):
+        definition = "upper"
+
         def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
@@ -82,7 +87,7 @@ def test_directive_on_wrong_location():
                 foo: String
             }
             """,
-            schema_directives={"upper": UppercaseDirective},
+            schema_directives=(UppercaseDirective,),
         )
 
     assert exc_info.value.to_dict() == {
@@ -105,6 +110,8 @@ def test_ignores_unknown_directive_implementation():
 
 def test_field_modifier_using_arguments():
     class PowerDirective(SchemaDirective):
+        definition = "power"
+
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -122,7 +129,7 @@ def test_field_modifier_using_arguments():
                     bar: Int @power(exponent: 3)
                 }
                 """,
-                schema_directives={"power": PowerDirective},
+                schema_directives=(PowerDirective,),
             ),
             "{ foo, bar }",
             root={"foo": 2, "bar": 2},
@@ -133,10 +140,14 @@ def test_field_modifier_using_arguments():
 
 def test_object_modifier_and_field_modifier():
     class UppercaseDirective(SchemaDirective):
+        definition = "upper"
+
         def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x.upper())
 
-    class UniqueID(SchemaDirective):
+    class UniqueIDDirective(SchemaDirective):
+        definition = "uid"
+
         def __init__(self, args):
             self.name = args["name"]
             self.source = args["source"]
@@ -176,7 +187,7 @@ def test_object_modifier_and_field_modifier():
             name: String @upper
         }
         """,
-        schema_directives={"upper": UppercaseDirective, "uid": UniqueID},
+        schema_directives=(UppercaseDirective, UniqueIDDirective),
     )
 
     assert schema.to_string() == dedent(
@@ -217,7 +228,7 @@ def test_object_modifier_and_field_modifier():
 
 def test_missing_definition():
     class NoopDirective(SchemaDirective):
-        pass
+        definition = "noop"
 
     with pytest.raises(SDLError) as exc_info:
         build_schema(
@@ -226,7 +237,33 @@ def test_missing_definition():
                 foo: String @upper
             }
             """,
-            schema_directives={"upper": NoopDirective},
+            schema_directives=(NoopDirective,),
+        )
+
+    expected_message = (
+        "Unknown schema directive noop.\n"
+        "The definition attribute must either be an explicit Directive "
+        "instance or a string. When using a string, a directive with that name "
+        "must be present in the schema."
+    )
+
+    assert exc_info.value.to_dict() == {
+        "message": expected_message,
+    }
+
+
+def test_missing_definition_and_impl():
+    class NoopDirective(SchemaDirective):
+        definition = Directive("noop", locations=Directive.SCHEMA_LOCATONS)
+
+    with pytest.raises(SDLError) as exc_info:
+        build_schema(
+            """
+            type Query {
+                foo: String @upper
+            }
+            """,
+            schema_directives=(NoopDirective,),
         )
 
     assert exc_info.value.to_dict() == {
@@ -237,6 +274,8 @@ def test_missing_definition():
 
 def test_multiple_directives_applied_in_order():
     class PowerDirective(SchemaDirective):
+        definition = "power"
+
         def __init__(self, args):
             self.exponent = args["exponent"]
 
@@ -244,6 +283,8 @@ def test_multiple_directives_applied_in_order():
             return wrap_resolver(field_definition, lambda x: x ** self.exponent)
 
     class PlusOneDirective(SchemaDirective):
+        definition = "plus_one"
+
         def on_field(self, field_definition):
             return wrap_resolver(field_definition, lambda x: x + 1)
 
@@ -259,10 +300,7 @@ def test_multiple_directives_applied_in_order():
                     bar: Int @plus_one @power
                 }
                 """,
-                schema_directives={
-                    "power": PowerDirective,
-                    "plus_one": PlusOneDirective,
-                },
+                schema_directives=(PowerDirective, PlusOneDirective,),
             ),
             "{ foo, bar }",
             root={"foo": 2, "bar": 2},
@@ -305,6 +343,8 @@ def test_input_values():
             return parsed
 
     class LimitedLengthDirective(SchemaDirective):
+        definition = "len"
+
         def __init__(self, args):
             self.min = args["min"]
             self.max = args.get("max")
@@ -337,7 +377,7 @@ def test_input_values():
             baz: String @len(min: 3)
         }
         """,
-        schema_directives={"len": LimitedLengthDirective},
+        schema_directives=(LimitedLengthDirective,),
     )
 
     assert schema.to_string() == dedent(
@@ -409,6 +449,8 @@ def test_enum_value_directive():
     VALUES = {"RED": "#FF4136", "BLUE": "#0074D9", "GREEN": "#2ECC40"}
 
     class CSSColorDirective(SchemaDirective):
+        definition = "cssColor"
+
         def on_enum_value(self, enum_value):
             return EnumValue(
                 enum_value.name,
@@ -431,7 +473,7 @@ def test_enum_value_directive():
             GREEN @cssColor
         }
         """,
-        schema_directives={"cssColor": CSSColorDirective},
+        schema_directives=(CSSColorDirective,),
     )
 
     enum = cast(EnumType, schema.get_type("Color"))
@@ -446,6 +488,8 @@ def test_enum_type_directive():
     VALUES = [("RED", "#FF4136"), ("BLUE", "#0074D9"), ("GREEN", "#2ECC40")]
 
     class GeneratedEnum(SchemaDirective):
+        definition = "generated"
+
         def on_enum(self, enum):
             return EnumType(
                 enum.name,
@@ -464,7 +508,7 @@ def test_enum_type_directive():
 
         enum Color @generated { _empty }
         """,
-        schema_directives={"generated": GeneratedEnum},
+        schema_directives=(GeneratedEnum,),
     )
 
     assert schema.to_string() == dedent(
@@ -492,6 +536,8 @@ def test_enum_type_directive():
 
 def test_schema_extension_duplicate_directive():
     class OnSchema(SchemaDirective):
+        definition = "onSchema"
+
         def on_schema(self, schema):
             pass
 
@@ -509,7 +555,7 @@ def test_schema_extension_duplicate_directive():
 
             extend schema @onSchema
             """,
-            schema_directives={"onSchema": OnSchema},
+            schema_directives=(OnSchema,),
         )
 
     assert exc_info.value.to_dict() == {

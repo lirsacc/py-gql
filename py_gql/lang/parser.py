@@ -43,30 +43,32 @@ from .token import (
     Token,
 )
 
-DIRECTIVE_LOCATIONS = frozenset(
-    [
-        "QUERY",
-        "MUTATION",
-        "SUBSCRIPTION",
-        "FIELD",
-        "FRAGMENT_DEFINITION",
-        "FRAGMENT_SPREAD",
-        "INLINE_FRAGMENT",
-        "VARIABLE_DEFINITION",
-        # Type System Definitions
-        "SCHEMA",
-        "SCALAR",
-        "OBJECT",
-        "FIELD_DEFINITION",
-        "ARGUMENT_DEFINITION",
-        "INTERFACE",
-        "UNION",
-        "ENUM",
-        "ENUM_VALUE",
-        "INPUT_OBJECT",
-        "INPUT_FIELD_DEFINITION",
-    ]
+RUNTIME_DIRECTIVE_LOCATIONS = (
+    "QUERY",
+    "MUTATION",
+    "SUBSCRIPTION",
+    "FIELD",
+    "FRAGMENT_DEFINITION",
+    "FRAGMENT_SPREAD",
+    "INLINE_FRAGMENT",
+    "VARIABLE_DEFINITION",
 )
+
+SCHEMA_DIRECTIVE_LOCATONS = (
+    "SCHEMA",
+    "SCALAR",
+    "OBJECT",
+    "FIELD_DEFINITION",
+    "ARGUMENT_DEFINITION",
+    "INTERFACE",
+    "UNION",
+    "ENUM",
+    "ENUM_VALUE",
+    "INPUT_OBJECT",
+    "INPUT_FIELD_DEFINITION",
+)
+
+DIRECTIVE_LOCATIONS = RUNTIME_DIRECTIVE_LOCATIONS + SCHEMA_DIRECTIVE_LOCATONS
 
 
 EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset(

@@ -473,6 +473,8 @@ def test_union_type_extension_bad_extension():
 
 def test_scalar_type_extension():
     class ProtectedDirective(SchemaDirective):
+        definition = "protected"
+
         def visit_scalar(self, scalar_type):
             return scalar_type
 
@@ -488,7 +490,7 @@ def test_scalar_type_extension():
 
         extend scalar Foo @protected
         """,
-        schema_directives={"protected": ProtectedDirective},
+        schema_directives=(ProtectedDirective,),
     )
 
     assert schema.to_string() == dedent(
@@ -516,6 +518,8 @@ def test_scalar_type_extension():
 
 def test_injected_scalar_type_extension():
     class ProtectedDirective(SchemaDirective):
+        definition = "protected"
+
         def visit_scalar(self, scalar_type):
             return scalar_type
 
@@ -530,7 +534,7 @@ def test_injected_scalar_type_extension():
         extend scalar UUID @protected
         """,
         additional_types=[UUID],
-        schema_directives={"protected": ProtectedDirective},
+        schema_directives=(ProtectedDirective,),
     )
 
     assert schema.to_string(include_descriptions=False) == dedent(

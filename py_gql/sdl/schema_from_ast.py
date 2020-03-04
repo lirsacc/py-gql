@@ -4,8 +4,8 @@ import collections
 from typing import (
     Dict,
     List,
-    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -17,7 +17,7 @@ from ..exc import ExtensionError, SDLError
 from ..lang import ast as _ast, parse
 from ..schema import NamedType, ObjectType, Schema
 from .ast_type_builder import ASTTypeBuilder
-from .schema_directives import SchemaDirective, apply_schema_directives
+from .schema_directives import TSchemaDirective, apply_schema_directives
 
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
 
@@ -30,7 +30,7 @@ def build_schema(
     *,
     ignore_extensions: bool = False,
     additional_types: Optional[List[NamedType]] = None,
-    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
+    schema_directives: Optional[Sequence[TSchemaDirective]] = None
 ) -> Schema:
     """
     Build an executable schema from a GraphQL document.
@@ -53,9 +53,6 @@ def build_schema(
             so users should not rely on type identity.
         schema_directives: Schema directive classes.
             Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
-            and must either  define a non-null ``definition`` attribute or the
-            corresponding definition must be present in the document. See
-            :func:`~py_gql.schema.apply_schema_directives` for more details.
 
             Note:
                 Specified directives such as ``@deperecated`` do not need to be
@@ -154,7 +151,7 @@ def extend_schema(
     *,
     additional_types: Optional[List[NamedType]] = None,
     strict: bool = True,
-    schema_directives: Optional[Mapping[str, Type[SchemaDirective]]] = None
+    schema_directives: Optional[Sequence[TSchemaDirective]] = None
 ) -> Schema:
     """
     Extend an existing Schema according to a GraphQL document

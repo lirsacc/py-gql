@@ -6,7 +6,18 @@ This is largely based on the way Apollo and graphql-tools implement it,
 borrowing the same idea of using visitors and treating the schema as graph.
 """
 
-from typing import Iterator, List, Mapping, Optional, Set, Type, TypeVar, Union
+from typing import (
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from .._utils import flatten
 from ..exc import SDLError
@@ -49,6 +60,8 @@ _HasDirectives = Union[
     UnionType,
 ]
 
+TSchemaDirective = Type["SchemaDirective"]
+
 
 def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:
     if isinstance(definition, (Field, Argument, InputField, EnumValue)):
@@ -57,8 +70,6 @@ def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:
         return list(flatten(n.directives for n in definition.nodes if n))
 
 
-# REVIEW: With the definition and the usage as a keyed map we end up repeating
-# the name of the directive.
 class SchemaDirective(SchemaVisitor):
     """
     @directive implementation for use alongside  :func:`py_gql.schema.build_schema`.
@@ -66,14 +77,21 @@ class SchemaDirective(SchemaVisitor):
     You need to subclass this in order to define your own custom directives.
     All valid directive locations have a corresponding `on_X` method to
     implement from :class:`~py_gql.schema.SchemaVisitor`.
+
+    The definition atributes defines how the definition will be found at runtime.
+    A `Directive` object defines the directive inline, while a string delegates
+    to the schema at build time by name, in which case the directive must be
+    part of the schema it's applied to.
     """
+
+    definition = NotImplemented  # type: Union[Directive, str]
 
     def __init__(self, args=None):
         self.args = args or {}
 
 
 def apply_schema_directives(
-    schema: Schema, schema_directives: Mapping[str, Type[SchemaDirective]]
+    schema: Schema, schema_directives: Sequence[TSchemaDirective]
 ) -> Schema:
     """
     Apply :class:`~py_gql.schema.SchemaDirective` implementors to a given schema.
@@ -92,42 +110,46 @@ def apply_schema_directives(
 
     Args:
         schema: Schema to modify
-        schema_directives: Dict of directive name to corredponsing
-            :class:`~py_gql.schema.SchemaDirective` implementation. The directive
-            must either be defined in the schema or the class implement the
-            `definition` attribute.
+        schema_directives: List of schema directives (`~py_gql.schema.SchemaDirective`).
+            Each directive must implement the `definition` attribute.
 
     Returns:
         Modified schema.
 
     """
     return _SchemaDirectivesApplicationVisitor(
-        schema.directives, schema_directives
+        schema_directives, schema.directives
     ).on_schema(schema)
 
 
 class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
     def __init__(
         self,
-        directive_definitions: Mapping[str, Directive],
-        schema_directives: Mapping[str, Type[SchemaDirective]],
+        schema_directives: Sequence[TSchemaDirective],
+        directives: Dict[str, Directive],
     ):
-        self._schema_directives = schema_directives
-        directive_definitions = dict(directive_definitions)
 
-        for schema_directive in schema_directives.values():
-            if not issubclass(schema_directive, SchemaDirective):
+        self._defs = {}  # type: Dict[str, Tuple[Directive, TSchemaDirective]]
+
+        for sd in schema_directives:
+            if not isinstance(sd, type) or not issubclass(sd, SchemaDirective):
                 raise TypeError(
-                    'Expected SchemaDirective subclass but got "%r"'
-                    % schema_directive
+                    'Expected SchemaDirective subclass but got "%r"' % sd
                 )
 
-        for directive_name in directive_definitions:
-            visitor_cls = schema_directives.get(directive_name)
-            if visitor_cls is None:
-                continue
-
-        self._directive_definitions = directive_definitions
+            if isinstance(sd.definition, str):
+                try:
+                    self._defs[sd.definition] = directives[sd.definition], sd
+                except KeyError:
+                    raise SDLError(
+                        "Unknown schema directive %s.\n"
+                        "The definition attribute must either be an explicit "
+                        "Directive instance or a string. When using a string, a "
+                        "directive with that name must be present in the schema."
+                        % sd.definition
+                    )
+            else:
+                self._defs[sd.definition.name] = sd.definition, sd
 
     def _collect_schema_directives(
         self, definition: _HasDirectives, loc: str
@@ -137,14 +159,9 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
         for node in _find_directives(definition):
             name = node.name.value
             try:
-                directive_def = self._directive_definitions[name]
+                directive_def, schema_directive_cls = self._defs[name]
             except KeyError:
                 raise SDLError('Unknown directive "@%s' % name, [node])
-
-            try:
-                schema_directive_cls = self._schema_directives[name]
-            except KeyError:
-                raise SDLError('Missing implementation for "@%s"' % name)
 
             if loc not in directive_def.locations:
                 raise SDLError(
@@ -160,8 +177,12 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             yield schema_directive_cls(args)
 
     def on_schema(self, schema: Schema) -> Schema:
+        # Make sure the schema has all the definitions.
+        schema.directives.update({n: d for n, (d, _) in self._defs.items()})
+
         for sd in self._collect_schema_directives(schema, "SCHEMA"):
             schema = sd.on_schema(schema)
+
         return super().on_schema(schema)
 
     def on_scalar(self, scalar: ScalarType) -> Optional[ScalarType]:

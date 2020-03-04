@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+### Breaking Changes & Deprecations
+
+- Schema directives now **must** specify their defiinition, either with an explicit `Directive` or by delegating to the schema by name. They are now passed in as a sequence and not a mapping when using `build_schema`.
+
 ### Fixed
 
 - `snakecase_to_camelcase` util now correctly preserves leading and trailing underscores. This bug lead to the camelcase schema transform not handling fields prefixed with `_`.
