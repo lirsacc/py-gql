@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+### Fixed
+
+- `snakecase_to_camelcase` util now correctly preserves leading and trailing underscores. This bug lead to the camelcase schema transform not handling fields prefixed with `_`.
+
 [0.5.0](https://github.com/lirsacc/py-gql/releases/tag/0.5.0) - 2020-02-05
 --------------------------------------------------------------------------
 

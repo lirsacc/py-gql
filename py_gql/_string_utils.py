@@ -9,12 +9,15 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Match,
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
+EXTRACT_UNDERSCORES_RE = re.compile(r"^(_*).*(?<!_)(_*)$")
 
 ResponsePath = Sequence[Union[int, str]]
 
@@ -414,12 +417,29 @@ def snakecase_to_camelcase(value: str) -> str:
     >>> snakecase_to_camelcase('fooBarBaz')
     'fooBarBaz'
 
+    >>> snakecase_to_camelcase('_foo')
+    '_foo'
+
+    >>> snakecase_to_camelcase('__foo__')
+    '__foo__'
+
     """
     if not value:
         return value
 
+    # Regex matches everything.
+    captured = cast(Match[str], EXTRACT_UNDERSCORES_RE.match(value))
+    value = value.strip("_")
+    leading, trailing = captured.groups()
+
     head, *tail = value.split("_")
-    return head[0].lower() + head[1:] + "".join(s.title() for s in tail)
+    return "%s%s%s%s%s" % (
+        leading,
+        head[0].lower(),
+        head[1:],
+        "".join(s.title() for s in tail),
+        trailing,
+    )
 
 
 def camelcase_to_snakecase(value: str) -> str:
@@ -437,6 +457,13 @@ def camelcase_to_snakecase(value: str) -> str:
 
     >>> camelcase_to_snakecase('foo_bar_baz')
     'foo_bar_baz'
+
+
+    >>> camelcase_to_snakecase('_fooBarBaz')
+    '_foo_bar_baz'
+
+    >>> camelcase_to_snakecase('__fooBarBaz_')
+    '__foo_bar_baz_'
 
     """
     value = re.sub(r"[\-\.\s]", "_", value)
