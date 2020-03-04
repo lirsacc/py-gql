@@ -98,7 +98,7 @@ jobs:
           inv benchmark
 
       - name: Test with Cython
-        if: matrix.python != 'pypy3'
+        if: matrix.python != 'pypy3' && matrix.os != 'macos-latest'
         run: |
           PY_GQL_USE_CYTHON=1 python setup.py develop
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
