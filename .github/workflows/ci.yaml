@@ -116,10 +116,19 @@ jobs:
 
   # Build wheels and source distribution, upload them as build artifacts.
   build:
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
+    needs: [check]
 
-    needs:
-      - check
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - any
+          - 3.5
+          - 3.6
+          - 3.7
+          - 3.8
 
     steps:
       - uses: actions/checkout@v2
@@ -141,14 +150,17 @@ jobs:
           pip install --cache-dir .pip-cache --upgrade pip wheel setuptools 'cython<3' 'invoke~=1.1'
 
       - name: Build base wheel and source distribution
+        if: matrix.version == 'any'
         run: inv build
 
-      # manylinux wheels are not used in releases yet
-      # - name: Build manylinux wheels
-      #   run: inv build-manylinux-wheels --cythonize-module --python 3.8
+      - name: Build manylinux wheel
+        if: matrix.version != 'any'
+        run: inv build-manylinux-wheels --cythonize-module --python ${{ matrix.version }}
 
       - name: Generate checksums
-        run: inv generate-checksums
+        run: |
+          inv generate-checksums
+          mv dist/checksums.txt dist/checksums.${{ matrix.version }}.txt
 
       - name: Upload dist
         uses: actions/upload-artifact@v1
@@ -160,10 +172,9 @@ jobs:
   # artifacts from the `build` step.
   # TODO: Upload to PyPI?
   release:
+    if: success() && contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
     needs: [check, build]
-
-    if: success() && contains(github.ref, 'tags/v')
 
     steps:
       - uses: actions/checkout@v2
@@ -198,6 +209,11 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: dist
+
+      - name: Concatenate checksums
+        run: |
+          cat dist/checksums.*.txt dist/checksums.txt
+          rm -rf dist/checksums.*.txt
 
       - name: Create body
         id: body

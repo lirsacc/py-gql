@@ -297,6 +297,7 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
 @invoke.task
 def generate_checksums(ctx):
     with ctx.cd(os.path.join(ROOT, "dist")):
+        ctx.run("rm -rf checksums.txt")
         ctx.run(
             'find . -name "*%s*" -type f -exec sha256sum "{}" + >| checksums.txt'
             % PACKAGE,
