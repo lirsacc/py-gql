@@ -102,7 +102,6 @@ jobs:
         run: |
           PY_GQL_USE_CYTHON=1 python setup.py develop
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
-          inv clean --cython
 
       - name: Build docs
         if: matrix.python == '3.8'
@@ -110,9 +109,10 @@ jobs:
           inv docs
 
       - uses: codecov/codecov-action@v1
-        if: matrix.python != 'pypy3'
+        if: matrix.python != 'pypy3' && matrix.os != 'macos-latest'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
 
   # Build wheels and source distribution, upload them as build artifacts.
   build:
