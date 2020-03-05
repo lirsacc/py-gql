@@ -528,7 +528,9 @@ without: Int\
     """
 
     schema = build_schema(sdl, schema_directives=(CustomDirective,))
-    assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
+    assert print_schema(
+        schema, include_custom_schema_directives=True
+    ) == dedent(sdl)
 
 
 def test_custom_directives_from_sdl_are_included_if_set_to_True():
@@ -574,7 +576,9 @@ without: Int\
     """
 
     schema = build_schema(sdl, schema_directives=(CustomDirective,))
-    assert print_schema(schema, include_custom_directives=True) == dedent(sdl)
+    assert print_schema(
+        schema, include_custom_schema_directives=True
+    ) == dedent(sdl)
 
 
 class CustomDirective1(SchemaDirective):
@@ -614,7 +618,7 @@ def test_custom_directives_whitelist():
         sdl, schema_directives=(CustomDirective1, CustomDirective2,),
     )
     assert print_schema(
-        schema, include_custom_directives=["custom1"]
+        schema, include_custom_schema_directives=["custom1"]
     ) == dedent(
         """
         schema @custom1(arg: 1) {

@@ -3,6 +3,7 @@
 Export schema as SDL.
 """
 
+import itertools
 from typing import Any, Sequence, Union
 
 from .._string_utils import wrapped_lines
@@ -30,6 +31,8 @@ from ..schema.directives import DEFAULT_DEPRECATION
 from ..schema.introspection import is_introspection_type
 from .ast_node_from_value import ast_node_from_value
 
+_SPECIFIED_DIRECTIVE_NAMES = (d.name for d in SPECIFIED_DIRECTIVES)
+
 
 class ASTSchemaPrinter:
     """
@@ -37,27 +40,22 @@ class ASTSchemaPrinter:
 
     Args:
         indent: Indent character or number of spaces
-
         include_descriptions: If ``True`` include descriptions in the output
-
         use_legacy_comment_descriptions: Control how descriptions are formatted.
             Set to ``True`` for the old standard (use comments) which will be
             compatible with most GraphQL parsers while the default settings is
             to use block strings and is part of the most recent specification.
-
         include_introspection: If ``True``, include introspection types in the output
-
-        include_custom_directives: Include custom directives collected when
+        include_custom_schema_directives: Include custom directives collected when
             building the schema from an SDL document.
-
-            By default this class will not print any directive included in the
-            schema as there is no guarantee any external tooling consuming the
-            SDL will undertand them. You can set this flag to ``True`` to
-            include all of them or use a whitelist of directive names.
-
-            This applies only to directive locations and not directive
-            definitions as they could be relevant to clients regardless of their
-            use in the schema.
+            By default this class will not print any custom schema directive
+            included in the schema as there is no guarantee external tooling
+            consuming the resulting schema file will undertand them. You can set
+            this flag to ``True`` to include all of them or use a whitelist of
+            directive names.
+            This applies only to directive locations and not directive definitions
+            as they could be relevant to clients regardless of their use in the
+            schema.
 
     """
 
@@ -66,17 +64,18 @@ class ASTSchemaPrinter:
         "include_descriptions",
         "use_legacy_comment_descriptions",
         "include_introspection",
-        "include_custom_directives",
+        "include_custom_schema_directives",
     )
 
     def __init__(
         self,
+        *,
         indent: Union[str, int] = 4,
         include_descriptions: bool = True,
         include_introspection: bool = False,
         # TODO: Can this be dropped?
         use_legacy_comment_descriptions: bool = False,
-        include_custom_directives: Union[bool, Sequence[str]] = False,
+        include_custom_schema_directives: Union[bool, Sequence[str]] = False,
     ):
         self.include_descriptions = include_descriptions
         self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
@@ -87,7 +86,7 @@ class ASTSchemaPrinter:
             self.indent = indent
 
         self.include_introspection = include_introspection
-        self.include_custom_directives = include_custom_directives
+        self.include_custom_schema_directives = include_custom_schema_directives
 
     def __call__(self, schema: Schema) -> str:
         directives = sorted(
@@ -114,22 +113,25 @@ class ASTSchemaPrinter:
             key=lambda x: x.name,
         )
 
-        parts = (
-            [self.print_schema_definition(schema)]
-            + (
-                [
-                    self.print_directive_definition(d)
-                    for d in SPECIFIED_DIRECTIVES
-                ]
-                if self.include_introspection
-                else []
+        parts = list(
+            itertools.chain(
+                [self.print_schema_definition(schema)],
+                (
+                    (
+                        self.print_directive_definition(d)
+                        for d in SPECIFIED_DIRECTIVES
+                    )
+                    if self.include_introspection
+                    else []
+                ),
+                (self.print_directive_definition(d) for d in directives),
+                (self.print_type(t) for t in types),
             )
-            + [self.print_directive_definition(d) for d in directives]
-            + [self.print_type(t) for t in types]
         )
 
         if not any(p for p in parts):
             return ""
+
         return "\n\n".join(part for part in parts if part) + "\n"
 
     def print_description(
@@ -204,13 +206,14 @@ class ASTSchemaPrinter:
             ast_node_from_value(field_or_enum_value.deprecation_reason, String)
         )
 
-    def include_custom_directive(self, directive_name: str) -> bool:
-        known_directive_names = (d.name for d in SPECIFIED_DIRECTIVES)
-        if directive_name in known_directive_names:
+    def include_custom_schema_directive(self, directive_name: str) -> bool:
+        # The only specified schema directive is currently @deprecated and
+        # it special cased internally.
+        if directive_name in _SPECIFIED_DIRECTIVE_NAMES:
             return False
 
-        if not isinstance(self.include_custom_directives, bool):
-            return directive_name in self.include_custom_directives
+        if not isinstance(self.include_custom_schema_directives, bool):
+            return directive_name in self.include_custom_schema_directives
         else:
             return True
 
@@ -229,7 +232,7 @@ class ASTSchemaPrinter:
             UnionType,
         ],
     ) -> str:
-        if not self.include_custom_directives:
+        if not self.include_custom_schema_directives:
             return ""
 
         if isinstance(definition, (Field, InputValue, EnumValue)):
@@ -249,7 +252,7 @@ class ASTSchemaPrinter:
         return " " + " ".join(
             print_ast(directive_node)
             for directive_node in directives_nodes
-            if self.include_custom_directive(directive_node.name.value)
+            if self.include_custom_schema_directive(directive_node.name.value)
         )
 
     def print_type(self, type_: GraphQLType) -> str:

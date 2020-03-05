@@ -403,7 +403,7 @@ class Schema(ResolverMap):
         include_descriptions: bool = True,
         include_introspection: bool = False,
         use_legacy_comment_descriptions: bool = False,
-        include_custom_directives: bool = False,
+        include_custom_schema_directives: bool = False,
     ) -> str:
         """
         Format the schema as an SDL string.
@@ -417,7 +417,7 @@ class Schema(ResolverMap):
             include_descriptions=include_descriptions,
             include_introspection=include_introspection,
             use_legacy_comment_descriptions=use_legacy_comment_descriptions,
-            include_custom_directives=include_custom_directives,
+            include_custom_schema_directives=include_custom_schema_directives,
         )(self)
 
     def register_resolver(
