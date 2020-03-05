@@ -29,7 +29,7 @@ from ..schema import (
 )
 from ..schema.directives import DEFAULT_DEPRECATION
 from ..schema.introspection import is_introspection_type
-from .ast_node_from_value import ast_node_from_value
+from ..utilities.ast_node_from_value import ast_node_from_value
 
 _SPECIFIED_DIRECTIVE_NAMES = (d.name for d in SPECIFIED_DIRECTIVES)
 

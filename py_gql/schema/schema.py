@@ -407,9 +407,9 @@ class Schema(ResolverMap):
         """
         Format the schema as an SDL string.
 
-        Refer to :class:`py_gql.utilities.ASTSchemaPrinter` for details.
+        Refer to :class:`py_gql.sdl.ASTSchemaPrinter` for details.
         """
-        from ..utilities.ast_schema_printer import ASTSchemaPrinter
+        from ..sdl import ASTSchemaPrinter
 
         return ASTSchemaPrinter(
             indent=indent,

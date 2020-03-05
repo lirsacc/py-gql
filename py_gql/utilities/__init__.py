@@ -7,7 +7,6 @@ tooling on top of this library.
 """
 
 from .ast_node_from_value import ast_node_from_value
-from .ast_schema_printer import ASTSchemaPrinter
 from .coerce_value import (
     coerce_argument_values,
     coerce_value,
@@ -26,7 +25,6 @@ from .value_from_ast import value_from_ast
 
 __all__ = (
     "ast_node_from_value",
-    "ASTSchemaPrinter",
     "coerce_argument_values",
     "coerce_value",
     "coerce_variable_values",
