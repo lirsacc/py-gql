@@ -70,6 +70,8 @@ SCHEMA_DIRECTIVE_LOCATONS = (
 
 DIRECTIVE_LOCATIONS = RUNTIME_DIRECTIVE_LOCATIONS + SCHEMA_DIRECTIVE_LOCATONS
 
+_DIRECTIVE_LOCATIONS = frozenset(DIRECTIVE_LOCATIONS)
+
 
 EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset(
     ["query", "mutation", "subscription", "fragment"]
@@ -1464,7 +1466,7 @@ class Parser:
         """
         start = self.peek()
         name = self.parse_name()
-        if name.value in DIRECTIVE_LOCATIONS:
+        if name.value in _DIRECTIVE_LOCATIONS:
             return name
         raise UnexpectedToken(
             "Unexpected Name %s" % name.value, start.start, self._lexer._source
