@@ -41,10 +41,6 @@ class ASTSchemaPrinter:
     Args:
         indent: Indent character or number of spaces
         include_descriptions: If ``True`` include descriptions in the output
-        use_legacy_comment_descriptions: Control how descriptions are formatted.
-            Set to ``True`` for the old standard (use comments) which will be
-            compatible with most GraphQL parsers while the default settings is
-            to use block strings and is part of the most recent specification.
         include_introspection: If ``True``, include introspection types in the output
         include_custom_schema_directives: Include custom directives collected when
             building the schema from an SDL document.
@@ -62,7 +58,6 @@ class ASTSchemaPrinter:
     __slots__ = (
         "indent",
         "include_descriptions",
-        "use_legacy_comment_descriptions",
         "include_introspection",
         "include_custom_schema_directives",
     )
@@ -73,18 +68,14 @@ class ASTSchemaPrinter:
         indent: Union[str, int] = 4,
         include_descriptions: bool = True,
         include_introspection: bool = False,
-        # TODO: Can this be dropped?
-        use_legacy_comment_descriptions: bool = False,
         include_custom_schema_directives: Union[bool, Sequence[str]] = False,
     ):
-        self.include_descriptions = include_descriptions
-        self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
-
         if isinstance(indent, int):
             self.indent = indent * " "  # type: str
         else:
             self.indent = indent
 
+        self.include_descriptions = include_descriptions
         self.include_introspection = include_introspection
         self.include_custom_schema_directives = include_custom_schema_directives
 
@@ -142,55 +133,39 @@ class ASTSchemaPrinter:
 
         indent = self.indent * depth
 
-        if self.use_legacy_comment_descriptions:
-            prefix = indent + "# "
-            max_len = 120 - len(prefix)
-            lines = [
-                (prefix + line.rstrip()) if line else "#"
-                for line in wrapped_lines(
-                    definition.description.split("\n"), max_len
-                )
-            ]
-            return (
-                ("\n" if not first_in_block else "") + "\n".join(lines) + "\n"
-            )
+        max_len = 120 - len(indent)
+        lines = list(wrapped_lines(definition.description.split("\n"), max_len))
+        first = lines[0]
 
+        if len(lines) == 1 and len(first) < 70 and not first.endswith('"'):
+            body = first.replace('"""', '\\"""')
         else:
-            max_len = 120 - len(indent)
-            lines = list(
-                wrapped_lines(definition.description.split("\n"), max_len)
-            )
-            first = lines[0]
-
-            if len(lines) == 1 and len(first) < 70 and not first.endswith('"'):
-                body = first.replace('"""', '\\"""')
-            else:
-                has_leading_whitespace = len(first) > len(first.lstrip())
-                body = (
-                    "\n".join(
-                        [
-                            "%s%s%s"
-                            % (
-                                "\n"
-                                if (i == 0 and not has_leading_whitespace)
-                                else "",
-                                indent
-                                if (i > 0 or not has_leading_whitespace)
-                                else "",
-                                line.replace('"""', '\\"""'),
-                            )
-                            for i, line in enumerate(lines)
-                        ]
-                    )
-                    + "\n"
-                    + indent
+            has_leading_whitespace = len(first) > len(first.lstrip())
+            body = (
+                "\n".join(
+                    [
+                        "%s%s%s"
+                        % (
+                            "\n"
+                            if (i == 0 and not has_leading_whitespace)
+                            else "",
+                            indent
+                            if (i > 0 or not has_leading_whitespace)
+                            else "",
+                            line.replace('"""', '\\"""'),
+                        )
+                        for i, line in enumerate(lines)
+                    ]
                 )
-
-            return '%s%s"""%s"""\n' % (
-                "\n" if indent and not first_in_block else "",
-                indent,
-                body,
+                + "\n"
+                + indent
             )
+
+        return '%s%s"""%s"""\n' % (
+            "\n" if indent and not first_in_block else "",
+            indent,
+            body,
+        )
 
     def print_deprecated(
         self, field_or_enum_value: Union[Field, EnumValue]

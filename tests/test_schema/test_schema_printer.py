@@ -470,20 +470,8 @@ def test_description_has_leading_space():
 
 def test_introspection_schema(fixture_file):
     assert print_schema(
-        Schema(),
-        indent=2,
-        include_introspection=True,
-        use_legacy_comment_descriptions=False,
+        Schema(), indent=2, include_introspection=True,
     ) == fixture_file("introspection-schema.graphql")
-
-
-def test_introspection_schema_comments(fixture_file):
-    assert print_schema(
-        Schema(),
-        indent=2,
-        include_introspection=True,
-        use_legacy_comment_descriptions=True,
-    ) == fixture_file("introspection-schema-comments.graphql")
 
 
 def test_custom_directive_from_sdl_are_included_if_set():

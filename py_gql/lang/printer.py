@@ -15,27 +15,14 @@ class ASTPrinter:
         indent (Union[str, int]): Indent character or number of spaces
         include_descriptions (bool): If ``True`` include descriptions as
             leading block strings in the output. Only relevant for SDL nodes.
-        use_legacy_comment_descriptions: Control how descriptions are formatted.
-            Set to ``True`` for the old standard (use comments) which will be
-            compatible with most GraphQL parsers while the default settings is
-            to use block strings and is part of the most recent specification.
-
     """
 
-    __slots__ = (
-        "indent",
-        "include_descriptions",
-        "use_legacy_comment_descriptions",
-    )
+    __slots__ = ("indent", "include_descriptions")
 
     def __init__(
-        self,
-        indent: Union[str, int] = 4,
-        include_descriptions: bool = True,
-        use_legacy_comment_descriptions: bool = False,
+        self, indent: Union[str, int] = 4, include_descriptions: bool = True,
     ):
         self.include_descriptions = include_descriptions
-        self.use_legacy_comment_descriptions = use_legacy_comment_descriptions
         if isinstance(indent, int):
             self.indent = indent * " "
         else:
@@ -514,13 +501,7 @@ class ASTPrinter:
         if desc is None or not self.include_descriptions:
             return formatted
 
-        if not self.use_legacy_comment_descriptions:
-            desc_str = _block_string(desc.value, self.indent, True)
-        else:
-            desc_str = "\n".join(
-                ("# " + line for line in desc.value.split("\n"))
-            )
-
+        desc_str = _block_string(desc.value, self.indent, True)
         return _join([desc_str, formatted], "\n")
 
 

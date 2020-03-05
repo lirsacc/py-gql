@@ -333,32 +333,6 @@ extend schema @onSchema {
     )
 
 
-def test_comment_descriptions():
-    node = _ast.ObjectTypeDefinition(
-        name=_ast.Name(value="Foo"),
-        description=_ast.StringValue(
-            value="This is a description\nof the `Foo` type.", block=True
-        ),
-        fields=[
-            _ast.FieldDefinition(
-                name=_ast.Name(value="bar"),
-                type=_ast.NamedType(name=_ast.Name(value="Bar")),
-            )
-        ],
-    )
-
-    assert ASTPrinter(indent=4, use_legacy_comment_descriptions=True)(
-        node
-    ) == dedent(
-        """
-        # This is a description
-        # of the `Foo` type.
-        type Foo {
-            bar: Bar
-        }"""
-    )
-
-
 # From a broken case
 def test_custom_indentation_object():
     assert (

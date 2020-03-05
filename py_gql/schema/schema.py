@@ -402,7 +402,6 @@ class Schema(ResolverMap):
         indent: Union[str, int] = 4,
         include_descriptions: bool = True,
         include_introspection: bool = False,
-        use_legacy_comment_descriptions: bool = False,
         include_custom_schema_directives: bool = False,
     ) -> str:
         """
@@ -416,7 +415,6 @@ class Schema(ResolverMap):
             indent=indent,
             include_descriptions=include_descriptions,
             include_introspection=include_introspection,
-            use_legacy_comment_descriptions=use_legacy_comment_descriptions,
             include_custom_schema_directives=include_custom_schema_directives,
         )(self)
 
