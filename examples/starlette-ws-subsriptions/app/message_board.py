@@ -23,7 +23,12 @@ Message = TypedDict(
 
 Room = TypedDict(
     "Room",
-    {"id": uuid.UUID, "created": int, "name": str, "messages": List[uuid.UUID]},
+    {
+        "id": uuid.UUID,
+        "created": int,
+        "name": str,
+        "messages": List[uuid.UUID],
+    },
 )
 
 

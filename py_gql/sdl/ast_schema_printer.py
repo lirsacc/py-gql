@@ -68,7 +68,7 @@ class ASTSchemaPrinter:
         indent: Union[str, int] = 4,
         include_descriptions: bool = True,
         include_introspection: bool = False,
-        include_custom_schema_directives: Union[bool, Sequence[str]] = False,
+        include_custom_schema_directives: Union[bool, Sequence[str]] = False
     ):
         if isinstance(indent, int):
             self.indent = indent * " "  # type: str
