@@ -63,7 +63,7 @@ You can install the development version from source after cloning locally:
 
     $ git clone git@github.com:lirsacc/py-gql.git py_gql
     $ cd py-gql
-    $ python setup.py develop
+    $ pip install -e .
 
 
 Or you can directly install through pip `VCS support

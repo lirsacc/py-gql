@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade -r dev-requirements.txt
-          python setup.py develop
+          pip install -e .
 
       # Some dev dependencies don't build under pypy but testing deps and py-gql
       # should work.
@@ -64,7 +64,7 @@ jobs:
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade -r test-requirements.txt
-          python setup.py develop
+          pip install -e .
 
       - name: (Debug) dependency versions
         run: |
@@ -100,7 +100,7 @@ jobs:
       - name: Test with Cython
         if: matrix.python != 'pypy3' && matrix.os != 'macos-latest'
         run: |
-          PY_GQL_USE_CYTHON=1 python setup.py develop
+          PY_GQL_USE_CYTHON=1 pip install -v --no-build-isolation -e .
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
 
       - name: Build docs
