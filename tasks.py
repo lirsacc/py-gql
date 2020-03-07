@@ -28,7 +28,7 @@ def _join(cmd):
 
 
 @invoke.task
-def clean(ctx, cython=False, dist=False):
+def clean(ctx):
     """
     Remove test and compilation artifacts.
     """
@@ -41,14 +41,13 @@ def clean(ctx, cython=False, dist=False):
             echo=True,
         )
 
-        if cython:
-            ctx.run(
-                'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
-                echo=True,
-            )
+        ctx.run(
+            'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
+            echo=True,
+        )
 
-        if dist:
-            ctx.run("rm -rf dist")
+        ctx.run("rm -rf dist", echo=True)
+        ctx.run("rm -rf build", echo=True)
 
 
 @invoke.task()
