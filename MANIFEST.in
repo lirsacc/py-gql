@@ -4,6 +4,7 @@ include setup.cfg
 include requirements.txt *-requirements.txt
 
 recursive-include tests *.py
+recursive-include tests *.graphql
 
 # This would include .c files (cythonized code) in the source distribution when
 # they are present.
