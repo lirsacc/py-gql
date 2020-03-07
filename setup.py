@@ -37,7 +37,7 @@ def run_setup():
 
     pkg = {}
 
-    with open(os.path.join(DIR, "py_gql", "_pkg.py")) as f:
+    with open(os.path.join(DIR, "src", "py_gql", "_pkg.py")) as f:
         exec(f.read(), {}, pkg)
 
     with open(os.path.join(DIR, "README.md")) as f:
@@ -55,14 +55,13 @@ def run_setup():
         license=pkg["__license__"],
         keywords="graphql api",
         zip_safe=False,
-        packages=setuptools.find_packages(
-            exclude=("tests", "tests.*", "docs", "examples")
-        ),
+        packages=setuptools.find_packages(where="src"),
+        package_dir={"": "src"},
         install_requires=_split_requirements("requirements.txt"),
         tests_require=_split_requirements("test-requirements.txt"),
         include_package_data=True,
         python_requires=">=3.5",
-        ext_modules=_ext_modules("py_gql",),
+        ext_modules=_ext_modules("src/py_gql",),
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",

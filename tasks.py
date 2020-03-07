@@ -13,7 +13,7 @@ import sys
 import invoke
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-PACKAGE = "py_gql"
+PACKAGE = "src/py_gql"
 DEFAULT_TARGETS = (
     "%s tests examples" % PACKAGE
     if sys.version >= "3.6"
