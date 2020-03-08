@@ -14,6 +14,7 @@ from py_gql.lang import parse
 from py_gql.lang.ast import Document
 from py_gql.schema import Field, GraphQLType, ObjectType, Schema
 
+
 ExpectedError = Tuple[str, Tuple[int, int], Optional[str]]
 ExpectedExcDef = Union[Type[Exception], Tuple[Type[Exception], Optional[str]]]
 

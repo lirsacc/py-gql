@@ -32,6 +32,7 @@ from ..schema import (
 )
 from .value_from_ast import value_from_ast
 
+
 Path = List[Union[int, str]]
 
 

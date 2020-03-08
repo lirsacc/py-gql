@@ -25,6 +25,7 @@ from py_gql.schema import (
 )
 from py_gql.sdl import build_schema, extend_schema
 
+
 BASE_SCHEMA = Schema(ObjectType("Query", [Field("foo", Int)]))
 
 build_schema_ignoring_extensions = functools.partial(

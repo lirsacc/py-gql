@@ -11,6 +11,7 @@ from py_gql.tracers import ApolloTracer
 
 from .schema import SCHEMA
 
+
 RUNTIME = ThreadPoolRuntime(max_workers=20)
 
 with open(os.path.join(os.path.dirname(__file__), "graphiql.html")) as f:

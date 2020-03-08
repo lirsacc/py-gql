@@ -30,6 +30,7 @@ from ..schema.introspection import INTROPSPECTION_TYPES
 from ..schema.scalars import default_scalar
 from ..utilities import directive_arguments, value_from_ast
 
+
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
 
 

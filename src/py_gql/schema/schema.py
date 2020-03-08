@@ -34,6 +34,7 @@ from .types import (
 )
 from .validation import validate_schema
 
+
 _SPECIFIED_DIRECTIVE_NAMES = [t.name for t in SPECIFIED_DIRECTIVES]
 _PROTECTED_TYPES = SPECIFIED_SCALAR_TYPES + INTROPSPECTION_TYPES
 

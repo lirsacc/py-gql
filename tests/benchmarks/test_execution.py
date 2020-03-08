@@ -5,6 +5,7 @@ import random
 
 import py_gql
 
+
 SIZE = 10000
 
 FooType = collections.namedtuple("Object", ["x", "y", "z"])

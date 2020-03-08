@@ -42,6 +42,7 @@ from py_gql.schema.differ import (
 )
 from py_gql.sdl import build_schema
 
+
 GROUPED_TEST_CASES = [
     (
         "add_and_remove_types",

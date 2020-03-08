@@ -18,6 +18,7 @@ from ...schema import (
 )
 from ...schema.introspection import INTROPSPECTION_TYPES
 
+
 TNamedType = TypeVar("TNamedType", bound=NamedType)
 
 

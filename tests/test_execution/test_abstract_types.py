@@ -16,6 +16,7 @@ from py_gql.schema import (
     UnionType,
 )
 
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

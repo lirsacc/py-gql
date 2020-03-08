@@ -7,6 +7,7 @@ from py_gql.lang import parse
 from py_gql.schema import Argument, Directive, IncludeDirective, Int, String
 from py_gql.utilities import directive_arguments
 
+
 CustomDirective = Directive(
     "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
 )

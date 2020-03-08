@@ -9,6 +9,7 @@ from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
 from .wrappers import GroupedFields, ResolveInfo, ResponsePath
 
+
 Resolver = Callable[..., Any]
 
 

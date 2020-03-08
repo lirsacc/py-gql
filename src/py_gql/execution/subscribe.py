@@ -13,6 +13,7 @@ from .instrumentation import Instrumentation
 from .runtime import SubscriptionRuntime
 from .wrappers import GraphQLResult, ResolveInfo
 
+
 Resolver = Callable[..., Any]
 
 

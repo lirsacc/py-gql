@@ -19,6 +19,7 @@ from ..schema import (
 )
 from ..schema.scalars import MAX_INT, MIN_INT, SPECIFIED_SCALAR_TYPES
 
+
 _INT_RE = re.compile(r"^-?(0|[1-9][0-9]*)$")
 
 

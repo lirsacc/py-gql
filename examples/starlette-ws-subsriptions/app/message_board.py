@@ -9,6 +9,7 @@ from typing import Callable, Dict, List, Set
 
 from mypy_extensions import TypedDict
 
+
 Message = TypedDict(
     "Message",
     {

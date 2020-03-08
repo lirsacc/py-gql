@@ -43,6 +43,7 @@ from .token import (
     Token,
 )
 
+
 RUNTIME_DIRECTIVE_LOCATIONS = (
     "QUERY",
     "MUTATION",

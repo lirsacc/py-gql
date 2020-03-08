@@ -61,6 +61,7 @@ from .changes import (
     TypeRemovedFromUnion,
 )
 
+
 TGraphQLType = TypeVar("TGraphQLType", bound=GraphQLType)
 
 

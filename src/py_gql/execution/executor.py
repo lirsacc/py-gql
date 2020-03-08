@@ -46,6 +46,7 @@ from .wrappers import (
     ResponsePath,
 )
 
+
 Resolver = Callable[..., Any]
 
 T = TypeVar("T")

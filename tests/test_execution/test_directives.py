@@ -19,6 +19,7 @@ from py_gql.schema import (
 
 from ._test_utils import assert_sync_execution
 
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

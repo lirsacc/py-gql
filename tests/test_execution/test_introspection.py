@@ -18,6 +18,7 @@ from py_gql.utilities import introspection_query
 
 from ._test_utils import assert_sync_execution
 
+
 # Star Wars schema related tests. These are simpler than other tests down
 # this file and should be easier to debug if something breaks while
 # the others are supposed to cover more ground.

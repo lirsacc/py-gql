@@ -14,6 +14,7 @@ from py_gql.execution.runtime import AsyncIORuntime
 
 from ._test_utils import assert_execution
 
+
 schema = build_schema(
     """
     type Query {

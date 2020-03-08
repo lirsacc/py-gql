@@ -12,6 +12,7 @@ from py_gql.schema import UUID
 
 from .message_board import Message, MessageBoard, Room
 
+
 CreateRoomInput = TypedDict("CreateRoomInput", {"name": str})
 
 CreateMessageInput = TypedDict(

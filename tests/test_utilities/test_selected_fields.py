@@ -5,6 +5,7 @@ from typing import cast
 from py_gql.lang import ast, parse
 from py_gql.utilities import selected_fields
 
+
 DOCUMENT = """
     query {
         foo {

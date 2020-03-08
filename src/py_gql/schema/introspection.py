@@ -25,6 +25,7 @@ from .types import (
     UnionType,
 )
 
+
 __Schema__ = ObjectType(
     "__Schema",
     description=(

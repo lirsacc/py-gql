@@ -12,6 +12,7 @@ from py_gql.exc import ResolverError
 
 from ._test_utils import assert_sync_execution
 
+
 HERO_QUERY = """
 query HeroNameAndFriendsQuery {
     hero {

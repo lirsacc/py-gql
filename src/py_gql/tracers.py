@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Tuple, Union, cast
 from ._utils import OrderedDict
 from .execution import GraphQLExtension, Instrumentation, ResolveInfo
 
+
 __all__ = ("TimingTracer", "ApolloTracer")
 
 

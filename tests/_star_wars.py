@@ -25,6 +25,7 @@ from py_gql.schema import (
     String,
 )
 
+
 luke = {
     "type": "Human",
     "id": "1000",

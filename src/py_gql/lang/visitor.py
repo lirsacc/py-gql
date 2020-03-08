@@ -10,6 +10,7 @@ from .._utils import classdispatch, map_and_filter
 from ..exc import GraphQLError
 from . import ast as _ast
 
+
 T = TypeVar("T")
 N = TypeVar("N", bound=_ast.Node)
 S = TypeVar("S", bound=_ast.Selection)

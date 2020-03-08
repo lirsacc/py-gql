@@ -30,6 +30,7 @@ from .overlapping_fields_can_be_merged import (  # noqa: F401
 )
 from .values_of_correct_type import ValuesOfCorrectTypeChecker  # noqa: F401
 
+
 __all__ = (
     "ExecutableDefinitionsChecker",
     "UniqueOperationNameChecker",

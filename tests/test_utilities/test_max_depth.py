@@ -5,6 +5,7 @@ import pytest
 from py_gql.lang import ast, parse
 from py_gql.utilities import MaxDepthValidationRule
 
+
 MULTIPLE_OPERATIONS = """
 query ShallowQuery {
     hero {

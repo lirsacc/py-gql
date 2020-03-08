@@ -4,6 +4,7 @@ import pytest
 
 from py_gql.lang import parse
 
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

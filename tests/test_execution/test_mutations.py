@@ -8,6 +8,7 @@ import pytest
 from py_gql.exc import ResolverError
 from py_gql.schema import Argument, Field, Int, ObjectType, Schema
 
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 

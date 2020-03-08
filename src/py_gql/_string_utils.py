@@ -16,6 +16,7 @@ from typing import (
     cast,
 )
 
+
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
 EXTRACT_UNDERSCORES_RE = re.compile(r"^(_*).*(?<!_)(_*)$")
 

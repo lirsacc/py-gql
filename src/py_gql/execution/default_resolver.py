@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+
 if TYPE_CHECKING:
     from .wrappers import ResolveInfo
 

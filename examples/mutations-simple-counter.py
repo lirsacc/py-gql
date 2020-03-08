@@ -5,6 +5,7 @@ Simple mutations example: incrementing and decrementing a global counter.
 
 from py_gql import build_schema, graphql_blocking
 
+
 ROOT = {"counter": 0}
 
 

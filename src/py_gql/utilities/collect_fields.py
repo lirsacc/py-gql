@@ -26,6 +26,7 @@ from ..schema import (
 )
 from ..utilities import directive_arguments
 
+
 T = TypeVar("T")
 GroupedFields = Dict[str, List[ast.Field]]
 

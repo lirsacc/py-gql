@@ -19,6 +19,7 @@ from ..schema import Schema
 from . import rules as _rules
 from .visitors import TypeInfoVisitor, ValidationVisitor
 
+
 Validator = Callable[
     [Schema, _ast.Document, Optional[Dict[str, Any]]], Iterable[ValidationError]
 ]

@@ -9,6 +9,7 @@ from .instrumentation import Instrumentation, MultiInstrumentation
 from .subscribe import subscribe
 from .wrappers import GraphQLExtension, GraphQLResult, ResolveInfo, ResponsePath
 
+
 __all__ = (
     "execute",
     "subscribe",

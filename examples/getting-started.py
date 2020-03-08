@@ -13,6 +13,7 @@ import flask
 
 from py_gql import build_schema, graphql_blocking
 
+
 SDL = """
 enum CharacterType {
     Human,

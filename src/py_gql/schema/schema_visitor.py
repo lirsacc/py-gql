@@ -21,6 +21,7 @@ from .types import (
     UnionType,
 )
 
+
 TType = TypeVar("TType", bound=type)
 
 

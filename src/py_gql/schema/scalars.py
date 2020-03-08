@@ -10,6 +10,7 @@ from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar, Union
 from ..lang import ast as _ast
 from .types import ScalarType
 
+
 T = TypeVar("T")
 
 _ScalarValueNode = Union[

@@ -18,6 +18,7 @@ from py_gql.schema import (
     String,
 )
 
+
 Interface = InterfaceType("Interface", [Field("fieldName", String)])
 
 Implementing = ObjectType(

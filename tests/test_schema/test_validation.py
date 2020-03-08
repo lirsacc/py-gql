@@ -28,6 +28,7 @@ from py_gql.schema import (
 )
 from py_gql.schema.validation import validate_schema
 
+
 SomeScalar = ScalarType(
     "SomeScalar",
     serialize=lambda a: None,

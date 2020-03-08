@@ -24,4 +24,5 @@ from .lexer import Lexer
 from .parser import Parser, parse, parse_type, parse_value
 from .printer import print_ast
 
+
 __all__ = ("parse", "parse_type", "parse_value", "print_ast", "Parser", "Lexer")

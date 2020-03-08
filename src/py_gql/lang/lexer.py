@@ -39,6 +39,7 @@ from .token import (
     Token,
 )
 
+
 IGNORED_CHARS = "\n\r\ufeff\t ,"
 
 SYMBOLS = {

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
 
+
 URL = "https://swapi.co/api"
 
 

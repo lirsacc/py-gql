@@ -30,6 +30,7 @@ from ..utilities import (
 from .default_resolver import default_resolver as _default_resolver
 from .runtime import Runtime
 
+
 _UNSET = object()
 
 Resolver = Callable[..., Any]

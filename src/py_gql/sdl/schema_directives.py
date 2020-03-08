@@ -40,6 +40,7 @@ from ..schema import (
 )
 from ..utilities import coerce_argument_values
 
+
 __all__ = ("SchemaDirective", "apply_schema_directives")
 
 

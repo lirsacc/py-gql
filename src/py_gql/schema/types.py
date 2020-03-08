@@ -26,6 +26,7 @@ from ..lang.parser import (
     SCHEMA_DIRECTIVE_LOCATONS,
 )
 
+
 if TYPE_CHECKING:
     from ..execution.wrappers import ResolveInfo  # noqa: F401
 

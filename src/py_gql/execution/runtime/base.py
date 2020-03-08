@@ -3,6 +3,7 @@
 import abc
 from typing import Any, Callable, Iterable, Optional, Tuple, Type, TypeVar
 
+
 T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 AnyFn = Callable[..., Any]

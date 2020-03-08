@@ -5,6 +5,7 @@ from py_gql.execution import Instrumentation, MultiInstrumentation
 
 from ._test_utils import process_request
 
+
 pytestmark = pytest.mark.asyncio
 
 

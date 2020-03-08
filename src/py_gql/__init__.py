@@ -17,6 +17,7 @@ from ._graphql import graphql, graphql_blocking, process_graphql_query
 from .execution import GraphQLResult, ResolveInfo
 from .sdl import build_schema
 
+
 __all__ = (
     "__version__",
     "graphql",

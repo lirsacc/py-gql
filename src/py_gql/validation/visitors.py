@@ -40,6 +40,7 @@ from ..schema.introspection import (
     TYPE_NAME_INTROSPECTION_FIELD,
 )
 
+
 T = TypeVar("T")
 N = TypeVar("N", bound=_ast.Node)
 MMap = Mapping[str, Mapping[str, T]]

@@ -11,6 +11,7 @@ from .instrumentation import Instrumentation
 from .runtime import BlockingRuntime, Runtime
 from .wrappers import GraphQLResult
 
+
 Resolver = Callable[..., Any]
 
 

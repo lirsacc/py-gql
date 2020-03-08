@@ -22,6 +22,7 @@ from .types import (
     is_output_type,
 )
 
+
 if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
     from .schema import Schema
 

@@ -15,6 +15,7 @@ from .graphql_ws import GraphQLWSHandler
 from .message_board import MessageBoard
 from .schema import SDL, schema
 
+
 logger = logging.getLogger(__name__)
 
 PLAYGROUND_FILEPATH = os.path.join(

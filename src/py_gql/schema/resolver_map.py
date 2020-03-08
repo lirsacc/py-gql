@@ -2,6 +2,7 @@
 
 from typing import Any, Callable, Dict, TypeVar
 
+
 Resolver = Callable[..., Any]
 TResolver = TypeVar("TResolver", bound=Resolver)
 

@@ -28,6 +28,7 @@ from typing import (
     cast,
 )
 
+
 T = TypeVar("T")
 G = TypeVar("G")
 H = TypeVar("H", bound=Hashable)
