@@ -63,7 +63,7 @@ jobs:
         if: matrix.python == 'pypy3'
         run: |
           mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade -r requirements-tests.txt
+          pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt
           pip install -e .
 
       - name: (Debug) dependency versions
