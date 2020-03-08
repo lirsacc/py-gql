@@ -142,7 +142,7 @@ def parse_value(
     """
     Parse a string as a single GraphQL value.
 
-    This is useful within tools that operate upon GraphQL values (eg. ``[42]``)
+    This is useful within tools that operate upon GraphQL values (e.g. ``[42]``)
     directly and in isolation of complete GraphQL documents. Consider providing
     the results to the utility functions
     :func:`py_gql.utilities.untyped_value_from_ast` and
@@ -173,7 +173,7 @@ def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
     """
     Parse a string as a single GraphQL type.
 
-    This is useful within tools that operate upon GraphQL types (eg. ``[Int!]``)
+    This is useful within tools that operate upon GraphQL types (e.g. ``[Int!]``)
     directly and in isolation of complete GraphQL documents such as when
     building a schema from the SDL or stitching schemas together.
 
@@ -379,7 +379,7 @@ class Parser:
 
     def skip(self, kind: Kind) -> bool:
         """
-        Conditionnaly advance the parser.
+        Conditionally advance the parser.
 
         Args:
             kind: Token kind to read over. Must be a subclass of
@@ -401,7 +401,7 @@ class Parser:
         """
         Parse a non-empty list of nodes surrounded by ``open_kind`` and ``close_kind``.
 
-        This advances the parser to the next lex token after the closing token.
+        This advances the parser to the next token after the closing token.
 
         Args:
             open_kind: Opening token kind. Must be a subclass of
@@ -432,7 +432,7 @@ class Parser:
         """
         Parse a list of nodes surrounded by ``open_kind`` and ``close_kind``.
 
-        This advances the parser to the next lex token after the closing token.
+        This advances the parser to the next token after the closing token.
 
         Args:
             open_kind: Opening token kind. Must be a subclass of
@@ -461,7 +461,7 @@ class Parser:
         """
         Parse a list of nodes separated by ``delimiter`` tokens.
 
-        Advances the parser to the next lex token after the last token.
+        Advances the parser to the next token after the last token.
 
         Args:
             delimiter: Delimiter kind. Must be a subclass of
@@ -527,7 +527,7 @@ class Parser:
 
     def parse_name(self) -> _ast.Name:
         """
-        Convert a name lex token into a name parse node.
+        Convert a name token into a name parse node.
         """
         token = self.expect(Name)
         return _ast.Name(

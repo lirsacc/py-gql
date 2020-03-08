@@ -368,7 +368,7 @@ def test_allows_querying_the_schema_for_documentation(starwars_schema):
     )
 
 
-def test_intropsection_query():
+def test_introspection_query():
     empty_schema = Schema(ObjectType("QueryRoot", [Field("onlyField", String)]))
 
     assert_sync_execution(
@@ -1238,7 +1238,7 @@ def test_intropsection_query():
     )
 
 
-def test_intropsection_on_input_object():
+def test_introspection_on_input_object():
     test_input = InputObjectType(
         "TestInputObject",
         [

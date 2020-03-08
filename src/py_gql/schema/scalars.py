@@ -217,7 +217,7 @@ UUID = ScalarType(
 
 class RegexType(ScalarType):
     """
-    Scalar typeclass to validate regex patterns.
+    ScalarType subclass used to validate regex patterns.
 
     Args:
         name: Type name

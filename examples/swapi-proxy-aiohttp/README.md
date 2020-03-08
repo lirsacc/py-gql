@@ -9,7 +9,7 @@ This example demonstrates:
 
 Data is fetched live from <https://swapi.co>.
 
-**NOTE:** This code could be optimised as it currently doesn't deduplicate in flight requests and doesn't chain requests which leads to longer wait time than necessary.
+**NOTE:** This code could be optimized as it currently doesn't deduplicate in flight requests and doesn't chain requests which leads to longer wait time than necessary.
 
 ## Running
 

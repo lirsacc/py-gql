@@ -42,7 +42,7 @@ class GraphQLResponseError(GraphQLError):
         """
         Convert the exception to a dictionary.
 
-        The return value should be serializable to JSON for usein a GraphQL
+        The return value should be serializable to JSON for use in a GraphQL
         response.
         """
         raise NotImplementedError()
@@ -343,17 +343,17 @@ class ResolverError(GraphQLLocatedError):
 
 class SDLError(GraphQLLocatedError):
     """
-    Any error that occured while interpreting a schema definition document.
+    Any error that occurred while interpreting a schema definition document.
     """
 
 
 class ExtensionError(SDLError):
     """
-    Error that occured when applying an extension node.
+    Error that occurred when applying an extension node.
     """
 
 
 class SchemaDirectiveError(SDLError):
     """
-    Error that occured when applying schema directives.
+    Error that occurred when applying schema directives.
     """

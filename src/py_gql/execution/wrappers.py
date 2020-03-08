@@ -300,7 +300,7 @@ class GraphQLExtension:
     """
     Encode a GraphQL response extension.
 
-    Use in conjonction with :meth:`GraphQLResult.add_extension` to encode the
+    Use in conjunction with :meth:`GraphQLResult.add_extension` to encode the
     response alongside an execution result.
     """
 
@@ -322,7 +322,7 @@ class GraphQLResult:
     """
     Operation response.
 
-    This wrapper encodes the behaviour described in the `Response
+    This wrapper encodes the behavior described in the `Response
     <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
     specification.
 

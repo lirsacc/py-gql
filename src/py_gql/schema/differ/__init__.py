@@ -140,7 +140,7 @@ def diff_schema(
     so this classification errs on the side of safety.
 
     Some compatible type changes are ignored given that they should not lead to
-    any change in client behaviour.
+    any change in client behavior.
 
     Args:
         old_schema: Source schema

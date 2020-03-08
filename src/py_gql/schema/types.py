@@ -295,7 +295,7 @@ class InputField(InputValue):
             Default value if it was set. Accessing this attribute raises an
             :py:class:`AttributeError` if default value wasn't set.
 
-        type (GraphQLType): Vaue type.
+        type (GraphQLType): Value type.
 
         required (bool):
             Whether this field is required (non nullable and does not have
@@ -335,8 +335,8 @@ class InputObjectType(NamedType):
 
         nodes (List[\
             Union[\
-                py_gql.lanf.ast.InputObjectTypeDefinition,\
-                py_gql.lanf.ast.InputObjectTypeExtension,\
+                py_gql.lang.ast.InputObjectTypeDefinition,\
+                py_gql.lang.ast.InputObjectTypeExtension,\
             ]\
         ]): Source nodes used when building type from the SDL
 
@@ -619,8 +619,8 @@ class ScalarType(GraphQLLeafType, NamedType):
 
         serialize: Type serializer.
 
-            This function will receive a Python value and must output JSON serialisable
-            scalars.
+            This function will receive a Python value and must output JSON
+            serializable scalars.
 
             Raise :class:`~py_gql.exc.ScalarSerializationError`,
             :py:class:`ValueError` or :py:class:`TypeError` to signify that the
@@ -783,7 +783,7 @@ class Argument(InputValue):
             Default value if it was set. Accessing this attribute raises an
             :py:class:`AttributeError` if default value wasn't set.
 
-        type (GraphQLType): Vaue type.
+        type (GraphQLType): Value type.
 
         required (bool):
             Whether this argument is required (non nullable and does not have

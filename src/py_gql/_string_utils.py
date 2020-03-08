@@ -38,7 +38,7 @@ def parse_block_string(raw_string: str) -> str:
     This is similar to Coffeescript's block string, Python's inspect.cleandoc or
     Ruby's strip_heredoc.
 
-    Compared to Python's default behaviour, this does not remove leading
+    Compared to Python's default behavior, this does not remove leading
     whitespace from the first line.
 
     Args:

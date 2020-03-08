@@ -7,7 +7,7 @@ query language for Python 3.5+.
 
 The main :mod:`py_gql` package provides the minimum required to build GraphQL
 schemas and execute queries against them while the relevant submodules allow
-you implement custom behaviours and runtimes.
+you implement custom behaviors and runtimes.
 """
 
 from ._pkg import __version__  # isort:skip

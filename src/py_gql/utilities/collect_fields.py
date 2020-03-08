@@ -78,7 +78,7 @@ def collect_fields(
 
         elif isinstance(selection, ast.FragmentSpread):
             name = selection.name.value
-            # This should ususally be used after validation (given a document
+            # This should usually be used after validation (given a document
             # and schema are required) and so we expect fragments to be present.
             fragment = fragments[name]
 
@@ -212,7 +212,7 @@ def selected_fields(
     _path: Optional[List[str]] = None
 ) -> List[str]:
     """
-    Extract a list of fieldpaths from an object field and provided fragments.
+    Extract a list of field paths from an object field and provided fragments.
 
     If ``maxdepth`` is 0 or higher than 1, subfields will be traversed
     recursively and exposed as a ``/`` separated path. For example,
@@ -242,10 +242,10 @@ def selected_fields(
         pattern: Filter string used to control which fields are returned.
             If this is passed as a string, it will be compiled into a regex
             through the :py:mod:`fnmatch` module.
-        _path: Already traversed path, used for recursing.
+        _path: Already traversed path, used for recursive calls.
 
     Returns:
-        List of selected fieldpaths.
+        List of selected field paths.
 
     """
     if field.selection_set is None:

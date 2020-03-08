@@ -15,10 +15,10 @@ Resolver = Callable[..., Any]
 
 class BlockingExecutor(Executor):
     """
-    Executor implementation optimised for synchronous, blocking execution.
+    Executor implementation optimized for synchronous, blocking execution.
 
     Warning:
-        This is aimed to be used internally to optimise the blocking execution
+        This is aimed to be used internally to optimize the blocking execution
         case while keeping the base `Executor` class as generic as possible by
         side-stepping some of the operations that need to happen when working
         with arbitrary wrapper types such as Awaitable. As a result this

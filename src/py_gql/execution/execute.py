@@ -55,11 +55,11 @@ def execute(
             of `py_gql.execution.default_resolver`.
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
-            common logic, they are good canidates for logging, authentication,
+            common logic, they are good candidates for logging, authentication,
             and execution guards.
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
-            mutiple instances together.
+            multiple instances together.
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
             keeping your API available. Note that this deviates from the GraphQL
@@ -73,7 +73,7 @@ def execute(
             `py_gql.execution.Executor`.
 
     Returns:
-        Execution result. Exact type dependant on the runtime.
+        Execution result. Exact type dependent on the runtime.
 
     Raises:
         RuntimeError: on invalid operation.

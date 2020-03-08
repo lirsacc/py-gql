@@ -8,7 +8,7 @@ py-gql is a pure python [GraphQL](http://facebook.github.io/graphql/) implementa
 It supports:
 
 - Parsing the GraphQL query language and schema definition language.
-- Building a GraphQL type schema programatically and from Schema Definition files (including support for schema directives).
+- Building a GraphQL type schema programmatically and from Schema Definition files (including support for schema directives).
 - Validating and Executing a GraphQL request against a type schema.
 
 Quick links

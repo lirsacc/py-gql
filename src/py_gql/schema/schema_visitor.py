@@ -29,8 +29,8 @@ class SchemaVisitor(object):
     """
     Base class encoding schema traversal and modifications.
 
-    Subclass and override the ``on_*`` methods to implement custom behaviour.
-    Do not forget to call the superclass methods as it ususally  encodes how
+    Subclass and override the ``on_*`` methods to implement custom behavior.
+    Do not forget to call the superclass methods as it usually  encodes how
     child elements such as field, enum values, etc. are processed.
 
     All methods *must* return the modified value; returning ``None`` will drop

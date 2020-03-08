@@ -58,7 +58,7 @@ Unreleased
   - `instrument_*` type hooks have been renamed as they are better served by consumers wrapping values at call sites.
   - `on_*` type hooks have been split between `on_*_start` and `on_*_end` hooks to avoid having to return lambdas.
 
-- Runtime specific concepts have been extracted from `Executor` into a separate `Runtime` abstract class which is now passed in on execution (instead of the executor class). This was done to separate the resolver execution layer (which library consumer may care about) and the graphql query execution layer (which libreary consumers shouldn't care about) which were implemented in the `Executor` class. The main changes are:
+- Runtime specific concepts have been extracted from `Executor` into a separate `Runtime` abstract class which is now passed in on execution (instead of the executor class). This was done to separate the resolver execution layer (which library consumer may care about) and the graphql query execution layer (which library consumers shouldn't care about) which were implemented in the `Executor` class. The main changes are:
 
   - `Executor` should not be implemented moving forward, use `Runtime` instead.
   - The specific methods haven't changed (to make it easy to migrate, they might be revisited later) but they have become actual method instead of staticmethods.
@@ -73,7 +73,7 @@ Unreleased
 
 - `TypeInfoVisitor` and `VariablesCollector` are now kept internal to `py_gql.validation.visitors`.
 
-- Fix Lexer greediness. Some edge cases were not handled as expected. This commit adds test cases from the 2 RFCs clarifying the expected behaviour ([graphql/graphql-spec#601](https://github.com/graphql/graphql-spec/pull/601), [graphql/graphql-spec#599](https://github.com/graphql/graphql-spec/pull/599)) and updates the Lexer to match. This is _technically_ a breaking change but most cases were likely to lead to validation errors (e.g. "0xF1" being parsed as [0, xF1] when expecting a list of integers).
+- Fix Lexer greediness. Some edge cases were not handled as expected. This commit adds test cases from the 2 RFCs clarifying the expected behavior ([graphql/graphql-spec#601](https://github.com/graphql/graphql-spec/pull/601), [graphql/graphql-spec#599](https://github.com/graphql/graphql-spec/pull/599)) and updates the Lexer to match. This is _technically_ a breaking change but most cases were likely to lead to validation errors (e.g. "0xF1" being parsed as [0, xF1] when expecting a list of integers).
 
 [0.4.0](https://github.com/lirsacc/py-gql/releases/tag/0.4.0) - 2019-10-10
 --------------------------------------------------------------------------
@@ -91,8 +91,8 @@ Unreleased
 
 - Add support for `copy` and `deepcopy` to `py_gql.lang.ast.Node`.
 - `py_gql.lang.Visitor` now supports modifying the nodes inline; this supports the implementation of some common AST transformers.
-- Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor` to canonicalise queries from a server's perspective.
-- Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor` to support interacting with common convetions in the wider GraphQL ecosystem.
+- Add `py_gql.utilities.ast_transforms.RemoveFieldAliasesVisitor` to canonicalize queries from a server's perspective.
+- Add `py_gql.utilities.ast_transforms.CamelCaseToSnakeCaseVisitor` and `py_gql.utilities.ast_transforms.SnakeCaseToCamelCaseVisitor` to support interacting with common conventions in the wider GraphQL ecosystem.
 - Extended the tracer concept into `Instrumentation` which supports overriding runtime values as well as observing execution stages.
 - `(UnionType|InterfaceType).resolve_type` now receives the current resolution data value and `ResolveInfo`.
 - Basic subscription support has been added through `py_gql.execution.subscribe`. It's not well documented yet is subject to change. For now refer to the _starlette-ws-subsriptions_ example.
@@ -140,7 +140,7 @@ This release follow some extensive internal refactor and legwork in order to mak
 - **Dropped Python 2 support**; the minimum supported version is now Python 3.5.
 - `py_gql.build_schema` is now the preferred way to define executable GraphQL schema (instead of using the `py_gql.schema.Schema` class).
 - `py_gql.graphql` now defaults to working with `asyncio`. Use `py_gql.graphql_blocking` for synchronous use cases. This should make things more obvious when implementing subscriptions. `py_gql.process_graphql_query` is still available in order to support custom executors.
-- Finalised implementation of schema directives for `py_gql.build_schema`.
+- Finalized implementation of schema directives for `py_gql.build_schema`.
 - Resolvers can now be assigned with the `py_gql.schema.Schema.resolver` decorator.
 - Added type hints for most exposed apis, however some types are still too open and this will be improved moving forward.
 - Simplify middleware and tracer implementation: middlewares do not try to be smart and users have to write them against their resolver and executor. Tracers are not based on middlewares anymore.

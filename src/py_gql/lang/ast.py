@@ -72,7 +72,7 @@ class Node:
         Convert the current node and all of its children to a JSON serializable format.
 
         This is mostly useful for testing and when you need to convert nodes to
-        JSON such as interop with other languages, printing and serialisation.
+        JSON such as interop with other languages, printing and serialization.
 
         The conversion rules are:
 

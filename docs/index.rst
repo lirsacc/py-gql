@@ -12,7 +12,7 @@ Welcome to py-gql's documentation!
 implementation aimed at creating GraphQL servers. It supports:
 
 - Parsing the GraphQL query language and schema definition language.
-- Building a GraphQL type schema programatically and from Schema Definition
+- Building a GraphQL type schema programmatically and from Schema Definition
   files (including support for schema directives).
 - Validating and executing GraphQL operations against a type schema.
 
@@ -30,11 +30,11 @@ Hello World
 GraphQL
 -------
 
-GraphQL is a data query language and runtime specification originally developped
+GraphQL is a data query language and runtime specification originally developed
 at Facebook and released publicly in 2015. It provides semantics for describing
 your data as a type schema and exposing them to clients. It is backend agnostic,
 which means you can freely choose the transport and serialization protocols,
-data storage layer, etc. that fit your project / organisation and use GraphQL as
+data storage layer, etc. that fit your project / organization and use GraphQL as
 a thin layer on top.
 
 If you are not familiar with GraphQL already, we strongly suggest you head

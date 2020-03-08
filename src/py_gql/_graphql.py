@@ -42,7 +42,7 @@ def process_graphql_query(
 
     Warning:
         The returned value will depend on the ``runtime`` argument. Custom
-        implementations  ususually return a type wrapping the
+        implementations usually return a type wrapping the
         :class:`~py_gql.GraphQLResult` object such as `Awaitable[...]`.
 
     Args:
@@ -67,11 +67,11 @@ def process_graphql_query(
             of `py_gql.execution.default_resolver`.
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
-            common logic, they are good canidates for logging, authentication,
+            common logic, they are good candidates for logging, authentication,
             and execution guards.
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
-            mutiple instances together.
+            multiple instances together.
         disable_introspection: Use this to prevent schema introspection.
             This can be useful when you want to hide your full schema while
             keeping your API available. Note that this deviates from the GraphQL

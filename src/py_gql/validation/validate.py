@@ -126,11 +126,11 @@ def validate_ast(
         schema: Schema to validate against (for known types, directives, etc.).
         document: The parse tree root.
         validators: List of validator callables to use.
-            Defaults to the rules defined in the specificaton.
+            Defaults to the rules defined in the specification.
         variables: Raw, JSON decoded variables parsed from the request.
 
     Returns:
-        Validation result wrapping any validatione error that occured.
+        Validation result wrapping any validation error that occurred.
 
     """
     if validators is None:

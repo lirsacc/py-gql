@@ -9,7 +9,7 @@ def introspection_query(description: bool = True) -> str:
         description: If ``True`` the query will require descriptions.
 
     Returns:
-        Canonical intropsection query
+        Canonical introspection query
 
     """
     return """

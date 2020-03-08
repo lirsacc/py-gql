@@ -51,14 +51,14 @@ def _visit_method(method):
 
 class ASTVisitor:
     """
-    Base visitor class encoding AST tarversal and transforms behaviours.
+    Base visitor class encoding AST traversal and transforms behaviors.
     """
 
     def enter(self, node: N) -> Optional[N]:
         """
         Process an AST node.
 
-        Implement this for the main visiting behaviour (i.e. before a node's
+        Implement this for the main visiting behavior (i.e. before a node's
         children have been visited).
 
         Return ``None`` to delete the node from it's parent context or raise
@@ -71,7 +71,7 @@ class ASTVisitor:
         """
         Cleanup after processing an AST node and its children.
 
-        Implement this if you need behaviour to run after a node's children
+        Implement this if you need behavior to run after a node's children
         have been visited.
 
         This is called with the corresponding value returned by :meth:`enter`.
@@ -84,7 +84,7 @@ class ASTVisitor:
 
     def visit(self, node: N) -> Optional[N]:
         """
-        Apply visitor's behaviour to a given node.
+        Apply visitor's behavior to a given node.
 
         Warning:
             Transformations are applied inline. If you rely on node identity
@@ -93,7 +93,7 @@ class ASTVisitor:
 
         Warning:
             In general you should not override this method as this is where
-            tarversal of a node's children and orchestration around :meth:`enter`
+            traversal of a node's children and orchestration around :meth:`enter`
             and :meth:`leave` is encoded.
 
         """
@@ -454,14 +454,14 @@ class ASTVisitor:
 
 class DispatchingVisitor(ASTVisitor):
     """
-    Base class for specialised visitors.
+    Base class for specialized visitors.
 
     You should subclass this and implement methods named ``enter_*`` and
     ``leave_*`` where ``*`` represents the node class to be handled.
     For instance to process :class:`py_gql.lang.ast.FloatValue` nodes,
     implement ``enter_float_value``.
 
-    Default behaviour is noop for all node types.
+    Default behavior is noop for all node types.
     """
 
     def enter(self, node: N) -> Optional[N]:

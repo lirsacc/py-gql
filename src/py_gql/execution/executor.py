@@ -378,7 +378,7 @@ class Executor(ResolutionContext):
         if resolved_value is None:
             # REVIEW: Shouldn't this be a RuntimeError? As in the developer
             # should never return a null non nullable field, raising explicitely
-            # if the query lead to this behaviour could be valid outcome.
+            # if the query lead to this behavior could be valid outcome.
             self.add_error(
                 ResolverError(
                     'Field "%s" is not nullable' % stringify_path(path),

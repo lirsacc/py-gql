@@ -13,7 +13,7 @@ class CamelCaseSchemaTransform(SchemaVisitor):
     by web clients written in Javascript where camel case is the standard
     convention.
 
-    This transofm will rename field and directive argument names, field names,
+    This transform will rename field and directive argument names, field names,
     and input field names. It won't touch any enum value or type name and won't
     replace the values in the description.
     """

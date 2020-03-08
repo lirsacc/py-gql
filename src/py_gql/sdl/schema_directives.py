@@ -79,7 +79,7 @@ class SchemaDirective(SchemaVisitor):
     All valid directive locations have a corresponding `on_X` method to
     implement from :class:`~py_gql.schema.SchemaVisitor`.
 
-    The definition atributes defines how the definition will be found at runtime.
+    The definition attributes defines how the definition will be found at runtime.
     A `Directive` object defines the directive inline, while a string delegates
     to the schema at build time by name, in which case the directive must be
     part of the schema it's applied to.
@@ -95,7 +95,7 @@ def apply_schema_directives(
     schema: Schema, schema_directives: Sequence[TSchemaDirective]
 ) -> Schema:
     """
-    Apply :class:`~py_gql.schema.SchemaDirective` implementors to a given schema.
+    Apply :class:`~py_gql.schema.SchemaDirective` implementers to a given schema.
 
     This assumes the provided schema was built from a GraphQL document and
     contains references to the parse node which contains the actual directive

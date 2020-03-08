@@ -51,7 +51,7 @@ def subscribe(
             data-structures should work.
         instrumentation: Instrumentation instance.
             Use :class:`~py_gql.execution.MultiInstrumentation` to compose
-            mutiple instances together.
+            multiple instances together.
         runtime: Runtime against which to execute field resolvers (defaults to
             `~py_gql.execution.runtime.BlockingRuntime()`).
         executor_cls: Executor class to use.
@@ -60,7 +60,7 @@ def subscribe(
             `py_gql.execution.Executor`.
 
     Returns:
-        An iterator over subscription results. Exact type dependant on the runtime.
+        An iterator over subscription results. Exact type dependent on the runtime.
 
     Raises:
         RuntimeError: on invalid operation.

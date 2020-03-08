@@ -87,7 +87,7 @@ class SubscriptionRuntime(Runtime):
     """
     Subscription runtime base class.
 
-    By default runtimes are assumed to not support subscriptions which ususally
+    By default runtimes are assumed to not support subscriptions which usually
     require implementing some form of background streams to be useful.
     Implementing this instead of the base `Runtime` class notifies the library
     that subscriptions are available.

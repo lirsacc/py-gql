@@ -37,7 +37,7 @@ _SPECIFIED_DIRECTIVE_NAMES = (d.name for d in SPECIFIED_DIRECTIVES)
 
 class ASTSchemaPrinter:
     """
-    Encode schema serialisation as a valid SDL document.
+    Encode schema serialization as a valid SDL document.
 
     Args:
         indent: Indent character or number of spaces
@@ -47,7 +47,7 @@ class ASTSchemaPrinter:
             building the schema from an SDL document.
             By default this class will not print any custom schema directive
             included in the schema as there is no guarantee external tooling
-            consuming the resulting schema file will undertand them. You can set
+            consuming the resulting schema file will understand them. You can set
             this flag to ``True`` to include all of them or use a whitelist of
             directive names.
             This applies only to directive locations and not directive definitions

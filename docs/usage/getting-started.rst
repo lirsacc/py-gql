@@ -68,7 +68,7 @@ note that they receive 3 positional arguments:
 While the GraphQL field arguments are passed as keyword arguments.
 
 We haven't implemented any resolver for the field on the ``Character`` type.
-That is because the default behaviour is to look up field of dictionaries and
+That is because the default behavior is to look up field of dictionaries and
 objects which is sufficient here.
 
 
@@ -78,7 +78,7 @@ Executing queries against the schema
 Now that we have a valid schema, we just need to provide client queries for
 execution. The execution is carried out by :func:`py_gql.graphql_blocking` (as
 all our resolvers are blocking, for different runtimes such as Python's asyncio
-we'd use :func:`py_gql.graphql`) and consistst of 3 steps:
+we'd use :func:`py_gql.graphql`) and consists of 3 steps:
 
 1. Parsing the client query and validating that it is a correct GraphQL document
 2. Validating the query against the schema to verify that it can be executed at all
@@ -92,7 +92,7 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
 .. note::
 
     While the transport and serialization format depend on the application and
-    are technically irrelevant to the GraphQL runtime itsefl; it is common
+    are technically irrelevant to the GraphQL runtime itself; it is common
     to expose GraphQL APIs behind an HTTP server, traditionally under
     ``POST /graphql`` and JSON encode the request and response.
 
@@ -102,8 +102,8 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
 Pulling together all that we've seen so far you should have a working GraphQL
 server that you can test using any HTTP client.
 
-Using `httpie <https://httpie.org/>`_ for example (note that the response might
-be reordered due to how httpie prints json, use ``--pretty=none`` to see the
+Using `HTTPie <https://httpie.org/>`_ for example (note that the response might
+be reordered due to how HTTPie prints json, use ``--pretty=none`` to see the
 raw response):
 
 .. literalinclude:: getting-started/queries.txt

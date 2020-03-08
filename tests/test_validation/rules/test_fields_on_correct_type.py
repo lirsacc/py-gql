@@ -208,7 +208,7 @@ def test_not_defined_on_interface(schema):
     )
 
 
-def test_defined_on_implementors_but_not_on_interface(schema):
+def test_defined_on_implementers_but_not_on_interface(schema):
     run_test(
         FieldsOnCorrectTypeChecker,
         schema,
@@ -249,7 +249,7 @@ def test_direct_field_selection_on_union(schema):
     )
 
 
-def test_defined_on_implementors_queried_on_union(schema):
+def test_defined_on_implementers_queried_on_union(schema):
     run_test(
         FieldsOnCorrectTypeChecker,
         schema,
