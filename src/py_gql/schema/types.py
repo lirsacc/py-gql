@@ -109,7 +109,22 @@ class GraphQLCompositeType(NamedType):
     These types may describe the parent context of a selection set.
     """
 
-    pass
+    _source_fields = NotImplemented  # type: LazySeq[Field]
+    _fields = NotImplemented  # type: Optional[Sequence[Field]]
+
+    @property
+    def fields(self) -> Sequence["Field"]:
+        if self._fields is None:
+            self._fields = lazy(self._source_fields) or []
+        return self._fields
+
+    @fields.setter
+    def fields(self, fields: List["Field"]) -> None:
+        self._fields = self._source_fields = fields
+
+    @property
+    def field_map(self) -> Dict[str, "Field"]:
+        return {f.name: f for f in self.fields}
 
 
 class GraphQLLeafType(NamedType):
@@ -962,20 +977,6 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
         self.resolve_type = resolve_type
 
-    @property
-    def fields(self) -> Sequence[Field]:
-        if self._fields is None:
-            self._fields = lazy(self._source_fields) or []
-        return self._fields
-
-    @fields.setter
-    def fields(self, fields: List[Field]) -> None:
-        self._fields = self._source_fields = fields
-
-    @property
-    def field_map(self) -> Dict[str, Field]:
-        return {f.name: f for f in self.fields}
-
 
 class ObjectType(GraphQLCompositeType, NamedType):
     """
@@ -1051,20 +1052,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
     @interfaces.setter
     def interfaces(self, interfaces: List[InterfaceType]) -> None:
         self._interfaces = self._source_interfaces = interfaces
-
-    @property
-    def fields(self) -> Sequence[Field]:
-        if self._fields is None:
-            self._fields = lazy(self._source_fields) or []
-        return self._fields
-
-    @fields.setter
-    def fields(self, fields: List[Field]) -> None:
-        self._fields = self._source_fields = fields
-
-    @property
-    def field_map(self) -> Dict[str, Field]:
-        return {f.name: f for f in self.fields}
 
 
 class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
