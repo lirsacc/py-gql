@@ -442,7 +442,7 @@ class EnumValue:
         Create an enum value from various source objects.
 
         This supports existing `EnumValue` instances, strings,
-        ``(name, value)`` tuples and dictionnaries matching the signature of
+        ``(name, value)`` tuples and dictionaries matching the signature of
         `EnumValue.__init__`.
         """
         if isinstance(definition, cls):

@@ -68,7 +68,7 @@ note that they receive 3 positional arguments:
 While the GraphQL field arguments are passed as keyword arguments.
 
 We haven't implemented any resolver for the field on the ``Character`` type.
-That is because the default behaviour is to look up field of dictionnaries and
+That is because the default behaviour is to look up field of dictionaries and
 objects which is sufficient here.
 
 
@@ -93,7 +93,7 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
 
     While the transport and serialization format depend on the application and
     are technically irrelevant to the GraphQL runtime itsefl; it is common
-    to expose GraphQL APIs behind an HTTP server, traditionnaly under
+    to expose GraphQL APIs behind an HTTP server, traditionally under
     ``POST /graphql`` and JSON encode the request and response.
 
 .. literalinclude:: getting-started/flask.py

@@ -19,7 +19,7 @@ def default_resolver(
     **args: Any
 ) -> Any:
     """
-    Resolve a field from dictionnaries or objects.
+    Resolve a field from dictionaries or objects.
 
     This is the default resolver used during query execution and looks up the
     value from the ``root`` in the following lookup order:

@@ -267,7 +267,7 @@ class ResolveInfo:
 
         Returns:
             ``None`` if the directive is not present on the current field and a
-            dictionnary of coerced arguments otherwise.
+            dictionary of coerced arguments otherwise.
         """
         try:
             return self._directive_arguments[name]

@@ -6,7 +6,7 @@ Unreleased
 
 ### Breaking Changes & Deprecations
 
-- Schema directives now **must** specify their defiinition, either with an explicit `Directive` or by delegating to the schema by name. They are now passed in as a sequence and not a mapping when using `build_schema`.
+- Schema directives now **must** specify their definition, either with an explicit `Directive` or by delegating to the schema by name. They are now passed in as a sequence and not a mapping when using `build_schema`.
 - Drop support for comment based descriptions in `ASTPrinter` and `ASTSchemaPrinter`.
 - Move `ASTSchemaPrinter` from `py_gql.utilities` to `py_gql.sdl`.
 

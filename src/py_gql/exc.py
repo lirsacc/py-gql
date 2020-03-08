@@ -40,7 +40,7 @@ class GraphQLResponseError(GraphQLError):
 
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the exception to a dictionnary.
+        Convert the exception to a dictionary.
 
         The return value should be serializable to JSON for usein a GraphQL
         response.
