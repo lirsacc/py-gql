@@ -65,6 +65,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
+    "sphinxcontrib.spelling",
     "recommonmark",
 ]
 
@@ -74,6 +75,8 @@ set_type_checking_flag = True
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 html_add_permalinks = "#"
 napoleon_use_param = True
+
+spelling_show_suggestions = True
 
 # Pygments custom lexer
 from pygments.lexer import RegexLexer

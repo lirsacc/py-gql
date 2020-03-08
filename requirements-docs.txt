@@ -2,3 +2,6 @@ recommonmark ~= 0.4
 sphinx ~= 2.2
 alabaster ~= 0.7
 sphinx-autodoc-typehints ~= 1.8
+
+pyenchant
+sphinxcontrib-spelling ~= 4.3
