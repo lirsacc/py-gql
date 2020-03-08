@@ -1,0 +1,18 @@
+# Dependencies for local development.
+
+invoke >= 1
+
+wheel
+setuptools
+twine
+pip
+
+tox
+tox-pyenv
+
+-r requirements-tests.txt
+-r requirements-lint.txt
+-r requirements-mypy.txt
+-r requirements-docs.txt
+
+cython < 3

@@ -3,7 +3,7 @@
 Installation
 ============
 
-- **Python Versions**: ``py_gql`` supports CPython 3.5 and newer.
+- **Python Versions**: ``py_gql`` supports CPython 3.5 and newer. We aim to support all [currently supported python versions](https://devguide.python.org/#status-of-python-branches).
 - **Platforms**: Unix/Posix, MacOS X.
 - **Dependencies**: :mod:`py_gql` has no direct dependency.
 

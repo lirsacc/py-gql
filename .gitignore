@@ -48,8 +48,10 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.*.xml
 junit.xml
 *.junit.xml
+junit.*.xml
 *,cover
 .hypothesis/
 .pytest_cache

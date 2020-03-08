@@ -90,7 +90,7 @@ Clone this repo and create a virtualenv before installing the development depend
 ```bash
 git clone git@github.com:lirsacc/py-gql.git
 python -m venv $WORKON_HOME/py-gql --copies
-pip install -U -r dev-requirements.txt
+pip install -U -r requirements-dev.txt
 pip install -e .
 ```
 

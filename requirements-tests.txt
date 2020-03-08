@@ -1,11 +1,8 @@
-# Dependencies related to testing.
-
-invoke ~= 1.1
-
 pytest ~= 5.1
-
 pytest-asyncio ~= 0.10
 pytest-benchmark ~= 3.2
 pytest-cov ~= 2.6
 pytest-mock ~= 2.0
 pytest-xdist ~=  1.27
+
+coverage

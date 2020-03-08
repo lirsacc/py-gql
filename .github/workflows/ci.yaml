@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: .pip-cache
-          key: ${{ runner.os }}-python-${{ matrix.python }}-${{ hashFiles('*requirements.txt') }}
+          key: ${{ runner.os }}-python-${{ matrix.python }}-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-python-${{ matrix.python }}-
             ${{ runner.os }}-python-
@@ -54,7 +54,7 @@ jobs:
         if: matrix.python != 'pypy3'
         run: |
           mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade -r dev-requirements.txt
+          pip install --cache-dir .pip-cache --upgrade -r requirements-dev.txt
           pip install -e .
 
       # Some dev dependencies don't build under pypy but testing deps and py-gql
@@ -63,7 +63,7 @@ jobs:
         if: matrix.python == 'pypy3'
         run: |
           mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade -r test-requirements.txt
+          pip install --cache-dir .pip-cache --upgrade -r requirements-tests.txt
           pip install -e .
 
       - name: (Debug) dependency versions

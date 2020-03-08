@@ -28,26 +28,34 @@ def _join(cmd):
 
 
 @invoke.task
-def clean(ctx):
+def clean(ctx, full=False):
     """
     Remove test and compilation artifacts.
     """
     with ctx.cd(ROOT):
+        ctx.run('find src tests -type f -name "*.pyc" -delete', echo=True)
+        ctx.run('find src tests -type f -name "*.pyc" -delete', echo=True)
+        ctx.run('find src tests -type f -name "*.pyo" -delete', echo=True)
+        ctx.run('find src tests -type f -name "*.pyd" -delete', echo=True)
+        ctx.run('find src tests -type d -name "__pycache__" -delete', echo=True)
+        ctx.run('find src tests -type d -name "*.c" -delete', echo=True)
+        ctx.run('find src tests -type d -name "*.so" -delete', echo=True)
         ctx.run(
-            "find . "
-            '| grep -E "(__pycache__|\\.py[cod]|\\.pyo$|.pytest_cache|'
-            '.mypy_cache|htmlcov|junit.xml|coverage.xml|tox)$" '
-            "| xargs rm -rf",
-            echo=True,
+            'find . src tests -type f -path "*.egg-info*" -delete', echo=True
+        )
+        ctx.run(
+            'find . src tests -type d -path "*.egg-info" -delete', echo=True
         )
 
-        ctx.run(
-            'find %s | grep -E "(\\.c|\\.so)$" | xargs rm -rf' % PACKAGE,
-            echo=True,
-        )
+        if full:
+            ctx.run(
+                "rm -rf .pytest_cache .mypy_cache junit*.xml "
+                "htmlcov* coverage*.xml .coverage* "
+                "flake8.*",
+                echo=True,
+            )
 
-        ctx.run("rm -rf dist", echo=True)
-        ctx.run("rm -rf build", echo=True)
+            ctx.run("rm -rf dist build", echo=True)
 
 
 @invoke.task()

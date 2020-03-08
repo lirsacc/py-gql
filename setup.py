@@ -58,7 +58,7 @@ def run_setup():
         packages=setuptools.find_packages(where="src"),
         package_dir={"": "src"},
         install_requires=_split_requirements("requirements.txt"),
-        tests_require=_split_requirements("test-requirements.txt"),
+        tests_require=_split_requirements("requirements-tests.txt"),
         include_package_data=True,
         python_requires=">=3.5",
         ext_modules=_ext_modules("src/py_gql",),
