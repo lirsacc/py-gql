@@ -12,6 +12,7 @@ import sys
 
 import invoke
 
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = "src/py_gql"
 DEFAULT_TARGETS = (
@@ -25,37 +26,6 @@ VALID_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.(dev|a|b|rc)\d+)?$")
 
 def _join(cmd):
     return " ".join((c for c in cmd if c))
-
-
-@invoke.task
-def clean(ctx, full=False):
-    """
-    Remove test and compilation artifacts.
-    """
-    with ctx.cd(ROOT):
-        ctx.run('find src tests -type f -name "*.pyc" -delete', echo=True)
-        ctx.run('find src tests -type f -name "*.pyc" -delete', echo=True)
-        ctx.run('find src tests -type f -name "*.pyo" -delete', echo=True)
-        ctx.run('find src tests -type f -name "*.pyd" -delete', echo=True)
-        ctx.run('find src tests -type d -name "__pycache__" -delete', echo=True)
-        ctx.run('find src tests -type d -name "*.c" -delete', echo=True)
-        ctx.run('find src tests -type d -name "*.so" -delete', echo=True)
-        ctx.run(
-            'find . src tests -type f -path "*.egg-info*" -delete', echo=True
-        )
-        ctx.run(
-            'find . src tests -type d -path "*.egg-info" -delete', echo=True
-        )
-
-        if full:
-            ctx.run(
-                "rm -rf .pytest_cache .mypy_cache junit*.xml "
-                "htmlcov* coverage*.xml .coverage* "
-                "flake8.*",
-                echo=True,
-            )
-
-            ctx.run("rm -rf dist build", echo=True)
 
 
 @invoke.task()
