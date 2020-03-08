@@ -104,7 +104,7 @@ jobs:
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
 
       - name: Build docs
-        if: matrix.python == '3.8'
+        if: matrix.python == '3.8' && matrix.os != 'macos-latest'
         run: |
           inv docs
 
