@@ -29,13 +29,11 @@ from ..schema import (
     GraphQLAbstractType,
     GraphQLCompositeType,
     GraphQLType,
-    InterfaceType,
     ListType,
     NonNullType,
     ObjectType,
     ScalarType,
     Schema,
-    UnionType,
 )
 from .instrumentation import Instrumentation
 from .runtime import BlockingRuntime, Runtime
@@ -112,10 +110,7 @@ class Executor(ResolutionContext):
             return wrapped
 
     def resolve_type(
-        self,
-        value: Any,
-        info: ResolveInfo,
-        abstract_type: Union[InterfaceType, UnionType],
+        self, value: Any, info: ResolveInfo, abstract_type: GraphQLAbstractType,
     ) -> Optional[ObjectType]:
 
         maybe_type = None  # type: Optional[Union[ObjectType, str]]

@@ -17,11 +17,13 @@ _ScalarValueNode = Union[
     _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
 ]
 
+_ScalarValue = Union[str, int, float, bool, None]
+
 
 # Shortcut to generate ``parse_literal`` from a simple
 # parsing function by adding node type validation.
 def _typed_coerce(
-    coerce_: Callable[[Any], T], *types: Type[_ScalarValueNode]
+    coerce_: Callable[[_ScalarValue], T], *types: Type[_ScalarValueNode]
 ) -> Callable[[_ScalarValueNode, Mapping[str, Any]], T]:
     def _coerce(node: _ScalarValueNode, _variables: Mapping[str, Any]) -> T:
         if type(node) not in types:
@@ -50,7 +52,7 @@ INVALID_INT = "Int cannot represent non integer value: %s"
 INVALID_NUMERIC = "Int cannot represent non 32-bit signed integer: %s"
 
 
-def coerce_int(maybe_int: Any) -> int:
+def coerce_int(maybe_int: _ScalarValue) -> int:
     """
     Spec compliant int conversion.
     """
@@ -85,7 +87,7 @@ def coerce_int(maybe_int: Any) -> int:
     return numeric
 
 
-def coerce_float(maybe_float: Any) -> float:
+def coerce_float(maybe_float: _ScalarValue) -> float:
     """
     Spec compliant float conversion.
     """
@@ -187,17 +189,20 @@ SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID)
 # be available by default 2) not be available in other GraphQL servers a-priori.
 
 
-def _serialize_uuid(maybe_uuid: Any) -> str:
+def _parse_uuid(maybe_uuid: _ScalarValue) -> uuid.UUID:
+    if isinstance(maybe_uuid, str):
+        return uuid.UUID(maybe_uuid)
+
+    raise TypeError(type(maybe_uuid))
+
+
+def _serialize_uuid(maybe_uuid: Union[str, uuid.UUID]) -> str:
     if isinstance(maybe_uuid, uuid.UUID):
         return str(maybe_uuid)
-    else:
+    elif isinstance(maybe_uuid, str):
         return str(uuid.UUID(maybe_uuid))
 
-
-def _parse_uuid(maybe_uuid: Any) -> uuid.UUID:
-    if isinstance(maybe_uuid, uuid.UUID):
-        return maybe_uuid
-    return uuid.UUID(maybe_uuid)
+    raise TypeError(type(maybe_uuid))
 
 
 _coerce_uuid_node = _typed_coerce(_parse_uuid, _ast.StringValue)
@@ -239,8 +244,9 @@ class RegexType(ScalarType):
         if description is None:
             description = "String matching pattern /%s/" % self._regex.pattern
 
-        def _parse(value: Any) -> str:
+        def _parse(value: _ScalarValue) -> str:
             string_value = _serialize_string(value)
+
             if not self._regex.match(string_value):
                 raise ValueError(
                     '"%s" does not match pattern "%s"'

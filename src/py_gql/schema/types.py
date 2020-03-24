@@ -615,6 +615,8 @@ _ScalarValueNode = Union[
     _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
 ]
 
+_ScalarValue = Union[str, int, float, bool, None]
+
 
 class ScalarType(GraphQLLeafType, NamedType):
     """
@@ -680,8 +682,8 @@ class ScalarType(GraphQLLeafType, NamedType):
     def __init__(
         self,
         name: str,
-        serialize: Callable[[Any], Union[str, int, float, bool, None]],
-        parse: Callable[[Any], Any],
+        serialize: Callable[[Any], _ScalarValue],
+        parse: Callable[[_ScalarValue], Any],
         parse_literal: Optional[
             Callable[[_ScalarValueNode, Mapping[str, Any]], Any]
         ] = None,
@@ -699,7 +701,7 @@ class ScalarType(GraphQLLeafType, NamedType):
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ScalarTypeDefinition, _ast.ScalarTypeExtension]]
 
-    def serialize(self, value: Any) -> Union[str, int, float, bool, None]:
+    def serialize(self, value: Any) -> _ScalarValue:
         """
         Transform a Python value in a JSON serializable one.
 
@@ -718,7 +720,7 @@ class ScalarType(GraphQLLeafType, NamedType):
         except (ValueError, TypeError) as err:
             raise ScalarSerializationError(str(err)) from err
 
-    def parse(self, value: Any) -> Any:
+    def parse(self, value: _ScalarValue) -> Any:
         """
         Transform a GraphQL value in a valid Python value
 

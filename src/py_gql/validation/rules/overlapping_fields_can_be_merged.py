@@ -21,11 +21,12 @@ from ...schema import (
     GraphQLLeafType,
     GraphQLType,
     InterfaceType,
+    ListType,
+    NonNullType,
     ObjectType,
     Schema,
     unwrap_type,
 )
-from ...schema.types import ListType, NonNullType
 from ..visitors import ValidationVisitor
 
 

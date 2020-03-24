@@ -8,8 +8,8 @@ from ...lang import ast as _ast
 from ...lang.visitor import SkipNode
 from ...schema import (
     EnumType,
+    GraphQLType,
     InputObjectType,
-    NamedType,
     NonNullType,
     ScalarType,
     unwrap_type,
@@ -29,7 +29,7 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
 
     def _report_bad_value(
         self,
-        input_type: NamedType,
+        input_type: GraphQLType,
         node: _ast.Node,
         extra: Optional[str] = None,
     ) -> None:

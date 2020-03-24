@@ -149,10 +149,6 @@ class TestUUID:
             "c4da8450-ec7a-4d3b-9ade-18194daeb2d6"
         )
 
-    def test_parse_uuid_object(self):
-        _uuid = uuid.UUID("c4da8450-ec7a-4d3b-9ade-18194daeb2d6")
-        assert UUID.parse(_uuid) == _uuid
-
     def test_serialize(self):
         assert (
             UUID.serialize(uuid.UUID("c4da8450-ec7a-4d3b-9ade-18194daeb2d6"))

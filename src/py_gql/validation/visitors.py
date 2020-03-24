@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import (
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
 from .._utils import DefaultOrderedDict, OrderedDict, deduplicate, find_one
 from ..exc import UnknownEnumValue, UnknownType, ValidationError
@@ -22,10 +13,10 @@ from ..schema import (
     EnumValue,
     Field,
     GraphQLCompositeType,
+    GraphQLType,
     InputObjectType,
     InputValue,
     InterfaceType,
-    ListType,
     ObjectType,
     ScalarType,
     Schema,
@@ -45,8 +36,6 @@ N = TypeVar("N", bound=_ast.Node)
 MMap = Mapping[str, Mapping[str, T]]
 LMap = Mapping[str, List[T]]
 OptList = List[Optional[T]]
-InputType = Union[InputObjectType, EnumType, ScalarType]
-
 
 VariableUsages = MMap[
     Tuple[
@@ -257,26 +246,26 @@ class TypeInfoVisitor(DispatchingVisitor):
     def __init__(self, schema):
         self._schema = schema
 
-        self._type_stack = []  # type: OptList[ObjectType]
-        self._parent_type_stack = []  # type: OptList[ObjectType]
-        self._input_type_stack = []  # type: OptList[InputType]
+        self._type_stack = []  # type: OptList[GraphQLCompositeType]
+        self._parent_type_stack = []  # type: OptList[GraphQLCompositeType]
+        self._input_type_stack = []  # type: OptList[GraphQLType]
         self._field_stack = []  # type: OptList[Field]
-        self._input_value_def_stack = []  # type: OptList[Union[InputValue]]
+        self._input_value_def_stack = []  # type: OptList[InputValue]
 
         self.directive = None  # type: Optional[Directive]
         self.argument = None  # type: Optional[Argument]
         self.enum_value = None  # type: Optional[EnumValue]
 
     @property
-    def type(self) -> Optional[ObjectType]:
+    def type(self) -> Optional[GraphQLCompositeType]:
         return _peek(self._type_stack)
 
     @property
-    def parent_type(self) -> Optional[ObjectType]:
+    def parent_type(self) -> Optional[GraphQLCompositeType]:
         return _peek(self._parent_type_stack, 1)
 
     @property
-    def input_type(self) -> Optional[InputType]:
+    def input_type(self) -> Optional[GraphQLType]:
         return _peek(self._input_type_stack, 1)
 
     @property
@@ -289,7 +278,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         return _peek(self._field_stack)
 
     @property
-    def input_value_def(self) -> Optional[Union[InputValue]]:
+    def input_value_def(self) -> Optional[InputValue]:
         return _peek(self._input_value_def_stack)
 
     def _get_field_def(self, node):
@@ -311,9 +300,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._input_value_def_stack.pop()
 
     def enter_selection_set(self, node):
-        named_type = (
-            cast(ObjectType, unwrap_type(self.type)) if self.type else None
-        )
+        named_type = unwrap_type(self.type) if self.type else None
         self._parent_type_stack.append(
             named_type if isinstance(named_type, GraphQLCompositeType) else None
         )
@@ -393,7 +380,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             self.argument = find_one(ctx.arguments, lambda a: a.name == name)
             self._input_value_def_stack.append(self.argument)
             self._input_type_stack.append(
-                cast(InputType, self.argument.type)
+                self.argument.type
                 if self.argument and is_input_type(self.argument.type)
                 else None
             )
@@ -412,9 +399,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         item_type = unwrap_type(self.input_type) if self.input_type else None
 
         self._input_type_stack.append(
-            cast(InputType, item_type)
-            if item_type and is_input_type(item_type)
-            else None
+            item_type if item_type and is_input_type(item_type) else None
         )
         # List positions never have a default value.
         self._input_value_def_stack.append(None)
@@ -430,7 +415,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             field_def = find_one(object_type.fields, lambda f: f.name == name)
             self._input_value_def_stack.append(field_def)
             self._input_type_stack.append(
-                cast(InputType, field_def.type)
+                field_def.type
                 if field_def and is_input_type(field_def.type)
                 else None
             )

@@ -588,36 +588,36 @@ def _build_type_map(
 
         child_types = []  # type: List[GraphQLType]
 
-        type_ = unwrap_type(type_)
+        inner_type = unwrap_type(type_)
 
-        if not isinstance(type_, NamedType):
+        if not isinstance(inner_type, NamedType):
             raise SchemaError(
                 'Expected NamedType but got "%s" of type %s'
-                % (type_, type(type_))
+                % (inner_type, type(inner_type))
             )
 
-        name = type_.name
+        name = inner_type.name
 
         if name in type_map:
-            if type_ is not type_map[name]:
+            if inner_type is not type_map[name]:
                 raise SchemaError('Duplicate type "%s"' % name)
             continue
 
-        type_map[name] = type_
+        type_map[name] = inner_type
 
-        if isinstance(type_, UnionType):
-            child_types.extend(type_.types)
+        if isinstance(inner_type, UnionType):
+            child_types.extend(inner_type.types)
 
-        if isinstance(type_, ObjectType):
-            child_types.extend(type_.interfaces)
+        if isinstance(inner_type, ObjectType):
+            child_types.extend(inner_type.interfaces)
 
-        if isinstance(type_, (ObjectType, InterfaceType)):
-            for field in type_.fields:
+        if isinstance(inner_type, (ObjectType, InterfaceType)):
+            for field in inner_type.fields:
                 child_types.append(field.type)
                 child_types.extend([arg.type for arg in field.arguments or []])
 
-        if isinstance(type_, InputObjectType):
-            for input_field in type_.fields:
+        if isinstance(inner_type, InputObjectType):
+            for input_field in inner_type.fields:
                 child_types.append(input_field.type)
 
         type_map.update(_build_type_map(child_types, _type_map=type_map))
