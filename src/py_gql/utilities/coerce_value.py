@@ -105,7 +105,10 @@ def coerce_value(
 
 
 def _coerce_list_value(
-    value: Any, type_: ListType, node: Optional[_ast.Node], path: Path
+    value: Any,
+    type_: "ListType[GraphQLType]",
+    node: Optional[_ast.Node],
+    path: Path,
 ) -> List[Any]:
     if isinstance(value, (list, tuple)):
         coerced = []

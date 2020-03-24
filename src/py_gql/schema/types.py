@@ -25,6 +25,7 @@ from ..lang.parser import (
     RUNTIME_DIRECTIVE_LOCATIONS,
     SCHEMA_DIRECTIVE_LOCATONS,
 )
+from ._types import GraphQLType, ListType, NamedType, NonNullType  # noqa: F401
 
 
 if TYPE_CHECKING:
@@ -51,52 +52,22 @@ TypeResolver = Callable[[Any, Any, "ResolveInfo"], "Union[ObjectType, str]"]
 _UNSET = object()
 
 
-class GraphQLType:
-    """
-    Base type class.
-
-    All types used in a :class:`py_gql.schema.Schema` should be instances of
-    this class.
-    """
-
-    def __eq__(self, lhs: Any) -> bool:
-        return self is lhs or (
-            isinstance(self, (ListType, NonNullType))
-            and self.__class__ == lhs.__class__
-            and self.type == lhs.type
-        )
-
-    def __hash__(self) -> int:
-        return id(self)
-
-
-class NamedType(GraphQLType):
-    """
-    Named type base class.
-
-    Warning:
-        Named types must be unique across a single :class:`~py_gql.schema.Schema`
-        instance.
-
-    Attributes:
-        name (str): Type name.
-    """
-
-    name = NotImplemented  # type: str
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __repr__(self) -> str:
-        return "%s(%s at %d)" % (self.__class__.__name__, self.name, id(self))
-
-
 class GraphQLAbstractType(NamedType):
     """
     Abstract types.
 
     These types may describe the parent context of a selection set and indicate
     that the value will be of a concrete ObjectType.
+    """
+
+    resolve_type = NotImplemented  # type: Optional[TypeResolver]
+
+
+class GraphQLLeafType(NamedType):
+    """
+    Lead types.
+
+    These types may describe types which may be leaf values.
     """
 
     pass
@@ -125,106 +96,6 @@ class GraphQLCompositeType(NamedType):
     @property
     def field_map(self) -> Dict[str, "Field"]:
         return {f.name: f for f in self.fields}
-
-
-class GraphQLLeafType(NamedType):
-    """
-    Lead types.
-
-    These types may describe types which may be leaf values.
-    """
-
-    pass
-
-
-class NonNullType(GraphQLType):
-    """
-    Non nullable wrapping type.
-
-    A non-null type is a wrapping type which points to another type.
-
-    Non-null types enforce that their values are never null and can ensure
-    an error is raised if this ever occurs during a request. It is useful for
-    fields which you can make a strong guarantee on non-nullability, for example
-    usually the id field of a database row will never be null.
-
-    Args:
-        type_: Wrapped type
-        node: Source node used when building type from the SDL
-
-    Attributes:
-        type (GraphQLType): Wrapped type
-        node (Optional[py_gql.lang.ast.NonNullType]):
-            Source node used when building type from the SDL
-
-    """
-
-    __slots__ = ("node", "_ltype", "_type")
-
-    def __init__(
-        self, type_: Lazy[GraphQLType], node: Optional[_ast.NonNullType] = None
-    ):
-        if isinstance(type_, NonNullType):
-            raise ValueError("Cannot wrap NonNullType twice")
-
-        self._ltype = type_
-        self._type = None  # type: Optional[GraphQLType]
-        self.node = node
-
-    def __str__(self) -> str:
-        return "%s!" % self.type
-
-    @property
-    def type(self) -> GraphQLType:
-        if self._type is None:
-            self._type = lazy(self._ltype)
-        return self._type
-
-    @type.setter
-    def type(self, type_: GraphQLType) -> None:
-        self._type = self._ltype = type_
-
-
-class ListType(GraphQLType):
-    """
-    List wrapping type.
-
-    A list type is a wrapping type which points to another type.
-
-    Lists are often created within the context of defining the fields of
-    an object type.
-
-    Args:
-        type_: Wrapped type
-        node: Source node used when building type from the SDL
-
-    Attributes:
-        type (GraphQLType): Wrapped type
-        node (Optional[py_gql.lang.ast.ListType]):
-            Source node used when building type from the SDL
-    """
-
-    __slots__ = ("node", "_ltype", "_type")
-
-    def __init__(
-        self, type_: Lazy[GraphQLType], node: Optional[_ast.ListType] = None
-    ):
-        self._ltype = type_
-        self._type = None  # type: Optional[GraphQLType]
-        self.node = node
-
-    def __str__(self):
-        return "[%s]" % self.type
-
-    @property
-    def type(self) -> GraphQLType:
-        if self._type is None:
-            self._type = lazy(self._ltype)
-        return self._type
-
-    @type.setter
-    def type(self, type_: GraphQLType) -> None:
-        self._type = self._ltype = type_
 
 
 class InputValue:

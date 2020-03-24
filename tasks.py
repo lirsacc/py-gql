@@ -219,6 +219,7 @@ def cythonize(ctx):
     with ctx.cd(ROOT):
         Cython.Build.cythonize(
             "%s/**/*.py" % PACKAGE,
+            exclude=["src/py_gql/schema/_types.py",],
             compiler_directives={"embedsignature": True, "language_level": 3},
         )
 

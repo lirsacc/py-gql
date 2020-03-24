@@ -62,7 +62,9 @@ def run_setup():
         tests_require=_split_requirements("requirements-tests.txt"),
         include_package_data=True,
         python_requires=">=3.5",
-        ext_modules=_ext_modules("src/py_gql",),
+        ext_modules=_ext_modules(
+            "src/py_gql", exclude=["src/py_gql/schema/_types.py"]
+        ),
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
@@ -89,7 +91,7 @@ def run_setup():
     )
 
 
-def _ext_modules(*packages):
+def _ext_modules(*packages, exclude=()):
     if not CYTHON:
         return [
             setuptools.Extension(f.replace(".c", "").replace("/", "."), [f])
@@ -104,6 +106,7 @@ def _ext_modules(*packages):
             (
                 cythonize(
                     "%s/**/*.py" % package,
+                    exclude=exclude,
                     compiler_directives={
                         "embedsignature": True,
                         "language_level": 3,
