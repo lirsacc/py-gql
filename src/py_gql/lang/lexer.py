@@ -86,7 +86,7 @@ class Lexer:
 
     Args:
         source (Union[str, bytes]): Source string.
-            Bytestrings will be converted to Unicode.
+            ``bytes`` objects will be converted to Unicode.
 
     """
 
