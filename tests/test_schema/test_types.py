@@ -15,7 +15,25 @@ from py_gql.exc import (
     UnknownEnumValue,
 )
 from py_gql.lang.parser import parse_value
-from py_gql.schema import UUID, Boolean, EnumType, Float, Int, RegexType, String
+from py_gql.schema import (
+    UUID,
+    Boolean,
+    EnumType,
+    Float,
+    Int,
+    ListType,
+    NonNullType,
+    RegexType,
+    String,
+)
+
+
+def test_as_list():
+    assert UUID.as_list() == ListType(UUID)
+
+
+def test_as_non_null():
+    assert UUID.as_non_null() == NonNullType(UUID)
 
 
 def test_EnumType_rejects_duplicate_names():

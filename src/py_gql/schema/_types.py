@@ -35,6 +35,18 @@ class GraphQLType:
     def __hash__(self) -> int:
         return id(self)
 
+    def as_list(self: TGraphQLType) -> "ListType[TGraphQLType]":
+        """
+        Return current type wrapped as a list type.
+        """
+        return ListType(self)
+
+    def as_non_null(self: TGraphQLType) -> "NonNullType[TGraphQLType]":
+        """
+        Return current type wrapped as a non nullable type.
+        """
+        return NonNullType(self)
+
 
 class NamedType(GraphQLType):
     """
