@@ -265,7 +265,7 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
                     "-v $(pwd):/workspace",
                     "-e PYTHON_VERSIONS=%s" % python_versions,
                     "quay.io/pypa/manylinux2010_x86_64",
-                    "bash -c /workspace/build-manylinux-wheels.sh",
+                    "bash -c /workspace/scripts/build-manylinux-wheels.sh",
                 ],
             ),
             echo=True,
