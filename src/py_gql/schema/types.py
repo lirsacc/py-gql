@@ -1210,28 +1210,10 @@ def is_output_type(type_: GraphQLType) -> bool:
 
 def unwrap_type(type_: GraphQLType) -> NamedType:
     """
-    Recursively extract type from a wrapping type like `ListType` or `NonNullType`.
-
-    >>> from py_gql.schema import Int, NonNullType, ListType
-    >>> unwrap_type(NonNullType(ListType(NonNullType(Int)))) is Int
-    True
+    Recursively extract inner type from a potentially wrapping type like
+    `ListType` or `NonNullType`.
     """
-    if isinstance(type_, (ListType, NonNullType)):
-        return unwrap_type(type_.type)
-    return cast(NamedType, type_)
-
-
-def nullable_type(type_: GraphQLType) -> GraphQLType:
-    """
-    Extract nullable type from a potentially non nulllable one.
-
-    >>> from py_gql.schema import Int, NonNullType
-    >>> nullable_type(NonNullType(Int)) is Int
-    True
-
-    >>> nullable_type(Int) is Int
-    True
-    """
-    if isinstance(type_, NonNullType):
-        return type_.type
-    return type_
+    cur = type_
+    while isinstance(cur, (ListType, NonNullType)):
+        cur = cur.type
+    return cast(NamedType, cur)

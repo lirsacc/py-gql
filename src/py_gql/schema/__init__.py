@@ -49,6 +49,5 @@ from .types import (
     UnionType,
     is_input_type,
     is_output_type,
-    nullable_type,
     unwrap_type,
 )

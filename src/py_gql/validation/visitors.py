@@ -31,7 +31,6 @@ from ..schema import (
     Schema,
     is_input_type,
     is_output_type,
-    nullable_type,
     unwrap_type,
 )
 from ..schema.introspection import (
@@ -409,10 +408,9 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._leave_input_value()
 
     def enter_list_value(self, node):
-        list_type = nullable_type(self.input_type) if self.input_type else None
-        item_type = (
-            unwrap_type(list_type) if isinstance(list_type, ListType) else None
-        )
+
+        item_type = unwrap_type(self.input_type) if self.input_type else None
+
         self._input_type_stack.append(
             cast(InputType, item_type)
             if item_type and is_input_type(item_type)
