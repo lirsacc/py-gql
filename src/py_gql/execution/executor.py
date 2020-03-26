@@ -35,6 +35,7 @@ from ..schema import (
     ScalarType,
     Schema,
 )
+from .default_resolver import default_resolver
 from .instrumentation import Instrumentation
 from .runtime import BlockingRuntime, Runtime
 from .wrappers import (
@@ -61,7 +62,11 @@ class Executor(ResolutionContext):
     https://spec.graphql.org/June2018/#sec-Execution).
     """
 
-    __slots__ = ResolutionContext.__slots__ + ("instrumentation", "runtime",)
+    __slots__ = ResolutionContext.__slots__ + (
+        "instrumentation",
+        "runtime",
+        "_default_resolver",
+    )
 
     def __init__(
         self,
@@ -73,7 +78,6 @@ class Executor(ResolutionContext):
         middlewares: Optional[Sequence[Callable[..., Any]]] = None,
         instrumentation: Optional[Instrumentation] = None,
         disable_introspection: bool = False,
-        default_resolver: Optional[Resolver] = None,
         runtime: Optional[Runtime] = None
     ):
         super().__init__(
@@ -82,11 +86,11 @@ class Executor(ResolutionContext):
             variables,
             context_value,
             disable_introspection=disable_introspection,
-            default_resolver=default_resolver,
             middlewares=middlewares,
         )
         self.instrumentation = instrumentation or Instrumentation()
         self.runtime = runtime or BlockingRuntime()
+        self._default_resolver = schema.default_resolver or default_resolver
 
     def field_resolver(
         self, parent_type: ObjectType, field_definition: Field

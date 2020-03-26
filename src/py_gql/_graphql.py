@@ -26,7 +26,6 @@ def process_graphql_query(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Validator]] = None,
-    default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
@@ -62,9 +61,6 @@ def process_graphql_query(
         validators: Custom validators.
             Setting this will replace the defaults so if you just want to add
             some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
-        default_resolver: Alternative default resolver.
-            For field which do not specify a resolver, this will be used instead
-            of `py_gql.execution.default_resolver`.
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
             common logic, they are good candidates for logging, authentication,
@@ -133,7 +129,6 @@ def process_graphql_query(
                 variables=variables,
                 initial_value=root,
                 context_value=context,
-                default_resolver=default_resolver,
                 instrumentation=instrumentation,
                 middlewares=middlewares,
                 disable_introspection=disable_introspection,
@@ -157,7 +152,6 @@ async def graphql(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Validator]] = None,
-    default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
@@ -181,7 +175,6 @@ async def graphql(
             root=root,
             validators=validators,
             context=context,
-            default_resolver=default_resolver,
             instrumentation=instrumentation,
             middlewares=middlewares,
             runtime=AsyncIORuntime(),
@@ -198,7 +191,6 @@ def graphql_blocking(
     root: Any = None,
     context: Any = None,
     validators: Optional[Sequence[Validator]] = None,
-    default_resolver: Optional[Callable[..., Any]] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
@@ -219,7 +211,6 @@ def graphql_blocking(
             root=root,
             validators=validators,
             context=context,
-            default_resolver=default_resolver,
             instrumentation=instrumentation,
             middlewares=middlewares,
             executor_cls=BlockingExecutor,

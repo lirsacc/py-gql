@@ -10,6 +10,7 @@ Unreleased
 - Drop support for comment based descriptions in `ASTPrinter` and `ASTSchemaPrinter`.
 - Move `ASTSchemaPrinter` from `py_gql.utilities` to `py_gql.sdl`.
 - Removed `nullable_type` helper (`unwrap_type` now handles nesting and should be used instead).
+- Execution related functions and classes (`graphql`, `execute`, etc.) do not accept a `default_resolver` argument anymore. It should be defined on the schema for consistency.
 
 ### Fixed
 
@@ -20,6 +21,9 @@ Unreleased
 - [Typechecking] `ListType` and `NonNullType` are now generics. This should have little impact when building schema from string definition, but should be useful when writing code to manipulating schema elements.
 - Added `GraphQLType.as_list`, `GraphQLType.as_non_null`.
 - Schema validation now checks resolver signatures to ensure that they won't break at runtime.
+- `ResolverMap` now supports setting default resolvers:
+  - At a type level (`register_default_resolver` or `resolver('Type.*')`)
+  - Globally as `ResolverMap.default_resolver = ...`
 
 [0.5.0](https://github.com/lirsacc/py-gql/releases/tag/0.5.0) - 2020-02-05
 --------------------------------------------------------------------------

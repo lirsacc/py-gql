@@ -27,7 +27,6 @@ from ..utilities import (
     directive_arguments,
     selected_fields,
 )
-from .default_resolver import default_resolver as _default_resolver
 from .runtime import Runtime
 
 
@@ -53,7 +52,6 @@ class ResolutionContext:
         "_fragment_type_applies",
         "_field_defs",
         "_argument_values",
-        "_default_resolver",
         "_resolver_cache",
         "_middlewares",
         "_disable_introspection",
@@ -68,7 +66,6 @@ class ResolutionContext:
         context_value: Any,
         *,
         disable_introspection: bool = False,
-        default_resolver: Optional[Resolver] = None,
         middlewares: Optional[Sequence[Callable[..., Any]]] = None
     ):
         #: ~py_gql.schema.Schema: Current schema.
@@ -82,7 +79,6 @@ class ResolutionContext:
         #: Dict[str, ~ast.FragmentDefinition]: Document fragments
         self.fragments = document.fragments
 
-        self._default_resolver = default_resolver or _default_resolver
         self._disable_introspection = disable_introspection
         self._middlewares = middlewares or []
 

@@ -262,9 +262,24 @@ class SchemaValidator:
 
             # Check that the resolver won't break when being called by the
             # execution layer.
-            if field.resolver is not None and self.enable_resolver_validation:
+
+            # Default resolvers must be compatible with any field they could be
+            # used for, which usually this means defining a variable keyword
+            # parameter.
+
+            resolver = (
+                field.resolver
+                or (
+                    composite_type.default_resolver
+                    if isinstance(composite_type, ObjectType)
+                    else None
+                )
+                or self.schema.default_resolver
+            )
+
+            if resolver and self.enable_resolver_validation:
                 self._validate_resolver_arguments(
-                    path, field.arguments, field.resolver,
+                    path, field.arguments, resolver,
                 )
 
             fieldnames.add(field.name)

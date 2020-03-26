@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import cast
+
 import pytest
 
 from py_gql.exc import SchemaError, UnknownType
@@ -323,3 +325,74 @@ def test_register_subscription_raises_on_existing_resolver():
 
     with pytest.raises(ValueError):
         schema.register_subscription("Subscription", "values", lambda *_: 42)
+
+
+def test_register_default_resolver():
+    Query = ObjectType("Query", [Field("id", String)])
+    schema = Schema(Query)
+
+    def query_default(root, ctx, info):
+        return 42
+
+    schema.register_default_resolver("Query", query_default)
+
+    assert (
+        cast(ObjectType, schema.get_type("Query")).default_resolver
+        is query_default
+    )
+
+
+def test_register_default_resolver_already_set():
+    Query = ObjectType("Query", [Field("id", String)])
+    schema = Schema(Query)
+
+    def query_default(root, ctx, info):
+        return 42
+
+    def query_default_2(root, ctx, info):
+        return 84
+
+    schema.register_default_resolver("Query", query_default)
+
+    with pytest.raises(ValueError):
+        schema.register_default_resolver("Query", query_default_2)
+
+    assert (
+        cast(ObjectType, schema.get_type("Query")).default_resolver
+        is query_default
+    )
+
+
+def test_register_default_resolver_allow_override():
+    Query = ObjectType("Query", [Field("id", String)])
+    schema = Schema(Query)
+
+    def query_default(root, ctx, info):
+        return 42
+
+    def query_default_2(root, ctx, info):
+        return 84
+
+    schema.register_default_resolver("Query", query_default)
+    schema.register_default_resolver(
+        "Query", query_default_2, allow_override=True
+    )
+
+    assert (
+        cast(ObjectType, schema.get_type("Query")).default_resolver
+        is query_default_2
+    )
+
+
+def test_resolver_decorator_with_wildcard():
+    Query = ObjectType("Query", [Field("id", String)])
+    schema = Schema(Query)
+
+    @schema.resolver("Query.*")
+    def query_default(root, ctx, info):
+        return 42
+
+    assert (
+        cast(ObjectType, schema.get_type("Query")).default_resolver
+        is query_default
+    )

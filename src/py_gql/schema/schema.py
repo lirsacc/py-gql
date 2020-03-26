@@ -103,7 +103,9 @@ class Schema(ResolverMap):
         "directives",
         "implementations",
         "resolvers",
-        "subsciptions",
+        "subscriptions",
+        "default_resolver",
+        "default_resolvers",
     )
 
     def __init__(
@@ -419,6 +421,31 @@ class Schema(ResolverMap):
             include_custom_schema_directives=include_custom_schema_directives,
         )(self)
 
+    def register_default_resolver(
+        self, typename: str, resolver: Resolver, *, allow_override: bool = False
+    ) -> None:
+        super().register_default_resolver(
+            typename, resolver, allow_override=allow_override
+        )
+
+        try:
+            object_type = self.types[typename]
+        except KeyError:
+            raise UnknownType(typename)
+
+        if not isinstance(object_type, ObjectType):
+            raise SchemaError(
+                'Cannot assign default resolver to %s "%s".'
+                % (object_type.__class__.__name__, typename)
+            )
+
+        if object_type.default_resolver and not allow_override:
+            raise ValueError(
+                'Type "%s" already has a default resolver.' % (typename,)
+            )
+
+        object_type.default_resolver = resolver
+
     def register_resolver(
         self,
         typename: str,
@@ -441,6 +468,9 @@ class Schema(ResolverMap):
                 'Cannot assign resolver to %s "%s".'
                 % (object_type.__class__.__name__, typename)
             )
+
+        if fieldname == "*":
+            return
 
         try:
             field = object_type.field_map[fieldname]

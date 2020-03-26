@@ -862,3 +862,37 @@ class TestResolverValidation:
         schema.register_resolver("Object", "field", Resolver())
 
         validate_schema(schema)
+
+    def test_reject_bad_type_default_resolver(self, schema: Schema) -> None:
+        @schema.resolver("Object.*")
+        def default_resolver(root, info, ctx):
+            pass
+
+        with pytest.raises(SchemaError):
+            validate_schema(schema)
+
+    def test_accept_generic_type_default_resolver(self, schema: Schema) -> None:
+        @schema.resolver("Object.*")
+        def default_resolver(root, info, ctx, **args):
+            pass
+
+        validate_schema(schema)
+
+    def test_reject_bad_global_default_resolver(self, schema: Schema) -> None:
+        def default_resolver(root, info, ctx):
+            pass
+
+        schema.default_resolver = default_resolver
+
+        with pytest.raises(SchemaError):
+            validate_schema(schema)
+
+    def test_accept_generic_global_default_resolver(
+        self, schema: Schema
+    ) -> None:
+        def default_resolver(root, info, ctx, **args):
+            pass
+
+        schema.default_resolver = default_resolver
+
+        validate_schema(schema)

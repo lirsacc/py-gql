@@ -23,7 +23,6 @@ def execute(
     variables: Optional[Mapping[str, Any]] = None,
     initial_value: Optional[Any] = None,
     context_value: Optional[Any] = None,
-    default_resolver: Optional[Resolver] = None,
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
@@ -50,9 +49,6 @@ def execute(
             Limits on the type(s) used here will depend on your own resolver
             and the runtime implementations used. Most thread safe data-structures
             should work with built in runtimes.
-        default_resolver: Alternative default resolver.
-            For field which do not specify a resolver, this will be used instead
-            of `py_gql.execution.default_resolver`.
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
             common logic, they are good candidates for logging, authentication,
@@ -93,7 +89,6 @@ def execute(
         document,
         coerced_variables,
         context_value,
-        default_resolver=default_resolver,
         instrumentation=instrumentation,
         disable_introspection=disable_introspection,
         middlewares=middlewares,
