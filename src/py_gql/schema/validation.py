@@ -287,7 +287,16 @@ class SchemaValidator:
     def _validate_resolver_arguments(
         self, path: str, args: Sequence[Argument], resolver: Callable[..., Any],
     ) -> None:
-        sig = signature(resolver)
+        try:
+            sig = signature(resolver)
+        except ValueError:
+            # In some cases (mostly C Extensions) this can fail, in this case
+            # we fallback to the previous behaviour of not validating and
+            # assuming correctness.
+            # This also seems to affect lambda functions when using Cython
+            # (https://github.com/cython/cython/issues/2983)
+            return
+
         params = list(sig.parameters.values())
 
         accepts_arbitrary_params = any(
