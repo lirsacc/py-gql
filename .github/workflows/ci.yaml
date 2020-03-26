@@ -100,7 +100,7 @@ jobs:
       - name: Test with Cython
         if: matrix.python != 'pypy3' && matrix.os != 'macos-latest'
         run: |
-          PY_GQL_USE_CYTHON=1 pip install -v --no-build-isolation -e .
+          PY_GQL_USE_CYTHON=1 pip install --no-build-isolation -e .
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
 
       - name: Build docs
