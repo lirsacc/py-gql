@@ -64,7 +64,9 @@ def test_custom_resolver_still_works(schema: Schema) -> None:
 def test_arguments_and_input_fields_are_handled_correctly(
     schema: Schema,
 ) -> None:
-    def resolver(_root, _ctx, _info, *, arg_one, arg_two):
+    def resolver(_root, _ctx, _info, *, arg_one, arg_two=None):
+        if arg_two is None:
+            arg_two = {"field_one": 0, "field_two": ""}
         return arg_one + arg_two["field_one"]
 
     schema.register_resolver("Query", "field_with_arguments", resolver)

@@ -19,6 +19,7 @@ Unreleased
 
 - [Typechecking] `ListType` and `NonNullType` are now generics. This should have little impact when building schema from string definition, but should be useful when writing code to manipulating schema elements.
 - Added `GraphQLType.as_list`, `GraphQLType.as_non_null`.
+- Schema validation now checks resolver signatures to ensure that they won't break at runtime.
 
 [0.5.0](https://github.com/lirsacc/py-gql/releases/tag/0.5.0) - 2020-02-05
 --------------------------------------------------------------------------

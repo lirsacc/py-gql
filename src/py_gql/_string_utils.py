@@ -341,7 +341,9 @@ def infer_suggestions(
     return [opt for opt, _ in sorted(distances, key=lambda s: s[1])]
 
 
-def quoted_options_list(options: Sequence[str]) -> str:
+def quoted_options_list(
+    options: Sequence[str], final_separator: str = "or"
+) -> str:
     """
     Quote a list of possible strings.
 
@@ -363,6 +365,9 @@ def quoted_options_list(options: Sequence[str]) -> str:
     >>> quoted_options_list(['foo', 'bar', 'baz'])
     '"foo", "bar" or "baz"'
 
+    >>> quoted_options_list(['foo', 'bar', 'baz'], "and")
+    '"foo", "bar" and "baz"'
+
     """
     if not options:
         return ""
@@ -370,8 +375,9 @@ def quoted_options_list(options: Sequence[str]) -> str:
     if len(options) == 1:
         return '"%s"' % options[0]
 
-    return "%s or %s" % (
+    return "%s %s %s" % (
         ", ".join(('"%s"' % option for option in options[:-1])),
+        final_separator,
         '"%s"' % options[-1],
     )
 

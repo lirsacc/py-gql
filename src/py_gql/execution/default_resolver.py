@@ -12,6 +12,7 @@ def default_resolver(
     root: Any,
     context: Any,
     info: "ResolveInfo",
+    *,
     __isinstance: Any = isinstance,
     __getattr: Any = getattr,
     __callable: Any = callable,

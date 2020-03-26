@@ -3,7 +3,7 @@
 Test schema validation.
 """
 
-from typing import List
+from typing import Any, List
 
 import pytest
 
@@ -73,7 +73,7 @@ input_types = _with_modifiers([String, SomeScalar, SomeEnum, SomeInputObject])
 not_input_types = _with_modifiers([SomeObject, SomeUnion, SomeInterface])
 
 
-def _single_type_schema(type_, fieldname="f"):
+def _single_type_schema(type_: Any, fieldname: str = "f") -> Schema:
     return Schema(ObjectType("Query", [Field(fieldname, type_)]), types=[type_])
 
 
@@ -676,6 +676,10 @@ def test_github_schema_is_valid(github_schema):
 
 def test_collects_multiple_errors():
     iface = InterfaceType("IFace", [Field("f", ListType(String))])
+
+    bad_name_union = UnionType("#BadNameUnion", lambda: [object_type])
+    empty_union = UnionType("EmptyUnion", [])
+
     object_type = ObjectType(
         "SomeObject",
         [
@@ -684,11 +688,7 @@ def test_collects_multiple_errors():
             Field("g", lambda: bad_name_union),
         ],
         interfaces=[iface],
-    )
-
-    bad_name_union = UnionType("#BadNameUnion", [object_type])
-
-    empty_union = UnionType("EmptyUnion", [])
+    )  # type: ObjectType
 
     schema = _single_type_schema(object_type)
 
@@ -704,3 +704,161 @@ def test_collects_multiple_errors():
             'Invalid type name "#BadNameUnion"',
         ]
     )
+
+
+class TestResolverValidation:
+    @pytest.fixture
+    def schema(self) -> Schema:
+        return _single_type_schema(
+            ObjectType(
+                "Object",
+                [
+                    Field(
+                        "field",
+                        String,
+                        [
+                            Argument("a", String),
+                            Argument("b", NonNullType(String)),
+                            Argument("c", String, default_value="c"),
+                        ],
+                    )
+                ],
+            )
+        )
+
+    def test_ok(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, b, c, a="s"):
+            pass
+
+        validate_schema(schema)
+
+    def test_reject_missing_parameter(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Missing resolver parameter for argument "a" on "Object.field"',
+                'Missing resolver parameter for argument "b" on "Object.field"',
+                'Missing resolver parameter for argument "c" on "Object.field"',
+            ]
+        )
+
+    def test_reject_missing_default_value(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, *, a, b, c):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Resolver parameter for optional argument "a" on "Object.field" '
+                "must have a default",
+            ]
+        )
+
+    def test_reject_extra_keyword_without_default(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, *, b, c, d, a="s"):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Required resolver parameter "d" on "Object.field" does not '
+                "match any known argument or expected positional parameter",
+            ]
+        )
+
+    def test_accept_extra_keyword_with_default(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, *, b, c, a="s", d=None):
+            pass
+
+        validate_schema(schema)
+
+    def test_reject_missing_positional(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(*, b, c, a="s", d=None):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Resolver for "Object.field" must accept 3 positional '
+                "parameters, found ()"
+            ]
+        )
+
+    def test_reject_extra_positional(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, bar, *, b, c, a="s", d=None):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Required resolver parameter "bar" on "Object.field" does not '
+                "match any known argument or expected positional parameter",
+            ]
+        )
+
+    def test_accept_extra_positional_with_default(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, d=None, *, b, c, a="s"):
+            pass
+
+        validate_schema(schema)
+
+    def test_accept_variable_keyword_args(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, **kwargs):
+            pass
+
+        validate_schema(schema)
+
+    def test_accept_partial_variable_keyword_args(self, schema: Schema) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, b, c, **kwargs):
+            pass
+
+        validate_schema(schema)
+
+    def test_accept_reject_invalid_with_variable_keyword_args(
+        self, schema: Schema
+    ) -> None:
+        @schema.resolver("Object.field")
+        def resolver(root, ctx, info, a, **kwargs):
+            pass
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Resolver parameter for optional argument "a" on "Object.field" '
+                "must have a default"
+            ]
+        )
+
+    def test_accept_callable_object(self, schema: Schema) -> None:
+        class Resolver:
+            def __call__(self, root, ctx, info, b, c, a="s"):
+                pass
+
+        schema.register_resolver("Object", "field", Resolver())
+
+        validate_schema(schema)

@@ -39,7 +39,7 @@ Path = List[Union[int, str]]
 def _path(path):
     if not path:
         return []
-    return ["value"] + path
+    return ["value", *path]
 
 
 def coerce_value(
@@ -198,6 +198,10 @@ def coerce_argument_values(
     """
     Prepare a dict of argument values given a definition and a node.
 
+    Warning:
+        Missing arguments (according to the definition) will not be present in
+        the resulting dictionary unless they have a default value.
+
     Args:
         definition: Field or Directive definition from which to extract argument
             definitions.
@@ -216,41 +220,44 @@ def coerce_argument_values(
 
     values = {a.name.value: a for a in node.arguments}
     for arg_def in definition.arguments:
-        argname = arg_def.name
+        arg_name = arg_def.name
         target_name = arg_def.python_name
-        argtype = arg_def.type
-        if argname not in values:
+        arg_type = arg_def.type
+
+        try:
+            arg = values[arg_name]
+        except KeyError:
             if arg_def.has_default_value:
                 coerced_values[target_name] = arg_def.default_value
-            elif isinstance(argtype, NonNullType):
+            elif isinstance(arg_type, NonNullType):
                 raise CoercionError(
                     'Argument "%s" of required type "%s" was not provided'
-                    % (argname, argtype),
+                    % (arg_name, arg_type),
                     [node],
                 )
         else:
-            arg = values[argname]
             if isinstance(arg.value, _ast.Variable):
                 varname = arg.value.name.value
                 if varname in variables:
                     coerced_values[target_name] = variables[varname]
                 elif arg_def.has_default_value:
                     coerced_values[target_name] = arg_def.default_value
-                elif isinstance(argtype, NonNullType):
+                elif isinstance(arg_type, NonNullType):
                     raise CoercionError(
                         'Argument "%s" of required type "%s" was provided the '
-                        'missing variable "$%s"' % (argname, argtype, varname),
+                        'missing variable "$%s"'
+                        % (arg_name, arg_type, varname),
                         [node],
                     )
             else:
                 try:
                     coerced_values[target_name] = value_from_ast(
-                        arg.value, argtype, variables=variables
+                        arg.value, arg_type, variables=variables
                     )
                 except InvalidValue as err:
                     raise CoercionError(
                         'Argument "%s" of type "%s" was provided invalid value %s (%s)'
-                        % (argname, argtype, print_ast(arg.value), err),
+                        % (arg_name, arg_type, print_ast(arg.value), err),
                         [node],
                     )
 

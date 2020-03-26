@@ -4,12 +4,15 @@ Schema validation utility
 """
 
 import re
-from typing import TYPE_CHECKING, List, Set, Union
+from inspect import Parameter, signature
+from typing import TYPE_CHECKING, Any, Callable, List, Sequence, Set, Union
 
+from .._string_utils import quoted_options_list
 from ..exc import SchemaError, SchemaValidationError
 from .introspection import is_introspection_type
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
+    Argument,
     Directive,
     EnumType,
     EnumValue,
@@ -29,8 +32,16 @@ if TYPE_CHECKING:  # Fix import cycles of types needed for Mypy checking
 VALID_NAME_RE = re.compile(r"^(?!__)[_a-zA-Z][_a-zA-Z0-9]*$")
 RESERVED_NAMES = set(t.name for t in SPECIFIED_SCALAR_TYPES)
 
+VAR_PARAM_KINDS = (Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD)
+POSITIONAL_PARAM_KINDS = (
+    Parameter.POSITIONAL_ONLY,
+    Parameter.POSITIONAL_OR_KEYWORD,
+)
 
-def validate_schema(schema: "Schema") -> bool:
+
+def validate_schema(
+    schema: "Schema", enable_resolver_validation: bool = True,
+) -> bool:
     """
     Validate a GraphQL schema.
 
@@ -56,13 +67,16 @@ def validate_schema(schema: "Schema") -> bool:
         ``True`` if the schema is valid, else ``False``.
 
     """
-    validator = SchemaValidator(schema)
+    validator = SchemaValidator(
+        schema, enable_resolver_validation=enable_resolver_validation,
+    )
+
     validator()
 
-    if validator:
-        return True
+    if not validator:
+        raise SchemaValidationError(validator.errors)
 
-    raise SchemaValidationError(validator.errors)
+    return True
 
 
 def _is_valid_name(name: str) -> bool:
@@ -98,9 +112,12 @@ def _is_valid_name(name: str) -> bool:
 
 # TODO: Most non-lazy attributes could be checked earlier.
 class SchemaValidator:
-    def __init__(self, schema: "Schema"):
+    def __init__(
+        self, schema: "Schema", enable_resolver_validation: bool = True
+    ):
         self.schema = schema
         self.errors = []  # type: List[SchemaError]
+        self.enable_resolver_validation = enable_resolver_validation
 
     def __bool__(self) -> bool:
         return not self.errors
@@ -222,10 +239,9 @@ class SchemaValidator:
                 )
 
             argnames = set()  # type: Set[str]
+            path = "%s.%s" % (composite_type, field.name)
 
             for arg in field.arguments:
-
-                path = "%s.%s" % (composite_type, field.name)
 
                 self.check_valid_name(arg.name)
 
@@ -243,7 +259,88 @@ class SchemaValidator:
 
                 argnames.add(arg.name)
 
+            # Check that the resolver won't break when being called by the
+            # execution layer.
+            if field.resolver is not None and self.enable_resolver_validation:
+                self._validate_resolver_arguments(
+                    path, field.arguments, field.resolver,
+                )
+
             fieldnames.add(field.name)
+
+    def _validate_resolver_arguments(
+        self, path: str, args: Sequence[Argument], resolver: Callable[..., Any],
+    ) -> None:
+        sig = signature(resolver)
+        params = list(sig.parameters.values())
+
+        accepts_arbitrary_params = any(
+            p for p in params if p.kind is Parameter.VAR_POSITIONAL
+        )
+
+        accepts_arbitrary_kw_params = any(
+            p for p in params if p.kind is Parameter.VAR_KEYWORD
+        )
+
+        known_param_names = [arg.python_name for arg in args]
+
+        for arg in args:
+            try:
+                param = sig.parameters[arg.python_name]
+            except KeyError:
+                if not accepts_arbitrary_kw_params:
+                    self.add_error(
+                        'Missing resolver parameter for argument "%s" on "%s"'
+                        % (arg.name, path,)
+                    )
+            else:
+                if param.kind is Parameter.POSITIONAL_ONLY:
+                    # In practice this is a 3.8+ only concern.
+                    self.add_error(
+                        'Resolver parameter for argument "%s" on "%s" '
+                        "must not be positional only" % (arg.name, path,)
+                    )
+                elif (
+                    param.default is Parameter.empty
+                    and (not arg.has_default_value)
+                    and (not arg.required)
+                ):
+                    # Required arguments must provide values at query time and
+                    # arguments with default values will fallback, so they'll
+                    # both always be provided to the resolver.
+                    self.add_error(
+                        'Resolver parameter for optional argument "%s" on '
+                        '"%s" must have a default' % (arg.name, path,)
+                    )
+
+        remaining = [
+            p
+            for p in params
+            if p.name not in known_param_names and p.kind not in VAR_PARAM_KINDS
+        ]
+
+        remaining_positional = [
+            p for p in remaining if p.kind in POSITIONAL_PARAM_KINDS
+        ]
+
+        if not accepts_arbitrary_params and len(remaining_positional) < 3:
+            self.add_error(
+                'Resolver for "%s" must accept 3 positional parameters, found (%s)'
+                % (
+                    path,
+                    quoted_options_list(
+                        [p.name for p in remaining_positional], "and",
+                    ),
+                )
+            )
+
+        for param in remaining[3:]:
+            if param.default is Parameter.empty:
+                self.add_error(
+                    'Required resolver parameter "%s" on "%s" does not match '
+                    "any known argument or expected positional parameter"
+                    % (param.name, path)
+                )
 
     def validate_interfaces(self, type_: ObjectType) -> None:
         imlemented_types = set()  # type: Set[str]
