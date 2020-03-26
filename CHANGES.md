@@ -24,6 +24,7 @@ Unreleased
 - `ResolverMap` now supports setting default resolvers:
   - At a type level (`register_default_resolver` or `resolver('Type.*')`)
   - Globally as `ResolverMap.default_resolver = ...`
+- Added `py.typed` marker file.
 
 [0.5.0](https://github.com/lirsacc/py-gql/releases/tag/0.5.0) - 2020-02-05
 --------------------------------------------------------------------------
