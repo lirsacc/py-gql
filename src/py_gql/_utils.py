@@ -148,7 +148,7 @@ def find_one(
     )
 
 
-# TODO: Not sure how to type this correctly without recursive types.
+# Not sure how to type this correctly without recursive types.
 def flatten(lst):
     """
     Recursively flatten iterators, ignoring strings.

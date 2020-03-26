@@ -138,8 +138,6 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
     if not pending:
         return cast(List[T], result)
 
-    # TODO: This is not used internally and is mostly here for completeness
-    # but we could drop it.
     def handle_cancel(d: "Future[List[T]]") -> Any:
         if d.cancelled():
             for inner in pending:

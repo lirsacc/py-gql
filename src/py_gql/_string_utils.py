@@ -188,7 +188,6 @@ def highlight_location(body: str, position: int, delta: int = 2) -> str:
         str: Formatted view
 
     """
-    # REVIEW: There must be a more readable way to write this
     line, col = index_to_loc(body, position)
     line_index = line - 1
     lines = LINE_SEPARATOR.split(body)

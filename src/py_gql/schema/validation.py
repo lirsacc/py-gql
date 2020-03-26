@@ -111,6 +111,7 @@ def _is_valid_name(name: str) -> bool:
 
 
 # TODO: Most non-lazy attributes could be checked earlier.
+# TODO: Can this be made into a SchemaVisitor?
 class SchemaValidator:
     def __init__(
         self, schema: "Schema", enable_resolver_validation: bool = True

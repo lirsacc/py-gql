@@ -605,8 +605,6 @@ def test_it_processes_github_schema_sink_without_crashing(fixture_file):
     visitor.visit(parse(sdl, no_location=True, allow_type_system=True))
 
 
-# TODO: The following tests are not super exhaustive, which is in part due to
-# the verbose Visitor implementation.
 def test_node_removal():
     class Visitor(DispatchingVisitor):
         def enter_field(self, field):

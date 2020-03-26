@@ -55,7 +55,6 @@ def assert_execution_result(
     pprint.pprint(expected_data)
     pprint.pprint(expected_errors)
 
-    # TODO: Remove this guard
     if expected_data is not None:
         assert expected_data == data
 

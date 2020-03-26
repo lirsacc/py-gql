@@ -271,7 +271,6 @@ class Parser:
         # Keep track of the current parsing window + last seen token internally
         # as the Lexer iterator itself doesn't handle backtracking or lookahead
         # semantics and can only be consumed once.
-        # TODO: Do we need dequeue here or can we go with a list?
         self._buffer = collections.deque()  # type: Deque[Token]
 
     def _advance_window(self, by: int = 1) -> None:
