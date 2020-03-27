@@ -1,7 +1,4 @@
 #!/bin/bash
-
-cd "$(dirname "$0")" || true
-
 PYTHON_VERSIONS=${PYTHON_VERSIONS:?'PYTHON_VERSIONS must be set.'}
 DIST=${1:-'dist'}
 
