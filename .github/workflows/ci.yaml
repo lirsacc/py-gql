@@ -148,52 +148,52 @@ jobs:
           name: dist.any
           path: dist
 
-  build_wheels:
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
-    needs: [check]
+  # build_wheels:
+  #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev'
+  #   runs-on: ubuntu-latest
+  #   needs: [check]
 
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - 3.5
-          - 3.6
-          - 3.7
-          - 3.8
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       version:
+  #         - 3.5
+  #         - 3.6
+  #         - 3.7
+  #         - 3.8
 
-    steps:
-      - uses: actions/checkout@v2
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: 3.8
 
-      - name: Cache deps
-        uses: actions/cache@v1
-        with:
-          path: .pip-cache
-          key: ${{ runner.os }}-python-build-deps
+  #     - name: Cache deps
+  #       uses: actions/cache@v1
+  #       with:
+  #         path: .pip-cache
+  #         key: ${{ runner.os }}-python-build-deps
 
-      - name: Dependencies
-        run: |
-          mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade pip wheel setuptools 'cython<3' 'invoke~=1.1'
+  #     - name: Dependencies
+  #       run: |
+  #         mkdir -p .pip-cache
+  #         pip install --cache-dir .pip-cache --upgrade pip wheel setuptools 'cython<3' 'invoke~=1.1'
 
-      - name: Build manylinux wheel
-        run: inv build-manylinux-wheels --cythonize-module --python ${{ matrix.version }}
+  #     - name: Build manylinux wheel
+  #       run: inv build-manylinux-wheels --cythonize-module --python ${{ matrix.version }}
 
-      - name: Upload dist
-        uses: actions/upload-artifact@v1
-        with:
-          name: dist.${{ matrix.version }}
-          path: dist
+  #     - name: Upload dist
+  #       uses: actions/upload-artifact@v1
+  #       with:
+  #         name: dist.${{ matrix.version }}
+  #         path: dist
 
   collect_dist:
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-    needs: [build_wheels, build_universal]
+    needs: [build_universal]
 
     steps:
       - name: Download build artifacts (any)
@@ -201,25 +201,25 @@ jobs:
         with:
           name: dist.any
 
-      - name: Download build artifacts (3.5)
-        uses: actions/download-artifact@v1
-        with:
-          name: dist.3.5
+      # - name: Download build artifacts (3.5)
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: dist.3.5
 
-      - name: Download build artifacts (3.6)
-        uses: actions/download-artifact@v1
-        with:
-          name: dist.3.6
+      # - name: Download build artifacts (3.6)
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: dist.3.6
 
-      - name: Download build artifacts (3.7)
-        uses: actions/download-artifact@v1
-        with:
-          name: dist.3.7
+      # - name: Download build artifacts (3.7)
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: dist.3.7
 
-      - name: Download build artifacts (3.8)
-        uses: actions/download-artifact@v1
-        with:
-          name: dist.3.8
+      # - name: Download build artifacts (3.8)
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: dist.3.8
 
       - name: Collect
         run: |
