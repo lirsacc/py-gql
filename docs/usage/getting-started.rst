@@ -4,10 +4,10 @@ Getting Started
 This document will go over the basics of building a GraphQL server.
 We will cover:
 
-    1. Defining your types and schema
-    2. Adding custom resolvers to your schema
-    3. Executing client queries against the schema
-    4. Exposing the schema behind an HTTP endpoint (using Flask)
+1. Defining your types and schema
+2. Adding custom resolvers to your schema
+3. Executing client queries against the schema
+4. Exposing the schema behind an HTTP endpoint (using Flask)
 
 If you haven’t done so already, please take a moment to :ref:`install
 <installation>` py-gql before continuing.
@@ -23,13 +23,15 @@ implement for this example is as follow (using the `schema definition language
 
 
 .. literalinclude:: getting-started/schema.graphql
-   :language: graphql
+    :language: graphql
 
 The easiest way to build an executable schema for our server is through
-:func:`py_gql.build_schema` which does so by consuming the SDL:
+:func:`py_gql.build_schema` which does so by consuming the SDL. This is often
+referred to as a *schema first* approach to schema definition, as opposed to *code
+first* where we'd build a schema from Python objects.
 
 .. literalinclude:: getting-started/schema.py
-   :language: python
+    :language: python
 
 
 Interacting with your data through resolver functions
@@ -38,38 +40,32 @@ Interacting with your data through resolver functions
 The schema as defined above isn't going to be very useful unless we have a way
 to interact with our data.
 
-By default the runtime looks up fields as dict items
-and object attributes of the root value you provide during execution. This works
-for simple cases, but it is limited when running dynamic queries (such as
-fetching a character by id like in our schema). In order to implement custom
-field resolution you have to implement custom field resolvers. This is where
-your business logic and data access code should live.
-
 For this example we will use the following JSON dataset:
 
 .. literalinclude:: getting-started/data.json
-   :language: json
+    :language: json
 
 Let's implement our resolver functions:
 
 .. literalinclude:: getting-started/resolvers.py
-   :language: python
+    :language: python
 
 While we won't go into details concerning the resolvers signature we can already
-note that they receive 3 positional arguments:
+note that they receive the following parameters:
 
-- The resolved parent value (The server root value for top-level fields)
-- A context value which is where you provide any application specific value such
+- The resolved parent value (The server provided root value for top-level fields)
+- A context value which is where you provide any application specific data such
   as database connections, loggers, etc. In this case the ``db`` part of the
   context will be a mapping for each entry's id to itself.
-- An info object which carries some data about the current execution context
-  and field. We won't worry about it for this example.
-
-While the GraphQL field arguments are passed as keyword arguments.
+- An info object which carries some GraphQL specific data about the current
+  execution context.
+-  The GraphQL field arguments are passed as keyword parameters.
 
 We haven't implemented any resolver for the field on the ``Character`` type.
 That is because the default behavior is to look up field of dictionaries and
 objects which is sufficient here.
+
+Refer to :ref:`defining_resolvers` for more details on implementing resolvers.
 
 
 Executing queries against the schema
@@ -92,12 +88,13 @@ We will expose this behind an HTTP API using `Flask <http://flask.pocoo.org/>`_.
 .. note::
 
     While the transport and serialization format depend on the application and
-    are technically irrelevant to the GraphQL runtime itself; it is common
-    to expose GraphQL APIs behind an HTTP server, traditionally under
-    ``POST /graphql`` and JSON encode the request and response.
+    are technically irrelevant to the GraphQL runtime itself; it is pretty
+    common to expose GraphQL APIs behind an HTTP server, traditionally under
+    ``POST /graphql`` and JSON encode the request and response which is what
+    we're doing  here.
 
 .. literalinclude:: getting-started/flask.py
-   :language: python
+    :language: python
 
 Pulling together all that we've seen so far you should have a working GraphQL
 server that you can test using any HTTP client.
@@ -113,4 +110,5 @@ Complete code
 -------------
 
 .. literalinclude:: ../../examples/getting-started.py
-   :language: python
+    :linenos:
+    :language: python

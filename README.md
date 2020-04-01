@@ -31,8 +31,6 @@ For more details see [install.rst](docs/usage/install.rst).
 Usage & Examples
 ----------------
 
-### Hello World
-
 ```python
 from py_gql import build_schema, graphql_blocking
 

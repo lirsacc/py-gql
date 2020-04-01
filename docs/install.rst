@@ -3,15 +3,15 @@
 Installation
 ============
 
-- **Python Versions**: ``py_gql`` supports CPython 3.5 and newer. We aim to support all [currently supported python versions](https://devguide.python.org/#status-of-python-branches).
+- **Python Versions**: py_gql supports CPython 3.5 and newer. We aim to support all `currently
+  supported python versions <https://devguide.python.org/#status-of-python-branches>`_.
 - **Platforms**: Unix/Posix, MacOS X.
-- **Dependencies**: :mod:`py_gql` has no direct dependency.
+- **Dependencies**: py_gql has no direct dependency.
 
 Installing from PyPI
 --------------------
 
-A source distribution and universal wheel are available on
-`PyPI <https://pypi.org/project/py-gql/>`_.
+The source distribution and wheel are available on `PyPI <https://pypi.org/project/py-gql/>`_.
 
 To install, run:
 
@@ -38,6 +38,7 @@ To benefit from this, run:
 
 .. code::
 
+    $ pip install cython
     $ PY_GQL_USE_CYTHON=1 pip install --no-binary :all: py-gql
 
 **Notes**
@@ -50,6 +51,8 @@ To benefit from this, run:
   See `this document <https://cython.readthedocs.io/en/latest/src/tutorial/profiling_tutorial.html>`_
   for more details.
 - You need Xcode Command Line Tools installed on MaxOS X for this to work.
+- Pre-built, platform specific wheels are not available at the moment although it is
+  under consideration.
 
 
 Installing from source
@@ -72,3 +75,12 @@ Or you can directly install through pip `VCS support
 .. code::
 
     $ pip install git+ssh://git@github.com/lirsacc/py-gql.git@master
+
+To use Cython mode:
+
+When installing from source:
+
+.. code::
+
+    $ pip install cython
+    $ PY_GQL_USE_CYTHON=1 pip install --no-build-isolation -e .

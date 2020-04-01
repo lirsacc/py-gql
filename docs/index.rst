@@ -20,8 +20,8 @@ The source code, issue tracker and development guidelines are available on
 `Github <https://github.com/lirsacc/py-gql>`_.
 
 
-Hello World
-------------
+Example
+-------
 
 .. literalinclude:: ../examples/hello_world.py
    :language: python
@@ -46,7 +46,7 @@ Documentation
 -------------
 
 .. toctree::
-    :maxdepth: 4
+    :maxdepth: 3
 
     install
     usage/index
@@ -57,5 +57,6 @@ Documentation
 Indices and tables
 ------------------
 
+* :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

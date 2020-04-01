@@ -5,10 +5,8 @@ User guide
 
 .. note::
 
-    This is a work in progress.
-
-    More guides will come, but in the meantime you can check out the :ref:`public API
-    <api>` or `code examples on Github
+    This is a work in progress. More guides will come, but in the meantime you
+    can check out the :ref:`public API <api>` or `code examples on Github
     <https://github.com/lirsacc/py-gql/tree/master/examples>`_.
 
 
@@ -16,4 +14,5 @@ User guide
     :maxdepth: 2
 
     getting-started
+    defining-resolvers
 
