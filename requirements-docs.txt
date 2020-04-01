@@ -1,7 +1,7 @@
 recommonmark ~= 0.4
 sphinx ~= 2.2
 alabaster ~= 0.7
-pygments-graphql ~= 2.5
+pygments-graphql
 sphinx-autodoc-typehints ~= 1.8
 
 pyenchant
