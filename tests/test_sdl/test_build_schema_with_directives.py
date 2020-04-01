@@ -275,7 +275,7 @@ def test_missing_definition_and_impl():
 
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 29, "line": 3}],
-        "message": 'Unknown directive "@upper',
+        "message": 'Unknown directive "@upper"',
     }
 
 

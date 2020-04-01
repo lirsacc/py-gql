@@ -170,7 +170,7 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             try:
                 directive_def, schema_directive_cls = self._defs[name]
             except KeyError:
-                raise SDLError('Unknown directive "@%s' % name, [node])
+                raise SDLError('Unknown directive "@%s"' % name, [node])
 
             if loc not in directive_def.locations:
                 raise SDLError(

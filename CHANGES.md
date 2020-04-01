@@ -7,6 +7,7 @@ Unreleased
 ### Fixed
 
 - Fix bug where mixing schema directives with `@deprecated` would break.
+- Fix error message on unknown schema directive.
 
 [0.6.0](https://github.com/lirsacc/py-gql/releases/tag/0.6.0) - 2020-04-01
 --------------------------------------------------------------------------
