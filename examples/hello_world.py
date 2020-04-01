@@ -12,9 +12,9 @@ schema = build_schema(
 
 
 @schema.resolver("Query.hello")
-def resolve_hello(*, value):
+def resolve_hello(*_, value):
     return "Hello {}!".format(value)
 
 
-result = graphql_blocking(schema, '{ hello(value: "Foo") }')
-assert result.response() == {"data": {"hello": "Hello Foo!"}}
+result = graphql_blocking(schema, '{ hello(value: "World") }')
+assert result.response() == {"data": {"hello": "Hello World!"}}

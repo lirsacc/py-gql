@@ -35,7 +35,7 @@ def swapi_caller(func):
 
 def single_resource_resolver(resource):
     @swapi_caller
-    def resolve(*, id):
+    def resolve(*_, id):
         return swapi.fetch_one(resource, id)
 
     return resolve
