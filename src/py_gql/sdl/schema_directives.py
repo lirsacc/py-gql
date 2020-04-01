@@ -23,8 +23,8 @@ from .._utils import flatten
 from ..exc import SDLError
 from ..lang import ast as _ast
 from ..schema import (
-    SPECIFIED_SCALAR_TYPES,
     SPECIFIED_DIRECTIVES,
+    SPECIFIED_SCALAR_TYPES,
     Argument,
     Directive,
     EnumType,
