@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+[0.6.0](https://github.com/lirsacc/py-gql/releases/tag/0.6.0) - 2020-04-01
+--------------------------------------------------------------------------
+
 ### Breaking Changes & Deprecations
 
 - Schema directives now **must** specify their definition, either with an explicit `Directive` or by delegating to the schema by name. They are now passed in as a sequence and not a mapping when using `build_schema`.
