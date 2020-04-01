@@ -445,6 +445,8 @@ class Schema(ResolverMap):
             )
 
         object_type.default_resolver = resolver
+        # Invalidate validation
+        self._is_valid = None
 
     def register_resolver(
         self,
@@ -491,6 +493,8 @@ class Schema(ResolverMap):
             )
 
         field.resolver = resolver
+        # Invalidate validation
+        self._is_valid = None
 
     def register_subscription(
         self,
@@ -534,6 +538,8 @@ class Schema(ResolverMap):
             )
 
         field.subscription_resolver = resolver
+        # Invalidate validation
+        self._is_valid = None
 
     def clone(self) -> "Schema":
         cloned = Schema(
