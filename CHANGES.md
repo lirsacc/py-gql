@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+[0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
+--------------------------------------------------------------------------
+
 ### Fixed
 
 - Fix bug where mixing schema directives with `@deprecated` would break.
