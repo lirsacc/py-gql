@@ -12,6 +12,10 @@ for py in $(echo ${PYTHON_VERSIONS//\./} | sed "s/,/ /g"); do
         exit 1
     fi
 
+    if [ -n "$PY_GQL_USE_CYTHON" ]; then
+        "/opt/python/${pybin}/bin/pip" install 'cython<3'
+    fi
+
     "/opt/python/${pybin}/bin/python" setup.py bdist_wheel -d "$DIST"
 
     # Fix wheel
