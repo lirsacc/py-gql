@@ -96,15 +96,22 @@ def test_directive_on_wrong_location():
     }
 
 
-def test_ignores_unknown_directive_implementation():
+def test_ignores_specified_directives():
+    class UppercaseDirective(SchemaDirective):
+        definition = "upper"
+
+        def on_field(self, field_definition):
+            return wrap_resolver(field_definition, lambda x: x.upper())
+
     build_schema(
         """
         directive @upper on FIELD_DEFINITION
 
-        type Query @upper {
+        type Query @deprecated {
             foo: String
         }
-        """
+        """,
+        schema_directives=(UppercaseDirective,),
     )
 
 

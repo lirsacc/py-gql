@@ -24,6 +24,7 @@ from ..exc import SDLError
 from ..lang import ast as _ast
 from ..schema import (
     SPECIFIED_SCALAR_TYPES,
+    SPECIFIED_DIRECTIVES,
     Argument,
     Directive,
     EnumType,
@@ -42,6 +43,9 @@ from ..utilities import coerce_argument_values
 
 
 __all__ = ("SchemaDirective", "apply_schema_directives")
+
+
+SPECIFIED_DIRECTIVE_NAMES = [x.name for x in SPECIFIED_DIRECTIVES]
 
 
 T = TypeVar("T")
@@ -159,6 +163,10 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
 
         for node in _find_directives(definition):
             name = node.name.value
+
+            if name in SPECIFIED_DIRECTIVE_NAMES:
+                continue
+
             try:
                 directive_def, schema_directive_cls = self._defs[name]
             except KeyError:
