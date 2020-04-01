@@ -6,6 +6,12 @@ from py_gql.exc import ResolverError
 from py_gql.schema import Field, NonNullType, ObjectType, Schema, String
 
 
+class _obj:
+    def __init__(self, **attrs):
+        for k, v in attrs.items():
+            setattr(self, k, v)
+
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
@@ -35,7 +41,7 @@ async def test_nulls_lazy_nullable_field(assert_execution):
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalar }",
-        initial_value=dict(scalar=lambda *_: None),
+        initial_value=_obj(scalar=lambda *_: None),
         expected_data={"scalar": None},
     )
 
@@ -58,7 +64,7 @@ async def test_nulls_and_report_error_on_lazy_non_nullable_field(
     await assert_execution(
         NullAndNonNullSchema,
         "query Q { scalarNonNull }",
-        initial_value=dict(scalarNonNull=lambda *_: None),
+        initial_value=_obj(scalarNonNull=lambda *_: None),
         expected_data={"scalarNonNull": None},
         expected_errors=[
             ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
@@ -150,7 +156,7 @@ async def test_nulls_and_report_errors_on_tree_of_non_nullable_fields(
 
 
 async def test_nulls_out_errored_subtrees(raiser, assert_execution):
-    root = dict(
+    root = _obj(
         sync="sync",
         callable_error=raiser(ResolverError, "callable_error"),
         callable=lambda *_: "callable",

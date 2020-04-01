@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from py_gql import build_schema
-from py_gql.schema import Argument, Field, Int, ObjectType, Schema, String
+from py_gql.schema import Argument, Field, Int, Schema, String
 
 from ._test_utils import assert_sync_execution, create_test_schema
 
@@ -66,50 +66,6 @@ class TestDefaultResolver:
             initial_value=root,
             context_value={"addend2": 9},
             expected_data={"test": 789},
-        )
-
-    def test_evaluates_callables(self):
-        data = {
-            "a": lambda *_: "Apple",
-            "b": lambda *_: "Banana",
-            "c": lambda *_: "Cookie",
-            "d": lambda *_: "Donut",
-            "e": lambda *_: "Egg",
-            "deep": lambda *_: data,  # type: ignore
-        }
-
-        Fruits = ObjectType(
-            "Fruits",
-            [
-                Field("a", String),
-                Field("b", String),
-                Field("c", String),
-                Field("d", String),
-                Field("e", String),
-                Field("deep", lambda: Fruits),
-            ],
-        )  # type: ObjectType
-
-        assert_sync_execution(
-            Schema(Fruits),
-            """{
-                a, b, c, d, e
-                deep {
-                    a
-                    deep {
-                        a
-                    }
-                }
-            }""",
-            initial_value=data,
-            expected_data={
-                "a": "Apple",
-                "b": "Banana",
-                "c": "Cookie",
-                "d": "Donut",
-                "e": "Egg",
-                "deep": {"a": "Apple", "deep": {"a": "Apple"}},
-            },
         )
 
 

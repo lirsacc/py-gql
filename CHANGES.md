@@ -11,6 +11,7 @@ Unreleased
 - Move `ASTSchemaPrinter` from `py_gql.utilities` to `py_gql.sdl`.
 - Removed `nullable_type` helper (`unwrap_type` now handles nesting and should be used instead).
 - Execution related functions and classes (`graphql`, `execute`, etc.) do not accept a `default_resolver` argument anymore. It should be defined on the schema for consistency.
+- The default resolver now only evaluates methods and not callable members of a mapping.
 
 ### Fixed
 

@@ -393,10 +393,17 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
         """
     )
 
+    class Root:
+        def __init__(self, resolver):
+            self.resolver = resolver
+
+        def foo(self, ctx, info, **args):
+            return self.resolver(ctx, info, **args)
+
     assert graphql_blocking(
         schema,
         '{ foo (foo: "abcdef") }',
-        root={"foo": lambda *_, **args: args["foo"]},
+        root=Root(lambda *_, **args: args["foo"]),
     ).response() == {
         "errors": [
             {
@@ -413,19 +420,19 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
     assert graphql_blocking(
         schema,
         '{ foo (foo: "abcd") }',
-        root={"foo": lambda *_, **args: args["foo"]},
+        root=Root(lambda *_, **args: args["foo"]),
     ).response() == {"data": {"foo": "abcd"}}
 
     assert graphql_blocking(
         schema,
         '{ foo (bar: {baz: "abcd"}) }',
-        root={"foo": lambda *_, **args: args["bar"]["baz"]},
+        root=Root(lambda *_, **args: args["bar"]["baz"]),
     ).response() == {"data": {"foo": "abcd"}}
 
     assert graphql_blocking(
         schema,
         '{ foo (bar: {baz: "a"}) }',
-        root={"foo": lambda *_, **args: args["bar"]["baz"]},
+        root=Root(lambda *_, **args: args["bar"]["baz"]),
     ).response() == {
         "errors": [
             {

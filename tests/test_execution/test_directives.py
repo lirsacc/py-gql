@@ -20,12 +20,18 @@ from py_gql.schema import (
 from ._test_utils import assert_sync_execution
 
 
+class _obj:
+    def __init__(self, **attrs):
+        for k, v in attrs.items():
+            setattr(self, k, v)
+
+
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
 
 test_type = ObjectType("TestType", [Field("a", String), Field("b", String)])
 schema = Schema(test_type)
-root = {"a": lambda *_: "a", "b": lambda *_: "b"}
+root = _obj(a=lambda *_: "a", b=lambda *_: "b")
 
 
 async def test_without_directives():
@@ -147,7 +153,7 @@ async def test_get_directive_arguments_known(mocker):
     execute(
         Schema(test_type, directives=[CustomDirective]),
         parse('{ a @custom(a: "foo", b: 42) }'),
-        initial_value={"a": resolver},
+        initial_value=_obj(a=resolver),
     )
 
     (_, info), _ = resolver.call_args
@@ -168,7 +174,7 @@ async def test_get_directive_arguments_known_with_variables(mocker):
     execute(
         Schema(test_type, directives=[CustomDirective]),
         parse('query ($b: Int!) { a @custom(a: "foo", b: $b) }'),
-        initial_value={"a": resolver},
+        initial_value=_obj(a=resolver),
         variables={"b": 42},
     )
 
@@ -190,7 +196,7 @@ async def test_get_directive_arguments_missing(mocker):
     execute(
         Schema(test_type, directives=[CustomDirective]),
         parse("{ a }"),
-        initial_value={"a": resolver},
+        initial_value=_obj(a=resolver),
     )
 
     (_, info), _ = resolver.call_args
@@ -208,7 +214,7 @@ async def test_get_directive_arguments_unknown(mocker):
     execute(
         Schema(test_type, directives=[CustomDirective]),
         parse('{ a @custom(a: "foo", b: 42) }'),
-        initial_value={"a": resolver},
+        initial_value=_obj(a=resolver),
     )
 
     (_, info), _ = resolver.call_args

@@ -21,6 +21,12 @@ from py_gql.schema import (
 pytestmark = pytest.mark.asyncio
 
 
+class _obj:
+    def __init__(self, **attrs):
+        for k, v in attrs.items():
+            setattr(self, k, v)
+
+
 async def run_test(
     test_type,
     test_data,
@@ -32,7 +38,7 @@ async def run_test(
     expected_msg=None
 ):
 
-    data = {"test": test_data}
+    data = _obj(test=test_data)
     data_type = ObjectType(
         "DataType",
         [

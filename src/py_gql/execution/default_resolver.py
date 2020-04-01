@@ -26,21 +26,18 @@ def default_resolver(
     value from the ``root`` in the following lookup order:
 
     - If ``root`` is a dict subclass:
-
-        - If the field name is present and non callable, return it
-        - If the field name is present and callable, return the result of
-            calling it passing in ``(context, info, **args)``.
-
+        - If the field is present return it
     - If ``root`` has an attribute corresponding to the field name:
-
         - If the attribute is non callable, return it
         - If the attribute is callable, treat it like a method and return the
-            result of calling it passing in ``(context, info, **args)``.
-
+          result of calling it passing in ``(context, info, **args)``.
     - Return ``None``.
 
     If the field defined a custom ``python_name`` attribute, this will be used
     instead of the field name.
+
+    As this is can be called a lot during execution, the ``__*`` type arguments
+    are there as an optimisation.
 
     Args:
         root: Value of the resolved parent node.
@@ -52,13 +49,10 @@ def default_resolver(
         Resolved value.
 
     """
-    field_name = info.field_definition.python_name
+    if __isinstance(root, __mapping_cls):
+        return root.get(info.field_definition.python_name, None)
 
-    field_value = (
-        root.get(field_name, None)
-        if __isinstance(root, __mapping_cls)
-        else __getattr(root, field_name, None)
-    )
+    field_value = __getattr(root, info.field_definition.python_name, None)
 
     if __callable(field_value):
         return field_value(context, info, **args)
