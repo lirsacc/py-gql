@@ -36,29 +36,6 @@ class ResolverMap:
         self.default_resolvers = {}  # type: Dict[str, Resolver]
         self.type_resolvers = {}  # type: Dict[str, Resolver]
 
-    def get_resolver(self, typename: str, fieldname: str) -> Optional[Resolver]:
-        """
-        Extract resolver for a given field and fall back to defaults if possible.
-        """
-        try:
-            return self.resolvers[typename][fieldname]
-        except KeyError:
-            return self.default_resolvers.get(typename) or self.default_resolver
-
-    def get_subscription(
-        self, typename: str, fieldname: str
-    ) -> Optional[Resolver]:
-        """
-        Extract subscription resolver for a given field.
-        """
-        try:
-            return self.subscriptions[typename][fieldname]
-        except KeyError:
-            return None
-
-    def get_type_resolver(self, typename: str) -> Optional[TypeResolver]:
-        return self.type_resolvers.get(typename, None)
-
     def register_default_resolver(
         self, typename: str, resolver: Resolver, *, allow_override: bool = False
     ) -> None:
