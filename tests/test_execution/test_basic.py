@@ -6,10 +6,10 @@ import pytest
 
 from py_gql.exc import ExecutionError, ResolverError
 from py_gql.execution import execute
+from py_gql.exts.scalars import UUID, RegexType
 from py_gql.lang import parse
 from py_gql.schema import (
     ID,
-    UUID,
     Argument,
     Boolean,
     Field,
@@ -17,7 +17,6 @@ from py_gql.schema import (
     ListType,
     NonNullType,
     ObjectType,
-    RegexType,
     Schema,
     String,
 )

@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+
+### Breaking Changes & Deprecations
+
+- Custom scalar types such as `RegexType` and `UUID` have been moved to `py_gql.exts.scalars`.
+
 ### Fixed
 
 - Added type resolver support on `ResolverMap`.

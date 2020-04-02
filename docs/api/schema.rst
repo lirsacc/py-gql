@@ -109,17 +109,9 @@ in any compliant GraphQL server (although they may not be used).
 Extra scalar types
 ^^^^^^^^^^^^^^^^^^
 
-The following types and classes are provided for convenience as they are
-quite common. They will not always be present in GraphQL servers and need to be
-included manually when using `py_gql.build_schema`.
-
-.. autoattribute:: py_gql.schema.UUID
-    :annotation:
-
-    The UUID scalar type represents a UUID as specified in :rfc:`4122`.
-
-.. autoclass:: RegexType
-    :members:
+Extra, non built-in scalar types are provided for convenience in
+:ref:`py_gql.exts.scalars`. They will not always be present in GraphQL servers
+and need to be included manually when using :ref:`py_gql.build_schema`.
 
 Directives
 ~~~~~~~~~~

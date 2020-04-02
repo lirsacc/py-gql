@@ -5,17 +5,9 @@ import pytest
 from py_gql._string_utils import dedent
 from py_gql._utils import flatten
 from py_gql.exc import SDLError
+from py_gql.exts.scalars import UUID
 from py_gql.lang import ast as _ast
-from py_gql.schema import (
-    ID,
-    UUID,
-    Boolean,
-    Field,
-    Float,
-    Int,
-    ObjectType,
-    String,
-)
+from py_gql.schema import ID, Boolean, Field, Float, Int, ObjectType, String
 from py_gql.sdl import SchemaDirective, build_schema
 
 

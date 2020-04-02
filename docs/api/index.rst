@@ -18,3 +18,4 @@ rendered automatically from the code.
     execution
     tracers
     utilities
+    exts

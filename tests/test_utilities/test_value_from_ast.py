@@ -5,8 +5,9 @@ import uuid
 import pytest
 
 from py_gql.exc import InvalidValue, UnknownVariable
+from py_gql.exts.scalars import UUID
 from py_gql.lang.parser import parse_value
-from py_gql.schema.scalars import ID, UUID, Boolean, Float, Int, String
+from py_gql.schema.scalars import ID, Boolean, Float, Int, String
 from py_gql.schema.types import (
     EnumType,
     EnumValue,

@@ -5,8 +5,9 @@ import pytest
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
 from py_gql.exc import SDLError
+from py_gql.exts.scalars import UUID
 from py_gql.lang import parse
-from py_gql.schema import SPECIFIED_DIRECTIVES, UUID
+from py_gql.schema import SPECIFIED_DIRECTIVES
 from py_gql.sdl import build_schema
 
 

@@ -14,16 +14,7 @@ from .directives import (
 )
 from .introspection import is_introspection_type
 from .resolver_map import ResolverMap
-from .scalars import (
-    ID,
-    SPECIFIED_SCALAR_TYPES,
-    UUID,
-    Boolean,
-    Float,
-    Int,
-    RegexType,
-    String,
-)
+from .scalars import ID, SPECIFIED_SCALAR_TYPES, Boolean, Float, Int, String
 from .schema import Schema
 from .schema_visitor import SchemaVisitor
 from .types import (

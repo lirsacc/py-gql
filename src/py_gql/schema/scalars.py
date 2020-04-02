@@ -3,8 +3,6 @@
 Pre-defined scalar types.
 """
 
-import re
-import uuid
 from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar, Union
 
 from ..lang import ast as _ast
@@ -13,19 +11,19 @@ from .types import ScalarType
 
 T = TypeVar("T")
 
-_ScalarValueNode = Union[
+ScalarValueNode = Union[
     _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
 ]
 
-_ScalarValue = Union[str, int, float, bool, None]
+ScalarValue = Union[str, int, float, bool, None]
 
 
 # Shortcut to generate ``parse_literal`` from a simple
 # parsing function by adding node type validation.
 def _typed_coerce(
-    coerce_: Callable[[_ScalarValue], T], *types: Type[_ScalarValueNode]
-) -> Callable[[_ScalarValueNode, Mapping[str, Any]], T]:
-    def _coerce(node: _ScalarValueNode, _variables: Mapping[str, Any]) -> T:
+    coerce_: Callable[[ScalarValue], T], *types: Type[ScalarValueNode]
+) -> Callable[[ScalarValueNode, Mapping[str, Any]], T]:
+    def _coerce(node: ScalarValueNode, _variables: Mapping[str, Any]) -> T:
         if type(node) not in types:
             raise TypeError("Invalid literal %s" % node.__class__.__name__)
         return coerce_(node.value)
@@ -52,7 +50,7 @@ INVALID_INT = "Int cannot represent non integer value: %s"
 INVALID_NUMERIC = "Int cannot represent non 32-bit signed integer: %s"
 
 
-def coerce_int(maybe_int: _ScalarValue) -> int:
+def coerce_int(maybe_int: ScalarValue) -> int:
     """
     Spec compliant int conversion.
     """
@@ -87,7 +85,7 @@ def coerce_int(maybe_int: _ScalarValue) -> int:
     return numeric
 
 
-def coerce_float(maybe_float: _ScalarValue) -> float:
+def coerce_float(maybe_float: ScalarValue) -> float:
     """
     Spec compliant float conversion.
     """
@@ -135,16 +133,20 @@ Float = ScalarType(
 )
 
 
-def _parse_string(value: Any) -> str:
+def _parse_string(value: ScalarValue) -> str:
     if isinstance(value, (list, tuple)):
         raise ValueError('String cannot represent list value "%s"' % value)
     return str(value)
 
 
-def _serialize_string(value: Any) -> str:
+def coerce_string(value: Any) -> str:
     if value in (True, False):
         return str(value).lower()
-    return _parse_string(value)
+
+    if isinstance(value, (list, tuple)):
+        raise ValueError('String cannot represent list value "%s"' % value)
+
+    return str(value)
 
 
 _coerce_string_node = _typed_coerce(_parse_string, _ast.StringValue)
@@ -157,7 +159,7 @@ String = ScalarType(
         "UTF-8 character sequences. The String type is most often used by "
         "GraphQL to represent free-form human-readable text."
     ),
-    serialize=_serialize_string,
+    serialize=coerce_string,
     parse=_parse_string,
     parse_literal=_coerce_string_node,
 )  # type: ScalarType
@@ -185,85 +187,6 @@ ID = ScalarType(
 # in any spec compliant GraphQL server.
 SPECIFIED_SCALAR_TYPES = (Int, Float, Boolean, String, ID)
 
-# Further down are common types for your convenience but which will 1) not
-# be available by default 2) not be available in other GraphQL servers a-priori.
-
-
-def _parse_uuid(maybe_uuid: _ScalarValue) -> uuid.UUID:
-    if isinstance(maybe_uuid, str):
-        return uuid.UUID(maybe_uuid)
-
-    raise TypeError(type(maybe_uuid))
-
-
-def _serialize_uuid(maybe_uuid: Union[str, uuid.UUID]) -> str:
-    if isinstance(maybe_uuid, uuid.UUID):
-        return str(maybe_uuid)
-    elif isinstance(maybe_uuid, str):
-        return str(uuid.UUID(maybe_uuid))
-
-    raise TypeError(type(maybe_uuid))
-
-
-_coerce_uuid_node = _typed_coerce(_parse_uuid, _ast.StringValue)
-
-
-UUID = ScalarType(
-    "UUID",
-    description=(
-        "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
-        "(https://tools.ietf.org/html/rfc4122)"
-    ),
-    serialize=_serialize_uuid,
-    parse=_parse_uuid,
-    parse_literal=_coerce_uuid_node,
-)
-
-
-class RegexType(ScalarType):
-    """
-    ScalarType subclass used to validate regex patterns.
-
-    Args:
-        name: Type name
-        regex: Regular expression
-        description: Type description
-
-    Attributes:
-        name (str): Type name
-        description (str): Type description
-    """
-
-    def __init__(self, name, regex, description=None):
-
-        if isinstance(regex, str):
-            self._regex = re.compile(regex)
-        else:
-            self._regex = regex
-
-        if description is None:
-            description = "String matching pattern /%s/" % self._regex.pattern
-
-        def _parse(value: _ScalarValue) -> str:
-            string_value = _serialize_string(value)
-
-            if not self._regex.match(string_value):
-                raise ValueError(
-                    '"%s" does not match pattern "%s"'
-                    % (string_value, self._regex.pattern)
-                )
-            return string_value
-
-        _parse_node = _typed_coerce(_parse, _ast.StringValue)
-
-        super(RegexType, self).__init__(
-            name,
-            serialize=_parse,
-            parse=_parse,
-            parse_literal=_parse_node,
-            description=description,
-        )
-
 
 def _identity(value: T) -> T:
     return value
@@ -277,7 +200,7 @@ def default_scalar(
     ] = None,
 ) -> ScalarType:
     """
-    Create a default transparant scalar type.
+    Create a default transparent scalar type.
 
     This should be used as a stand in for custom scalar when the exact
     implementation is not known (e.g. when generating a schema). Values will be

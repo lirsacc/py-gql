@@ -3,8 +3,8 @@
 import pytest
 
 from py_gql._string_utils import dedent
+from py_gql.exts.scalars import UUID, RegexType
 from py_gql.schema import (
-    UUID,
     Argument,
     Directive,
     EnumType,
@@ -16,7 +16,6 @@ from py_gql.schema import (
     ListType,
     NonNullType,
     ObjectType,
-    RegexType,
     Schema,
     String,
     UnionType,

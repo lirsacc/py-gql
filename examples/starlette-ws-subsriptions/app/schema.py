@@ -8,7 +8,7 @@ from mypy_extensions import TypedDict
 
 from py_gql import build_schema
 from py_gql.exc import ResolverError
-from py_gql.schema import UUID
+from py_gql.exts.scalars import UUID
 
 from .message_board import Message, MessageBoard, Room
 
