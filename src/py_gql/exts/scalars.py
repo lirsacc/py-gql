@@ -4,6 +4,7 @@ Additional, non specified scalar types and utilities to build your own
 scalar types.
 """
 
+import json
 import re
 import uuid
 from typing import Any, Callable, Optional, Pattern, Union
@@ -120,8 +121,25 @@ class RegexType(StringType):
         )
 
 
+def _to_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True)
+
+
+JSONString = StringType(
+    "JSONString",
+    serialize=_to_json,
+    parse=json.loads,
+    description=(
+        "JSON value serialised to a string.\n"
+        "This allows opting out of GraphQL's type safety and should be used "
+        "sparingly."
+    ),
+)
+
+
 __all__ = (
     "StringType",
     "RegexType",
     "UUID",
+    "JSONString",
 )

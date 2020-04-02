@@ -16,6 +16,7 @@ Unreleased
 ### Added
 
 - Add `CamelCaseSchemaTransform.to_camelcase` method.
+- Add `py_gql.exts.scalars.JSONString` scalar type.
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
