@@ -18,6 +18,10 @@ class CamelCaseSchemaTransform(SchemaVisitor):
     replace the values in the description.
     """
 
+    @staticmethod
+    def to_camelcase(value: str) -> str:
+        return snakecase_to_camelcase(value)
+
     def on_argument(self, arg: Argument) -> Optional[Argument]:
         return super().on_argument(
             Argument(
