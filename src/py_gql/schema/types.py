@@ -29,7 +29,7 @@ from ._types import GraphQLType, ListType, NamedType, NonNullType  # noqa: F401
 
 
 if TYPE_CHECKING:
-    from ..execution.wrappers import ResolveInfo  # noqa: F401
+    from .resolver_map import TypeResolver, Resolver  # noqa: F401
 
 
 # TODO: Encode as much of the rules for validate_schema in the type system such
@@ -42,12 +42,6 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 LazySeq = Lazy[Sequence[T]]
-
-# NOTE: Resolver supports keyword arguments for field arguments but we can't
-# express this without mypy_extensions.
-Resolver = Callable[[Any, Any, "ResolveInfo"], Any]
-
-TypeResolver = Callable[[Any, Any, "ResolveInfo"], "Union[ObjectType, str]"]
 
 _UNSET = object()
 
@@ -742,8 +736,8 @@ class Field:
         args: Optional[LazySeq[Argument]] = None,
         description: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
-        resolver: Optional[Callable[..., Any]] = None,
-        subscription_resolver: Optional[Callable[..., Any]] = None,
+        resolver: Optional["Resolver"] = None,
+        subscription_resolver: Optional["Resolver"] = None,
         node: Optional[_ast.FieldDefinition] = None,
         python_name: Optional[str] = None,
     ):
@@ -834,7 +828,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         fields: LazySeq[Field],
-        resolve_type: Optional[TypeResolver] = None,
+        resolve_type: Optional["TypeResolver"] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[
@@ -899,7 +893,7 @@ class ObjectType(GraphQLCompositeType, NamedType):
         name: str,
         fields: LazySeq[Field],
         interfaces: Optional[LazySeq[InterfaceType]] = None,
-        default_resolver: Optional[Resolver] = None,
+        default_resolver: Optional["Resolver"] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
@@ -968,7 +962,7 @@ class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         types: LazySeq[ObjectType],
-        resolve_type: Optional[TypeResolver] = None,
+        resolve_type: Optional["TypeResolver"] = None,
         description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.UnionTypeDefinition, _ast.UnionTypeExtension]]

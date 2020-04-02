@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union
 
+from .types import ObjectType
+
+
+if TYPE_CHECKING:
+    from ..execution.wrappers import ResolveInfo  # noqa: F401
 
 Resolver = Callable[..., Any]
 TResolver = TypeVar("TResolver", bound=Resolver)
+
+TypeResolver = Callable[
+    [Any, Any, "ResolveInfo"], Optional[Union[ObjectType, str]]
+]
+TTypeResolver = TypeVar("TTypeResolver", bound=TypeResolver)
 
 
 class ResolverMap:
@@ -24,6 +34,7 @@ class ResolverMap:
         self.subscriptions = {}  # type: Dict[str, Dict[str, Resolver]]
         self.default_resolver = None  # type: Optional[Resolver]
         self.default_resolvers = {}  # type: Dict[str, Resolver]
+        self.type_resolvers = {}  # type: Dict[str, Resolver]
 
     def get_resolver(self, typename: str, fieldname: str) -> Optional[Resolver]:
         """
@@ -44,6 +55,9 @@ class ResolverMap:
             return self.subscriptions[typename][fieldname]
         except KeyError:
             return None
+
+    def get_type_resolver(self, typename: str) -> Optional[TypeResolver]:
+        return self.type_resolvers.get(typename, None)
 
     def register_default_resolver(
         self, typename: str, resolver: Resolver, *, allow_override: bool = False
@@ -198,6 +212,53 @@ class ResolverMap:
 
         return decorator
 
+    def register_type_resolver(
+        self,
+        typename: str,
+        type_resolver: TypeResolver,
+        *,
+        allow_override: bool = False,
+    ) -> None:
+        """
+        Register a function as a type resolver.
+
+        Args:
+            typename: Type name
+            type_resolver: Resolver callable
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Raises:
+            ValueError: If the resolver has already been defined and
+                ``allow_override`` was ``False``.
+        """
+        if typename in self.type_resolvers and not allow_override:
+            raise ValueError(
+                'Type resolver already set for type "%s"' % typename
+            )
+        self.type_resolvers[typename] = type_resolver
+
+    def type_resolver(
+        self, typename: str, *, allow_override: bool = False
+    ) -> Callable[[TTypeResolver], TTypeResolver]:
+        """
+        Decorate a function to register it as a type resolver.
+
+        Args:
+            typename: Type name.
+            allow_override: Set this to ``True`` to allow re-definition.
+
+        Returns:
+            Decorator.
+        """
+
+        def decorator(func: TTypeResolver) -> TTypeResolver:
+            self.register_type_resolver(
+                typename, func, allow_override=allow_override
+            )
+            return func
+
+        return decorator
+
     def merge_resolvers(
         self, other: "ResolverMap", *, allow_override: bool = False
     ) -> None:
@@ -207,8 +268,16 @@ class ResolverMap:
         for typename, field_resolvers in other.resolvers.items():
             for fieldname, resolver in field_resolvers.items():
                 self.register_resolver(
-                    typename, fieldname, resolver, allow_override=allow_override
+                    typename,
+                    fieldname,
+                    resolver,
+                    allow_override=allow_override,
                 )
+
+        for typename, default_resolver in other.default_resolvers.items():
+            self.register_default_resolver(
+                typename, default_resolver, allow_override=allow_override
+            )
 
         for typename, field_subscriptions in other.subscriptions.items():
             for fieldname, subscription in field_subscriptions.items():
@@ -218,3 +287,8 @@ class ResolverMap:
                     subscription,
                     allow_override=allow_override,
                 )
+
+        for typename, type_resolver in other.type_resolvers.items():
+            self.register_type_resolver(
+                typename, type_resolver, allow_override=allow_override
+            )

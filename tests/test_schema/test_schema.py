@@ -396,3 +396,72 @@ def test_resolver_decorator_with_wildcard():
         cast(ObjectType, schema.get_type("Query")).default_resolver
         is query_default
     )
+
+
+def test_register_type_resolver():
+    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+
+    def type_resolver(root, ctx, info):
+        return None
+
+    schema.register_type_resolver("Interface", type_resolver)
+    assert (
+        cast(InterfaceType, schema.get_type("Interface")).resolve_type
+        is type_resolver
+    )
+
+
+def test_type_resolver_decorator():
+    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+
+    @schema.type_resolver("Interface")
+    def type_resolver(root, ctx, info):
+        return None
+
+    assert (
+        cast(InterfaceType, schema.get_type("Interface")).resolve_type
+        is type_resolver
+    )
+
+
+def test_register_type_resolver_override():
+    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+
+    def type_resolver(root, ctx, info):
+        return None
+
+    def type_resolver2(root, ctx, info):
+        return None
+
+    schema.register_type_resolver("Interface", type_resolver)
+
+    with pytest.raises(ValueError):
+        schema.register_type_resolver("Interface", type_resolver2)
+
+    schema.register_type_resolver(
+        "Interface", type_resolver2, allow_override=True
+    )
+    assert (
+        cast(InterfaceType, schema.get_type("Interface")).resolve_type
+        is type_resolver2
+    )
+
+
+def test_register_type_resolver_on_invalid_type():
+    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+
+    def type_resolver(root, ctx, info):
+        return None
+
+    with pytest.raises(SchemaError):
+        schema.register_type_resolver("Object", type_resolver)
+
+
+def test_register_type_resolver_on_unknown_type():
+    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+
+    def type_resolver(root, ctx, info):
+        return None
+
+    with pytest.raises(UnknownType):
+        schema.register_type_resolver("IFace", type_resolver)

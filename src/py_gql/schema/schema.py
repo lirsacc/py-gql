@@ -2,22 +2,13 @@
 
 import copy
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
 from ..exc import SchemaError, UnknownType
 from ..lang import ast as _ast
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import INTROPSPECTION_TYPES
-from .resolver_map import ResolverMap
+from .resolver_map import Resolver, ResolverMap, TypeResolver
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .types import (
     Directive,
@@ -37,9 +28,6 @@ from .validation import validate_schema
 
 _SPECIFIED_DIRECTIVE_NAMES = [t.name for t in SPECIFIED_DIRECTIVES]
 _PROTECTED_TYPES = SPECIFIED_SCALAR_TYPES + INTROPSPECTION_TYPES
-
-
-Resolver = Callable[..., Any]
 
 
 class Schema(ResolverMap):
@@ -540,6 +528,30 @@ class Schema(ResolverMap):
         field.subscription_resolver = resolver
         # Invalidate validation
         self._is_valid = None
+
+    def register_type_resolver(
+        self,
+        typename: str,
+        resolver: TypeResolver,
+        *,
+        allow_override: bool = False
+    ) -> None:
+        super().register_type_resolver(
+            typename, resolver, allow_override=allow_override
+        )
+
+        try:
+            abstract_type = self.types[typename]
+        except KeyError:
+            raise UnknownType(typename)
+
+        if not isinstance(abstract_type, GraphQLAbstractType):
+            raise SchemaError(
+                'Cannot assign type resolver to %s "%s".'
+                % (abstract_type.__class__.__name__, typename)
+            )
+
+        abstract_type.resolve_type = resolver
 
     def clone(self) -> "Schema":
         cloned = Schema(
