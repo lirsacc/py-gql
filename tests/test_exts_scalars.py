@@ -90,17 +90,11 @@ class TestJSONString:
         assert expected == JSONString.parse(value)
 
     @pytest.mark.parametrize(
-        "value,error",
-        [
-            ("", "Expecting value"),
-            ('"foo', "Unterminated"),
-            ("False", "Expecting value"),
-        ],
+        "value", [("",), ('"foo',), ("False",)],
     )
-    def test_parse_err(self, value, error):
-        with pytest.raises(ScalarParsingError) as exc_info:
+    def test_parse_err(self, value):
+        with pytest.raises(ScalarParsingError):
             JSONString.parse(value)
-        assert error in str(exc_info.value)
 
     def test_parse_node_invalid_type(self):
         with pytest.raises(ScalarParsingError):
