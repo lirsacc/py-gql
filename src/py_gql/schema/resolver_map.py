@@ -194,7 +194,7 @@ class ResolverMap:
         typename: str,
         type_resolver: TypeResolver,
         *,
-        allow_override: bool = False,
+        allow_override: bool = False
     ) -> None:
         """
         Register a function as a type resolver.
