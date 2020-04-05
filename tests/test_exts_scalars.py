@@ -14,6 +14,11 @@ class TestUUID:
             "c4da8450-ec7a-4d3b-9ade-18194daeb2d6"
         )
 
+    def test_parse_string_no_dashes(self):
+        assert UUID.parse("c4da8450ec7a4d3b9ade18194daeb2d6") == uuid.UUID(
+            "c4da8450-ec7a-4d3b-9ade-18194daeb2d6"
+        )
+
     def test_serialize(self):
         assert (
             UUID.serialize(uuid.UUID("c4da8450-ec7a-4d3b-9ade-18194daeb2d6"))
