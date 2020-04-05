@@ -11,7 +11,7 @@ business logic usually hooks into the GraphQL schema.
 Resolver signature
 ------------------
 
-Resolvers should rougly match a signature similar to this:
+Resolvers should roughly match a signature similar to this:
 
 .. code-block:: python
 
@@ -29,9 +29,9 @@ parameters:
 - ``info``: A :class:`~py_gql.execution.ResolveInfo` object which carries GraphQL
   specific information about the field being currently resolved. This should be
   rarely used by most people outside of custom directives handling and query
-  optimisations such as collapsing requests or join optimisation.
+  optimizations such as collapsing requests or join optimisation.
 - The GraphQL field arguments are passed as keyword parameters. Required
-  aguments and arguments with default values will always be passed in while
+  arguments and arguments with default values will always be passed in while
   optional arguments with no default will be omitted when not present in the
   query.
 
@@ -63,7 +63,7 @@ Resolvers can be attached through the :class:`~py_gql.schema.Schema` object:
     schema.register_resolver("Character", "friends", resolve_character_friends)
 
 
-In case the schema is built withou using `build_schema`, the resolvers can be
+In case the schema is built without using `build_schema`, the resolvers can be
 added directly to :class:`~py_gql.schema.Field` objects:
 
 .. code-block:: python
@@ -101,7 +101,7 @@ extracting values from their parent by:
 See :func:`py_gql.execution.default_resolver` for the exact implementation.
 
 
-Overiding the default resolver
+Overriding the default resolver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are cases where defining resolver per field could be overkill and you
