@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Additional, non specified scalar types and utilities to build your own
-scalar types.
+Additional scalar types which are not part of the specification.
+
+These types are provided for convenience as they are pretty common as well as
+to serve as examples for how to implement custom Scalar types.
+
+They won't always be supported by GraphQL servers and may not fit every purpose.
+They **must** be included in the schema manually either by providing them to
+:func:`~py_gql.build_schema` or including them in your type definitions.
 """
 
 import json
@@ -26,8 +32,8 @@ class StringType(ScalarType):
     def __init__(
         self,
         name: str,
-        parse: Callable[[str], Any] = lambda x: x,
-        serialize: Callable[[Any], str] = lambda x: str(x),
+        parse: Callable[[str], Any],
+        serialize: Callable[[Any], str],
         description: Optional[str] = None,
     ):
         super().__init__(
@@ -48,36 +54,9 @@ class StringType(ScalarType):
         return self.parse(node.value)
 
 
-def _parse_uuid(maybe_uuid: ScalarValue) -> uuid.UUID:
-    if isinstance(maybe_uuid, str):
-        return uuid.UUID(maybe_uuid)
-
-    raise TypeError(type(maybe_uuid))
-
-
-def _serialize_uuid(maybe_uuid: Union[str, uuid.UUID]) -> str:
-    if isinstance(maybe_uuid, uuid.UUID):
-        return str(maybe_uuid)
-    elif isinstance(maybe_uuid, str):
-        return str(uuid.UUID(maybe_uuid))
-
-    raise TypeError(type(maybe_uuid))
-
-
-UUID = StringType(
-    "UUID",
-    serialize=_serialize_uuid,
-    parse=_parse_uuid,
-    description=(
-        "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
-        "(https://tools.ietf.org/html/rfc4122)"
-    ),
-)
-
-
 class RegexType(StringType):
     """
-    ScalarType type base clasee used to validate regex patterns.
+    ScalarType type class used to validate regex patterns.
 
     This will accept either a string or a compiled Pattern and will match
     strings both on output and input values.
@@ -122,21 +101,55 @@ class RegexType(StringType):
         )
 
 
+def _parse_uuid(maybe_uuid: ScalarValue) -> uuid.UUID:
+    if isinstance(maybe_uuid, str):
+        return uuid.UUID(maybe_uuid)
+
+    raise TypeError(type(maybe_uuid))
+
+
+def _serialize_uuid(maybe_uuid: Union[str, uuid.UUID]) -> str:
+    if isinstance(maybe_uuid, uuid.UUID):
+        return str(maybe_uuid)
+    elif isinstance(maybe_uuid, str):
+        return str(uuid.UUID(maybe_uuid))
+
+    raise TypeError(type(maybe_uuid))
+
+
+#: The ``UUID`` scalar type represents a UUID as specified in :rfc:`4122` using
+#: Python's :py:mod:`uuid` module.
+UUID = StringType(
+    "UUID",
+    serialize=_serialize_uuid,
+    parse=_parse_uuid,
+    description=(
+        "The `UUID` scalar type represents a UUID as specified in [RFC 4122]"
+        "(https://tools.ietf.org/html/rfc4122)"
+    ),
+)
+
+
 def _to_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True)
 
 
+#: The ``JSONString`` scalar type represents any value serializable as JSON
+#: using Python's :py:mod:`json` module. This allows opting out of GraphQL's
+#: type safety and should be used sparingly.
 JSONString = StringType(
     "JSONString",
     serialize=_to_json,
     parse=json.loads,
     description=(
-        "JSON value serialised to a string.\n"
-        "This allows opting out of GraphQL's type safety and should be used "
-        "sparingly."
+        "The `JSONString` scalar type represents any value serializable as JSON"
     ),
 )
 
+
+#: The ``DateTime`` scalar type represents a datetime value as specified
+#: by the `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_ standard.
+#: This expects and parses values as :py:class:`datetime.datetime` objects.
 DateTime = StringType(
     "DateTime",
     description=(
@@ -147,7 +160,9 @@ DateTime = StringType(
     parse=_du.parse_datetime,
 )
 
-
+#: The ``Date`` scalar type represents a date value as specified
+#: by the `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_ standard.
+#: This expects and parses values as :py:class:`datetime.date` objects.
 Date = StringType(
     "Date",
     description=(
@@ -158,7 +173,9 @@ Date = StringType(
     parse=_du.parse_date,
 )
 
-
+#: The ``Time`` scalar type represents a time value as specified
+#: by the `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_ standard.
+#: This expects and parses values as :py:class:`datetime.time` objects.
 Time = StringType(
     "Time",
     description=(

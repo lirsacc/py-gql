@@ -66,7 +66,7 @@ class NamedType(GraphQLType):
         return self.name
 
     def __repr__(self) -> str:
-        return "%s(%s at %d)" % (self.__class__.__name__, self.name, id(self))
+        return "%s(%s)" % (self.__class__.__name__, self.name)
 
 
 class WrappingType(GraphQLType, Generic[TGraphQLType]):

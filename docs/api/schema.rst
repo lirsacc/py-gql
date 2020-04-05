@@ -109,9 +109,7 @@ in any compliant GraphQL server (although they may not be used).
 Extra scalar types
 ^^^^^^^^^^^^^^^^^^
 
-Extra, non built-in scalar types are provided for convenience in
-:ref:`py_gql.exts.scalars`. They will not always be present in GraphQL servers
-and need to be included manually when using :ref:`py_gql.build_schema`.
+See :mod:`py_gql.exts.scalars`.
 
 Directives
 ~~~~~~~~~~

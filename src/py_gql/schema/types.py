@@ -189,7 +189,7 @@ class InputField(InputValue):
         return "InputField(%s: %s)" % (self.name, self.type)
 
     def __repr__(self) -> str:
-        return "InputField(%s: %s at %d)" % (self.name, self.type, id(self))
+        return "InputField(%s: %s)" % (self.name, self.type)
 
 
 class InputObjectType(NamedType):
@@ -679,7 +679,7 @@ class Argument(InputValue):
         return "Argument(%s: %s)" % (self.name, self.type)
 
     def __repr__(self) -> str:
-        return "Argument(%s: %s at %d)" % (self.name, self.type, id(self))
+        return "Argument(%s: %s)" % (self.name, self.type)
 
 
 class Field:
@@ -782,7 +782,7 @@ class Field:
         return "Field(%s: %s)" % (self.name, self.type)
 
     def __repr__(self) -> str:
-        return "Field(%s: %s at %d)" % (self.name, self.type, id(self))
+        return "Field(%s: %s)" % (self.name, self.type)
 
 
 class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
