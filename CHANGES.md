@@ -4,7 +4,6 @@ Changelog
 Unreleased
 ----------
 
-
 ### Breaking Changes & Deprecations
 
 - Custom scalar types such as `RegexType` and `UUID` have been moved to `py_gql.exts.scalars`.
@@ -19,7 +18,6 @@ Unreleased
 - Add `py_gql.exts.scalars.JSONString` scalar type.
 - Add `py_gql.exts.scalars.DateTime`, `py_gql.exts.scalars.Date` and `py_gql.exts.scalars.Time` scalar type based on [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).
 - Add `py_gql.exts.scalars.Base64String` scalar type.
-
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
