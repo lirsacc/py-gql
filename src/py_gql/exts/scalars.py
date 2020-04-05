@@ -13,6 +13,7 @@ They **must** be included in the schema manually either by providing them to
 import json
 import re
 import uuid
+from base64 import b64decode, b64encode
 from typing import Any, Callable, Optional, Pattern, Union
 
 from py_gql import _date_utils as _du
@@ -187,6 +188,28 @@ Time = StringType(
 )
 
 
+def _parse_b64(value: str) -> str:
+    return b64decode(value.encode("utf8")).decode("utf8")
+
+
+def _serialize_b64(value: str) -> str:
+    return b64encode(value.encode("utf8")).decode("utf8")
+
+
+#: Base64 encoded strings suitable to transmit binary data which cannot normally
+#: be encoded in a GraphQL String. This uses Python's :py:mod:`base64` module.
+Base64String = StringType(
+    "Base64String",
+    description=(
+        "The ``Base64String`` scalar represent strings that have been encoded "
+        "using base 64 as specified in "
+        "[RFC 3548](https://tools.ietf.org/html/rfc3548.html)."
+    ),
+    parse=_parse_b64,
+    serialize=_serialize_b64,
+)
+
+
 __all__ = (
     "StringType",
     "RegexType",
@@ -195,4 +218,5 @@ __all__ = (
     "DateTime",
     "Date",
     "Time",
+    "Base64String",
 )

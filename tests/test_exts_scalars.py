@@ -1,10 +1,13 @@
+import base64
 import re
 import uuid
 
+import hypothesis.strategies as st
 import pytest
+from hypothesis import given
 
 from py_gql.exc import ScalarParsingError, ScalarSerializationError
-from py_gql.exts.scalars import UUID, JSONString, RegexType
+from py_gql.exts.scalars import UUID, Base64String, JSONString, RegexType
 from py_gql.lang import parse_value
 
 
@@ -136,3 +139,15 @@ class TestJSONString:
         with pytest.raises(ScalarSerializationError) as exc_info:
             JSONString.serialize(value)
         assert error in str(exc_info.value)
+
+
+class TestBase64String:
+    @given(st.text())
+    def test_parse(self, value):
+        encoded = base64.b64encode(value.encode("utf8")).decode("utf8")
+        assert value == Base64String.parse(encoded)
+
+    @given(st.text())
+    def test_serialize(self, value):
+        encoded = base64.b64encode(value.encode("utf8")).decode("utf8")
+        assert encoded == Base64String.serialize(value)
