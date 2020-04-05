@@ -125,8 +125,7 @@ def test_parse_datetime(value, expected):
         ),
         (
             "2007-06-23T06:40:72.00Z",
-            "Cannot parse datetime from 2007-06-23T06:40:72.00Z "
-            "(second must be in 0..59)",
+            "Cannot parse datetime from 2007-06-23T06:40:72.00Z",
         ),
         (
             "2007-06-23 06:40:34.00Zrubbish",
@@ -141,7 +140,7 @@ def test_parse_datetime(value, expected):
 def test_parse_datetime_invalid(value, expected_msg):
     with pytest.raises(ValueError) as exc_info:
         parse_datetime(value)
-    assert str(exc_info.value) == expected_msg
+    assert expected_msg in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
@@ -191,16 +190,13 @@ def test_parse_time(value, expected):
         ("X06:40:34.00", "Invalid ISO 8601 time 'X06:40:34.00'."),
         ("06:40:34.00foo", "Invalid ISO 8601 time '06:40:34.00foo'."),
         ("foo", "Invalid ISO 8601 time 'foo'."),
-        (
-            "06:40:72.00",
-            "Cannot parse time from 06:40:72.00 (second must be in 0..59)",
-        ),
+        ("06:40:72.00", "Cannot parse time from 06:40:72.00",),
     ],
 )
 def test_parse_time_invalid(value, expected_msg):
     with pytest.raises(ValueError) as exc_info:
         parse_time(value)
-    assert str(exc_info.value) == expected_msg
+    assert expected_msg in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
