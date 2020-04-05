@@ -9,6 +9,7 @@ import re
 import uuid
 from typing import Any, Callable, Optional, Pattern, Union
 
+from py_gql import _date_utils as _du
 from py_gql.exc import ScalarParsingError
 from py_gql.lang import ast
 from py_gql.schema.scalars import ScalarValue, ScalarValueNode, coerce_string
@@ -136,10 +137,45 @@ JSONString = StringType(
     ),
 )
 
+DateTime = StringType(
+    "DateTime",
+    description=(
+        "The `DateTime` scalar type represents a datetime value as specified "
+        "by the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard."
+    ),
+    serialize=_du.serialize_datetime,
+    parse=_du.parse_datetime,
+)
+
+
+Date = StringType(
+    "Date",
+    description=(
+        "The `Date` scalar type represents a date value as specified "
+        "by the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard."
+    ),
+    serialize=_du.serialize_date,
+    parse=_du.parse_date,
+)
+
+
+Time = StringType(
+    "Time",
+    description=(
+        "The `Time` scalar type represents a time value as specified "
+        "by the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) standard."
+    ),
+    serialize=_du.serialize_time,
+    parse=_du.parse_time,
+)
+
 
 __all__ = (
     "StringType",
     "RegexType",
     "UUID",
     "JSONString",
+    "DateTime",
+    "Date",
+    "Time",
 )
