@@ -29,7 +29,16 @@ from ._types import GraphQLType, ListType, NamedType, NonNullType  # noqa: F401
 
 
 if TYPE_CHECKING:
-    from .resolver_map import TypeResolver, Resolver  # noqa: F401
+    from ..execution import ResolveInfo  # noqa: F401
+
+
+Resolver = Callable[..., Any]
+TResolver = TypeVar("TResolver", bound=Resolver)
+
+TypeResolver = Callable[
+    [Any, Any, "ResolveInfo"], Optional[Union["ObjectType", str]]
+]
+TTypeResolver = TypeVar("TTypeResolver", bound=TypeResolver)
 
 
 # TODO: Encode as much of the rules for validate_schema in the type system such

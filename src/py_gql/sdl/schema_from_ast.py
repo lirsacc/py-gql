@@ -17,10 +17,11 @@ from ..exc import ExtensionError, SDLError
 from ..lang import ast as _ast, parse
 from ..schema import NamedType, ObjectType, Schema
 from .ast_type_builder import ASTTypeBuilder
-from .schema_directives import TSchemaDirective, apply_schema_directives
+from .schema_directives import SchemaDirective, apply_schema_directives
 
 
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
+TSchemaDirective = TypeVar("TSchemaDirective", bound=Type[SchemaDirective])
 
 
 __all__ = ("build_schema", "extend_schema")

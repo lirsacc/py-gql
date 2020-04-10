@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module implements all the exceptions exposed by this library.
+All the exceptions used with py-gql.
 """
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence
@@ -16,9 +16,7 @@ from .lang import ast as _ast
 
 class GraphQLError(Exception):
     """
-    Base GraphQL exception from which all other inherit.
-
-    You should prefer using one of its subclasses most of the time.
+    Base exception for the library.
     """
 
     def __init__(self, message: str = ""):
@@ -31,7 +29,7 @@ class GraphQLError(Exception):
 
 class GraphQLResponseError(GraphQLError):
     """
-    Errors suitable for use in responses and being exposed to end users.
+    Errors suitable for use in query results and exposed to end users.
 
     See `the relevant part of the spec
     <https://graphql.github.io/graphql-spec/June2018/#sec-Errors>`_ for more
@@ -42,8 +40,7 @@ class GraphQLResponseError(GraphQLError):
         """
         Convert the exception to a dictionary.
 
-        The return value should be serializable to JSON for use in a GraphQL
-        response.
+        The return value should be serializable for use in a GraphQL responses.
         """
         raise NotImplementedError()
 

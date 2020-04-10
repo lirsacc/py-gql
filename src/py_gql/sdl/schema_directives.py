@@ -50,6 +50,7 @@ SPECIFIED_DIRECTIVE_NAMES = [x.name for x in SPECIFIED_DIRECTIVES]
 
 T = TypeVar("T")
 TType = TypeVar("TType", bound=type)
+TSchemaDirective = TypeVar("TSchemaDirective", bound=Type["SchemaDirective"])
 
 _HasDirectives = Union[
     Argument,
@@ -64,8 +65,6 @@ _HasDirectives = Union[
     Schema,
     UnionType,
 ]
-
-TSchemaDirective = Type["SchemaDirective"]
 
 
 def _find_directives(definition: _HasDirectives) -> List[_ast.Directive]:

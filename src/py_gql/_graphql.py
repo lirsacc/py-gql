@@ -39,11 +39,6 @@ def process_graphql_query(
     start to finish including parsing, validation, variable coercion and
     execution.
 
-    Warning:
-        The returned value will depend on the ``runtime`` argument. Custom
-        implementations usually return a type wrapping the
-        :class:`~py_gql.GraphQLResult` object such as `Awaitable[...]`.
-
     Args:
         schema: Schema to execute the query against.
         document: The query document.
@@ -82,6 +77,11 @@ def process_graphql_query(
 
     Returns:
         Execution result.
+
+        The returned value will depend on the ``runtime`` argument. Custom
+        implementations usually return a type wrapping the
+        :class:`~py_gql.GraphQLResult` object such as :py:class:`~typing.Awaitable`
+        when using :class:`~py_gql.execution.runtime.AsyncIORuntime`.
 
     """
     schema.validate()

@@ -12,7 +12,7 @@ Unreleased
 
 - Added type resolver support on `ResolverMap`.
 
-### Added
+### Added
 
 - Add `CamelCaseSchemaTransform.to_camelcase` method.
 - Add `py_gql.exts.scalars.JSONString` scalar type.

@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-
-if TYPE_CHECKING:
-    from .wrappers import ResolveInfo
+from .wrappers import ResolveInfo
 
 
 def default_resolver(
     root: Any,
     context: Any,
-    info: "ResolveInfo",
+    info: ResolveInfo,
     *,
     __isinstance: Any = isinstance,
     __getattr: Any = getattr,
@@ -26,7 +24,7 @@ def default_resolver(
     value from the ``root`` in the following lookup order:
 
     - If ``root`` is a dict subclass:
-        - If the field is present return it
+        - If the field name is present return it
     - If ``root`` has an attribute corresponding to the field name:
         - If the attribute is non callable, return it
         - If the attribute is callable, treat it like a method and return the

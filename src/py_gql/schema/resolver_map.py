@@ -6,7 +6,7 @@ from .types import ObjectType
 
 
 if TYPE_CHECKING:
-    from ..execution.wrappers import ResolveInfo  # noqa: F401
+    from ..execution import ResolveInfo  # noqa: F401
 
 Resolver = Callable[..., Any]
 TResolver = TypeVar("TResolver", bound=Resolver)
