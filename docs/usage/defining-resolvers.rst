@@ -102,7 +102,7 @@ See :func:`py_gql.execution.default_resolver` for the exact implementation.
 
 
 Overriding the default resolver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are cases where defining resolver per field could be overkill and you
 instead want to define catch-all resolver globally or per object type, or simply

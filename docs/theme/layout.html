@@ -1,0 +1,135 @@
+{%- extends "basic/layout.html" %}
+
+{%- set reldelim1 = reldelim1 is not defined and ' / ' or reldelim1 %}
+{%- set reldelim2 = reldelim2 is not defined and ' | ' or reldelim2 %}
+
+{% macro icon(name, class='') -%}
+<svg class="icon {{ class }}"><use xlink:href="{{ pathto('_static/feather-sprite.svg', 1) }}#{{ name }}"/></svg>
+{%- endmacro %}
+
+{%- macro theme_switcher_() %}
+<div class="theme-switcher">
+    <button data-toggle-theme="dark" arial-label="Activate dark mode" type="button">
+        {{ icon('moon') }}
+    </button>
+    <button data-toggle-theme="light" arial-label="Activate light mode" type="button">
+        {{ icon('sun') }}
+    </button>
+</div>
+<script type="text/javascript">
+function onThemeToggleClick(evt) { window.setTheme(evt.currentTarget.dataset.toggleTheme); }
+var buttons = document.getElementsByClassName('theme-switcher')[0].getElementsByTagName('button');
+for (el of buttons) el.addEventListener("click", onThemeToggleClick);
+</script>
+{% endmacro %}
+
+{%- macro relbar_() %}
+    <div class="related" role="navigation" aria-label="related navigation">
+      <ul>
+        {%- for rellink in rellinks %}
+        <li class="right">
+          <a href="{{ pathto(rellink[0]) }}" title="{{ rellink[1]|striptags|e }}"
+             {{ accesskey(rellink[2]) }}>{{ rellink[3] }}</a>
+          {%- if not loop.first %}{{ reldelim2 }}{% endif %}</li>
+        {%- endfor %}
+        {%- block rootrellink %}
+        <li class="nav-item nav-item-0"><a href="{{ pathto(master_doc) }}">{{ shorttitle }}</a>{{ reldelim1 }}</li>
+        {%- endblock %}
+        {%- for parent in parents %}
+          <li class="nav-item nav-item-{{ loop.index }}"><a href="{{ parent.link|e }}" {% if loop.last %}{{ accesskey("U") }}{% endif %}>{{ parent.title }}</a>{{ reldelim1 }}</li>
+        {%- endfor %}
+          <li>{{ title }}</li>
+        {%- block relbaritems %} {% endblock %}
+      </ul>
+    </div>
+{%- endmacro %}
+
+{%- macro sidebar_() %}
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+          {%- for sidebartemplate in sidebars %}
+          {%- include sidebartemplate %}
+          {%- endfor %}
+        </div>
+      </div>
+{%- endmacro %}
+
+{%- block extrahead %}
+  {{ super() }}
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}" type="text/css" />
+{% endblock %}
+
+{%- block relbar1 %}{% endblock %}
+{%- block relbar2 %}{% endblock %}
+
+{% block header %}
+  {{ super() }}
+  <div class="header">
+  {{ relbar_() }}
+  {{ theme_switcher_() }}
+  </div>
+{% endblock %}
+
+{%- block content %}
+  {%- block sidebar1 %}{% endblock %}
+
+    <div class="document">
+  {%- block document %}
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            {% block body %} {% endblock %}
+          </div>
+        </div>
+      </div>
+  {%- endblock %}
+
+  {%- block sidebar2 %}{{ sidebar_() }}{% endblock %}
+      <div class="clearer"></div>
+    </div>
+{%- endblock %}
+
+{%- block footer %}
+  <div class="footer">
+    &copy; Copyright {{ copyright }}.
+    {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx-doc.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
+  </div>
+{%- endblock %}
+
+{%- block body_tag %}<body data-pygment-theme="dark" data-theme="auto">
+<script type="text/javascript">
+// Theme switcher and saving logic.
+// Adapated from https://github.com/rust-lang/mdBook
+
+// Work around some values being stored in localStorage wrapped in quotes
+var THEME_KEY = "sphinx-theme";
+var theme, storedTheme;
+
+try {
+    storedTheme = localStorage.getItem(THEME_KEY);
+
+    if (storedTheme.startsWith('"')) {
+        localStorage.setItem(
+            THEME_KEY,
+            storedTheme.slice(1, storedTheme.length - 1)
+        );
+    }
+} catch (e) {}
+
+// Set the theme before any content is loaded, prevents flash
+try {
+    theme = localStorage.getItem(THEME_KEY);
+} catch (e) {}
+
+if (theme === null || theme === undefined || !theme) {
+    theme = "auto";
+}
+
+window.setTheme = function setTheme(theme) {
+    document.body.dataset.theme = theme;
+    localStorage.setItem(THEME_KEY, theme);
+};
+
+document.body.dataset.theme = theme;
+</script>{% endblock %}

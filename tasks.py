@@ -167,7 +167,7 @@ def check(ctx):
 
 
 @invoke.task
-def docs(ctx, clean_=True, strict=False, verbose=False):
+def docs(ctx, clean_=False, strict=False, verbose=False):
     """
     Generate documentation.
     """

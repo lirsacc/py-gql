@@ -1,8 +1,8 @@
-recommonmark ~= 0.4
-sphinx ~= 2.2
-alabaster ~= 0.7
+recommonmark
+sphinx-markdown-tables
+sphinx<3
 pygments-graphql
-sphinx-autodoc-typehints ~= 1.8
+sphinx-autodoc-typehints
 
 pyenchant
-sphinxcontrib-spelling ~= 4.3
+sphinxcontrib-spelling

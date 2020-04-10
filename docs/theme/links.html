@@ -1,0 +1,10 @@
+{%- if theme_sidebar_links %}
+    <h3>{{ _('Project Links') }}</h3>
+    <ul>
+        {%- for text, href in theme_sidebar_links %}
+        <li>
+            <a href="{{ href }}">{{ text }}</a>
+        </li>
+        {%- endfor %}
+    </ul>
+{%- endif %}
