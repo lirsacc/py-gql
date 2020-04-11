@@ -159,6 +159,7 @@ type __Schema {
 
   """A list of all directives supported by this server."""
   directives: [__Directive!]!
+  description: String
 }
 
 """

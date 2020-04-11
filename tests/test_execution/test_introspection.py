@@ -938,6 +938,17 @@ def test_introspection_query():
                                     },
                                 },
                             },
+                            {
+                                "args": [],
+                                "deprecationReason": None,
+                                "isDeprecated": False,
+                                "name": "description",
+                                "type": {
+                                    "kind": "SCALAR",
+                                    "name": "String",
+                                    "ofType": None,
+                                },
+                            },
                         ],
                         "inputFields": None,
                         "interfaces": [],
@@ -1599,6 +1610,7 @@ def test_it_exposes_descriptions_on_types_and_fields():
                         "name": "directives",
                         "description": "A list of all directives supported by this server.",
                     },
+                    {"name": "description", "description": None},
                 ],
             }
         },
@@ -1718,4 +1730,19 @@ def test_disable_introspection_type(starwars_schema):
         """,
         disable_introspection=True,
         expected_data={},
+    )
+
+
+def test_schema_description(starwars_schema):
+    starwars_schema.description = "Star wars stuff!"
+    assert_sync_execution(
+        starwars_schema,
+        """
+        {
+            __schema {
+                description
+            }
+        }
+        """,
+        {"__schema": {"description": "Star wars stuff!"}},
     )

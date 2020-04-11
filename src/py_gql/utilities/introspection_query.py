@@ -15,6 +15,8 @@ def introspection_query(description: bool = True) -> str:
     return """
     query IntrospectionQuery {
         __schema {
+            %(description_field)s
+
             queryType { name }
             mutationType { name }
             subscriptionType { name }

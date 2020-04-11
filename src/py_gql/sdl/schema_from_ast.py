@@ -141,6 +141,11 @@ def build_schema_ignoring_extensions(
         query_type=operations.get("query"),
         mutation_type=operations.get("mutation"),
         subscription_type=operations.get("subscription"),
+        description=(
+            schema_def.description.value
+            if schema_def is not None and schema_def.description is not None
+            else None
+        ),
         types=types,
         directives=directives,
         nodes=[schema_def] if schema_def else None,

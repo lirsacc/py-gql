@@ -42,6 +42,8 @@ class ASTPrinter:
         if node is None:
             return ""
 
+        # TODO: Should this be done trough a Visitor to avoid duplication of the
+        # traversal logic?
         return classdispatch(  # type: ignore
             node,
             {
@@ -261,13 +263,16 @@ class ASTPrinter:
         )
 
     def print_schema_definition(self, node: _ast.SchemaDefinition) -> str:
-        return _join(
-            [
-                "schema",
-                self.print_directives(node),
-                _block(map(self, node.operation_types), self.indent),
-            ],
-            " ",
+        return self._with_desc(
+            _join(
+                [
+                    "schema",
+                    self.print_directives(node),
+                    _block(map(self, node.operation_types), self.indent),
+                ],
+                " ",
+            ),
+            node.description,
         )
 
     def print_schema_extension(self, node: _ast.SchemaExtension) -> str:

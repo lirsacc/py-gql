@@ -68,6 +68,50 @@ def test_single_field_schema(type_, opts, expected):
     )
 
 
+def test_schema_description_with_standard_root_types():
+    schema = Schema(
+        ObjectType("Query", [Field("field", String)]),
+        description="Single field schema.",
+    )
+    assert (
+        dedent(
+            '''
+            """Single field schema."""
+            schema {
+                query: Query
+            }
+
+            type Query {
+                field: String
+            }
+            '''
+        )
+        == print_schema(schema, indent=4)
+    )
+
+
+def test_schema_description_with_custom_root_types():
+    schema = Schema(
+        ObjectType("RootQuery", [Field("field", String)]),
+        description="Single field schema.",
+    )
+    assert (
+        dedent(
+            '''
+            """Single field schema."""
+            schema {
+                query: RootQuery
+            }
+
+            type RootQuery {
+                field: String
+            }
+            '''
+        )
+        == print_schema(schema, indent=4)
+    )
+
+
 def test_mutation():
     assert (
         dedent(

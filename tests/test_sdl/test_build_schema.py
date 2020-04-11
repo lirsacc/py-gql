@@ -575,6 +575,22 @@ def test_allows_only_a_single_schema_definition():
     }
 
 
+def test_schema_description():
+    schema = build_schema(
+        '''
+        """
+        This is the schema.
+        """
+        schema {
+            query: SomeQuery
+        }
+        type SomeQuery { str: String }
+        '''
+    )
+
+    assert schema.description == "This is the schema."
+
+
 def test_allows_only_a_single_query_type():
     with pytest.raises(SDLError) as exc_info:
         build_schema(

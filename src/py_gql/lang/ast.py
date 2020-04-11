@@ -551,12 +551,19 @@ class TypeSystemDefinition(SupportDirectives, Definition):
 
 
 class SchemaDefinition(TypeSystemDefinition):
-    __slots__ = ("source", "loc", "directives", "operation_types")
+    __slots__ = (
+        "source",
+        "loc",
+        "directives",
+        "operation_types",
+        "description",
+    )
 
     def __init__(
         self,
         directives: Optional[List[Directive]] = None,
         operation_types=None,  # type: Optional[List[OperationTypeDefinition]]
+        description: Optional[StringValue] = None,
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
@@ -564,6 +571,7 @@ class SchemaDefinition(TypeSystemDefinition):
         self.operation_types = (
             operation_types or []
         )  # type: List[OperationTypeDefinition]
+        self.description = description
         self.source = source
         self.loc = loc
 

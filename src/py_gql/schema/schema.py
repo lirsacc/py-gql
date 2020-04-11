@@ -50,6 +50,8 @@ class Schema(ResolverMap):
             This only necessary for types that cannot be inferred by traversing
             the root types.
 
+        description: Schema description.
+
         nodes: AST node for the schema if applicable, i.e. when creating
             the schema from a GraphQL (SDL) document.
 
@@ -62,6 +64,8 @@ class Schema(ResolverMap):
 
         subscription_type (Optional[ObjectType]):
             The root subscription type for the schema (optional).
+
+        description (Optional[str]): Schema description.
 
         nodes (List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]):
             AST node for the schema if applicable, i.e. when creating the schema
@@ -80,6 +84,7 @@ class Schema(ResolverMap):
     """
 
     __slots__ = (
+        "description",
         "query_type",
         "mutation_type",
         "subscription_type",
@@ -103,6 +108,7 @@ class Schema(ResolverMap):
         subscription_type: Optional[ObjectType] = None,
         directives: Optional[List[Directive]] = None,
         types: Optional[List[NamedType]] = None,
+        description: Optional[str] = None,
         nodes: Optional[
             List[Union[_ast.SchemaDefinition, _ast.SchemaExtension]]
         ] = None,
@@ -111,6 +117,8 @@ class Schema(ResolverMap):
         self.query_type = query_type
         self.mutation_type = mutation_type
         self.subscription_type = subscription_type
+
+        self.description = description
 
         self.nodes = (
             nodes or []

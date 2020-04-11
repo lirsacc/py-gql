@@ -519,3 +519,38 @@ def test_it_parses_variable_definition_with_default_and_directives():
             ],
         ),
     )
+
+
+def test_it_parses_schema_definition():
+    assert_node_equal(
+        parse(
+            '''
+            """
+            This a schema description.
+            """
+            schema @someDirective {
+                query: RootQuery,
+            }
+            ''',
+            no_location=True,
+            allow_type_system=True,
+        ),
+        _ast.Document(
+            definitions=[
+                _ast.SchemaDefinition(
+                    directives=[
+                        _ast.Directive(name=_ast.Name(value="someDirective"))
+                    ],
+                    description=_ast.StringValue(
+                        "This a schema description.", block=True
+                    ),
+                    operation_types=[
+                        _ast.OperationTypeDefinition(
+                            operation="query",
+                            type=_ast.NamedType(name=_ast.Name("RootQuery")),
+                        )
+                    ],
+                )
+            ]
+        ),
+    )
