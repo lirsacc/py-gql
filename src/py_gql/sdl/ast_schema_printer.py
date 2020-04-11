@@ -400,6 +400,7 @@ class ASTSchemaPrinter:
                 not schema.subscription_type
                 or schema.subscription_type.name == "Subscription"
             )
+            and not schema.description
         ):
             return ""
 
@@ -418,4 +419,8 @@ class ASTSchemaPrinter:
                 % (self.indent, schema.subscription_type.name)
             )
 
-        return "schema%s {\n%s\n}" % (directives, "\n".join(operation_types))
+        return "%sschema%s {\n%s\n}" % (
+            self.print_description(schema, 0, True),
+            directives,
+            "\n".join(operation_types),
+        )
