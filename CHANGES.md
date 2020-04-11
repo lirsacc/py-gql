@@ -18,6 +18,7 @@ Unreleased
 - Add `py_gql.exts.scalars.JSONString` scalar type.
 - Add `py_gql.exts.scalars.DateTime`, `py_gql.exts.scalars.Date` and `py_gql.exts.scalars.Time` scalar type based on [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).
 - Add `py_gql.exts.scalars.Base64String` scalar type.
+- Add support for schema description (see: [graphql/graphql-spec/pull/466](https://github.com/graphql/graphql-spec/pull/466)).
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
