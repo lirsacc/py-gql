@@ -983,15 +983,18 @@ class Parser:
 
     def parse_schema_definition(self) -> _ast.SchemaDefinition:
         """
-        SchemaDefinition : schema Directives[Const]? { OperationTypeDefinition+ }
+        SchemaDefinition :
+            Description? schema Directives[Const]? { OperationTypeDefinition+ }
         """
         start = self.peek()
+        desc = self.parse_description()
         self.expect_keyword("schema")
         return _ast.SchemaDefinition(
             directives=self.parse_directives(True),
             operation_types=self.many(
                 CurlyOpen, self.parse_operation_type_definition, CurlyClose
             ),
+            description=desc,
             loc=self._loc(start),
             source=self._source,
         )
