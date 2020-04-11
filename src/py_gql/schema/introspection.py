@@ -77,6 +77,7 @@ __Schema__ = ObjectType(
                 schema.directives.values(), key=lambda d: d.name
             ),
         ),
+        Field("description", String),
     ],
 )
 
