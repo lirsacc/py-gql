@@ -1007,30 +1007,42 @@ class Directive:
     Type system creators will usually not create these directly.
 
     Args:
-        name: Directive name
+        name: Directive name.
 
-        locations: Possible locations for that directive
+        locations: Possible locations for that directive.
 
-        args: Argument definitions
+        args: Argument definitions.
 
-        description: Directive description
+        repeatable: Specify that the directive can be applied multiple times to
+            the same target. Repeatable directives are often useful when the
+            same directive should be used with different arguments at a single
+            location, especially in cases where additional information needs to
+            be provided to a type or schema extension via a directive.
+
+        description: Directive description.
 
         node: Source node used when building type from the SDL.
 
     Attributes:
-        name (str): Directive name
+        name (str): Directive name.
 
-        description (Optional[str]): Directive description
+        description (Optional[str]): Directive description.
 
-        locations (List[str]): Possible locations for that directive
+        locations (List[str]): Possible locations for that directive.
 
         arguments (List[py_gql.schema.Argument]): Directive arguments.
 
         argument_map (Dict[str, py_gql.schema.Argument]):
             Directive arguments in indexed form.
 
+        repeatable: Specify that the directive can be applied multiple times to
+            the same target. Repeatable directives are often useful when the
+            same directive should be used with different arguments at a single
+            location, especially in cases where additional information needs to
+            be provided to a type or schema extension via a directive.
+
         node (Optional[py_gql.lang.ast.DirectiveDefinition]):
-            Source node used when building type from the SDL
+            Source node used when building type from the SDL.
     """
 
     ALL_LOCATIONS = DIRECTIVE_LOCATIONS
@@ -1042,6 +1054,7 @@ class Directive:
         name: str,
         locations: Sequence[str],
         args: Optional[List[Argument]] = None,
+        repeatable: bool = False,
         description: Optional[str] = None,
         node: Optional[_ast.DirectiveDefinition] = None,
     ):
@@ -1057,6 +1070,7 @@ class Directive:
         self.name = name
         self.description = description
         self.locations = locations
+        self.repeatable = repeatable
         self.arguments = args if args is not None else []
         self.argument_map = {arg.name: arg for arg in self.arguments}
         self.node = node

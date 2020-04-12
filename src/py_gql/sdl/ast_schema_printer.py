@@ -342,10 +342,11 @@ class ASTSchemaPrinter:
         )
 
     def print_directive_definition(self, directive: Directive) -> str:
-        return "%sdirective @%s%s on %s" % (
+        return "%sdirective @%s%s%son %s" % (
             self.print_description(directive),
             directive.name,
             self.print_arguments(directive.arguments, 0),
+            " repeatable " if directive.repeatable else " ",
             " | ".join(directive.locations),
         )
 

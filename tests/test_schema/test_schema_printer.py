@@ -613,25 +613,14 @@ without: Int\
 
 
 class CustomDirective1(SchemaDirective):
-    definition = Directive(
-        "custom1",
-        args=[Argument("arg", NonNullType(Int))],
-        locations=("SCHEMA",),
-    )
+    definition = "custom1"
 
 
 class CustomDirective2(SchemaDirective):
-    definition = Directive(
-        "custom2",
-        args=[Argument("arg", NonNullType(Int))],
-        locations=("SCHEMA",),
-    )
+    definition = "custom2"
 
 
 def test_custom_directives_whitelist():
-    class CustomDirective(SchemaDirective):
-        pass
-
     sdl = """
     schema @custom1(arg: 1) @custom2(arg: 2) {
         query: Query
@@ -659,6 +648,43 @@ def test_custom_directives_whitelist():
         directive @custom1(arg: Int!) on SCHEMA
 
         directive @custom2(arg: Int!) on SCHEMA
+
+        type Query {
+            foo: Int
+        }
+        """
+    )
+
+
+def test_repeatable_directive():
+    sdl = """
+    schema @custom1(arg: 1) @custom2(arg: 2) @custom2(arg: 3) {
+        query: Query
+    }
+
+    directive @custom1(arg: Int!) on SCHEMA
+    directive @custom2(arg: Int!) repeatable on SCHEMA
+
+    type Query {
+        foo: Int
+    }
+    """
+
+    schema = build_schema(
+        sdl, schema_directives=(CustomDirective1, CustomDirective2,),
+    )
+
+    assert print_schema(
+        schema, include_custom_schema_directives=True,
+    ) == dedent(
+        """
+        schema @custom1(arg: 1) @custom2(arg: 2) @custom2(arg: 3) {
+            query: Query
+        }
+
+        directive @custom1(arg: Int!) on SCHEMA
+
+        directive @custom2(arg: Int!) repeatable on SCHEMA
 
         type Query {
             foo: Int

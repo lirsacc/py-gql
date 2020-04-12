@@ -178,6 +178,7 @@ class SchemaVisitor(object):
                 directive.name,
                 directive.locations,
                 args=updated_args,
+                repeatable=directive.repeatable,
                 description=directive.description,
                 node=directive.node,
             )
