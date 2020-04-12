@@ -212,6 +212,10 @@ class UnknownType(SchemaError, KeyError):
     pass
 
 
+class UnknownDirective(SchemaError, KeyError):
+    pass
+
+
 class ValidationError(GraphQLLocatedError):
     pass
 
