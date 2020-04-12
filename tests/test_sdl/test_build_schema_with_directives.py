@@ -574,3 +574,61 @@ def test_schema_extension_duplicate_directive():
         "locations": [{"column": 27, "line": 11}],
         "message": 'Directive "@onSchema" already applied',
     }
+
+
+def test_schema_extension_repeatable_directive(mocker):
+
+    mock_side_effect = mocker.Mock()
+
+    class OnSchema(SchemaDirective):
+        definition = "onSchema"
+
+        def on_schema(self, schema):
+            mock_side_effect(self.args["value"])
+            return schema
+
+    build_schema(
+        """
+        directive @onSchema(value: Int!) repeatable on SCHEMA
+
+        type Foo { foo: String }
+        type Bar { bar: String }
+
+        schema @onSchema(value: 1) {
+            query: Foo
+        }
+
+        extend schema @onSchema(value: 2)
+        """,
+        schema_directives=(OnSchema,),
+    )
+
+    mock_side_effect.assert_has_calls([((1,),), ((2,),)])
+
+
+def test_repeatable_directive(mocker):
+
+    mock_side_effect = mocker.Mock()
+
+    class OnSchema(SchemaDirective):
+        definition = "onSchema"
+
+        def on_schema(self, schema):
+            mock_side_effect(self.args["value"])
+            return schema
+
+    build_schema(
+        """
+        directive @onSchema(value: Int!) repeatable on SCHEMA
+
+        type Foo { foo: String }
+        type Bar { bar: String }
+
+        schema @onSchema(value: 1) @onSchema(value: 2) {
+            query: Foo
+        }
+        """,
+        schema_directives=(OnSchema,),
+    )
+
+    mock_side_effect.assert_has_calls([((1,),), ((2,),)])

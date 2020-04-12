@@ -154,6 +154,7 @@ class ASTTypeBuilder:
         return Directive(
             name=directive_def.name.value,
             description=_desc(directive_def),
+            repeatable=directive_def.repeatable,
             locations=[loc.value for loc in directive_def.locations],
             args=(
                 [self._build_argument(arg) for arg in directive_def.arguments]
@@ -203,6 +204,7 @@ class ASTTypeBuilder:
         return Directive(
             directive.name,
             description=directive.description,
+            repeatable=directive.repeatable,
             locations=directive.locations,
             args=[self._extend_argument(a) for a in directive.arguments],
             node=directive.node,

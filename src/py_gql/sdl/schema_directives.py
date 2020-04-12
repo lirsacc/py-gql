@@ -177,7 +177,7 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
                     [node],
                 )
 
-            if name in applied:
+            if name in applied and not directive_def.repeatable:
                 raise SDLError('Directive "@%s" already applied' % name, [node])
 
             args = coerce_argument_values(directive_def, node)
