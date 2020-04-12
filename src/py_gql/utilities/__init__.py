@@ -8,6 +8,7 @@ tooling on top of this library.
 
 from .ast_node_from_value import ast_node_from_value
 from .coerce_value import (
+    all_directive_arguments,
     coerce_argument_values,
     coerce_value,
     coerce_variable_values,
@@ -33,6 +34,7 @@ __all__ = (
     "collect_fields_untyped",
     "selected_fields",
     "directive_arguments",
+    "all_directive_arguments",
     "introspection_query",
     "untyped_value_from_ast",
     "value_from_ast",

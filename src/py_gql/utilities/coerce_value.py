@@ -264,13 +264,48 @@ def coerce_argument_values(
     return coerced_values
 
 
+def all_directive_arguments(
+    definition: Directive,
+    node: _ast.SupportDirectives,
+    variables: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Extract all directive arguments given node and a directive definition.
+
+    Args:
+        definition: Directive definition from which to extract arguments
+        node: Parse node
+        variables: Coerced variable values
+
+    Returns:
+        List of coerced directive arguments for all occurrences of the directive.
+        If the directive is not present the list is empty, otherwise this returns
+        one or more (for repeatable directives) dictionnaries of arguments in
+        the order they appear on the node.
+
+    Raises:
+        CoercionError: If any argument fails to coerce, is missing, etc.
+
+    """
+    return [
+        coerce_argument_values(definition, directive, variables)
+        for directive in node.directives
+        if directive.name.value == definition.name
+    ]
+
+
 def directive_arguments(
     definition: Directive,
     node: _ast.SupportDirectives,
     variables: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
-    Extract directive argument given node and a directive definition.
+    Extract first directive arguments given node and a directive definition.
+
+    Warning:
+        This extracts at most a single set of arguments which may not be
+        suitable for repeatable directives. In that case `py_gql.utilities.
+        all_directive_arguments`. should be preferred.
 
     Args:
         definition: Directive definition from which to extract arguments
@@ -283,7 +318,6 @@ def directive_arguments(
 
     Raises:
         CoercionError: If any argument fails to coerce, is missing, etc.
-
     """
     directive = find_one(
         node.directives, lambda d: d.name.value == definition.name
