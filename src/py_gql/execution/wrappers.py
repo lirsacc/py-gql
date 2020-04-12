@@ -22,9 +22,9 @@ from ..schema.introspection import (
     TYPE_NAME_INTROSPECTION_FIELD,
 )
 from ..utilities import (
+    all_directive_arguments,
     coerce_argument_values,
     collect_fields,
-    directive_arguments,
     selected_fields,
 )
 from .runtime import Runtime
@@ -192,6 +192,10 @@ class ResolveInfo:
 
     This is the 3rd positional argument provided to resolver functions and is
     constructed internally during query execution.
+
+    Warning:
+        This class assumes that the document and schema have been validated for
+        execution and may break unexectedly if used outside of such a context.
     """
 
     __slots__ = (
@@ -225,9 +229,7 @@ class ResolveInfo:
         self.runtime = runtime
 
         self._context = context
-        self._directive_arguments = (
-            {}
-        )  # type: Dict[str, Optional[Dict[str, Any]]]
+        self._directive_arguments = {}  # type: Dict[str, List[Dict[str, Any]]]
 
     @property
     def schema(self) -> Schema:  # noqa: D401
@@ -254,9 +256,7 @@ class ResolveInfo:
         """
         Extract arguments for a given directive on the current field.
 
-        Warning:
-            This method assumes the document has been validated and the
-            definition exists and is valid at this position.
+        This has the same semantics as `py_gql.utilities.directive_arguments`.
 
         Args:
             name: The name of the directive to extract.
@@ -264,6 +264,21 @@ class ResolveInfo:
         Returns:
             ``None`` if the directive is not present on the current field and a
             dictionary of coerced arguments otherwise.
+        """
+        args = self.get_all_directive_arguments(name)
+        return args[0] if args else None
+
+    def get_all_directive_arguments(self, name: str) -> List[Dict[str, Any]]:
+        """
+        Extract arguments for a given directive on the current field.
+
+        This has the same semantics as `py_gql.utilities.all_directive_arguments`.
+
+        Args:
+            name: The name of the directive to extract.
+
+        Returns:
+            List of directive arguments in order of occurrence.
         """
         try:
             return self._directive_arguments[name]
@@ -273,7 +288,7 @@ class ResolveInfo:
             except KeyError:
                 raise UnknownDirective(name) from None
 
-            args = self._directive_arguments[name] = directive_arguments(
+            args = self._directive_arguments[name] = all_directive_arguments(
                 directive_def, self.nodes[0], self._context.variables,
             )
             return args

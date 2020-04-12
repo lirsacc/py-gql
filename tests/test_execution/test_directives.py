@@ -230,3 +230,28 @@ async def test_get_directive_arguments_unknown(assert_execution, mocker):
 
     with pytest.raises(KeyError):
         info.get_directive_arguments("foo")
+
+
+async def test_repeatable_directive(assert_execution, mocker):
+    CustomDirective = Directive(
+        "custom",
+        ["FIELD"],
+        [Argument("a", String), Argument("b", Int)],
+        repeatable=True,
+    )
+
+    resolver = mocker.Mock(return_value=42)
+
+    await assert_execution(
+        Schema(test_type, directives=[CustomDirective]),
+        parse('{ a @custom(a: "foo", b: 42) @custom(a: "bar", b: 24) }'),
+        initial_value=_obj(a=resolver),
+    )
+
+    (_, info), _ = resolver.call_args
+
+    assert info.get_directive_arguments("custom") == {"a": "foo", "b": 42}
+    assert info.get_all_directive_arguments("custom") == [
+        {"a": "foo", "b": 42},
+        {"a": "bar", "b": 24},
+    ]
