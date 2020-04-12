@@ -709,6 +709,7 @@ class KnownDirectivesChecker(ValidationVisitor):
         schema_directive = self.schema.directives.get(name)
         if schema_directive is None:
             self.add_error('Unknown directive "%s".' % name, [node])
+            raise SkipNode()
         else:
             location = self._current_location()
             if location not in schema_directive.locations:
@@ -728,8 +729,14 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
         seen = set()  # type: Set[str]
         for directive in node.directives:
             name = directive.name.value
+            directive_def = self.schema.directives.get(name)
+
+            if directive_def is None:
+                continue
+
             if name in seen:
                 self.add_error('Duplicate directive "@%s"' % name, [directive])
+
             seen.add(name)
 
     enter_operation_definition = _validate_unique_directive_names
