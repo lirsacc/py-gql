@@ -57,29 +57,8 @@ junit.*.xml
 .pytest_cache
 .benchmarks
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
 # Sphinx documentation
 docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
 
 # pyenv
 .python-version
@@ -91,9 +70,6 @@ target/
 .venv
 venv
 ENV
-
-# Spyder project settings
-.spyderproject
 
 # Rope project settings
 .ropeproject
@@ -109,6 +85,7 @@ ENV
 .vscode
 .idea
 *_bak
+scratch
 
 flake8.txt
 
