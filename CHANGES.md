@@ -20,6 +20,12 @@ Unreleased
 - Add `py_gql.exts.scalars.Base64String` scalar type.
 - Add support for schema description (see: [graphql/graphql-spec/pull/466](https://github.com/graphql/graphql-spec/pull/466)).
 - Add `py_gql.exc.UnknownDirective` for cleaner errors in `py_gql.ResolveInfo.get_directive_arguments`.
+- Add support for repeatable directives (see: [graphql/graphql-spec/pull/472](https://github.com/graphql/graphql-spec/pull/472)).
+
+  - Language support (parser, ast, SDL and schema definitions)
+  - Schema directives: repeatable directives applied multiple times when calling `build_schema()` will be called multiple times in order.
+  - `ResolveInfo.get_directive_arguments` has not been modified to not break exising code. It returns the first set of arguments for repeated directives.
+  - `ResolveInfo.get_all_directive_arguments` has been added to handle repeated directives.
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
