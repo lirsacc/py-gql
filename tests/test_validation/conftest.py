@@ -234,6 +234,7 @@ def schema():
             Directive("onSubscription", ["SUBSCRIPTION"]),
             Directive("onField", ["FIELD"]),
             Directive("onField2", ["FIELD"]),
+            Directive("onFieldRepeatable", ["FIELD"], repeatable=True),
             Directive("onFragmentDefinition", ["FRAGMENT_DEFINITION"]),
             Directive("onFragmentSpread", ["FRAGMENT_SPREAD"]),
             Directive("onInlineFragment", ["INLINE_FRAGMENT"]),

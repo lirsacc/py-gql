@@ -140,3 +140,15 @@ def test_duplicate_directives_in_many_locations(schema):
         ['Duplicate directive "@onObject"', 'Duplicate directive "@onField"'],
         [[(32, 41)], [(63, 71)]],
     )
+
+
+def test_duplicate_repeatable_directive(schema):
+    run_test(
+        UniqueDirectivesPerLocationChecker,
+        schema,
+        """
+        fragment Test on Type {
+            field @onFieldRepeatable @onFieldRepeatable
+        }
+        """,
+    )

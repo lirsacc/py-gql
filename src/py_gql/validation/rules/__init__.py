@@ -731,7 +731,7 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
             name = directive.name.value
             directive_def = self.schema.directives.get(name)
 
-            if directive_def is None:
+            if directive_def is None or directive_def.repeatable:
                 continue
 
             if name in seen:
