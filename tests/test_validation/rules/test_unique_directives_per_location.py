@@ -24,6 +24,19 @@ def test_no_directives(schema):
     )
 
 
+# Should have been caught by KnownDirectivesChecker
+def test_unknown_directives(schema):
+    run_test(
+        UniqueDirectivesPerLocationChecker,
+        schema,
+        """
+        fragment Test on Type @unknownOnType {
+            field @unknownOnField
+        }
+        """,
+    )
+
+
 def test_unique_directives_in_different_locations(schema):
     run_test(
         UniqueDirectivesPerLocationChecker,
@@ -79,11 +92,11 @@ def test_duplicate_directives_in_one_location(schema):
         schema,
         """
         fragment Test on Type {
-            field @directive @directive
+            field @onField @onField
         }
         """,
-        ['Duplicate directive "@directive"'],
-        [[(45, 55)]],
+        ['Duplicate directive "@onField"'],
+        [[(43, 51)]],
     )
 
 
@@ -93,14 +106,11 @@ def test_many_duplicate_directives_in_one_location(schema):
         schema,
         """
         fragment Test on Type {
-            field @directive @directive @directive
+            field @onField @onField @onField
         }
         """,
-        [
-            'Duplicate directive "@directive"',
-            'Duplicate directive "@directive"',
-        ],
-        [[(45, 55)], [(56, 66)]],
+        ['Duplicate directive "@onField"', 'Duplicate directive "@onField"'],
+        [[(43, 51)], [(52, 60)]],
     )
 
 
@@ -110,14 +120,11 @@ def test_different_duplicate_directives_in_one_location(schema):
         schema,
         """
         fragment Test on Type {
-            field @directiveA @directiveB @directiveA @directiveB
+            field @onField @onField2 @onField @onField2
         }
         """,
-        [
-            'Duplicate directive "@directiveA"',
-            'Duplicate directive "@directiveB"',
-        ],
-        [[(58, 69)], [(70, 81)]],
+        ['Duplicate directive "@onField"', 'Duplicate directive "@onField2"'],
+        [[(53, 61)], [(62, 71)]],
     )
 
 
@@ -126,13 +133,10 @@ def test_duplicate_directives_in_many_locations(schema):
         UniqueDirectivesPerLocationChecker,
         schema,
         """
-        fragment Test on Type @directive @directive {
-            field @directive @directive
+        fragment Test on Type @onObject @onObject {
+            field @onField @onField
         }
         """,
-        [
-            'Duplicate directive "@directive"',
-            'Duplicate directive "@directive"',
-        ],
-        [[(33, 43)], [(67, 77)]],
+        ['Duplicate directive "@onObject"', 'Duplicate directive "@onField"'],
+        [[(32, 41)], [(63, 71)]],
     )
