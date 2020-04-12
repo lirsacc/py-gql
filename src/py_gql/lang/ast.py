@@ -944,6 +944,7 @@ class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
         "description",
         "name",
         "arguments",
+        "repeatable",
         "locations",
     )
 
@@ -951,6 +952,7 @@ class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
         self,
         name: Name,
         arguments: Optional[List[InputValueDefinition]] = None,
+        repeatable: bool = False,
         locations: Optional[List[Name]] = None,
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
@@ -958,6 +960,7 @@ class DirectiveDefinition(SupportDescription, TypeSystemDefinition):
     ):
         self.name = name
         self.arguments = arguments or []  # type: List[InputValueDefinition]
+        self.repeatable = repeatable
         self.locations = locations or []  # type: List[Name]
         self.source = source
         self.loc = loc

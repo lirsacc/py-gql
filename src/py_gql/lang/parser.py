@@ -394,6 +394,25 @@ class Parser:
             return True
         return False
 
+    def skip_keyword(self, keyword: str) -> bool:
+        """
+        Conditionally advance the parser asserting over a given keyword.
+
+        Args:
+            keyword (str): Expected keyword
+
+        Returns:
+            ``True`` if the next token was the given keyword and we've advanced
+            the parser, ``False`` otherwise.
+
+        """
+        next_token = self.peek()
+        if next_token.__class__ is Name and next_token.value == keyword:
+            self.advance()
+            return True
+
+        return False
+
     def many(
         self, open_kind: Kind, parse_fn: Callable[[], N], close_kind: Kind
     ) -> List[N]:
@@ -1430,7 +1449,8 @@ class Parser:
     def parse_directive_definition(self) -> _ast.DirectiveDefinition:
         """
         DirectiveDefinition :
-            Description? directive @ Name ArgumentsDefinition? on DirectiveLocations
+            Description? directive @ Name ArgumentsDefinition? repeatable?
+            on DirectiveLocations
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1438,11 +1458,13 @@ class Parser:
         self.expect(At)
         name = self.parse_name()
         args = self.parse_argument_definitions()
+        repeatable = self.skip_keyword("repeatable")
         self.expect_keyword("on")
         return _ast.DirectiveDefinition(
             description=desc,
             name=name,
             arguments=args,
+            repeatable=repeatable,
             locations=self.parse_directive_locations(),
             loc=self._loc(start),
             source=self._source,

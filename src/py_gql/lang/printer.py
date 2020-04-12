@@ -484,6 +484,7 @@ class ASTPrinter:
                     "directive @",
                     node.name.value,
                     self.print_argument_definitions(node),
+                    " repeatable" if node.repeatable else "",
                     " on ",
                     _join(map(self, node.locations), " | "),
                 ]
