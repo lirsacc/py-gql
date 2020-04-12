@@ -13,7 +13,7 @@ from typing import (
     Union,
 )
 
-from ..exc import GraphQLLocatedError, GraphQLResponseError
+from ..exc import GraphQLLocatedError, GraphQLResponseError, UnknownDirective
 from ..lang import ast
 from ..schema import Field, ObjectType, Schema
 from ..schema.introspection import (
@@ -268,10 +268,13 @@ class ResolveInfo:
         try:
             return self._directive_arguments[name]
         except KeyError:
+            try:
+                directive_def = self._context.schema.directives[name]
+            except KeyError:
+                raise UnknownDirective(name) from None
+
             args = self._directive_arguments[name] = directive_arguments(
-                self._context.schema.directives[name],
-                self.nodes[0],
-                self._context.variables,
+                directive_def, self.nodes[0], self._context.variables,
             )
             return args
 
