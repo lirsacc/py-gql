@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
 from ..exc import SchemaError, UnknownType
-from ..lang import ast as _ast
+from ..lang import ast as _ast, print_ast
 from .directives import SPECIFIED_DIRECTIVES
 from .introspection import INTROPSPECTION_TYPES
 from .resolver_map import Resolver, ResolverMap, TypeResolver
@@ -405,17 +405,17 @@ class Schema(ResolverMap):
     ) -> str:
         """
         Format the schema as an SDL string.
-
-        Refer to :class:`py_gql.sdl.ASTSchemaPrinter` for details.
         """
-        from ..sdl import ASTSchemaPrinter
+        from ..sdl import ASTSchemaConverter
 
-        return ASTSchemaPrinter(
+        return print_ast(
+            ASTSchemaConverter(
+                include_introspection=include_introspection,
+                include_custom_schema_directives=include_custom_schema_directives,
+            )(self),
             indent=indent,
             include_descriptions=include_descriptions,
-            include_introspection=include_introspection,
-            include_custom_schema_directives=include_custom_schema_directives,
-        )(self)
+        )
 
     def register_default_resolver(
         self, typename: str, resolver: Resolver, *, allow_override: bool = False

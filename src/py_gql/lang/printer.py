@@ -100,7 +100,10 @@ class ASTPrinter:
         return "$%s" % node.name.value
 
     def print_document(self, node: _ast.Document) -> str:
-        return _join(map(self, node.definitions), "\n\n") + "\n"
+        if node.definitions:
+            return _join(map(self, node.definitions), "\n\n") + "\n"
+        else:
+            return ""
 
     def print_operation_definition(self, node: _ast.OperationDefinition) -> str:
         op = node.operation
@@ -162,7 +165,7 @@ class ASTPrinter:
         )
 
     def print_selection_set(self, node: _ast.SelectionSet) -> str:
-        return _block(map(self, node.selections), self.indent)
+        return _block(map(self, node.selections), self.indent, spaced=False)
 
     def print_field(self, node: _ast.Field) -> str:
         if node.alias:
@@ -341,25 +344,31 @@ class ASTPrinter:
         )
 
     def print_field_definition(self, node: _ast.FieldDefinition) -> str:
-        return _join(
-            [
-                node.name.value,
-                self.print_argument_definitions(node),
-                ": ",
-                self(node.type),
-                _wrap(" ", self.print_directives(node)),
-            ]
+        return self._with_desc(
+            _join(
+                [
+                    node.name.value,
+                    self.print_argument_definitions(node),
+                    ": ",
+                    self(node.type),
+                    _wrap(" ", self.print_directives(node)),
+                ]
+            ),
+            node.description,
         )
 
     def print_input_value_definition(
         self, node: _ast.InputValueDefinition
     ) -> str:
-        return _join(
-            [
-                _join([node.name.value, ": ", self(node.type)]),
-                _wrap(" = ", self(node.default_value)),
-                _wrap(" ", self.print_directives(node)),
-            ]
+        return self._with_desc(
+            _join(
+                [
+                    _join([node.name.value, ": ", self(node.type)]),
+                    _wrap(" = ", self(node.default_value)),
+                    _wrap(" ", self.print_directives(node)),
+                ]
+            ),
+            node.description,
         )
 
     def print_interface_type_definition(
@@ -446,7 +455,10 @@ class ASTPrinter:
     def print_enum_value_definition(
         self, node: _ast.EnumValueDefinition
     ) -> str:
-        return _join([node.name.value, self.print_directives(node)], " ")
+        return self._with_desc(
+            _join([node.name.value, self.print_directives(node)], " "),
+            node.description,
+        )
 
     def print_input_object_type_definition(
         self, node: _ast.InputObjectTypeDefinition
@@ -502,7 +514,7 @@ class ASTPrinter:
             return _wrap("(\n", _indent(_join(args, "\n"), self.indent), "\n)")
 
     def _with_desc(
-        self, formatted: str, desc: Optional[_ast.StringValue]
+        self, formatted: str, desc: Optional[_ast.StringValue],
     ) -> str:
         if desc is None or not self.include_descriptions:
             return formatted
@@ -527,11 +539,27 @@ def _indent(maybe_string: str, indent: str) -> str:
     )
 
 
-def _block(iterator: Iterable[str], indent: str) -> str:
+def _block(iterator: Iterable[str], indent: str, spaced: bool = True) -> str:
     arr = list(iterator)
     if not arr:
         return ""
-    return "{\n%s\n}" % _join(map(lambda s: _indent(s, indent), arr), "\n")
+
+    parts = list(map(lambda s: _indent(s, indent), arr))
+
+    if spaced and len(parts) > 1:
+        with_newlines = []
+        for i, p in enumerate(parts):
+            # Add a newline before the entry if:
+            #  - The previous entry was multiline
+            #  - The entry is multiline
+            if i > 0 and (parts[i - 1].count("\n") > 1 or p.count("\n") > 1):
+                with_newlines.append("\n" + p)
+            else:
+                with_newlines.append(p)
+    else:
+        with_newlines = parts
+
+    return "{\n%s\n}" % _join(with_newlines, "\n")
 
 
 # Print a block string in the indented block form by adding a leading and
@@ -549,7 +577,9 @@ def _block_string(value: str, indent: str, is_description: bool = False) -> str:
 
 
 def print_ast(
-    node: _ast.Node, indent: int = 2, include_descriptions: bool = True
+    node: _ast.Node,
+    indent: Union[str, int] = 2,
+    include_descriptions: bool = True,
 ) -> str:
     """
     Convert an AST node into a string, using reasonable formatting rules.

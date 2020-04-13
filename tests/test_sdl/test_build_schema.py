@@ -70,24 +70,37 @@ def test_with_directive():
 
 def test_descriptions_supports():
     schema = '''
-    """This is a directive"""
+    """
+    This is a directive
+    """
     directive @foo(
-        """It has an argument"""
+        """
+        It has an argument
+        """
         arg: Int
     ) on FIELD
 
-    """With an enum"""
+    """
+    With an enum
+    """
     enum Color {
         RED
 
-        """Not a creative color"""
+        """
+        Not a creative color
+        """
         GREEN
+
         BLUE
     }
 
-    """What a great type"""
+    """
+    What a great type
+    """
     type Query {
-        """And a field to boot"""
+        """
+        And a field to boot
+        """
         str: String
     }
     '''

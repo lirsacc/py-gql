@@ -7,6 +7,7 @@ Unreleased
 ### Breaking Changes & Deprecations
 
 - Custom scalar types such as `RegexType` and `UUID` have been moved to `py_gql.exts.scalars`.
+- Removed `ASTSchemaPrinter` in favor of combining `ASTSchemaConverter` and `ASTPrinter`. `Schema.to_string()` is not affected.
 
 ### Fixed
 
@@ -26,6 +27,7 @@ Unreleased
   - Schema directives: repeatable directives applied multiple times when calling `build_schema()` will be called multiple times in order.
   - `ResolveInfo.get_directive_arguments` has not been modified to not break exising code. It returns the first set of arguments for repeated directives.
   - `ResolveInfo.get_all_directive_arguments` has been added to handle repeated directives.
+- Added `ASTSchemaConverter`.
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
