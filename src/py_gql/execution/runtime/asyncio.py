@@ -15,7 +15,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from .base import SubscriptionRuntime
@@ -60,10 +59,10 @@ class AsyncIORuntime(SubscriptionRuntime):
 
     def ensure_wrapped(self, value: MaybeAwaitable[T]) -> Awaitable[T]:
         if _isawaitable_fast(value):
-            return cast(Awaitable[T], value)
+            return value  # type: ignore
 
         async def _make_awaitable() -> T:
-            return cast(T, value)
+            return value  # type: ignore
 
         return _make_awaitable()
 
@@ -83,10 +82,10 @@ class AsyncIORuntime(SubscriptionRuntime):
         for index, value in enumerate(values):
             if _isawaitable_fast(value):
                 has_pending = True
-                pending_append(cast(Awaitable[T], value))
+                pending_append(value)  # type: ignore
                 pending_idx_append(index)
 
-            done_append(cast(T, value))
+            done_append(value)  # type: ignore
 
         if has_pending:
 
@@ -112,7 +111,7 @@ class AsyncIORuntime(SubscriptionRuntime):
 
             async def _await_value() -> G:
                 try:
-                    return then(await cast(Awaitable[T], value))
+                    return then(await value)  # type: ignore
                 except Exception as err:
                     if else_ and isinstance(err, else_[0]):
                         return else_[1](err)
@@ -121,7 +120,7 @@ class AsyncIORuntime(SubscriptionRuntime):
             return _await_value()
 
         try:
-            return then(cast(T, value))
+            return then(value)  # type: ignore
         except Exception as err:
             if else_ and isinstance(err, else_[0]):
                 return else_[1](err)
@@ -183,8 +182,16 @@ class AsyncMap:
 
 
 def _isawaitable_fast(value, cache={}, __isawaitable=isawaitable):
-    # This is faster than the default isawaitable which is benefitial for the
-    # hot loops required when resolving large objects.
+    # This is (usually) faster than the default isawaitable which is benefitial
+    # for the hot loops required when resolving large objects.
+    # TODO: This has been true in my use cases (mostly using dicts), but it may
+    # not be the case for all use cases, e.g. when using Django a lot of
+    # different classes may appear for models and this may end up having to drop
+    # to isawaitable anyway with the cache miss cost on top. Ideally the number
+    # of different classes is an order of magnitude smaller than the number of
+    # individual objects involved (at the point where this kind of optimisation
+    # matters) but this could do with some proper benchmarking against real life
+    # use cases.
     t = type(value)
     try:
         return cache[t]

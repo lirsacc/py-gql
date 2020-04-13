@@ -12,7 +12,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from .base import Runtime
@@ -129,14 +128,14 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
             result_append(maybe_future)
             done += 1
         else:
-            pending_append(cast("Future[T]", maybe_future))
+            pending_append(maybe_future)  # type: ignore
             result_append(maybe_future)
 
     if target_count == 0:
         return []
 
     if not pending:
-        return cast(List[T], result)
+        return result  # type: ignore
 
     def handle_cancel(d: "Future[List[T]]") -> Any:
         if d.cancelled():
@@ -155,15 +154,12 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
 
         if done == target_count:
             outer.set_result(
-                cast(
-                    "List[T]",
-                    [
-                        cast("Future[T]", v).result()
-                        if _is_future_fast(v)
-                        else v
-                        for v in result
-                    ],
-                )
+                [
+                    v.result()  # type: ignore
+                    if _is_future_fast(v)
+                    else v
+                    for v in result
+                ],
             )
 
     outer = Future()  # type: Future[List[T]]
@@ -183,7 +179,7 @@ def chain(
 
     if not _is_future_fast(source):
         try:
-            res = then(cast(T, source))
+            res = then(source)  # type: ignore
         except Exception as err:
             if else_ is not None:
                 exc_type, cb = else_
@@ -213,6 +209,6 @@ def chain(
             else:
                 target.set_result(res)
 
-        cast("Future[T]", source).add_done_callback(on_finish)
+        source.add_done_callback(on_finish)  # type: ignore
 
         return target

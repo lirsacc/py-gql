@@ -7,7 +7,7 @@ from ..exc import CoercionError, ResolverError
 from ..lang import ast as _ast
 from ..schema import Field, GraphQLType, ObjectType
 from .executor import Executor
-from .wrappers import GroupedFields, ResolveInfo, ResponsePath
+from .wrappers import CollectedFields, ResolveInfo, ResponsePath
 
 
 Resolver = Callable[..., Any]
@@ -31,16 +31,20 @@ class BlockingExecutor(Executor):
         parent_type: ObjectType,
         root: Any,
         path: ResponsePath,
-        fields: GroupedFields,
+        fields: CollectedFields,
     ) -> Dict[str, Any]:
-        result = OrderedDict()  # type: Dict[str, Any]
-
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
-            result[key] = self.resolve_field(
-                parent_type, root, field_def, nodes, path + [key]
-            )
-
-        return result
+        return OrderedDict(
+            [
+                (
+                    key,
+                    self.resolve_field(
+                        parent_type, root, field_def, nodes, path + [key]
+                    ),
+                )
+                for key, field_def, nodes in fields
+                if field_def is not None
+            ]
+        )
 
     execute_fields_serially = execute_fields
 

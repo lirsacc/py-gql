@@ -137,10 +137,8 @@ def create_source_event_stream(
             "Subscription operation must specify only one field."
         )
 
-    key, nodes = next(iter(fields.items()))
+    key, field_def, nodes = fields[0]
     node = nodes[0]
-
-    field_def = executor.field_definition(root_type, node.name.value)
 
     if field_def is None:
         raise RuntimeError(

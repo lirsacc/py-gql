@@ -1,18 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
 from .._string_utils import stringify_path
 from .._utils import OrderedDict, apply_middlewares, is_iterable
@@ -39,7 +27,7 @@ from .default_resolver import default_resolver
 from .instrumentation import Instrumentation
 from .runtime import BlockingRuntime, Runtime
 from .wrappers import (
-    GroupedFields,
+    CollectedFields,
     ResolutionContext,
     ResolveInfo,
     ResponsePath,
@@ -66,6 +54,7 @@ class Executor(ResolutionContext):
         "instrumentation",
         "runtime",
         "_default_resolver",
+        "_resolver_cache",
     )
 
     def __init__(
@@ -91,22 +80,19 @@ class Executor(ResolutionContext):
         self.instrumentation = instrumentation or Instrumentation()
         self.runtime = runtime or BlockingRuntime()
         self._default_resolver = schema.default_resolver or default_resolver
+        self._resolver_cache = {}  # type: Dict[Optional[Resolver], Resolver]
 
     def field_resolver(
         self, parent_type: ObjectType, field_definition: Field
     ) -> Resolver:
-        base = (
-            field_definition.resolver
-            or parent_type.default_resolver
-            or self._default_resolver
-        )
+        base = field_definition.resolver or parent_type.default_resolver
         try:
             return self._resolver_cache[base]
         except KeyError:
             wrapped = (
                 self.runtime.wrap_callable(base)
-                if base is not self._default_resolver
-                else base
+                if base is not None
+                else self._default_resolver
             )
             if self._middlewares:
                 wrapped = apply_middlewares(wrapped, self._middlewares)
@@ -147,10 +133,11 @@ class Executor(ResolutionContext):
         nodes: List[_ast.Field],
         path: ResponsePath,
     ) -> Any:
+        runtime = self.runtime
         resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
-            field_definition, path, parent_type, nodes, self.runtime, self
+            field_definition, path, parent_type, nodes, runtime, self
         )
 
         self.instrumentation.on_field_start(
@@ -178,9 +165,9 @@ class Executor(ResolutionContext):
             return fail(err)
 
         try:
-            return self.runtime.unwrap_value(
-                self.runtime.map_value(
-                    self.runtime.unwrap_value(
+            return runtime.unwrap_value(
+                runtime.map_value(
+                    runtime.unwrap_value(
                         resolver(
                             parent_value,
                             self.context_value,
@@ -195,27 +182,21 @@ class Executor(ResolutionContext):
         except ResolverError as err:
             return fail(err)
 
-    def _iterate_fields(
-        self, parent_type: ObjectType, fields: GroupedFields
-    ) -> Iterator[Tuple[str, Field, List[_ast.Field]]]:
-        for key, nodes in fields.items():
-            field_def = self.field_definition(parent_type, nodes[0].name.value)
-            if field_def is None:
-                continue
-
-            yield key, field_def, nodes
-
     def execute_fields(
         self,
         parent_type: ObjectType,
         root: Any,
         path: ResponsePath,
-        fields: GroupedFields,
+        fields: CollectedFields,
     ) -> Any:
         keys = []
         pending = []
 
-        for key, field_def, nodes in self._iterate_fields(parent_type, fields):
+        for key, field_def, nodes in fields:
+
+            if field_def is None:
+                continue
+
             resolved = self.resolve_field(
                 parent_type, root, field_def, nodes, path + [key]
             )
@@ -235,11 +216,15 @@ class Executor(ResolutionContext):
         parent_type: ObjectType,
         root: Any,
         path: ResponsePath,
-        fields: GroupedFields,
+        fields: CollectedFields,
     ) -> Any:
         resolved_fields = OrderedDict()  # type: Dict[str, Any]
 
-        args = list(self._iterate_fields(parent_type, fields))
+        args = [
+            (key, field_def, nodes)
+            for key, field_def, nodes in fields
+            if field_def is not None
+        ]
 
         def _next():
             try:
@@ -330,27 +315,33 @@ class Executor(ResolutionContext):
                 ) from err
 
         if isinstance(field_type, GraphQLCompositeType):
-            if isinstance(field_type, GraphQLAbstractType):
-                runtime_type = self.resolve_type(
+            if isinstance(field_type, ObjectType):
+                runtime_type = field_type
+            elif isinstance(field_type, GraphQLAbstractType):
+                maybe_runtime_type = self.resolve_type(
                     resolved_value, info, field_type
                 )
 
-                if not isinstance(runtime_type, ObjectType):
+                if not isinstance(maybe_runtime_type, ObjectType):
                     raise RuntimeError(
                         'Abstract type "%s" must resolve to an ObjectType at '
                         'runtime for field "%s". Received "%s"'
-                        % (field_type, stringify_path(path), runtime_type)
+                        % (field_type, stringify_path(path), maybe_runtime_type)
                     )
 
                 # Backup check in case of badly implemented `resolve_type`
-                if not self.schema.is_possible_type(field_type, runtime_type):
+                if not self.schema.is_possible_type(
+                    field_type, maybe_runtime_type
+                ):
                     raise RuntimeError(
                         'Runtime ObjectType "%s" is not a possible type for '
                         'field "%s" of type "%s".'
-                        % (runtime_type, stringify_path(path), field_type)
+                        % (maybe_runtime_type, stringify_path(path), field_type)
                     )
+
+                runtime_type = maybe_runtime_type
             else:
-                runtime_type = cast(ObjectType, field_type)
+                raise TypeError(type(field_type))
 
             return self.execute_fields(
                 runtime_type,

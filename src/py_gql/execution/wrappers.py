@@ -34,7 +34,7 @@ _UNSET = object()
 
 Resolver = Callable[..., Any]
 ResponsePath = List[Union[str, int]]
-GroupedFields = Dict[str, List[ast.Field]]
+CollectedFields = List[Tuple[str, Optional[Field], List[ast.Field]]]
 
 
 class ResolutionContext:
@@ -48,11 +48,10 @@ class ResolutionContext:
         "variables",
         "fragments",
         "context_value",
-        "_grouped_fields",
+        "_collected_fields",
         "_fragment_type_applies",
         "_field_defs",
         "_argument_values",
-        "_resolver_cache",
         "_middlewares",
         "_disable_introspection",
         "_errors",
@@ -85,9 +84,9 @@ class ResolutionContext:
         self._errors = []  # type: List[GraphQLResponseError]
 
         # Caches
-        self._grouped_fields = (
+        self._collected_fields = (
             {}
-        )  # type: Dict[Tuple[str, Tuple[ast.Selection, ...]], GroupedFields]
+        )  # type: Dict[Tuple[str, Tuple[ast.Selection, ...]], CollectedFields]
         self._fragment_type_applies = (
             {}
         )  # type: Dict[Tuple[str, ast.Type], bool]
@@ -95,7 +94,6 @@ class ResolutionContext:
         self._argument_values = (
             {}
         )  # type: Dict[Tuple[Field, ast.Field], Dict[str, Any]]
-        self._resolver_cache = {}  # type: Dict[Resolver, Resolver]
 
     def add_error(
         self,
@@ -130,39 +128,49 @@ class ResolutionContext:
         parent_type: ObjectType,
         selections: Sequence[ast.Selection],
         visited_fragments: Optional[Set[str]] = None,
-    ) -> GroupedFields:
+    ) -> CollectedFields:
         cache_key = parent_type.name, tuple(selections)
         try:
-            return self._grouped_fields[cache_key]
+            return self._collected_fields[cache_key]
         except KeyError:
-            self._grouped_fields[cache_key] = grouped_fields = collect_fields(
-                self.schema,
-                parent_type,
-                selections,
-                self.fragments,
-                self.variables,
-            )
+            self._collected_fields[cache_key] = result = [
+                (
+                    key,
+                    self.field_definition(parent_type, nodes[0].name.value),
+                    nodes,
+                )
+                for key, nodes in collect_fields(
+                    self.schema,
+                    parent_type,
+                    selections,
+                    self.fragments,
+                    self.variables,
+                ).items()
+            ]
 
-            self._grouped_fields[cache_key] = grouped_fields
-            return grouped_fields
+            return result
 
     def field_definition(
         self, parent_type: ObjectType, name: str
     ) -> Optional[Field]:
+
         key = parent_type.name, name
         cache = self._field_defs
 
         try:
             return cache[key]
         except KeyError:
+
+            field_def = None  # type: Optional[Field]
+
             if name in ("__schema", "__type", "__typename"):
-                is_query_type = self.schema.query_type is parent_type
                 if self._disable_introspection:
                     return None
-                elif name == "__schema" and is_query_type:
-                    field_def = (
-                        SCHEMA_INTROSPECTION_FIELD
-                    )  # type: Optional[Field]
+
+                is_query_type = self.schema.query_type is parent_type
+
+                if name == "__schema" and is_query_type:
+                    field_def = SCHEMA_INTROSPECTION_FIELD
                 elif name == "__type" and is_query_type:
                     field_def = TYPE_INTROSPECTION_FIELD
                 elif name == "__typename":

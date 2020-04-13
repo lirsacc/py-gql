@@ -54,5 +54,4 @@ def default_resolver(
 
     if __callable(field_value):
         return field_value(context, info, **args)
-    else:
-        return field_value
+    return field_value
