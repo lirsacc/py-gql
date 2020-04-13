@@ -368,6 +368,9 @@ class ASTVisitor:
         definition.fields = map_and_filter(
             self._visit_field_definition, definition.fields
         )
+        definition.interfaces = map_and_filter(
+            self._visit_type, definition.interfaces
+        )
         return definition
 
     @_visit_method
