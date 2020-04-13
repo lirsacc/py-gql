@@ -28,6 +28,8 @@ from .changes import (
     DirectiveArgumentChangedType,
     DirectiveArgumentDefaultValueChange,
     DirectiveArgumentRemoved,
+    DirectiveIsNotRepeatableAnymore,
+    DirectiveIsNowRepeatable,
     DirectiveLocationAdded,
     DirectiveLocationRemoved,
     DirectiveRemoved,
@@ -74,6 +76,8 @@ __all__ = (
     "DirectiveArgumentChangedType",
     "DirectiveArgumentDefaultValueChange",
     "DirectiveArgumentRemoved",
+    "DirectiveIsNotRepeatableAnymore",
+    "DirectiveIsNowRepeatable",
     "DirectiveLocationAdded",
     "DirectiveLocationRemoved",
     "DirectiveRemoved",
@@ -253,6 +257,12 @@ def _diff_directives(old: Schema, new: Schema) -> Iterator[SchemaChange]:
 
             for d in _diff_directive_arguments(old_directive, new_directive):
                 yield d
+
+            if new_directive.repeatable and (not old_directive.repeatable):
+                yield DirectiveIsNowRepeatable(old_directive)
+
+            if old_directive.repeatable and (not new_directive.repeatable):
+                yield DirectiveIsNotRepeatableAnymore(old_directive)
 
     for name, new_directive in new.directives.items():
         if new_directive in SPECIFIED_DIRECTIVES:

@@ -289,6 +289,34 @@ class DirectiveArgumentChangedType(SchemaChange):
         self.new_argument = new_argument
 
 
+class DirectiveIsNowRepeatable(SchemaChange):
+    severity = SchemaChangeSeverity.COMPATIBLE
+    format_str = "Directive @{self.directive.name} is now repeatable."
+
+    def __init__(self, directive: Directive):
+        self.directive = directive
+
+
+class DirectiveIsNotRepeatableAnymore(SchemaChange):
+    format_str = "Directive @{self.directive.name} is not repeatable anymore."
+
+    @property
+    def severity(self):
+        is_schema_only = all(
+            l in Directive.SCHEMA_LOCATONS for l in self.directive.locations
+        )
+        return (
+            # If this only affects schema authors and not schema consumers this
+            # should be fine in most cases.
+            SchemaChangeSeverity.DANGEROUS
+            if is_schema_only
+            else SchemaChangeSeverity.BREAKING
+        )
+
+    def __init__(self, directive: Directive):
+        self.directive = directive
+
+
 class FieldArgumentRemoved(SchemaChange):
     severity = SchemaChangeSeverity.BREAKING
     format_str = (

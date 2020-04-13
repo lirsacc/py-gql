@@ -2,12 +2,15 @@
 
 import pytest
 
+from py_gql.schema import Directive
 from py_gql.schema.differ import (
     DirectiveAdded,
     DirectiveArgumentAdded,
     DirectiveArgumentChangedType,
     DirectiveArgumentDefaultValueChange,
     DirectiveArgumentRemoved,
+    DirectiveIsNotRepeatableAnymore,
+    DirectiveIsNowRepeatable,
     DirectiveLocationAdded,
     DirectiveLocationRemoved,
     DirectiveRemoved,
@@ -874,6 +877,38 @@ GROUPED_TEST_CASES = [
             ),
         ],
     ),
+    (
+        "repeatable_directives",
+        build_schema(
+            """
+            directive @foo on SCHEMA
+            directive @bar repeatable on SCHEMA | FIELD
+            directive @baz repeatable on SCHEMA
+
+            type Query { noop: String }
+            """
+        ),
+        build_schema(
+            """
+            directive @foo repeatable on SCHEMA
+            directive @bar on SCHEMA | FIELD
+            directive @baz on SCHEMA
+
+            type Query { noop: String }
+            """
+        ),
+        [
+            (DirectiveIsNowRepeatable, "Directive @foo is now repeatable."),
+            (
+                DirectiveIsNotRepeatableAnymore,
+                "Directive @bar is not repeatable anymore.",
+            ),
+            (
+                DirectiveIsNotRepeatableAnymore,
+                "Directive @baz is not repeatable anymore.",
+            ),
+        ],
+    ),
 ]
 
 
@@ -964,3 +999,19 @@ def test_minimum_severity():
 
     assert len(changes) == 1
     assert_change_found(changes, (TypeRemoved, "Type Type1 was removed."))
+
+
+def test_repeatable_directive_severity():
+    assert (
+        DirectiveIsNotRepeatableAnymore(
+            Directive("foo", repeatable=True, locations=["SCHEMA"])
+        ).severity
+        is SchemaChangeSeverity.DANGEROUS
+    )
+
+    assert (
+        DirectiveIsNotRepeatableAnymore(
+            Directive("foo", repeatable=True, locations=["SCHEMA", "FIELD"])
+        ).severity
+        is SchemaChangeSeverity.BREAKING
+    )
