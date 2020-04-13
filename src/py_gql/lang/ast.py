@@ -705,11 +705,20 @@ class InputValueDefinition(SupportDirectives, SupportDescription, Node):
 
 
 class InterfaceTypeDefinition(TypeDefinition):
-    __slots__ = ("source", "loc", "description", "name", "directives", "fields")
+    __slots__ = (
+        "source",
+        "loc",
+        "description",
+        "name",
+        "interfaces",
+        "directives",
+        "fields",
+    )
 
     def __init__(
         self,
         name: Name,
+        interfaces: Optional[List[NamedType]] = None,
         directives: Optional[List[Directive]] = None,
         fields: Optional[List[FieldDefinition]] = None,
         source: Optional[str] = None,
@@ -717,6 +726,7 @@ class InterfaceTypeDefinition(TypeDefinition):
         description: Optional[StringValue] = None,
     ):
         self.name = name
+        self.interfaces = interfaces or []  # type: List[NamedType]
         self.directives = directives or []  # type: List[Directive]
         self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
@@ -865,17 +875,19 @@ class ObjectTypeExtension(TypeExtension):
 
 
 class InterfaceTypeExtension(TypeExtension):
-    __slots__ = ("source", "loc", "name", "directives", "fields")
+    __slots__ = ("source", "loc", "name", "interfaces", "directives", "fields")
 
     def __init__(
         self,
         name: Name,
+        interfaces: Optional[List[NamedType]] = None,
         directives: Optional[List[Directive]] = None,
         fields: Optional[List[FieldDefinition]] = None,
         source: Optional[str] = None,
         loc: Optional[Tuple[int, int]] = None,
     ):
         self.name = name
+        self.interfaces = interfaces or []  # type: List[NamedType]
         self.directives = directives or []  # type: List[Directive]
         self.fields = fields or []  # type: List[FieldDefinition]
         self.source = source
