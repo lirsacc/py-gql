@@ -1,17 +1,14 @@
-# Copyright (c) 2015-present, Facebook, Inc.
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-
-query queryName($foo: ComplexType, $site: Site = MOBILE) {
+# Adapted from
+# https://github.com/graphql/graphql-js/blob/a8f73dbfe0f76ff4eec4829a1426019a6df25eb2/src/__fixtures__/kitchen-sink.graphql
+query queryName($foo: ComplexType, $site: Site = MOBILE) @onQuery {
   whoever123is: node(id: [123, 456]) {
-    id ,
-    ... on User @defer {
+    id
+    ... on User @onInlineFragment {
       field2 {
-        id ,
-        alias: field1(first:10, after:$foo,) @include(if: $foo) {
-          id,
-          ...frag
+        id
+        alias: field1(first: 10, after: $foo) @include(if: $foo) {
+          id
+          ...frag @onFragmentSpread
         }
       }
     }
@@ -24,15 +21,16 @@ query queryName($foo: ComplexType, $site: Site = MOBILE) {
   }
 }
 
-mutation likeStory {
-  like(story: 123) @defer {
+mutation likeStory @onMutation {
+  like(story: 123) @onField {
     story {
-      id
+      id @onField
     }
   }
 }
 
-subscription StoryLikeSubscription($input: StoryLikeSubscribeInput) {
+subscription StoryLikeSubscription($input: StoryLikeSubscribeInput)
+  @onSubscription {
   storyLikeSubscribe(input: $input) {
     story {
       likers {
@@ -45,13 +43,24 @@ subscription StoryLikeSubscription($input: StoryLikeSubscribeInput) {
   }
 }
 
-fragment frag on Friend {
-  foo(size: $size, bar: $b, obj: {key: "value", block: """
+fragment frag on Friend @onFragmentDefinition {
+  foo(
+    size: $size
+    bar: $b
+    obj: {
+      key: "value"
+      block: """
       block string uses \"""
-  """})
+      """
+    }
+  )
 }
 
 {
-  unnamed(truthy: true, falsey: false, nullish: null),
+  unnamed(truthy: true, falsy: false, nullish: null)
   query
+}
+
+query {
+  __typename
 }

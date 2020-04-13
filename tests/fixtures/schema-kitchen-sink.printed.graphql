@@ -21,7 +21,7 @@ type Foo implements Bar & Baz {
 }
 
 type AnnotatedObject @onObject(arg: "value") {
-  annotatedField(arg: Type = "default" @onArg): Type @onField
+  annotatedField(arg: Type = "default" @onArgumentDefinition): Type @onField
 }
 
 type UndefinedType
@@ -38,7 +38,7 @@ interface Bar {
 }
 
 interface AnnotatedInterface @onInterface {
-  annotatedField(arg: Type @onArg): Type @onField
+  annotatedField(arg: Type @onArgumentDefinition): Type @onField
 }
 
 interface UndefinedInterface
@@ -48,6 +48,12 @@ extend interface Bar {
 }
 
 extend interface Bar @onInterface
+
+interface Baz {
+  one: Type
+  two(argument: InputType!): Type
+  four(argument: String = "string"): String
+}
 
 union Feed = Story | Article | Advert
 
@@ -70,6 +76,7 @@ extend scalar CustomScalar @onScalar
 enum Site {
   DESKTOP
   MOBILE
+  WEB
 }
 
 enum AnnotatedEnum @onEnum {
@@ -91,18 +98,21 @@ input InputType {
 }
 
 input AnnotatedInput @onInputObject {
-  annotatedField: Type @onField
+  annotatedField: Type @onInputFieldDefinition
 }
 
 input UndefinedInput
 
 extend input InputType {
-  other: Float = 1.23e4
+  other: Float = 1.23e4 @onInputFieldDefinition
 }
 
 extend input InputType @onInputObject
 
-directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+This is a description of the `@skip` directive
+"""
+directive @skip(if: Boolean! @onArgumentDefinition) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
