@@ -320,8 +320,10 @@ def test_input_values():
     class LimitedLengthScalarType(ScalarType):
         @classmethod
         def wrap(cls, type_: ScalarType, *args: Any, **kwargs: Any) -> Any:
-            if isinstance(type_, (NonNullType, ListType)):
-                return type(type_)(cls.wrap(type_.type, *args, **kwargs))
+            if isinstance(type_, NonNullType):
+                return NonNullType(cls.wrap(type_.type, *args, **kwargs))
+            elif isinstance(type_, ListType):
+                return ListType(cls.wrap(type_.type, *args, **kwargs))
             return cls(type_, *args, **kwargs)
 
         def __init__(self, type, min, max):
