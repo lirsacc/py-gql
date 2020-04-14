@@ -154,6 +154,7 @@ class ASTSchemaConverter:
             name=ast.Name(value=interface_type.name),
             directives=self.directive_nodes(interface_type),
             fields=[self.field(f) for f in interface_type.fields],
+            interfaces=[_named_type(i) for i in interface_type.interfaces],
             description=_desc_node(interface_type.description),
         )
 
