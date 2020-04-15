@@ -18,7 +18,8 @@ from typing import (
 
 
 LINE_SEPARATOR = re.compile(r"\r\n|[\n\r]")
-EXTRACT_UNDERSCORES_RE = re.compile(r"^(_*).*(?<!_)(_*)$")
+CONSTANT_NAME_RE = re.compile(r"^[A-Z_]+$")
+EXTRACT_UNDERSCORES_RE = re.compile(r"^(_*)(.*(?<!_))(_*)$")
 
 ResponsePath = Sequence[Union[int, str]]
 
@@ -411,6 +412,8 @@ def snakecase_to_camelcase(value: str) -> str:
     """
     Convert a string from camelCase to snake_case.
 
+    This ignore constants names (e.g. '_CONST' or 'SOME_CONST').
+
     >>> snakecase_to_camelcase('')
     ''
 
@@ -429,16 +432,21 @@ def snakecase_to_camelcase(value: str) -> str:
     >>> snakecase_to_camelcase('__foo__')
     '__foo__'
 
+    >>> snakecase_to_camelcase('EUR')
+    'EUR'
+
+    >>> snakecase_to_camelcase('_CONST')
+    '_CONST'
+
     """
-    if not value:
+    if (not value) or CONSTANT_NAME_RE.match(value):
         return value
 
     # Regex matches everything.
     captured = cast(Match[str], EXTRACT_UNDERSCORES_RE.match(value))
-    value = value.strip("_")
-    leading, trailing = captured.groups()
+    leading, stripped, trailing = captured.groups()
 
-    head, *tail = value.split("_")
+    head, *tail = stripped.split("_")
     return "%s%s%s%s%s" % (
         leading,
         head[0].lower(),
@@ -451,6 +459,8 @@ def snakecase_to_camelcase(value: str) -> str:
 def camelcase_to_snakecase(value: str) -> str:
     """
     Convert a string from snake_case to camelCase.
+
+    This ignore constants names (e.g. '_CONST' or 'SOME_CONST').
 
     >>> camelcase_to_snakecase('')
     ''
@@ -471,7 +481,16 @@ def camelcase_to_snakecase(value: str) -> str:
     >>> camelcase_to_snakecase('__fooBarBaz_')
     '__foo_bar_baz_'
 
+    >>> camelcase_to_snakecase('EUR')
+    'EUR'
+
+    >>> camelcase_to_snakecase('_CONST')
+    '_CONST'
+
     """
+    if (not value) or CONSTANT_NAME_RE.match(value):
+        return value
+
     value = re.sub(r"[\-\.\s]", "_", value)
 
     if not value:
