@@ -15,7 +15,7 @@ Unreleased
 
 ### Added
 
-- Add `CamelCaseSchemaTransform.to_camelcase` method.
+- Add `py_gql.schema.transform.CaseSchemaTransform` class.
 - Add `py_gql.exts.scalars.JSONString` scalar type.
 - Add `py_gql.exts.scalars.DateTime`, `py_gql.exts.scalars.Date` and `py_gql.exts.scalars.Time` scalar type based on [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).
 - Add `py_gql.exts.scalars.Base64String` scalar type.
