@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # Tests were adapted from the one in the GraphQLJS reference implementation,
-# as our version exits early not all of the expected errors are aplicable but
+# as our version exits early not all of the expected errors are applicable but
 # they conserved as comments for reference.
-# Tests related to suggestion list are kept for reference but skipped as this
-# feature is not implemented.
+
 
 from py_gql.validation.rules import FragmentsOnCompositeTypesChecker
 
@@ -135,4 +134,18 @@ def test_scalar_is_invalid_inline_fragment_type(schema):
         }
         """,
         ['Fragment cannot condition on non composite type "String".'],
+    )
+
+
+def test_interface_is_valid_inling_fragment_type(schema):
+    run_test(
+        FragmentsOnCompositeTypesChecker,
+        schema,
+        """
+        fragment validFragment on Mammal {
+            ... on Canine {
+               name
+            }
+        }
+        """,
     )

@@ -33,11 +33,20 @@ def schema():
     )
 
     Pet = InterfaceType(
-        "Pet", [Field("name", String, [Argument("surname", Boolean)])]
+        "Pet",
+        [Field("name", String, [Argument("surname", Boolean)])],
+        interfaces=[Being],
+    )
+
+    Mammal = InterfaceType(
+        "Mammal",
+        [Field("mother", lambda: Mammal), Field("father", lambda: Mammal)],
     )
 
     Canine = InterfaceType(
-        "Canine", [Field("name", String, [Argument("surname", Boolean)])]
+        "Canine",
+        [Field("name", String, [Argument("surname", Boolean)])],
+        interfaces=[Being, Mammal],
     )
 
     DogCommand = EnumType(
@@ -64,6 +73,8 @@ def schema():
             Field("nickname", String),
             Field("barkVolume", Int),
             Field("barks", Boolean),
+            Field("father", lambda: Dog),
+            Field("mother", lambda: Dog),
             Field(
                 "doesKnowCommand", Boolean, [Argument("dogCommand", DogCommand)]
             ),
@@ -78,7 +89,7 @@ def schema():
                 [Argument("x", Int), Argument("y", Int)],
             ),
         ],
-        [Being, Pet, Canine],
+        interfaces=[Being, Pet, Canine, Mammal],
     )
 
     Cat = ObjectType(

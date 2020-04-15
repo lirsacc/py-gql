@@ -413,7 +413,14 @@ class SchemaValidator:
                     if path:
                         msg = (
                             'Interface "%s" cannot implement itself (via: %s)'
-                            % (type_.name, quoted_options_list(path, ","))
+                            % (
+                                type_.name,
+                                quoted_options_list(
+                                    path,
+                                    separator=" > ",
+                                    final_separator=">",
+                                ),
+                            )
                         )
                     else:
                         msg = (

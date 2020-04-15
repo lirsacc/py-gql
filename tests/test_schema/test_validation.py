@@ -849,7 +849,9 @@ class TestInterfaceImplementsInterface:
         iface = InterfaceType("IFace", [Field("f", String)])
         schema = _single_type_schema(
             InterfaceType(
-                "IFace2", [Field("f", NonNullType(String))], interfaces=[iface],
+                "IFace2",
+                [Field("f", NonNullType(String))],
+                interfaces=[iface],
             )
         )
         schema.validate()
@@ -898,7 +900,9 @@ def test_complete_interface_chain_from_object():
 def test_incomplete_interface_chain_from_object():
     schema = _single_type_schema(
         ObjectType(
-            "SomeObject", [Field("f", String)], interfaces=[SomeOtherInterface],
+            "SomeObject",
+            [Field("f", String)],
+            interfaces=[SomeOtherInterface],
         )
     )
     with pytest.raises(SchemaError) as exc_info:
