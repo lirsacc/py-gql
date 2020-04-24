@@ -2,7 +2,7 @@
 import requests
 
 
-URL = "https://swapi.co/api"
+URL = "https://swapi.dev/api"
 
 
 def fetch(url, query=None, cache={}):

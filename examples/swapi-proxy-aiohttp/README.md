@@ -7,7 +7,7 @@ This example demonstrates:
 - Tracer and extension usage
 - Simple [aiohttp](https://aiohttp.readthedocs.io/) integration with GraphiQL
 
-Data is fetched live from <https://swapi.co>.
+Data is fetched live from <https://swapi.dev>.
 
 **NOTE:** This code could be optimized as it currently doesn't deduplicate in flight requests and doesn't chain requests which leads to longer wait time than necessary.
 

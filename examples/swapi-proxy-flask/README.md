@@ -8,7 +8,7 @@ This example demonstrates:
 - Simple [flask](http://flask.pocoo.org) integration with GraphiQL
 - Using schema transforms
 
-Data is fetched live from <https://swapi.co>.
+Data is fetched live from <https://swapi.dev>.
 
 **NOTE:** This code could be optimized as it currently doesn't deduplicate in flight requests and doesn't chain requests as `Future`s which leads to longer wait time than necessary.
 

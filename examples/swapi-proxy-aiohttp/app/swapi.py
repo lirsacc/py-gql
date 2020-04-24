@@ -2,7 +2,7 @@
 import aiohttp
 
 
-URL = "https://swapi.co/api"
+URL = "https://swapi.dev/api"
 
 
 async def fetch(url, query=None, cache={}):
