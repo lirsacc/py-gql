@@ -53,8 +53,6 @@ Documentation
     usage/index
     api/index
     CHANGES
-    theme/specimen
-    theme/specimen-markdown
 
 
 Indices and tables
