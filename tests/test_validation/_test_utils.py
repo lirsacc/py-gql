@@ -3,7 +3,7 @@
 from py_gql._string_utils import dedent
 from py_gql.lang import parse
 from py_gql.validation import validate_ast
-from py_gql.validation.validate import SPECIFIED_RULES, default_validator
+from py_gql.validation.validate import SPECIFIED_RULES, validate_with_rules
 
 
 def _ensure_list(value):
@@ -24,8 +24,8 @@ def assert_validation_result(
         schema,
         parse(dedent(source), allow_type_system=True),
         validators=[
-            lambda s, d, v: default_validator(
-                s, d, v, validators=(checkers or SPECIFIED_RULES)
+            lambda s, d, v: validate_with_rules(
+                s, d, v, rules=(checkers or SPECIFIED_RULES)
             )
         ],
     )

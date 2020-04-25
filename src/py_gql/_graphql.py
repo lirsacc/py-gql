@@ -14,7 +14,7 @@ from .execution.runtime import AsyncIORuntime, BlockingRuntime, Runtime
 from .lang import parse
 from .lang.ast import Document
 from .schema import Schema
-from .validation import Validator, validate_ast
+from .validation import Validator, default_validator, validate_ast
 
 
 def process_graphql_query(
@@ -25,7 +25,7 @@ def process_graphql_query(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Validator]] = None,
+    additional_validators: Sequence[Validator] = (),
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
@@ -53,9 +53,9 @@ def process_graphql_query(
             Limits on the type(s) used here will depend on your own resolver
             and the runtime implementations used. Most thread safe data-structures
             should work with built in runtimes.
-        validators: Custom validators.
-            Setting this will replace the defaults so if you just want to add
-            some rules, append to :obj:`py_gql.validation.SPECIFIED_RULES`.
+        additional_validators: List of additional validators to use.
+            Additional validators will be added to the `default validation rules
+            <http://facebook.github.io/graphql/June2018/#sec-Validation>`_.
         middlewares: List of middleware functions.
             Middlewares are used to wrap the resolution of **all** fields with
             common logic, they are good candidates for logging, authentication,
@@ -114,7 +114,9 @@ def process_graphql_query(
         ast = document
 
     instrumentation.on_validation_start()
-    validation_result = validate_ast(schema, ast, validators=validators)
+    validation_result = validate_ast(
+        schema, ast, validators=(default_validator, *additional_validators)
+    )
     instrumentation.on_validation_end()
 
     if not validation_result:
@@ -151,7 +153,7 @@ async def graphql(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Validator]] = None,
+    additional_validators: Sequence[Validator] = (),
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
@@ -173,7 +175,7 @@ async def graphql(
             variables=variables,
             operation_name=operation_name,
             root=root,
-            validators=validators,
+            additional_validators=additional_validators,
             context=context,
             instrumentation=instrumentation,
             middlewares=middlewares,
@@ -190,7 +192,7 @@ def graphql_blocking(
     operation_name: Optional[str] = None,
     root: Any = None,
     context: Any = None,
-    validators: Optional[Sequence[Validator]] = None,
+    additional_validators: Sequence[Validator] = (),
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     instrumentation: Optional[Instrumentation] = None
 ) -> GraphQLResult:
@@ -209,7 +211,7 @@ def graphql_blocking(
             variables=variables,
             operation_name=operation_name,
             root=root,
-            validators=validators,
+            additional_validators=additional_validators,
             context=context,
             instrumentation=instrumentation,
             middlewares=middlewares,

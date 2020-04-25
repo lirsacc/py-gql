@@ -14,12 +14,14 @@ from .validate import (
     Validator,
     default_validator,
     validate_ast,
+    validate_with_rules,
 )
 from .visitors import ValidationVisitor
 
 
 __all__ = (
     "validate_ast",
+    "validate_with_rules",
     "default_validator",
     "ValidationResult",
     "ValidationVisitor",
