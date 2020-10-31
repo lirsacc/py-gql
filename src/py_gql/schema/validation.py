@@ -18,6 +18,7 @@ from .types import (
     EnumValue,
     InputObjectType,
     InterfaceType,
+    NamedType,
     NonNullType,
     ObjectType,
     UnionType,
@@ -40,7 +41,8 @@ POSITIONAL_PARAM_KINDS = (
 
 
 def validate_schema(
-    schema: "Schema", enable_resolver_validation: bool = True,
+    schema: "Schema",
+    enable_resolver_validation: bool = True,
 ) -> bool:
     """
     Validate a GraphQL schema.
@@ -68,7 +70,8 @@ def validate_schema(
 
     """
     validator = SchemaValidator(
-        schema, enable_resolver_validation=enable_resolver_validation,
+        schema,
+        enable_resolver_validation=enable_resolver_validation,
     )
 
     validator()
@@ -111,14 +114,22 @@ def _is_valid_name(name: str) -> bool:
 
 
 # TODO: Most non-lazy attributes could be checked earlier.
-# TODO: Can this be made into a SchemaVisitor?
+
+# This is not a `SchemaVisitor` on purpose. There is some overlap in the code
+# that "walks" the schema, however this is more specialised, requires more
+# knowledge of the parent context that `SchemaVisitor` usually affords and does
+# more short-circuiting. This can be revisited later, but I've given it a shot
+# and I think this is more maintainable. One thing I have not tried is to change
+# this drastically to be more declarative, and split out the walking and
+# validating parts of the code, at which point relying on `SchemaVisitor` may
+# make more sense.
 class SchemaValidator:
     def __init__(
         self, schema: "Schema", enable_resolver_validation: bool = True
     ):
         self.schema = schema
-        self.errors = []  # type: List[SchemaError]
         self.enable_resolver_validation = enable_resolver_validation
+        self.errors = []  # type: List[SchemaError]
 
     def __bool__(self) -> bool:
         return not self.errors
@@ -134,11 +145,10 @@ class SchemaValidator:
         self.validate_root_types()
 
         for type_ in self.schema.types.values():
-            if not (
-                is_introspection_type(type_)
-                or type_ in SPECIFIED_SCALAR_TYPES
-                or _is_valid_name(type_.name)
-            ):
+            if is_introspection_type(type_) or type_ in SPECIFIED_SCALAR_TYPES:
+                continue
+
+            if not _is_valid_name(type_.name):
                 self.add_error('Invalid type name "%s"' % type_.name)
                 continue
 
@@ -153,34 +163,32 @@ class SchemaValidator:
                 self.validate_enum_values(type_)
             elif isinstance(type_, InputObjectType):
                 self.validate_input_fields(type_)
+            elif not isinstance(type_, NamedType):
+                self.add_error("%s is not a valid schema type" % type_)
 
         self.validate_directives()
 
     def validate_root_types(self) -> None:
-        if self.schema.query_type is None:
+        query = self.schema.query_type
+        mutation = self.schema.mutation_type
+        subscription = self.schema.subscription_type
+
+        if query is None:
             self.add_error("Must provide Query type")
 
-        if self.schema.query_type is not None and not isinstance(
-            self.schema.query_type, ObjectType
-        ):
+        if query is not None and not isinstance(query, ObjectType):
+            self.add_error('Query must be ObjectType but got "%s"' % query)
+
+        if mutation is not None and not isinstance(mutation, ObjectType):
             self.add_error(
-                'Query must be ObjectType but got "%s"' % self.schema.query_type
+                'Mutation must be ObjectType but got "%s"' % mutation
             )
 
-        if self.schema.mutation_type is not None and not isinstance(
-            self.schema.mutation_type, ObjectType
+        if subscription is not None and not isinstance(
+            subscription, ObjectType
         ):
             self.add_error(
-                'Mutation must be ObjectType but got "%s"'
-                % self.schema.mutation_type
-            )
-
-        if self.schema.subscription_type is not None and not isinstance(
-            self.schema.subscription_type, ObjectType
-        ):
-            self.add_error(
-                'Subscription must be ObjectType but got "%s"'
-                % self.schema.subscription_type
+                'Subscription must be ObjectType but got "%s"' % subscription
             )
 
     def validate_directives(self) -> None:
@@ -190,32 +198,33 @@ class SchemaValidator:
                 continue
 
             self.check_valid_name(directive.name)
+            self.validate_arguments(directive.arguments, "@%s" % directive)
 
-            # TODO: Ensure proper locations.
-            argnames = set()  # type: Set[str]
-            for arg in directive.arguments:
+    def validate_arguments(
+        self, arguments: Sequence[Argument], loc_str: str
+    ) -> None:
+        argnames = set()  # type: Set[str]
 
-                self.check_valid_name(arg.name)
+        for arg in arguments:
+            self.check_valid_name(arg.name)
 
-                if arg.name in argnames:
-                    self.add_error(
-                        'Duplicate argument "%s" on directive "@%s"'
-                        % (arg.name, directive.name)
-                    )
-                    continue
+            if arg.name in argnames:
+                self.add_error(
+                    'Duplicate argument "%s" on "%s"' % (arg.name, loc_str)
+                )
+                continue
 
-                if not is_input_type(arg.type):
-                    self.add_error(
-                        'Expected input type for argument "%s" on directive "@%s" but '
-                        'got "%s"' % (arg.name, directive.name, arg.type)
-                    )
+            if not is_input_type(arg.type):
+                self.add_error(
+                    'Expected input type for argument "%s" on "%s" but got "%s"'
+                    % (arg.name, loc_str, arg.type)
+                )
 
-                argnames.add(arg.name)
+            argnames.add(arg.name)
 
     def validate_fields(
         self, composite_type: Union[ObjectType, InterfaceType]
     ) -> None:
-        # TODO: Ensure resolvers arguments match field arguments.
         if not composite_type.fields:
             self.add_error(
                 'Type "%s" must define at least one field' % composite_type
@@ -223,8 +232,8 @@ class SchemaValidator:
 
         fieldnames = set()  # type: Set[str]
         for field in composite_type.fields:
-
             self.check_valid_name(field.name)
+            path = "%s.%s" % (composite_type, field.name)
 
             if field.name in fieldnames:
                 self.add_error(
@@ -239,26 +248,8 @@ class SchemaValidator:
                     % (field.name, composite_type, field.type)
                 )
 
-            argnames = set()  # type: Set[str]
-            path = "%s.%s" % (composite_type, field.name)
-
-            for arg in field.arguments:
-
-                self.check_valid_name(arg.name)
-
-                if arg.name in argnames:
-                    self.add_error(
-                        'Duplicate argument "%s" on "%s"' % (arg.name, path)
-                    )
-                    continue
-
-                if not is_input_type(arg.type):
-                    self.add_error(
-                        'Expected input type for argument "%s" on "%s" but got "%s"'
-                        % (arg.name, path, arg.type)
-                    )
-
-                argnames.add(arg.name)
+            fieldnames.add(field.name)
+            self.validate_arguments(field.arguments, path)
 
             # Check that the resolver won't break when being called by the
             # execution layer.
@@ -266,26 +257,29 @@ class SchemaValidator:
             # Default resolvers must be compatible with any field they could be
             # used for, which usually this means defining a variable keyword
             # parameter.
-
-            resolver = (
-                field.resolver
-                or (
-                    composite_type.default_resolver
-                    if isinstance(composite_type, ObjectType)
-                    else None
-                )
-                or self.schema.default_resolver
-            )
-
-            if resolver and self.enable_resolver_validation:
-                self._validate_resolver_arguments(
-                    path, field.arguments, resolver,
+            if self.enable_resolver_validation:
+                resolver = (
+                    field.resolver
+                    or (
+                        composite_type.default_resolver
+                        if isinstance(composite_type, ObjectType)
+                        else None
+                    )
+                    or self.schema.default_resolver
                 )
 
-            fieldnames.add(field.name)
+                if resolver:
+                    self._validate_resolver_arguments(
+                        path,
+                        field.arguments,
+                        resolver,
+                    )
 
     def _validate_resolver_arguments(
-        self, path: str, args: Sequence[Argument], resolver: Callable[..., Any],
+        self,
+        path: str,
+        args: Sequence[Argument],
+        resolver: Callable[..., Any],
     ) -> None:
         try:
             sig = signature(resolver)
@@ -316,14 +310,21 @@ class SchemaValidator:
                 if not accepts_arbitrary_kw_params:
                     self.add_error(
                         'Missing resolver parameter for argument "%s" on "%s"'
-                        % (arg.name, path,)
+                        % (
+                            arg.name,
+                            path,
+                        )
                     )
             else:
                 if param.kind is Parameter.POSITIONAL_ONLY:
                     # In practice this is a 3.8+ only concern.
                     self.add_error(
                         'Resolver parameter for argument "%s" on "%s" '
-                        "must not be positional only" % (arg.name, path,)
+                        "must not be positional only"
+                        % (
+                            arg.name,
+                            path,
+                        )
                     )
                 elif (
                     param.default is Parameter.empty
@@ -335,7 +336,11 @@ class SchemaValidator:
                     # both always be provided to the resolver.
                     self.add_error(
                         'Resolver parameter for optional argument "%s" on '
-                        '"%s" must have a default' % (arg.name, path,)
+                        '"%s" must have a default'
+                        % (
+                            arg.name,
+                            path,
+                        )
                     )
 
         remaining = [
