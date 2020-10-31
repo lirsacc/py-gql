@@ -45,9 +45,6 @@ class Person:
         self.friends = friends
 
 
-# RuntimeError will interupt resolution and coroutines will remain unawaited
-# which is fine as we want this to crash.
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_type_resolution_on_interface_yields_useful_error(
     assert_execution,
 ):
@@ -114,9 +111,6 @@ async def test_type_resolution_on_interface_yields_useful_error(
     )
 
 
-# RuntimeError will interupt resolution and coroutines will remain unawaited
-# which is fine as we want this to crash.
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_type_resolution_on_union_yields_useful_error(assert_execution):
     # WARN: Different from ref implementation -> this should never happen so we crash .
 
@@ -176,7 +170,6 @@ async def test_type_resolution_on_union_yields_useful_error(assert_execution):
     )
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_type_resolution_supports_strings(assert_execution):
     def _resolve_pet_type(value, *_):
         return type(value).__name__
@@ -329,7 +322,6 @@ _LIZ = Person("Liz", None, None)
 _JOHN = Person("John", [_GARFIELD, _ODIE], [_LIZ, _ODIE])
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 async def test_it_can_introspect_on_union_and_intersection_types(
     assert_execution,
 ):
