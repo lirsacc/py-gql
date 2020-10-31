@@ -113,7 +113,8 @@ def test_replace_query_type(schema: Schema) -> None:
 
 def test_replace_mutation_type(schema: Schema) -> None:
     NewMutation = ObjectType(
-        "Mutation", fields=[Field("update_some_number", Int)],
+        "Mutation",
+        fields=[Field("update_some_number", Int)],
     )
     schema._replace_types_and_directives({"Mutation": NewMutation})
     assert schema.mutation_type is NewMutation

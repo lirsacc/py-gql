@@ -29,7 +29,9 @@ async def test_instrumentation_does_not_raise(
     assert_execution, starwars_schema
 ):
     await process_request(
-        starwars_schema, QUERY, instrumentation=Instrumentation(),
+        starwars_schema,
+        QUERY,
+        instrumentation=Instrumentation(),
     )
 
 
@@ -78,7 +80,9 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
     )
 
     await process_request(
-        starwars_schema, QUERY, instrumentation=instrumentation,
+        starwars_schema,
+        QUERY,
+        instrumentation=instrumentation,
     )
 
     # Non blocking executor could lead to different ordering across fields so

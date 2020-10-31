@@ -80,7 +80,8 @@ async def test_raises_if_no_operation_is_provided(assert_execution):
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
         await assert_execution(
-            schema, "fragment Example on Query { test }",
+            schema,
+            "fragment Example on Query { test }",
         )
     assert str(exc_info.value) == "Expected at least one operation definition"
 
@@ -92,7 +93,8 @@ async def test_raises_if_no_operation_name_is_provided_along_multiple_operations
     with pytest.raises(ExecutionError) as exc_info:
         # This is an *invalid* query, but it should be an *executable* query.
         await assert_execution(
-            schema, "query Example { test } query OtherExample { test }",
+            schema,
+            "query Example { test } query OtherExample { test }",
         )
     assert str(exc_info.value) == (
         "Operation name is required when document contains multiple "
@@ -140,7 +142,9 @@ async def test_uses_mutation_schema_for_mutation_operation(
     )
 
     await assert_execution(
-        schema, parse("mutation M { test }"), expected_data={"test": "foo"},
+        schema,
+        parse("mutation M { test }"),
+        expected_data={"test": "foo"},
     )
     assert not query.call_count
     assert mutation.call_count == 1

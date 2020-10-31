@@ -199,23 +199,23 @@ def highlight_location(body: str, position: int, delta: int = 2) -> str:
     def ws(len_):
         return "".join((" " for _ in range(len_)))
 
-    def lineno(l):
-        m = l + 1
+    def lineno(line):
+        m = line + 1
         return " ".join(str(x) for x in range(pad_len - len(str(m)))) + str(m)
 
     output = ["(%d:%d):" % (line, col)]
     output.extend(
         [
-            ws(2) + lineno(l) + ":" + lines[l]
-            for l in range(min_line, line_index)
+            ws(2) + lineno(x) + ":" + lines[x]
+            for x in range(min_line, line_index)
         ]
     )
     output.append(ws(2) + lineno(line_index) + ":" + lines[line_index])
     output.append(ws(2) + ws(len(str(max_line + 1)) + col) + "^")
     output.extend(
         [
-            ws(2) + lineno(l) + ":" + lines[l]
-            for l in range(line_index + 1, max_line + 1)
+            ws(2) + lineno(x) + ":" + lines[x]
+            for x in range(line_index + 1, max_line + 1)
         ]
     )
     return "\n".join(output) + "\n"

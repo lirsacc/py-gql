@@ -472,14 +472,20 @@ def test_it_parses_variable_definition_with_directives():
                 _ast.OperationDefinition(
                     "query",
                     _ast.SelectionSet(
-                        selections=[_ast.Field(name=_ast.Name(value="foo"),)],
+                        selections=[
+                            _ast.Field(
+                                name=_ast.Name(value="foo"),
+                            )
+                        ],
                     ),
                     variable_definitions=[
                         _ast.VariableDefinition(
                             variable=_ast.Variable(
                                 name=_ast.Name(value="foo"),
                             ),
-                            type=_ast.NamedType(name=_ast.Name(value="Int"),),
+                            type=_ast.NamedType(
+                                name=_ast.Name(value="Int"),
+                            ),
                             directives=[
                                 _ast.Directive(name=_ast.Name(value="bar")),
                                 _ast.Directive(name=_ast.Name(value="baz")),
@@ -500,14 +506,20 @@ def test_it_parses_variable_definition_with_default_and_directives():
                 _ast.OperationDefinition(
                     "query",
                     _ast.SelectionSet(
-                        selections=[_ast.Field(name=_ast.Name(value="foo"),)],
+                        selections=[
+                            _ast.Field(
+                                name=_ast.Name(value="foo"),
+                            )
+                        ],
                     ),
                     variable_definitions=[
                         _ast.VariableDefinition(
                             variable=_ast.Variable(
                                 name=_ast.Name(value="foo"),
                             ),
-                            type=_ast.NamedType(name=_ast.Name(value="Int"),),
+                            type=_ast.NamedType(
+                                name=_ast.Name(value="Int"),
+                            ),
                             default_value=_ast.IntValue(value="42"),
                             directives=[
                                 _ast.Directive(name=_ast.Name(value="bar")),

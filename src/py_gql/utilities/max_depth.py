@@ -77,7 +77,10 @@ class MaxDepthValidationRule:
                 for f in op.selection_set.selections
                 if isinstance(f, Field)
                 for p in selected_fields(
-                    f, fragments=fragments, variables=variables, maxdepth=None,
+                    f,
+                    fragments=fragments,
+                    variables=variables,
+                    maxdepth=None,
                 )
             )
 

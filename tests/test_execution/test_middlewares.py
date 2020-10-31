@@ -76,24 +76,27 @@ async def test_async_path_collector(starwars_schema):
     await graphql(starwars_schema, HERO_QUERY, middlewares=[path_collector])
 
     # Async can lead to non-deterministic ordering
-    assert set(
-        [
-            "> hero",
-            "< hero",
-            "> hero.id",
-            "< hero.id",
-            "> hero.name",
-            "< hero.name",
-            "> hero.friends",
-            "< hero.friends",
-            "> hero.friends[0].name",
-            "< hero.friends[0].name",
-            "> hero.friends[1].name",
-            "< hero.friends[1].name",
-            "> hero.friends[2].name",
-            "< hero.friends[2].name",
-        ]
-    ) == set(path_collector.log)
+    assert (
+        set(
+            [
+                "> hero",
+                "< hero",
+                "> hero.id",
+                "< hero.id",
+                "> hero.name",
+                "< hero.name",
+                "> hero.friends",
+                "< hero.friends",
+                "> hero.friends[0].name",
+                "< hero.friends[0].name",
+                "> hero.friends[1].name",
+                "< hero.friends[1].name",
+                "> hero.friends[2].name",
+                "< hero.friends[2].name",
+            ]
+        )
+        == set(path_collector.log)
+    )
 
 
 def test_bail_out_in_middleware(starwars_schema):

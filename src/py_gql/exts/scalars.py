@@ -46,7 +46,9 @@ class StringType(ScalarType):
         )
 
     def parse_literal(
-        self, node: ScalarValueNode, variables: Optional[Any] = None,
+        self,
+        node: ScalarValueNode,
+        variables: Optional[Any] = None,
     ) -> Any:
         if not isinstance(node, ast.StringValue):
             raise ScalarParsingError(
@@ -98,7 +100,10 @@ class RegexType(StringType):
             return string_value
 
         super().__init__(
-            name, serialize=_coerce, parse=_coerce, description=description,
+            name,
+            serialize=_coerce,
+            parse=_coerce,
+            description=description,
         )
 
 

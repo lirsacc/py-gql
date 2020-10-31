@@ -519,9 +519,14 @@ def test_description_respects_whitespace():
 
 
 def test_introspection_schema(fixture_file):
-    assert print_schema(
-        Schema(), indent=4, include_introspection=True,
-    ) == fixture_file("introspection-schema.graphql")
+    assert (
+        print_schema(
+            Schema(),
+            indent=4,
+            include_introspection=True,
+        )
+        == fixture_file("introspection-schema.graphql")
+    )
 
 
 def test_custom_directive_from_sdl_are_included_if_set():
@@ -595,7 +600,11 @@ def test_custom_directives_whitelist():
     """
 
     schema = build_schema(
-        sdl, schema_directives=(CustomDirective1, CustomDirective2,),
+        sdl,
+        schema_directives=(
+            CustomDirective1,
+            CustomDirective2,
+        ),
     )
     assert print_schema(
         schema, include_custom_schema_directives=["custom1"]
@@ -631,11 +640,16 @@ def test_repeatable_directive():
     """
 
     schema = build_schema(
-        sdl, schema_directives=(CustomDirective1, CustomDirective2,),
+        sdl,
+        schema_directives=(
+            CustomDirective1,
+            CustomDirective2,
+        ),
     )
 
     assert print_schema(
-        schema, include_custom_schema_directives=True,
+        schema,
+        include_custom_schema_directives=True,
     ) == dedent(
         """
         directive @custom1(arg: Int!) on SCHEMA

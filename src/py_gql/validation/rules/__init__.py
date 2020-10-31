@@ -865,7 +865,8 @@ class ProvidedRequiredArgumentsChecker(ValidationVisitor):
 
 class VariablesInAllowedPositionChecker(VariablesCollector):
     """
-    Variables passed to field arguments conform to type """
+    Variables passed to field arguments conform to type.
+    """
 
     def iter_op_variables(self, op):
         for usage in self._op_variables[op].items():

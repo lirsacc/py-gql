@@ -324,10 +324,9 @@ def test_useful_unknown_character_error(value, err_cls, pos):
 
 
 def test_multiple_tokens():
-    assert (
-        list(
-            Lexer(
-                """
+    assert list(
+        Lexer(
+            """
     query {
         Node (search: "foo") {
             id
@@ -335,26 +334,24 @@ def test_multiple_tokens():
         }
     }
     """
-            )
         )
-        == [
-            token.SOF(0, 0),
-            token.Name(5, 10, "query"),
-            token.CurlyOpen(11, 12),
-            token.Name(21, 25, "Node"),
-            token.ParenOpen(26, 27),
-            token.Name(27, 33, "search"),
-            token.Colon(33, 34),
-            token.String(35, 40, "foo"),
-            token.ParenClose(40, 41),
-            token.CurlyOpen(42, 43),
-            token.Name(56, 58, "id"),
-            token.Name(71, 75, "name"),
-            token.CurlyClose(84, 85),
-            token.CurlyClose(90, 91),
-            token.EOF(96, 96),
-        ]
-    )
+    ) == [
+        token.SOF(0, 0),
+        token.Name(5, 10, "query"),
+        token.CurlyOpen(11, 12),
+        token.Name(21, 25, "Node"),
+        token.ParenOpen(26, 27),
+        token.Name(27, 33, "search"),
+        token.Colon(33, 34),
+        token.String(35, 40, "foo"),
+        token.ParenClose(40, 41),
+        token.CurlyOpen(42, 43),
+        token.Name(56, 58, "id"),
+        token.Name(71, 75, "name"),
+        token.CurlyClose(84, 85),
+        token.CurlyClose(90, 91),
+        token.EOF(96, 96),
+    ]
 
 
 def test_kitchen_sink(fixture_file):

@@ -79,7 +79,8 @@ class Runtime(abc.ABC):
     @abc.abstractmethod
     def wrap_callable(self, func: AnyFn) -> AnyFn:
         """
-        Wrap a function to be called through the executor. """
+        Wrap a function to be called through the executor.
+        """
         raise NotImplementedError()
 
 

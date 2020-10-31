@@ -297,7 +297,9 @@ class ResolveInfo:
                 raise UnknownDirective(name) from None
 
             args = self._directive_arguments[name] = all_directive_arguments(
-                directive_def, self.nodes[0], self._context.variables,
+                directive_def,
+                self.nodes[0],
+                self._context.variables,
             )
             return args
 

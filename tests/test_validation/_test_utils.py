@@ -39,7 +39,7 @@ def assert_validation_result(
 
     assert msgs == expected_msgs
     if expected_locs:
-        assert locs == [_ensure_list(l) for l in expected_locs]
+        assert locs == [_ensure_list(x) for x in expected_locs]
 
 
 def assert_checker_validation_result(

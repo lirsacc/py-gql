@@ -240,7 +240,9 @@ async def test_use_of_fragment_to_avoid_duplicate_content(
 )
 async def test_introspection(starwars_schema, assert_execution, query, result):
     await assert_execution(
-        starwars_schema, parse(query), expected_data=result,
+        starwars_schema,
+        parse(query),
+        expected_data=result,
     )
 
 

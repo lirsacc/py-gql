@@ -155,9 +155,7 @@ def gather_futures(source: Iterable[MaybeFuture[T]]) -> "MaybeFuture[List[T]]":
         if done == target_count:
             outer.set_result(
                 [
-                    v.result()  # type: ignore
-                    if _is_future_fast(v)
-                    else v
+                    v.result() if _is_future_fast(v) else v  # type: ignore
                     for v in result
                 ],
             )

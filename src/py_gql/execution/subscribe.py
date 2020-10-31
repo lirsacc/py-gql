@@ -152,7 +152,12 @@ def create_source_event_stream(
         )
 
     info = ResolveInfo(
-        field_def, [key], root_type, nodes, executor.runtime, executor,
+        field_def,
+        [key],
+        root_type,
+        nodes,
+        executor.runtime,
+        executor,
     )
 
     coerced_args = executor.argument_values(field_def, node)

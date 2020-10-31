@@ -303,7 +303,7 @@ class DirectiveIsNotRepeatableAnymore(SchemaChange):
     @property
     def severity(self):
         is_schema_only = all(
-            l in Directive.SCHEMA_LOCATONS for l in self.directive.locations
+            x in Directive.SCHEMA_LOCATONS for x in self.directive.locations
         )
         return (
             # If this only affects schema authors and not schema consumers this

@@ -248,7 +248,8 @@ __Type__ = ObjectType(
             ListType(NonNullType(__Type__)),
             resolver=lambda type_, _, info, **__: (
                 sorted(
-                    info.schema.get_possible_types(type_), key=lambda t: t.name,
+                    info.schema.get_possible_types(type_),
+                    key=lambda t: t.name,
                 )
                 if isinstance(type_, GraphQLAbstractType)
                 else None
@@ -298,7 +299,7 @@ __EnumValue__ = ObjectType(
     fields=lambda: [
         Field("name", NonNullType(String)),
         Field("description", String),
-        Field("isDeprecated", NonNullType(Boolean), python_name="deprecated",),
+        Field("isDeprecated", NonNullType(Boolean), python_name="deprecated"),
         Field("deprecationReason", String, python_name="deprecation_reason"),
     ],
 )  # type: ObjectType

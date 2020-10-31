@@ -120,13 +120,15 @@ class ASTSchemaConverter:
         if schema.mutation_type:
             operation_types.append(
                 ast.OperationTypeDefinition(
-                    "mutation", _named_type(schema.mutation_type),
+                    "mutation",
+                    _named_type(schema.mutation_type),
                 )
             )
         if schema.subscription_type:
             operation_types.append(
                 ast.OperationTypeDefinition(
-                    "subscription", _named_type(schema.subscription_type),
+                    "subscription",
+                    _named_type(schema.subscription_type),
                 )
             )
 

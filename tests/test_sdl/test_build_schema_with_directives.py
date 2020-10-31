@@ -307,7 +307,10 @@ def test_multiple_directives_applied_in_order():
                     bar: Int @plus_one @power
                 }
                 """,
-                schema_directives=(PowerDirective, PlusOneDirective,),
+                schema_directives=(
+                    PowerDirective,
+                    PlusOneDirective,
+                ),
             ),
             "{ foo, bar }",
             root={"foo": 2, "bar": 2},
@@ -426,17 +429,23 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
         ]
     }
 
-    assert graphql_blocking(
-        schema,
-        '{ foo (foo: "abcd") }',
-        root=Root(lambda *_, **args: args["foo"]),
-    ).response() == {"data": {"foo": "abcd"}}
+    assert (
+        graphql_blocking(
+            schema,
+            '{ foo (foo: "abcd") }',
+            root=Root(lambda *_, **args: args["foo"]),
+        ).response()
+        == {"data": {"foo": "abcd"}}
+    )
 
-    assert graphql_blocking(
-        schema,
-        '{ foo (bar: {baz: "abcd"}) }',
-        root=Root(lambda *_, **args: args["bar"]["baz"]),
-    ).response() == {"data": {"foo": "abcd"}}
+    assert (
+        graphql_blocking(
+            schema,
+            '{ foo (bar: {baz: "abcd"}) }',
+            root=Root(lambda *_, **args: args["bar"]["baz"]),
+        ).response()
+        == {"data": {"foo": "abcd"}}
+    )
 
     assert graphql_blocking(
         schema,

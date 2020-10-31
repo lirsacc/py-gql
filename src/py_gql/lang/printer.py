@@ -20,7 +20,9 @@ class ASTPrinter:
     __slots__ = ("indent", "include_descriptions")
 
     def __init__(
-        self, indent: Union[str, int] = 4, include_descriptions: bool = True,
+        self,
+        indent: Union[str, int] = 4,
+        include_descriptions: bool = True,
     ):
         self.include_descriptions = include_descriptions
         if isinstance(indent, int):
@@ -514,7 +516,9 @@ class ASTPrinter:
             return _wrap("(\n", _indent(_join(args, "\n"), self.indent), "\n)")
 
     def _with_desc(
-        self, formatted: str, desc: Optional[_ast.StringValue],
+        self,
+        formatted: str,
+        desc: Optional[_ast.StringValue],
     ) -> str:
         if desc is None or not self.include_descriptions:
             return formatted

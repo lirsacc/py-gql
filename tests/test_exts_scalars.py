@@ -97,9 +97,7 @@ class TestJSONString:
     def test_parse_ok(self, value, expected):
         assert expected == JSONString.parse(value)
 
-    @pytest.mark.parametrize(
-        "value", [("",), ('"foo',), ("False",)],
-    )
+    @pytest.mark.parametrize("value", [("",), ('"foo',), ("False",)])
     def test_parse_err(self, value):
         with pytest.raises(ScalarParsingError):
             JSONString.parse(value)

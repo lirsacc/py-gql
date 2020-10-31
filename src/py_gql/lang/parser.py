@@ -552,7 +552,7 @@ class Parser:
             value=token.value, loc=self._loc(token), source=self._source
         )
 
-    def parse_executable_definition(self,) -> _ast.ExecutableDefinition:
+    def parse_executable_definition(self) -> _ast.ExecutableDefinition:
         """
         ExecutableDefinition : OperationDefinition | FragmentDefinition
         """
@@ -566,7 +566,7 @@ class Parser:
             return self.parse_operation_definition()
         raise _unexpected_token(start, start.start, self._lexer._source)
 
-    def parse_operation_definition(self,) -> _ast.OperationDefinition:
+    def parse_operation_definition(self) -> _ast.OperationDefinition:
         """
         OperationDefinition :
             SelectionSet
@@ -602,7 +602,7 @@ class Parser:
             return token.value
         raise _unexpected_token(token, token.start, self._lexer._source)
 
-    def parse_variable_definitions(self,) -> List[_ast.VariableDefinition]:
+    def parse_variable_definitions(self) -> List[_ast.VariableDefinition]:
         """
         VariableDefinitions : ( VariableDefinition+ )
         """
@@ -612,7 +612,7 @@ class Parser:
             )
         return []
 
-    def parse_variable_definition(self,) -> _ast.VariableDefinition:
+    def parse_variable_definition(self) -> _ast.VariableDefinition:
         """
         VariableDefinition : Variable : Type DefaultValue? Directives[Const]?
         """
@@ -714,9 +714,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_fragment(
-        self,
-    ) -> Union[_ast.InlineFragment, _ast.FragmentSpread]:
+    def parse_fragment(self) -> Union[_ast.InlineFragment, _ast.FragmentSpread]:
         """
         FragmeSpread | InlineFragment
 
@@ -747,7 +745,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_fragment_definition(self,) -> _ast.FragmentDefinition:
+    def parse_fragment_definition(self) -> _ast.FragmentDefinition:
         """
         FragmentDefinition :
             fragment FragmentName on TypeCondition Directives? SelectionSet
@@ -946,7 +944,7 @@ class Parser:
             name=self.parse_name(), loc=self._loc(start), source=self._source
         )
 
-    def parse_type_system_definition(self,) -> _ast.TypeSystemDefinition:
+    def parse_type_system_definition(self) -> _ast.TypeSystemDefinition:
         """
         TypeSystemDefinition :
             SchemaDefinition
@@ -1018,7 +1016,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_operation_type_definition(self,) -> _ast.OperationTypeDefinition:
+    def parse_operation_type_definition(self) -> _ast.OperationTypeDefinition:
         """
         OperationTypeDefinition : OperationType : NamedType
         """
@@ -1032,7 +1030,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_scalar_type_definition(self,) -> _ast.ScalarTypeDefinition:
+    def parse_scalar_type_definition(self) -> _ast.ScalarTypeDefinition:
         """
         ScalarTypeDefinition : Description? scalar Name Directives[Const]?
         """
@@ -1047,7 +1045,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_object_type_definition(self,) -> _ast.ObjectTypeDefinition:
+    def parse_object_type_definition(self) -> _ast.ObjectTypeDefinition:
         """
         ObjectTypeDefinition :
             Description? type Name ImplementsInterfaces? Directives[Const]?
@@ -1066,7 +1064,7 @@ class Parser:
             source=self._source,
         )
 
-    def parse_implements_interfaces(self,) -> List[_ast.NamedType]:
+    def parse_implements_interfaces(self) -> List[_ast.NamedType]:
         """
         ImplementsInterfaces :
             implements `&`? NamedType

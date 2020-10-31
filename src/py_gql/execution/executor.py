@@ -100,7 +100,10 @@ class Executor(ResolutionContext):
             return wrapped
 
     def resolve_type(
-        self, value: Any, info: ResolveInfo, abstract_type: GraphQLAbstractType,
+        self,
+        value: Any,
+        info: ResolveInfo,
+        abstract_type: GraphQLAbstractType,
     ) -> Optional[ObjectType]:
 
         maybe_type = None  # type: Optional[Union[ObjectType, str]]

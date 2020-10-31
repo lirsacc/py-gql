@@ -1061,7 +1061,7 @@ class Directive:
         if not locations:
             raise ValueError("Expected at least one location")
 
-        if any(l not in DIRECTIVE_LOCATIONS for l in locations):
+        if any(x not in DIRECTIVE_LOCATIONS for x in locations):
             raise ValueError(
                 "Locations must be one of %s but received %r"
                 % (DIRECTIVE_LOCATIONS, locations)

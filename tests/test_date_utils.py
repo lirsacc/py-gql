@@ -190,7 +190,7 @@ def test_parse_time(value, expected):
         ("X06:40:34.00", "Invalid ISO 8601 time 'X06:40:34.00'."),
         ("06:40:34.00foo", "Invalid ISO 8601 time '06:40:34.00foo'."),
         ("foo", "Invalid ISO 8601 time 'foo'."),
-        ("06:40:72.00", "Cannot parse time from 06:40:72.00",),
+        ("06:40:72.00", "Cannot parse time from 06:40:72.00"),
     ],
 )
 def test_parse_time_invalid(value, expected_msg):

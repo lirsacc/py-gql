@@ -735,42 +735,36 @@ def test_directive_with_incorrect_locations_fails():
 
 
 def test_directive_definition():
-    assert (
-        parse(
-            """
+    assert parse(
+        """
             directive @foo on FIELD | FRAGMENT_SPREAD
             """,
-            allow_type_system=True,
-            no_location=True,
-        ).definitions[0]
-        == _ast.DirectiveDefinition(
-            _ast.Name(value="foo"),
-            locations=[
-                _ast.Name(value="FIELD"),
-                _ast.Name(value="FRAGMENT_SPREAD"),
-            ],
-            repeatable=False,
-        )
+        allow_type_system=True,
+        no_location=True,
+    ).definitions[0] == _ast.DirectiveDefinition(
+        _ast.Name(value="foo"),
+        locations=[
+            _ast.Name(value="FIELD"),
+            _ast.Name(value="FRAGMENT_SPREAD"),
+        ],
+        repeatable=False,
     )
 
 
 def test_repeatable_directive_definition():
-    assert (
-        parse(
-            """
+    assert parse(
+        """
             directive @foo repeatable on FIELD | FRAGMENT_SPREAD
             """,
-            allow_type_system=True,
-            no_location=True,
-        ).definitions[0]
-        == _ast.DirectiveDefinition(
-            _ast.Name(value="foo"),
-            locations=[
-                _ast.Name(value="FIELD"),
-                _ast.Name(value="FRAGMENT_SPREAD"),
-            ],
-            repeatable=True,
-        )
+        allow_type_system=True,
+        no_location=True,
+    ).definitions[0] == _ast.DirectiveDefinition(
+        _ast.Name(value="foo"),
+        locations=[
+            _ast.Name(value="FIELD"),
+            _ast.Name(value="FRAGMENT_SPREAD"),
+        ],
+        repeatable=True,
     )
 
 
