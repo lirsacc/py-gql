@@ -3,9 +3,20 @@
 Schema validation utility
 """
 
+import collections
 import re
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any, Callable, List, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from .._string_utils import quoted_options_list
 from ..exc import SchemaError, SchemaValidationError
@@ -18,6 +29,7 @@ from .types import (
     EnumValue,
     InputObjectType,
     InterfaceType,
+    ListType,
     NamedType,
     NonNullType,
     ObjectType,
@@ -167,6 +179,7 @@ class SchemaValidator:
                 self.add_error("%s is not a valid schema type" % type_)
 
         self.validate_directives()
+        self.validate_cyclic_input_types()
 
     def validate_root_types(self) -> None:
         query = self.schema.query_type
@@ -507,3 +520,74 @@ class SchemaValidator:
                 )
 
             fieldnames.add(field.name)
+
+    def validate_cyclic_input_types(self) -> None:
+        """
+        Detect unbroken chains of input types.
+
+        Generally input types can refer to themselves as long as it is through a
+        nullable type or a list, non nullable cycles are not supported.
+
+        This is currently (2020-10-31) `in the process of stabilising
+        <https://github.com/graphql/graphql-spec/pull/701/>`_ and may change in
+        the future.
+        """
+        # TODO: Add link to spec / RFC in errors when stabilised.
+        input_types = [
+            t
+            for t in self.schema.types.values()
+            if isinstance(t, InputObjectType)
+        ]
+
+        direct_references = collections.defaultdict(set)
+
+        # Collect any non breakable reference to any input object type.
+        for t in input_types:
+            for f in t.fields:
+                real_type = f.type
+
+                # Non null types are breakable by default, wrapped types are not.
+                breakable = not isinstance(real_type, (ListType, NonNullType))
+                while isinstance(real_type, (ListType, NonNullType)):
+                    # List can break the chain.
+                    if isinstance(real_type, ListType):
+                        breakable = True
+                    real_type = real_type.type
+
+                if (not breakable) and isinstance(real_type, InputObjectType):
+                    direct_references[t].add(real_type)
+
+        chains = []  # type: List[Tuple[str, Dict[str, List[str]]]]
+
+        def _search(outer, acc=None, path=None):
+            acc, path = acc or set(), path or ()
+
+            for inner in direct_references[outer]:
+                if inner.name in path:
+                    break
+
+                if (inner.name, path) in acc:
+                    break
+
+                acc.add((inner.name, path))
+                _search(inner, acc, (*path, inner.name))
+
+            return acc
+
+        all_chains = [
+            (t.name, _search(t)) for t in list(direct_references.keys())
+        ]
+
+        # TODO: This will contain multiple rotated versions of any given cycle.
+        # This is fine for now, but would be nice to avoid duplicate data.
+        for typename, chains in all_chains:
+            for final, path in chains:
+                if final == typename:
+                    self.add_error(
+                        "Non breakable input chain found: %s"
+                        % quoted_options_list(
+                            [typename, *path, typename],
+                            separator=" > ",
+                            final_separator=" > ",
+                        )
+                    )

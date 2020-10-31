@@ -896,3 +896,84 @@ class TestResolverValidation:
         schema.default_resolver = default_resolver
 
         validate_schema(schema)
+
+
+class TestInputTypeCycles:
+    def _schema(self, input_types):
+        return Schema(
+            ObjectType(
+                "query",
+                [
+                    Field(
+                        "field",
+                        Int,
+                        args=[Argument(t.name, t) for t in input_types],
+                    )
+                ],
+            )
+        )
+
+    def test_no_cycle(self):
+        A = InputObjectType("A", [InputField("f", Int)])
+        B = InputObjectType("B", [InputField("f", Int)])
+        C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
+        schema = self._schema([A, B, C])
+        assert validate_schema(schema)
+
+    def test_simple_cycles(self):
+        A = InputObjectType("A", [InputField("b", lambda: NonNullType(B))])
+        B = InputObjectType("B", [InputField("c", lambda: NonNullType(C))])
+        C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
+        schema = self._schema([A, B, C])
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Non breakable input chain found: "B" > "C" > "A" > "B"',
+                'Non breakable input chain found: "A" > "B" > "C" > "A"',
+                'Non breakable input chain found: "C" > "A" > "B" > "C"',
+            ]
+        )
+
+    def test_multiple_cycles(self):
+        A = InputObjectType(
+            "A",
+            [
+                InputField("b", lambda: NonNullType(B)),
+                InputField("c", lambda: NonNullType(C)),
+            ],
+        )
+        B = InputObjectType("B", [InputField("a", lambda: NonNullType(A))])
+        C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
+        schema = self._schema([A, B, C])
+
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert set([str(e) for e in exc_info.value.errors]) == set(
+            [
+                'Non breakable input chain found: "C" > "A" > "C"',
+                'Non breakable input chain found: "A" > "C" > "A"',
+                'Non breakable input chain found: "A" > "B" > "A"',
+                'Non breakable input chain found: "B" > "A" > "B"',
+            ]
+        )
+
+    def test_simple_breakable_cycle(self):
+        A = InputObjectType("A", [InputField("b", lambda: NonNullType(B))])
+        B = InputObjectType("B", [InputField("c", lambda: C)])
+        C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
+        schema = self._schema([A, B, C])
+        assert validate_schema(schema)
+
+    def test_list_breaks_cycle(self):
+        A = InputObjectType("A", [InputField("b", lambda: NonNullType(B))])
+        B = InputObjectType(
+            "B",
+            [InputField("c", lambda: NonNullType(ListType(NonNullType(C))))],
+        )
+        C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
+        schema = self._schema([A, B, C])
+        assert validate_schema(schema)
