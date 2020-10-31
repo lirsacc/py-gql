@@ -24,6 +24,7 @@ jobs:
           - 3.6
           - 3.7
           - 3.8
+          - 3.9
           - pypy3
         os:
           - ubuntu-latest
@@ -35,6 +36,8 @@ jobs:
             python: 3.6
           - os: macos-latest
             python: 3.7
+          - os: macos-latest
+            python: 3.8
           - os: macos-latest
             python: pypy3
 
@@ -57,16 +60,16 @@ jobs:
             ${{ runner.os }}-
 
       - name: Dependencies
-        if: matrix.python != 'pypy3'
+        if: matrix.python != 'pypy3' && matrix.python != '3.5'
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade -r requirements-dev.txt
           pip install -e .
 
-      # Some dev dependencies don't build under pypy but testing deps and py-gql
-      # should work.
+      # Some dev dependencies don't build under pypy / 3.5 but testing deps and
+      # py-gql itself should work.
       - name: Dependencies (PyPy)
-        if: matrix.python == 'pypy3'
+        if: matrix.python == 'pypy3' || matrix.python == '3.5'
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt
@@ -79,7 +82,7 @@ jobs:
           pip freeze
 
       - name: Lint (Flake 8)
-        if: matrix.python != 'pypy3'
+        if: matrix.python != 'pypy3' && matrix.python != '3.5'
         run: |
           inv flake8 --junit
 
@@ -110,7 +113,7 @@ jobs:
           PY_IGNORE_IMPORTMISMATCH=1 inv test -v --no-bail
 
       - name: Build docs
-        if: matrix.python == '3.8' && matrix.os != 'macos-latest'
+        if: matrix.python == '3.9' && matrix.os != 'macos-latest'
         run: |
           inv docs
 
@@ -132,7 +135,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Cache deps
         uses: actions/cache@v1
@@ -167,6 +170,7 @@ jobs:
           - 3.6
           - 3.7
           - 3.8
+          - 3.9
 
     steps:
       - uses: actions/checkout@v2
@@ -174,7 +178,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Cache deps
         uses: actions/cache@v1
@@ -255,7 +259,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Inspect and check version
         id: version

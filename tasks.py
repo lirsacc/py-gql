@@ -218,7 +218,7 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
         raise invoke.exceptions.Exit("Must define at least one Python version.")
 
     if all_:
-        python_versions = "35,36,37,38"
+        python_versions = "35,36,37,38,39"
     else:
         python_versions = ",".join(python)
 
@@ -294,11 +294,3 @@ def update_version(ctx, version, force=False, push=False):
 
         if push:
             ctx.run("git push && git push --tags")
-
-
-ns = invoke.Collection.from_module(sys.modules[__name__])
-
-
-# Support calling a standalone CLI tool as long as invoke is installed.
-if __name__ == "__main__":
-    invoke.Program(namespace=ns).run()

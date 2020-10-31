@@ -16,3 +16,5 @@ tox-pyenv
 -r requirements-docs.txt
 
 cython < 3
+
+-e .
