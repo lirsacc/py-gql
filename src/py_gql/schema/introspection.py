@@ -10,6 +10,7 @@ from typing import Optional, Union
 from .scalars import Boolean, String
 from .types import (
     Argument,
+    Directive,
     EnumType,
     EnumValue,
     Field,
@@ -19,11 +20,16 @@ from .types import (
     InputObjectType,
     InterfaceType,
     ListType,
+    NamedType,
     NonNullType,
     ObjectType,
     ScalarType,
     UnionType,
 )
+
+
+def _get_name(x: Union[Directive, NamedType]) -> str:
+    return x.name
 
 
 __Schema__ = ObjectType(
@@ -42,7 +48,8 @@ __Schema__ = ObjectType(
             # Sort as the output should not be determined by the way the schema
             # is built and this is the most logical order.
             resolver=lambda schema, *_: sorted(
-                schema.types.values(), key=lambda t: t.name
+                schema.types.values(),
+                key=_get_name,
             ),
         ),
         Field(
@@ -74,7 +81,8 @@ __Schema__ = ObjectType(
             NonNullType(ListType(NonNullType(__Directive__))),
             description="A list of all directives supported by this server.",
             resolver=lambda schema, *_: sorted(
-                schema.directives.values(), key=lambda d: d.name
+                schema.directives.values(),
+                key=_get_name,
             ),
         ),
         Field("description", String),
@@ -249,7 +257,7 @@ __Type__ = ObjectType(
             resolver=lambda type_, _, info, **__: (
                 sorted(
                     info.schema.get_possible_types(type_),
-                    key=lambda t: t.name,
+                    key=_get_name,
                 )
                 if isinstance(type_, GraphQLAbstractType)
                 else None

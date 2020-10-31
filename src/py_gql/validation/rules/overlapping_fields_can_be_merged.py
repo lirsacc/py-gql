@@ -560,9 +560,12 @@ def _find_conflict(
                 ]
             )
             nodes = sorted(
-                [node_1, node_2]
-                + list(flatten(nodes for _, _, nodes in subconflicts)),
-                key=lambda n: n.loc,
+                [
+                    node_1,
+                    node_2,
+                    *flatten(nodes for _, _, nodes in subconflicts),
+                ],
+                key=lambda n: cast(Tuple[int, int], n.loc),
             )
             return response_name, reason, nodes
 
