@@ -354,7 +354,8 @@ class SchemaValidator:
                 % (
                     path,
                     quoted_options_list(
-                        [p.name for p in remaining_positional], "and",
+                        [p.name for p in remaining_positional],
+                        final_separator=" and ",
                     ),
                 )
             )
