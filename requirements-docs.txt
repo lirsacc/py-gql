@@ -1,6 +1,6 @@
 recommonmark
 sphinx-markdown-tables
-sphinx<3
+sphinx
 pygments-graphql
 sphinx-autodoc-typehints
 
