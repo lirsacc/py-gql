@@ -660,3 +660,35 @@ def test_mixed_definition_and_extension():
             """
         )
     )
+
+
+def test_recursive_input_type_extension():
+    assert (
+        build_schema(
+            """
+            type Query {
+                one(foo: Foo): Int
+            }
+
+            input Foo {
+                a: Int
+            }
+
+            extend input Foo {
+                foo: [Foo]
+            }
+            """,
+        ).to_string()
+        == dedent(
+            """
+            input Foo {
+                a: Int
+                foo: [Foo]
+            }
+
+            type Query {
+                one(foo: Foo): Int
+            }
+            """
+        )
+    )

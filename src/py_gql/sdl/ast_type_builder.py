@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import functools as ft
-from typing import Dict, List, Mapping, Optional, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from .._utils import lazy
 from ..exc import ExtensionError, SDLError
@@ -32,6 +43,7 @@ from ..utilities import directive_arguments, value_from_ast
 
 
 TTypeExtension = TypeVar("TTypeExtension", bound=Type[_ast.TypeExtension])
+T = TypeVar("T")
 
 
 def _default_type_map() -> Dict[str, NamedType]:
@@ -42,6 +54,20 @@ def _default_type_map() -> Dict[str, NamedType]:
 
 
 _DEFAULT_TYPES_MAP = _default_type_map()
+
+
+class _DelayedObject:
+
+    UNSET = object()
+
+    def __init__(self, fn: Callable[[], Any]):
+        self.fn = fn
+        self.value = self.UNSET
+
+    def __call__(self) -> Any:
+        if self.value is self.UNSET:
+            self.value = self.fn()
+        return self.value
 
 
 class ASTTypeBuilder:
@@ -67,6 +93,7 @@ class ASTTypeBuilder:
         "_cache",
         "_extended_cache",
         "_extensions",
+        "_delayed",
     )
 
     def __init__(
@@ -83,6 +110,22 @@ class ASTTypeBuilder:
         self._extended_cache = {}  # type: Dict[str, GraphQLType]
         self._extensions = type_extensions
         self._cache.update(additional_types)
+        self._delayed = []  # type: List[_DelayedObject]
+
+    # To support recursive types and random ordering between types, we use a lot
+    # of lazy objects throughout the builder. Some of them are guaranteed to be
+    # called during the build, but other may well only be needed later, which
+    # could lead to things exploding later. By collecting them and caching
+    # result, we can call them directly from the build context.
+    def delay(self, fn: Callable[[], T]) -> Callable[[], T]:
+        delayed_obj = _DelayedObject(fn)
+        self._delayed.append(delayed_obj)
+        return cast(Callable[[], T], delayed_obj)
+
+    def flush_delayed(self):
+        for x in self._delayed:
+            x()
+        self._delayed[:] = []
 
     def _collect_extensions(
         self, target_name: str, ext_type: TTypeExtension
@@ -246,7 +289,7 @@ class ASTTypeBuilder:
         return Field(
             field_def.name.value,
             # has to be lazy to support cyclic definition
-            ft.partial(self.build_type, field_def.type),
+            self.delay(ft.partial(self.build_type, field_def.type)),
             description=_desc(field_def),
             args=(
                 [self._build_argument(arg) for arg in field_def.arguments]
@@ -311,21 +354,40 @@ class ASTTypeBuilder:
 
     def _build_argument(self, node: _ast.InputValueDefinition) -> Argument:
         type_ = self.build_type(node.type)
-        kwargs = dict(description=_desc(node), node=node)
+        default_value = InputField.NO_DEFAULT_VALUE  # type: Any
         if node.default_value is not None:
-            kwargs["default_value"] = value_from_ast(
-                node.default_value, lazy(type_)
-            )
-        return Argument(node.name.value, type_, **kwargs)  # type: ignore
+            default_value = value_from_ast(node.default_value, lazy(type_))
+
+        return Argument(
+            node.name.value,
+            type_,
+            default_value=default_value,
+            description=_desc(node),
+            node=node,
+        )
 
     def _build_input_field(self, node: _ast.InputValueDefinition) -> InputField:
-        type_ = self.build_type(node.type)
-        kwargs = dict(description=_desc(node), node=node)
+        default_value = InputField.NO_DEFAULT_VALUE  # type: Any
         if node.default_value is not None:
-            kwargs["default_value"] = value_from_ast(
-                node.default_value, lazy(type_)
+            # We need to support recursive input types, including recursive
+            # default values. This should be possible as infinite cycles are not
+            # possible in a valid SDL document (by virtue of it being a finite
+            # string), which means any input cycle in the default value will be
+            # broken, so this should not lead to recursion errors.
+            default_value = self.delay(
+                lambda: value_from_ast(
+                    cast(_ast.Value, node.default_value),
+                    lazy(self.build_type(node.type)),
+                )
             )
-        return InputField(node.name.value, type_, **kwargs)  # type: ignore
+
+        return InputField(
+            node.name.value,
+            self.delay(ft.partial(self.build_type, node.type)),
+            default_value=default_value,
+            description=_desc(node),
+            node=node,
+        )
 
     def _extend_object_type(self, object_type: ObjectType) -> ObjectType:
         name = object_type.name
@@ -378,7 +440,7 @@ class ASTTypeBuilder:
     def _extend_field(self, field_def: Field) -> Field:
         return Field(
             field_def.name,
-            lambda: self.extend_type(field_def.type),
+            self.delay(ft.partial(self.extend_type, field_def.type)),
             description=field_def.description,
             deprecation_reason=field_def.deprecation_reason,
             args=[self._extend_argument(a) for a in field_def.arguments],
@@ -480,8 +542,8 @@ class ASTTypeBuilder:
         fields = [
             InputField(
                 f.name,
-                self.extend_type(f.type),
-                default_value=f._default_value,
+                self.delay(ft.partial(self.extend_type, f.type)),
+                default_value=self.delay(lambda x=f: x._default_value),  # type: ignore
                 description=f.description,
                 node=f.node,
             )
@@ -497,13 +559,24 @@ class ASTTypeBuilder:
                         [ext_field],
                     )
                 field_names.add(ext_field.name.value)
-                fields.append(self._build_input_field(ext_field))
+                fields.append(
+                    self._extend_input_field(self._build_input_field(ext_field))
+                )
 
         return InputObjectType(
             name,
             description=input_object_type.description,
             fields=fields,
             nodes=input_object_type.nodes + extensions,  # type: ignore
+        )
+
+    def _extend_input_field(self, field: InputField) -> InputField:
+        return InputField(
+            field.name,
+            self.delay(ft.partial(self.extend_type, field.type)),
+            default_value=self.delay(lambda x=field: x._default_value),  # type: ignore
+            description=field.description,
+            node=field.node,
         )
 
     def _extend_scalar_type(self, scalar_type: ScalarType) -> ScalarType:

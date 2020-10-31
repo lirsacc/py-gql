@@ -70,12 +70,16 @@ def build_schema(
     """
     ast = _document_ast(document)
     schema = build_schema_ignoring_extensions(
-        ast, additional_types=additional_types
+        ast,
+        additional_types=additional_types,
     )
 
     if not ignore_extensions:
-        schema = extend_schema(
-            schema, ast, additional_types=additional_types, strict=False
+        schema = _extend_schema(
+            schema,
+            ast,
+            additional_types=additional_types,
+            strict=False,
         )
 
     if schema_directives is not None:
@@ -137,6 +141,8 @@ def build_schema_ignoring_extensions(
                 )
             operations[op] = cast(ObjectType, builder.build_type(op_def.type))
 
+    builder.flush_delayed()
+
     return Schema(
         query_type=operations.get("query"),
         mutation_type=operations.get("mutation"),
@@ -152,7 +158,7 @@ def build_schema_ignoring_extensions(
     )
 
 
-def extend_schema(
+def _extend_schema(
     schema: Schema,
     document: Union[_ast.Document, str],
     *,
@@ -160,48 +166,6 @@ def extend_schema(
     strict: bool = True,
     schema_directives: Optional[Sequence[TSchemaDirective]] = None
 ) -> Schema:
-    """
-    Extend an existing Schema according to a GraphQL document
-
-    This adds new types and directives as well as extends known types.
-
-    Warning:
-        Specified types (scalars, introspection) cannot be replace or extended.
-
-    Args:
-        schema: Executable schema
-        document: SDL document
-        additional_types: User supplied list of types
-            Use this to specify some custom implementation for scalar, enums,
-            etc.
-            - In case of object types, interfaces, etc. the supplied type will
-            override the extracted type without checking for compatibility.
-            - Extension will be applied to these types. As a result, the
-            resulting types may not be the same objects that were provided,
-            so users should not rely on type identity.
-        strict: Enable strict mode.
-            In strict mode, unknown extension targets, overriding type and
-            overriding the schema definition will raise an
-            :class:`ExtensionError`. Disable strict mode will silently ignore
-            such errors.
-        schema_directives: Schema directive classes.
-            Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
-            and must either  define a non-null ``definition`` attribute or the
-            corresponding definition must be present in the document. See
-            :func:`~py_gql.schema.apply_schema_directives` for more details.
-
-            Note:
-                Specified directives such as ``@deperecated`` do not need to be
-                specified this way and are always processed internally to ensure
-                compliance with the specification.
-
-    Returns:
-        Schema: Executable schema
-
-    Raises:
-        ExtensionError: If applying an extension fails.
-
-    """
     ast = _document_ast(document)
 
     schema_exts, type_defs, directive_defs, type_exts = _collect_extensions(
@@ -265,7 +229,9 @@ def extend_schema(
                 builder.build_type(op_def.type)
             )
 
-    schema = Schema(
+    builder.flush_delayed()
+
+    return Schema(
         query_type=operation_types["query"],
         mutation_type=operation_types["mutation"],
         subscription_type=operation_types["subscription"],
@@ -274,11 +240,73 @@ def extend_schema(
         nodes=(schema.nodes or []) + (schema_exts or []),  # type: ignore
     )
 
-    if schema_directives is not None:
-        schema = apply_schema_directives(schema, schema_directives)
 
-    schema.validate()
-    return schema
+def extend_schema(
+    schema: Schema,
+    document: Union[_ast.Document, str],
+    *,
+    additional_types: Optional[List[NamedType]] = None,
+    strict: bool = True,
+    schema_directives: Optional[Sequence[TSchemaDirective]] = None
+) -> Schema:
+    """
+    Extend an existing Schema according to a GraphQL document
+
+    This adds new types and directives as well as extends known types.
+
+    Warning:
+        Specified types (scalars, introspection) cannot be replace or extended.
+
+    Args:
+        schema: Executable schema
+        document: SDL document
+        additional_types: User supplied list of types
+            Use this to specify some custom implementation for scalar, enums,
+            etc.
+            - In case of object types, interfaces, etc. the supplied type will
+            override the extracted type without checking for compatibility.
+            - Extension will be applied to these types. As a result, the
+            resulting types may not be the same objects that were provided,
+            so users should not rely on type identity.
+        strict: Enable strict mode.
+            In strict mode, unknown extension targets, overriding type and
+            overriding the schema definition will raise an
+            :class:`ExtensionError`. Disable strict mode will silently ignore
+            such errors.
+        schema_directives: Schema directive classes.
+            Members must be subclasses of :class:`py_gql.schema.SchemaDirective`
+            and must either  define a non-null ``definition`` attribute or the
+            corresponding definition must be present in the document. See
+            :func:`~py_gql.schema.apply_schema_directives` for more details.
+
+            Note:
+                Specified directives such as ``@deperecated`` do not need to be
+                specified this way and are always processed internally to ensure
+                compliance with the specification.
+
+    Returns:
+        Schema: Executable schema
+
+    Raises:
+        ExtensionError: If applying an extension fails.
+
+    """
+    new_schema = _extend_schema(
+        schema=schema,
+        document=document,
+        additional_types=additional_types,
+        strict=strict,
+        schema_directives=schema_directives,
+    )
+
+    if new_schema is schema:
+        return schema
+
+    if schema_directives is not None:
+        new_schema = apply_schema_directives(new_schema, schema_directives)
+
+    new_schema.validate()
+    return new_schema
 
 
 def _collect_definitions(

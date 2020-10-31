@@ -101,24 +101,36 @@ class GraphQLCompositeType(NamedType):
         return {f.name: f for f in self.fields}
 
 
+# TODO: The default value handling is really weird. Should be reviewed.
 class InputValue:
+    NO_DEFAULT_VALUE = _UNSET
+
     def __init__(
         self,
         name: str,
         type_: Lazy[GraphQLType],
-        default_value: Any = _UNSET,
+        default_value: Lazy[Any] = _UNSET,
         description: Optional[str] = None,
         node: Optional[_ast.InputValueDefinition] = None,
         python_name: Optional[str] = None,
     ):
         self.name = name
         self.description = description
-        self.has_default_value = default_value is not _UNSET
         self.node = node
-        self._default_value = default_value
+        self._ldefault_value = default_value
         self._ltype = type_
         self._type = None  # type: Optional[GraphQLType]
         self.python_name = python_name or name
+
+    @property
+    def has_default_value(self) -> bool:
+        return self._default_value is not _UNSET
+
+    @property
+    def _default_value(self) -> Any:
+        if not hasattr(self, "_cdefault_value"):
+            self._cdefault_value = lazy(self._ldefault_value)
+        return self._cdefault_value
 
     @property
     def default_value(self) -> Any:
@@ -128,13 +140,11 @@ class InputValue:
 
     @default_value.setter
     def default_value(self, value: Any) -> None:
-        self._default_value = value
-        self.has_default_value = True
+        self._cdefault_value = value
 
     @default_value.deleter
     def default_value(self) -> None:
-        self._default_value = _UNSET
-        self.has_default_value = False
+        self._cdefault_value = _UNSET
 
     @property
     def type(self) -> GraphQLType:

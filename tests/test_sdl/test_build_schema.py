@@ -881,3 +881,66 @@ def test_build_schema_ignores_extensions_if_specified():
 
 def test_build_github_schema(fixture_file):
     build_schema(fixture_file("github-schema.graphql")).validate()
+
+
+def test_recursive_input_type():
+    schema = """
+    input Foo {
+        a: Int
+        foo: [Foo]
+    }
+
+    type Query {
+        one(foo: Foo!): Int
+    }
+    """
+    assert build_schema(schema).to_string() == dedent(schema)
+
+
+def test_recursive_input_type_with_default_value():
+    schema = """
+    input Foo {
+        a: Int
+        foo: [Foo] = [{a: 1, foo: [{a: 2, foo: []}]}]
+    }
+
+    type Query {
+        one(foo: Foo!): Int
+    }
+    """
+    assert build_schema(schema).to_string() == dedent(schema)
+
+
+def test_recursive_input_type_with_bad_default_value():
+    with pytest.raises(ValueError):
+        build_schema(
+            """
+            type Query {
+                one(foo: Foo!): Int
+            }
+
+            input Foo {
+                a: Int
+                foo: [Foo] = [{a: 1, foo: [{a: "FOO", foo: []}]}]
+            }
+            """,
+            ignore_extensions=True,
+        )
+
+
+def test_indirect_recursive_input_type():
+    schema = """
+    input Bar {
+        foo: Foo
+    }
+
+    input Foo {
+        a: Int
+        foo: [Bar]
+    }
+
+    type Query {
+        one(foo: Foo!): Int
+    }
+    """
+    assert build_schema(schema).to_string() == dedent(schema)
