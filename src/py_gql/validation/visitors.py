@@ -86,11 +86,10 @@ class ValidationVisitor(DispatchingVisitor):
             :func:`~py_gql.validation.validate`.
 
     Attributes:
-        schema (py_gql.schema.Schema): Schema to validate against
-            (for known types, directives, etc.).
-        type_info (TypeInfoVisitor): Type information collector provided by
-            :func:`~py_gql.validation.validate`.
-        errors (List[ValidationError]): Collected errors.
+        schema: Schema to validate against (for known types, directives, etc.).
+        type_info: Type information collector provided by
+            :func:`~py_gql.validation.validate_with_rules`.
+        errors: Collected errors.
     """
 
     def __init__(self, schema: Schema, type_info: "TypeInfoVisitor"):
@@ -106,9 +105,8 @@ class ValidationVisitor(DispatchingVisitor):
         Register an error
 
         Args:
-            message (str): Error description
-            nodes (Optional[List[py_gql.lang.ast.Node]]): Nodes where the error
-                originated from.
+            message: Error description
+            nodes: Nodes where the error originated from.
         """
         self.errors.append(ValidationError(message, nodes))
 
@@ -217,7 +215,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         provided donwstream to be accurate.
 
     Args:
-        schema (py_gql.schema.Schema): Reference schema to extract types from
+        schema: Reference schema to extract types from
 
     Attributes:
         type: Current type if applicable.

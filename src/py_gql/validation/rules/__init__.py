@@ -2,7 +2,7 @@
 """
 Validation rules defined in `the specification`_.
 
-.. _the specification: http://facebook.github.io/graphql/June2018/#sec-Validation
+.. _the specification: http://spec.graphql.org/June2018/#sec-Validation
 """
 
 from collections import defaultdict
