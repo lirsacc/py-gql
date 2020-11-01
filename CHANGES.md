@@ -14,6 +14,7 @@ Unreleased
 ### Fixed
 
 - Added type resolver support on `ResolverMap`.
+- `build_schema()` now handles recursive input types correctly.
 
 ### Added
 
@@ -30,6 +31,7 @@ Unreleased
   - `ResolveInfo.get_directive_arguments` has not been modified to not break exising code. It returns the first set of arguments for repeated directives.
   - `ResolveInfo.get_all_directive_arguments` has been added to handle repeated directives.
 - Added `ASTSchemaConverter`.
+- Added validation for recursive input types with non breakable chains.
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------

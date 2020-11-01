@@ -6,7 +6,6 @@ Some generic laguage level utilities for internal use.
 import collections
 import functools
 import sys
-import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -25,7 +24,6 @@ from typing import (
     TypeVar,
     Union,
     ValuesView,
-    cast,
 )
 
 
