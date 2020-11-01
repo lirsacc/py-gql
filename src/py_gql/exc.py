@@ -17,9 +17,16 @@ from .lang import ast as _ast
 class GraphQLError(Exception):
     """
     Base exception for the library.
+
+    Args:
+        message: Explanatory message
+
+    Attributes:
+        message (str): Explanatory message
+
     """
 
-    def __init__(self, message: str = ""):
+    def __init__(self, message: str = "") -> None:
         super().__init__(message)
         self.message = message
 
@@ -61,7 +68,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
 
     """
 
-    def __init__(self, message: str, position: int, source: str):
+    def __init__(self, message: str, position: int, source: str) -> None:
         super().__init__(message)
         self.source = source
         self.position = position
@@ -105,10 +112,9 @@ class UnexpectedEOF(GraphQLSyntaxError):
     Args:
         position: 0-indexed position locating the syntax error
         source: Source string from which the syntax error originated
-
     """
 
-    def __init__(self, position: int, source: str):
+    def __init__(self, position: int, source: str) -> None:
         super().__init__("Unexpected <EOF>", position, source)
 
 
@@ -146,7 +152,7 @@ class GraphQLLocatedError(GraphQLResponseError):
         message: str,
         nodes: Optional[Sequence[_ast.Node]] = None,
         path: Optional[ResponsePath] = None,
-    ):
+    ) -> None:
         super().__init__(message)
         self.path = path
         self.nodes = list(nodes[:]) if nodes else []  # type: List[_ast.Node]
@@ -194,11 +200,26 @@ class ScalarParsingError(InvalidValue):
 
 
 class SchemaError(GraphQLError):
+    """
+    Errors denoting a problem with the schema.
+    """
+
     pass
 
 
 class SchemaValidationError(SchemaError):
-    def __init__(self, errors: Sequence[SchemaError]):
+    """
+    Collection of multiple :class:`SchemaError`.
+
+    Args:
+        errors: Wrapped errors
+
+    Attributes:
+        errors (Sequence[SchemaError]): Wrapped errors
+
+    """
+
+    def __init__(self, errors: Sequence[SchemaError]) -> None:
         super().__init__("Invalid schema: %d errors" % len(errors))
         self.errors = errors
 
@@ -223,13 +244,6 @@ class ValidationError(GraphQLLocatedError):
 class ExecutionError(GraphQLResponseError):
     """
     Error that prevented execution of a query.
-
-    Args:
-        message: Explanatory message
-
-    Attributes:
-        message (str): Explanatory message
-
     """
 
     def to_dict(self) -> Dict[str, Any]:
@@ -256,7 +270,7 @@ class VariablesCoercionError(GraphQLError):
 
     """
 
-    def __init__(self, errors: Sequence[VariableCoercionError]):
+    def __init__(self, errors: Sequence[VariableCoercionError]) -> None:
         super().__init__("%d errors" % len(errors))
         self.errors = errors
 
@@ -267,7 +281,7 @@ class VariablesCoercionError(GraphQLError):
 
 
 class CoercionError(GraphQLLocatedError):
-    def __init__(self, message, node=None, path=None, value_path=None):
+    def __init__(self, message, node=None, path=None, value_path=None) -> None:
         super().__init__(message, node, path)
         self.value_path = value_path
 
@@ -289,7 +303,7 @@ class MultiCoercionError(CoercionError):
 
     """
 
-    def __init__(self, errors: Sequence[CoercionError]):
+    def __init__(self, errors: Sequence[CoercionError]) -> None:
         super().__init__("%d errors" % len(errors))
         self.errors = errors
 
@@ -331,7 +345,7 @@ class ResolverError(GraphQLLocatedError):
         nodes: Optional[Sequence[_ast.Node]] = None,
         path: Optional[ResponsePath] = None,
         extensions: Optional[Mapping[str, Any]] = None,
-    ):
+    ) -> None:
         super().__init__(message, nodes, path)
         self.extensions = extensions
 

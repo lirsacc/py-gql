@@ -64,11 +64,19 @@ html_theme_options = {
 }
 
 # Autodoc
-# autodoc_member_order = "bysource"
+autodoc_member_order = "bysource"
+autodoc_typehints = "signature"
+
 autoclass_content = "both"
-set_type_checking_flag = True
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
+
 napoleon_use_param = True
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+
+set_type_checking_flag = True
+always_document_param_types = True
+typehints_document_rtype = True
 
 # Spelling suggestions
 spelling_show_suggestions = True

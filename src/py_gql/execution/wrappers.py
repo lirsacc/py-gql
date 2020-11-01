@@ -347,7 +347,7 @@ class GraphQLResult:
     Operation response.
 
     This wrapper encodes the behavior described in the `Response
-    <http://facebook.github.io/graphql/June2018/#sec-Response>`_ part of the
+    <http://spec.graphql.org/June2018/#sec-Response>`_ part of the
     specification.
 
     Args:

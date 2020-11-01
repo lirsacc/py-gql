@@ -5,6 +5,7 @@ py_gql.lang
 
 .. automodule:: py_gql.lang
     :members:
+    :special-members: __next__
 
 Submodules
 ----------

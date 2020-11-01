@@ -2,7 +2,7 @@
 """
 GraphQL AST representations corresponding to the GraphQL language elements.
 
-See: http://facebook.github.io/graphql/June2018/#sec-Language/#sec-Language
+See: http://spec.graphql.org/June2018/#sec-Language/#sec-Language
 """
 
 import copy

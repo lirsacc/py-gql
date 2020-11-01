@@ -4,7 +4,7 @@ Lexer tokens found in GraphQL documents.
 
 All the valid source tokens found in GraphQL documents are encoded as instances
 of :class:`Token` and are described in `this document
-<http://facebook.github.io/graphql/June2018/#sec-Source-Text>`_)
+<http://spec.graphql.org/June2018/#sec-Source-Text>`_)
 """
 
 from typing import Any

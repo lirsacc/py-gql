@@ -8,7 +8,7 @@ Welcome to py-gql's documentation!
 
 **Release:** v\ |version| (:ref:`installation`)
 
-`py-gql </>`_ is a pure python `GraphQL <http://facebook.github.io/graphql/>`_
+`py-gql </>`_ is a pure python `GraphQL <http://spec.graphql.org/>`_
 implementation aimed at creating GraphQL servers. It supports:
 
 - Parsing the GraphQL query language and schema definition language.

@@ -123,14 +123,14 @@ def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
     Parse a string as a GraphQL Document.
 
     Args:
-        source (Union[str, bytes]): source document.
-        **kwargs: Remaining keyword arguments passed to :class:`Parser`
+        source: source document.
+        kwargs: Remaining keyword arguments passed to :class:`Parser`
 
     Raises:
-        :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+        GraphQLSyntaxError: if a syntax error is encountered.
 
     Returns:
-        `py_gql.lang.ast.Document`: Parsed document.
+        Parsed document.
 
     """
     return Parser(source, **kwargs).parse_document()
@@ -145,21 +145,18 @@ def parse_value(
     This is useful within tools that operate upon GraphQL values (e.g. ``[42]``)
     directly and in isolation of complete GraphQL documents. Consider providing
     the results to the utility functions
-    :func:`py_gql.utilities.untyped_value_from_ast` and
-    :func:`py_gql.utilities.value_from_ast`.
+    :func:`~py_gql.utilities.untyped_value_from_ast` and
+    :func:`~py_gql.utilities.value_from_ast`.
 
     Args:
-        source (Union[str, bytes]): source document
-        **kwargs: Remaining keyword arguments passed to :class:`Parser`
+        source: source document
+        kwargs: Remaining keyword arguments passed to :class:`Parser`
 
     Raises:
-        :class:`~py_gql.exc.GraphQLSyntaxError`: if a syntax error is encountered.
+        GraphQLSyntaxError: if a syntax error is encountered.
 
     Returns:
         Parsed value node.
-
-    Raises:
-        GraphQLSyntaxError
 
     """
     parser = Parser(source, **kwargs)
@@ -178,14 +175,14 @@ def parse_type(source: Union[str, bytes], **kwargs: Any) -> _ast.Type:
     building a schema from the SDL or stitching schemas together.
 
     Args:
-        source (Union[str, bytes]): source document
-        **kwargs: Remaining keyword arguments passed to :class:`Parser`
-
-    Returns:
-        Parsed value node.
+        source: source document
+        kwargs: Remaining keyword arguments passed to :class:`Parser`
 
     Raises:
-        GraphQLSyntaxError
+        GraphQLSyntaxError: if a syntax error is encountered.
+
+    Returns:
+        Parsed type node.
 
     """
     parser = Parser(source, **kwargs)
@@ -199,13 +196,13 @@ class Parser:
     """
     GraphQL syntax parser.
 
-    Call :meth:`parse_document` to parse a GraphQL document.
+    Call :meth:`parse_document` to parse a full GraphQL document.
 
     All ``parse_*`` methods will raise :class:`~py_gql.exc.GraphQLSyntaxError`
     if a syntax error is encountered.
 
     Args:
-        source (Union[str, bytes]): source document
+        source: source document
 
         no_location (bool):
             By default, the parser creates AST nodes that know the location
@@ -218,6 +215,11 @@ class Parser:
             operations and remove the need for some later validation.
 
         experimental_fragment_variables (bool):
+            Warning:
+                This feature is experimental and may change or be removed
+                in the future. See https://github.com/graphql/graphql-spec/issues/204
+                for the open spec PR.
+
             If enabled, the parser will understand and parse variable
             definitions contained in a fragment definition. They'll be
             represented in the ``variable_definitions`` field of the
@@ -231,11 +233,6 @@ class Parser:
                 fragment A($var: Boolean = false) on T  {
                     ...
                 }
-
-            Warning:
-                This feature is experimental and may change or be removed
-                in the future. See https://github.com/graphql/graphql-spec/issues/204
-                for the open spec PR.
 
     """
 
@@ -295,7 +292,7 @@ class Parser:
         Look at a token ahead of the current position without advancing the parser.
 
         Args:
-            count (int): How many tokens should we look ahead
+            count: How many tokens should we look ahead.
 
         Returns:
             Token
@@ -332,8 +329,8 @@ class Parser:
         Advance the parser asserting the kind of the the next token.
 
         Args:
-            kind: Expected token kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
+            kind: Expected token kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
 
         Returns:
             Token
@@ -357,7 +354,7 @@ class Parser:
         Advance the parser asserting that the next token is a specific Name.
 
         Args:
-            keyword (str): Expected keyword
+            keyword: Expected keyword
 
         Returns:
             Name token
@@ -381,8 +378,8 @@ class Parser:
         Conditionally advance the parser.
 
         Args:
-            kind: Token kind to read over. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
+            kind: Token kind to read over.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
 
         Returns:
             ``True`` if the next token was of the given kind and we've advanced
@@ -399,7 +396,7 @@ class Parser:
         Conditionally advance the parser asserting over a given keyword.
 
         Args:
-            keyword (str): Expected keyword
+            keyword: Expected keyword
 
         Returns:
             ``True`` if the next token was the given keyword and we've advanced
@@ -422,12 +419,12 @@ class Parser:
         This advances the parser to the next token after the closing token.
 
         Args:
-            open_kind: Opening token kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
-            parse_fn (callable): Function to call for every item, should be a
+            open_kind: Opening token kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
+            parse_fn: Function to call for every item, should be a
                 method of the :class:`Parser` instance.
-            close_kind: Closing token kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
+            close_kind: Closing token kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
 
         Returns:
             List of parsed nodes.
@@ -453,12 +450,12 @@ class Parser:
         This advances the parser to the next token after the closing token.
 
         Args:
-            open_kind: Opening token kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
-            parse_fn (callable): Function to call for every item, should be a
+            open_kind: Opening token kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
+            parse_fn: Function to call for every item, should be a
                 method of the :class:`Parser` instance.
-            close_kind: Closing token kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
+            close_kind: Closing token kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
 
         Returns:
             List of parsed nodes.
@@ -482,9 +479,9 @@ class Parser:
         Advances the parser to the next token after the last token.
 
         Args:
-            delimiter: Delimiter kind. Must be a subclass of
-                :class:`py_gql.lang.token.Token`
-            parse_fn (callable): Function to call for every item, should be a
+            delimiter: Delimiter kind.
+                Must be a subclass of :class:`py_gql.lang.token.Token`
+            parse_fn: Function to call for every item, should be a
                 method of the :class:`Parser` instance.
 
         Returns:

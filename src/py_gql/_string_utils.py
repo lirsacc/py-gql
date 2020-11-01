@@ -35,7 +35,7 @@ def parse_block_string(raw_string: str) -> str:
     Parse a block string.
 
     Parsing is done according to the GraphQL spec's BlockStringValue()
-    http://facebook.github.io/graphql/draft/#BlockStringValue() static algorithm.
+    http://spec.graphql.org/draft/#BlockStringValue() static algorithm.
     This is similar to Coffeescript's block string, Python's inspect.cleandoc or
     Ruby's strip_heredoc.
 
