@@ -363,17 +363,3 @@ def apply_middlewares(
         tail = functools.partial(mw, tail)
 
     return tail
-
-
-def deprecated(reason: str) -> Callable[[Fn], Fn]:
-    def decorator(fn: Fn) -> Fn:
-        @functools.wraps
-        def deprecated_fn(*args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(reason, category=DeprecationWarning, stacklevel=2)
-            return fn(*args, **kwargs)
-
-        return cast(Fn, deprecated_fn)
-
-    return decorator

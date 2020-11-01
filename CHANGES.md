@@ -9,6 +9,7 @@ Unreleased
 - Custom scalar types such as `RegexType` and `UUID` have been moved to `py_gql.exts.scalars`.
 - Removed `ASTSchemaPrinter` in favor of combining `ASTSchemaConverter` and `ASTPrinter`. `Schema.to_string()` is not affected.
 - `graphql` and `graphql_blocking` now accept an `additional_validators` parameter instead of `validators` and always use the specified validation rules.
+- Drop deprecated methods on `SchemaVisitor`.
 
 ### Fixed
 

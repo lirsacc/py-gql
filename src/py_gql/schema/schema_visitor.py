@@ -2,7 +2,7 @@
 
 from typing import Dict, Optional, TypeVar
 
-from .._utils import deprecated, map_and_filter
+from .._utils import map_and_filter
 from .directives import SPECIFIED_DIRECTIVES
 from .scalars import SPECIFIED_SCALAR_TYPES
 from .schema import Schema
@@ -183,15 +183,3 @@ class SchemaVisitor(object):
                 node=directive.node,
             )
         return directive
-
-    on_field_definition = deprecated(
-        "This method has been deprecated, use on_field instead."
-    )(on_field)
-
-    on_input_field_definition = deprecated(
-        "This method has been deprecated, use on_input_field instead."
-    )(on_input_field)
-
-    on_argument_definition = deprecated(
-        "This method has been deprecated, use on_argument instead."
-    )(on_argument)
