@@ -29,6 +29,7 @@ Unreleased
   - `ResolveInfo.get_directive_arguments` has not been modified to not break exising code. It returns the first set of arguments for repeated directives.
   - `ResolveInfo.get_all_directive_arguments` has been added to handle repeated directives.
 - Added `ASTSchemaConverter`.
+- Add support for `implements` keyword on interfaces. (see [RFC](https://github.com/graphql/graphql-spec/pull/373)).
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
