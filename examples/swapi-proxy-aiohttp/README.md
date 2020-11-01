@@ -14,7 +14,7 @@ Data is fetched live from <https://swapi.dev>.
 ## Running
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -e ../..
 adev runserver -p 5000 --app-factory init app/server.py
 ```
 

@@ -15,7 +15,7 @@ Data is fetched live from <https://swapi.dev>.
 ## Running
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -e ../..
 FLASK_APP=app.server:app python -m flask run --reload
 ```
 

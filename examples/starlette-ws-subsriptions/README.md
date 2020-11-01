@@ -12,7 +12,7 @@ This example demonstrates:
 ## Running
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -e ../..
 uvicorn --debug --port 5000 app:app
 ```
 
