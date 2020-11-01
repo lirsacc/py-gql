@@ -34,26 +34,26 @@ else:
         CYTHON_TRACE = int(_env("CYTHON_TRACE", "0"))
 
 
+AUTHOR = ("Charles Lirsac", "c.lirsac@gmail.com")
+GITHUB_URL = "https://github.com/lirsacc/py-gql"
+SHORT_DESCRIPTION = "Comprehensive GraphQL implementation for Python."
+
+
 def run_setup():
-
-    pkg = {}
-
-    with open(os.path.join(DIR, "src", "py_gql", "_pkg.py")) as f:
-        exec(f.read(), {}, pkg)
 
     with open(os.path.join(DIR, "README.md")) as f:
         readme = "\n" + f.read()
 
     setuptools.setup(
-        name=pkg["__title__"],
-        version=pkg["__version__"],
-        description=pkg["__description__"],
+        name="py_gql",
+        version=_get_version(),
+        description=SHORT_DESCRIPTION,
         long_description=readme,
         long_description_content_type="text/markdown",
-        author=pkg["__author__"],
-        author_email=pkg["__author_email__"],
-        url=pkg["__url__"],
-        license=pkg["__license__"],
+        author=AUTHOR[0],
+        author_email=AUTHOR[1],
+        url=GITHUB_URL,
+        license="MIT",
         keywords="graphql api",
         zip_safe=False,
         packages=setuptools.find_packages(where="src"),
@@ -85,8 +85,8 @@ def run_setup():
             "Topic :: Software Development :: Libraries :: Python Modules",
         ],
         project_urls={
-            "Bug Reports": "%s/issues" % pkg["__url__"],
-            "Source": pkg["__url__"],
+            "Bug Reports": "%s/issues" % GITHUB_URL,
+            "Source": GITHUB_URL,
             "Documentation": "https://py-gql.readthedocs.io/",
         },
     )
@@ -138,6 +138,16 @@ def _split_requirements(*requirements_files):
                 ]
             )
     return req
+
+
+def _get_version() -> str:
+    with open(os.path.join(DIR, "src", "py_gql", "version.py")) as f:
+        for line in f.readlines():
+            if line.startswith("__version__"):
+                delim = '"' if '"' in line else "'"
+                return line.split(delim)[1]
+        else:
+            raise RuntimeError("Unable to find version string.")
 
 
 if __name__ == "__main__":

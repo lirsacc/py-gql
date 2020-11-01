@@ -264,7 +264,7 @@ def update_version(ctx, version, force=False, push=False):
 
         pkg = {}
 
-        with open(os.path.join(PACKAGE, "_pkg.py")) as f:
+        with open(os.path.join(PACKAGE, "version.py")) as f:
             exec(f.read(), {}, pkg)
 
         local_version = pkg["__version__"]
@@ -274,21 +274,21 @@ def update_version(ctx, version, force=False, push=False):
                 "Must increment the version (current %s)." % local_version
             )
 
-        with open(os.path.join(PACKAGE, "_pkg.py")) as f:
+        with open(os.path.join(PACKAGE, "version.py")) as f:
             new_file = f.read().replace(local_version, version)
 
-        with open(os.path.join(PACKAGE, "_pkg.py"), "w") as f:
+        with open(os.path.join(PACKAGE, "version.py"), "w") as f:
             f.write(new_file)
 
         modified = ctx.run("git ls-files -m", hide=True)
 
-        if (not force) and modified.stdout.strip() != "%s/_pkg.py" % PACKAGE:
+        if (not force) and modified.stdout.strip() != "%s/version.py" % PACKAGE:
             raise invoke.exceptions.Exit(
                 "There are still modified files in your directory. "
                 "Commit or stash them."
             )
 
-        ctx.run("git add %s/_pkg.py" % PACKAGE)
+        ctx.run("git add %s/version.py" % PACKAGE)
         ctx.run("git commit -m v%s" % version)
         ctx.run("git tag v%s" % version)
 

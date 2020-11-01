@@ -265,7 +265,7 @@ jobs:
         id: version
         run: |
           version_str=$(echo ${{ github.ref }} | sed 's/refs\/tags\/v//')
-          package_version=$(grep __version__ src/py_gql/_pkg.py | sed 's/__version__ = //; s/\"//g')
+          package_version=$(grep __version__ src/py_gql/version.py | sed 's/__version__ = //; s/\"//g')
 
           if ! grep -q -P '^\d+\.\d+\.\d+(?:\.(?:dev|a|b|rc)\d+)?$' <<< "$version_str"; then
             echo "::error::Invalid version string $version_str"

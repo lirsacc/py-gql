@@ -10,7 +10,7 @@ schemas and execute queries against them while the relevant submodules allow
 you implement custom behaviors and runtimes.
 """
 
-from ._pkg import __version__  # isort:skip
+from .version import __version__  # isort:skip
 
 from . import lang, schema, tracers, utilities  # noqa: F401
 from ._graphql import graphql, graphql_blocking, process_graphql_query

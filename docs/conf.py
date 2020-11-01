@@ -1,28 +1,22 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-from pygments import token
-from pygments.lexer import RegexLexer
-from pygments_graphql import GraphqlLexer
-from sphinx.highlighting import lexers
+from importlib import metadata as _meta
 
 from pygments import token
 from pygments.lexer import RegexLexer
 from pygments_graphql import GraphqlLexer
 from sphinx.highlighting import lexers
 
-from py_gql import _pkg
+from py_gql.version import __version__
 
 
 # Project information
+project = "py_gql"
 
-
-# Project information
-project = _pkg.__title__
-copyright = _pkg.__copyright__
-author = _pkg.__author__
-version = _pkg.__version__
-release = _pkg.__version__
+release = version = __version__
+author = _meta.metadata(project)["author"]
+copyright = f"Copyright 2019 {author}"
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -63,7 +57,6 @@ html_title = project
 html_short_title = project
 
 html_theme_options = {
-    # "description": _pkg.__description__,
     "sidebar_links": [
         ("PyPI", "https://pypi.org/project/py-gql/"),
         ("Github", "https://github.com/lirsacc/py-gql/"),
