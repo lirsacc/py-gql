@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Optional
 from ..exc import ValidationError
 from ..lang.ast import Document, Field, OperationDefinition
 from ..schema import Schema
-from .collect_fields import selected_fields
+from ..utilities.collect_fields import selected_fields
 
 
-class MaxDepthValidationRule:
+class MaxDepthValidator:
     """
     Validate that a given document doesn't exceed a given query depth.
 

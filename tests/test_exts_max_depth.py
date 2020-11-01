@@ -2,8 +2,8 @@
 
 import pytest
 
+from py_gql.exts.max_depth import MaxDepthValidator
 from py_gql.lang import ast, parse
-from py_gql.utilities import MaxDepthValidationRule
 
 
 MULTIPLE_OPERATIONS = """
@@ -140,13 +140,13 @@ def case(id, *args):
     ],
 )
 def test(starwars_schema, doc, kwargs, expected_errors):
-    rule = MaxDepthValidationRule(**kwargs)
+    rule = MaxDepthValidator(**kwargs)
     errors = rule(starwars_schema, parse(doc))
     assert [e.message for e in errors] == expected_errors
 
 
 def test_errors_point_to_the_correct_operation_node(starwars_schema):
-    rule = MaxDepthValidationRule(5)
+    rule = MaxDepthValidator(5)
     doc = parse(MULTIPLE_OPERATIONS)
     errors = rule(starwars_schema, doc)
 

@@ -9,6 +9,7 @@ Unreleased
 - Custom scalar types such as `RegexType` and `UUID` have been moved to `py_gql.exts.scalars`.
 - Removed `ASTSchemaPrinter` in favor of combining `ASTSchemaConverter` and `ASTPrinter`. `Schema.to_string()` is not affected.
 - Drop deprecated methods on `SchemaVisitor`.
+- Moved `py_gql.utilities.MaxDepthValidationRule` to `py_gql.exts.max_depth.MaxDepthValidator`.
 
 ### Fixed
 
