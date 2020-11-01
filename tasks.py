@@ -75,12 +75,11 @@ def test(
                 "-c setup.cfg",
                 "--exitfirst" if bail else None,
                 (
-                    "--cov %s --cov-config setup.cfg --no-cov-on-fail "
-                    "--cov-report term --cov-report html --cov-report xml "
-                )
-                % PACKAGE
-                if coverage
-                else None,
+                    "--cov %s --cov-config setup.cfg --no-cov-on-fail --cov-report="
+                    % PACKAGE
+                    if coverage
+                    else None
+                ),
                 "--junit-xml junit.xml" if junit else None,
                 "--looponfail" if watch else None,
                 "-vvl --full-trace" if verbose else "-q",
