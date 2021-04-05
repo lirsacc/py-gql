@@ -363,7 +363,7 @@ async def test_it_can_introspect_on_union_and_intersection_types(
                 "enumValues": None,
                 "fields": [{"name": "name"}],
                 "inputFields": None,
-                "interfaces": None,
+                "interfaces": [],
                 "kind": "INTERFACE",
                 "name": "Named",
                 "possibleTypes": [

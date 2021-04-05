@@ -254,7 +254,9 @@ __Type__ = ObjectType(
             "interfaces",
             ListType(NonNullType(__Type__)),
             resolver=lambda type_, *_: (
-                type_.interfaces if isinstance(type_, ObjectType) else None
+                type_.interfaces
+                if isinstance(type_, (ObjectType, InterfaceType))
+                else None
             ),
         ),
         Field(
@@ -394,8 +396,8 @@ __TypeKind__ = EnumType(
         EnumValue(
             "INTERFACE",
             description=(
-                "Indicates this type is an interface. `fields` and "
-                "`possibleTypes` are valid fields."
+                "Indicates this type is an interface. `fields`, `interfaces`, "
+                "and `possibleTypes` are valid fields."
             ),
         ),
         EnumValue(

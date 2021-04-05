@@ -1,6 +1,7 @@
 # flake8: noqa
 import json
 
+from py_gql import build_schema
 from py_gql.schema import (
     Argument,
     EnumType,
@@ -8,6 +9,7 @@ from py_gql.schema import (
     Field,
     InputField,
     InputObjectType,
+    InterfaceType,
     ListType,
     ObjectType,
     Schema,
@@ -1642,13 +1644,17 @@ def test_it_exposes_descriptions_on_enums():
                         "name": "SCALAR",
                     },
                     {
-                        "description": "Indicates this type is an object. `fields` and "
-                        "`interfaces` are valid fields.",
+                        "description": (
+                            "Indicates this type is an object. `fields` and "
+                            "`interfaces` are valid fields."
+                        ),
                         "name": "OBJECT",
                     },
                     {
-                        "description": "Indicates this type is an interface. `fields` and "
-                        "`possibleTypes` are valid fields.",
+                        "description": (
+                            "Indicates this type is an interface. `fields`, "
+                            "`interfaces`, and `possibleTypes` are valid fields."
+                        ),
                         "name": "INTERFACE",
                     },
                     {
@@ -1744,4 +1750,31 @@ def test_schema_description(starwars_schema):
         }
         """,
         {"__schema": {"description": "Star wars stuff!"}},
+    )
+
+
+def test_implemented_interfaces():
+    IBase = InterfaceType("Base", [Field("a", String)])
+    IIntermediate = InterfaceType(
+        "Intermediate", [Field("a", String)], interfaces=[IBase],
+    )
+    Foo = ObjectType(
+        "Foo", [Field("a", String)], interfaces=[IIntermediate, IBase],
+    )
+    schema = Schema(ObjectType("Query", [Field("foo", Foo)]))
+
+    assert_sync_execution(
+        schema,
+        """
+        {
+            foo: __type(name: "Foo") { interfaces { name } }
+            base: __type(name: "Base") { interfaces { name } }
+            intermediate: __type(name: "Intermediate") { interfaces { name } }
+        }
+        """,
+        {
+            "base": {"interfaces": []},
+            "foo": {"interfaces": [{"name": "Intermediate"}, {"name": "Base"}]},
+            "intermediate": {"interfaces": [{"name": "Base"}]},
+        },
     )
