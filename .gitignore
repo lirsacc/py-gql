@@ -70,6 +70,8 @@ docs/_build/
 .venv
 venv
 ENV
+.direnv
+.envrc
 
 # Rope project settings
 .ropeproject
@@ -85,6 +87,7 @@ ENV
 .vscode
 .idea
 *_bak
+*.bak
 scratch
 
 flake8.txt
