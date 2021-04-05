@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql import build_schema
 from py_gql.schema import Argument, Field, Int, Schema, String
 
@@ -56,7 +54,7 @@ class TestDefaultResolver:
                 return self._num + addend1 + ctx["addend2"]
 
         schema = create_test_schema(
-            Field("test", Int, [Argument("addend1", Int)])
+            Field("test", Int, [Argument("addend1", Int)]),
         )
         root = Adder(700)
 
@@ -81,7 +79,7 @@ class TestOverrides:
             type Query {
                 foo: Foo!
             }
-            """
+            """,
         )
 
     def test_type_default_resolver_with_no_field_resolver(self):

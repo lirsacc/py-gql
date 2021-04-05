@@ -147,7 +147,10 @@ class EnumValueDeprecated(SchemaChange):
     )
 
     def __init__(
-        self, enum: EnumType, old_value: EnumValue, new_value: EnumValue
+        self,
+        enum: EnumType,
+        old_value: EnumValue,
+        new_value: EnumValue,
     ):
         self.enum = enum
         self.old_value = old_value
@@ -162,7 +165,10 @@ class EnumValueDeprecationRemoved(SchemaChange):
     )
 
     def __init__(
-        self, enum: EnumType, old_value: EnumValue, new_value: EnumValue
+        self,
+        enum: EnumType,
+        old_value: EnumValue,
+        new_value: EnumValue,
     ):
         self.enum = enum
         self.old_value = old_value
@@ -177,7 +183,10 @@ class EnumValueDeprecationReasonChanged(SchemaChange):
     )
 
     def __init__(
-        self, enum: EnumType, old_value: EnumValue, new_value: EnumValue
+        self,
+        enum: EnumType,
+        old_value: EnumValue,
+        new_value: EnumValue,
     ):
         self.enum = enum
         self.old_value = old_value
@@ -442,7 +451,9 @@ class FieldRemoved(SchemaChange):
     )
 
     def __init__(
-        self, parent_type: Union[ObjectType, InterfaceType], field: Field
+        self,
+        parent_type: Union[ObjectType, InterfaceType],
+        field: Field,
     ):
         self.type = parent_type
         self.context_str = (
@@ -459,7 +470,9 @@ class FieldAdded(SchemaChange):
     )
 
     def __init__(
-        self, parent_type: Union[ObjectType, InterfaceType], field: Field
+        self,
+        parent_type: Union[ObjectType, InterfaceType],
+        field: Field,
     ):
         self.type = parent_type
         self.context_str = (

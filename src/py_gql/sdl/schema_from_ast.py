@@ -136,7 +136,7 @@ def build_schema_ignoring_extensions(
             op = op_def.operation
             if op in operations:
                 raise SDLError(
-                    "Schema must only define a single %s operation" % op,
+                    f"Schema must only define a single {op} operation",
                     [schema_def, op_def],
                 )
             operations[op] = cast(ObjectType, builder.build_type(op_def.type))
@@ -169,7 +169,9 @@ def _extend_schema(
     ast = _document_ast(document)
 
     schema_exts, type_defs, directive_defs, type_exts = _collect_extensions(
-        schema, ast, strict=strict
+        schema,
+        ast,
+        strict=strict,
     )
 
     if not (
@@ -222,11 +224,11 @@ def _extend_schema(
             op = op_def.operation
             if operation_types.get(op) is not None:
                 raise ExtensionError(
-                    "Schema must only define a single %s operation" % op,
+                    f"Schema must only define a single {op} operation",
                     [ext, op_def],
                 )
             operation_types[op] = builder.extend_type(
-                builder.build_type(op_def.type)
+                builder.build_type(op_def.type),
             )
 
     builder.flush_delayed()
@@ -324,20 +326,21 @@ def _collect_definitions(
         if isinstance(node, _ast.SchemaDefinition):
             if schema_definition is not None:
                 raise SDLError(
-                    "More than one schema definition in document", [node]
+                    "More than one schema definition in document",
+                    [node],
                 )
             schema_definition = node
 
         elif isinstance(node, _ast.TypeDefinition):
             name = node.name.value
             if name in types:
-                raise SDLError("Duplicate type %s" % name, [node])
+                raise SDLError(f"Duplicate type {name}", [node])
             types[name] = node
 
         elif isinstance(node, _ast.DirectiveDefinition):
             name = node.name.value
             if name in directives:
-                raise SDLError("Duplicate directive @%s" % name, [node])
+                raise SDLError(f"Duplicate directive @{name}", [node])
             directives[name] = node
 
     return schema_definition, types, directives
@@ -349,11 +352,13 @@ def _document_ast(document: Union[str, _ast.Document]) -> _ast.Document:
     elif isinstance(document, _ast.Document):
         return document
     else:
-        TypeError("Expected Document but got %s" % type(document))
+        TypeError(f"Expected Document but got {type(document)}")
 
 
 def _collect_extensions(  # noqa: C901
-    schema: Schema, document: _ast.Document, strict: bool = True
+    schema: Schema,
+    document: _ast.Document,
+    strict: bool = True,
 ) -> Tuple[
     List[_ast.SchemaExtension],
     Dict[str, _ast.TypeDefinition],
@@ -364,7 +369,7 @@ def _collect_extensions(  # noqa: C901
     type_defs = {}  # type: Dict[str, _ast.TypeDefinition]
     _type_exts = []  # type: List[_ast.TypeExtension]
     type_exts = collections.defaultdict(
-        list
+        list,
     )  # type: Dict[str, List[_ast.TypeExtension]]
     directive_defs = {}  # type: Dict[str, _ast.DirectiveDefinition]
 
@@ -383,7 +388,7 @@ def _collect_extensions(  # noqa: C901
             if name in schema.types:
                 if strict:
                     raise ExtensionError(
-                        'Type "%s" is already defined in the schema.' % name,
+                        f'Type "{name}" is already defined in the schema.',
                         [definition],
                     )
                 else:
@@ -396,8 +401,7 @@ def _collect_extensions(  # noqa: C901
             if name in schema.directives:
                 if strict:
                     raise ExtensionError(
-                        'Directive "@%s" is already defined in the schema.'
-                        % name,
+                        f'Directive "@{name}" is already defined in the schema.',
                         [definition],
                     )
                 else:
@@ -413,7 +417,8 @@ def _collect_extensions(  # noqa: C901
         if not ((target in type_defs) or schema.has_type(target)):
             if strict:
                 raise ExtensionError(
-                    'Cannot extend undefined type "%s".' % target, [ext]
+                    f'Cannot extend undefined type "{target}".',
+                    [ext],
                 )
             else:
                 continue

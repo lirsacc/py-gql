@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # flake8: noqa
 import json
 
@@ -55,8 +54,8 @@ def test_allows_querying_the_schema_for_types(starwars_schema):
                     {"name": "__Schema"},
                     {"name": "__Type"},
                     {"name": "__TypeKind"},
-                ]
-            }
+                ],
+            },
         },
         [],
     )
@@ -166,7 +165,7 @@ def test_allows_querying_the_schema_for_object_fields(starwars_schema):
                         "type": {"name": "String", "kind": "SCALAR"},
                     },
                 ],
-            }
+            },
         },
         [],
     )
@@ -249,7 +248,7 @@ def test_allows_querying_the_schema_for_nested_object_fields(starwars_schema):
                     },
                 ],
                 "name": "Droid",
-            }
+            },
         },
         [],
     )
@@ -299,7 +298,7 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
                                         "name": "Episode",
                                         "ofType": None,
                                     },
-                                }
+                                },
                             ],
                             "name": "hero",
                         },
@@ -317,7 +316,7 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
                                             "name": "String",
                                         },
                                     },
-                                }
+                                },
                             ],
                             "name": "human",
                         },
@@ -335,13 +334,13 @@ def test_allows_querying_the_schema_for_field_args(starwars_schema):
                                             "name": "String",
                                         },
                                     },
-                                }
+                                },
                             ],
                             "name": "droid",
                         },
-                    ]
-                }
-            }
+                    ],
+                },
+            },
         },
         [],
     )
@@ -362,7 +361,7 @@ def test_allows_querying_the_schema_for_documentation(starwars_schema):
             "__type": {
                 "name": "Droid",
                 "description": "A mechanical creature in the Star Wars universe.",
-            }
+            },
         },
         [],
     )
@@ -429,7 +428,7 @@ def test_introspection_query():
                                     "name": "String",
                                     "ofType": None,
                                 },
-                            }
+                            },
                         ],
                         "inputFields": None,
                         "interfaces": [],
@@ -1006,7 +1005,7 @@ def test_introspection_query():
                                             "name": "Boolean",
                                             "ofType": None,
                                         },
-                                    }
+                                    },
                                 ],
                                 "deprecationReason": None,
                                 "isDeprecated": False,
@@ -1073,7 +1072,7 @@ def test_introspection_query():
                                             "name": "Boolean",
                                             "ofType": None,
                                         },
-                                    }
+                                    },
                                 ],
                                 "deprecationReason": None,
                                 "isDeprecated": False,
@@ -1193,7 +1192,7 @@ def test_introspection_query():
                                     "name": "String",
                                     "ofType": None,
                                 },
-                            }
+                            },
                         ],
                     },
                     {
@@ -1216,7 +1215,7 @@ def test_introspection_query():
                                         "ofType": None,
                                     },
                                 },
-                            }
+                            },
                         ],
                     },
                     {
@@ -1239,11 +1238,11 @@ def test_introspection_query():
                                         "ofType": None,
                                     },
                                 },
-                            }
+                            },
                         ],
                     },
                 ],
-            }
+            },
         },
         expected_errors=[],
     )
@@ -1267,7 +1266,7 @@ def test_introspection_on_input_object():
                 String,
                 [Argument("complex", test_input)],
                 resolver=lambda _, args, *__: json.dumps(args.get("complex")),
-            )
+            ),
         ],
     )
 
@@ -1342,7 +1341,7 @@ def test_introspection_on_input_object():
                 ],
                 "kind": "INPUT_OBJECT",
                 "name": "TestInputObject",
-            }
+            },
         },
         expected_errors=[],
     )
@@ -1404,7 +1403,7 @@ def test_it_identifies_deprecated_fields():
                         "deprecationReason": "Removed in 1.0",
                     },
                 ],
-            }
+            },
         },
         expected_errors=[],
     )
@@ -1442,9 +1441,9 @@ def test_it_respects_the_include_deprecated_parameter_for_fields():
                         "name": "nonDeprecated",
                         "isDeprecated": False,
                         "deprecationReason": None,
-                    }
+                    },
                 ],
-            }
+            },
         },
         expected_errors=[],
     )
@@ -1496,7 +1495,7 @@ def test_it_identifies_deprecated_enum_values():
                     },
                 ],
                 "name": "TestEnum",
-            }
+            },
         },
         [],
     )
@@ -1543,7 +1542,7 @@ def test_it_respects_the_include_deprecated_parameter_for_enum_values():
                     },
                 ],
                 "name": "TestEnum",
-            }
+            },
         },
         [],
     )
@@ -1561,7 +1560,7 @@ def test_it_fails_as_expected_on_the_type_root_field_without_an_arg():
                 'Argument "name" of required type "String!" was not provided',
                 (2, 17),
                 "__type",
-            )
+            ),
         ],
     )
 
@@ -1612,7 +1611,7 @@ def test_it_exposes_descriptions_on_types_and_fields():
                     },
                     {"name": "description", "description": None},
                 ],
-            }
+            },
         },
         [],
     )
@@ -1678,7 +1677,7 @@ def test_it_exposes_descriptions_on_enums():
                     },
                 ],
                 "name": "__TypeKind",
-            }
+            },
         },
         [],
     )

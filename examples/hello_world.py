@@ -6,7 +6,7 @@ schema = build_schema(
     type Query {
         hello(value: String = "world"): String!
     }
-    """
+    """,
 )
 
 

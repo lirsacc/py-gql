@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.exc import CoercionError
@@ -56,7 +54,10 @@ def test_Int_from_null_value():
 
 def test_Int_raises_for_empty_value():
     _test(
-        "", Int, None, "Int cannot represent non integer value: (empty string)"
+        "",
+        Int,
+        None,
+        "Int cannot represent non integer value: (empty string)",
     )
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Execution tests specific to AsyncIORuntime().
 """
@@ -26,7 +25,7 @@ schema = build_schema(
         error: Int!
         sync_error: Int!
     }
-    """
+    """,
 )
 
 
@@ -69,7 +68,10 @@ async def resolve_c(*_: Any) -> int:
 @pytest.mark.asyncio
 async def test_AsyncIORuntime_simple_field():
     await assert_execution(
-        schema, "{ a }", expected_data={"a": 42}, runtime=AsyncIORuntime()
+        schema,
+        "{ a }",
+        expected_data={"a": 42},
+        runtime=AsyncIORuntime(),
     )
 
 
@@ -162,7 +164,7 @@ async def test_AsyncIORuntime_gather_values_async_input():
         await cast(
             Awaitable[int],
             AsyncIORuntime().gather_values(
-                [1, AsyncIORuntime().ensure_wrapped(2), 3]
+                [1, AsyncIORuntime().ensure_wrapped(2), 3],
             ),
         )
         == [1, 2, 3]
@@ -193,7 +195,9 @@ async def test_AsyncIORuntime_map_value_sync_fail(raiser):
 async def test_AsyncIORuntime_map_value_sync_caught(raiser):
     assert (
         AsyncIORuntime().map_value(
-            42, raiser(ValueError), (ValueError, lambda _: 42)
+            42,
+            raiser(ValueError),
+            (ValueError, lambda _: 42),
         )
         == 42
     )
@@ -217,7 +221,8 @@ async def test_AsyncIORuntime_map_value_async_ok():
 async def test_AsyncIORuntime_map_value_async_fail(raiser):
     with pytest.raises(ValueError):
         await AsyncIORuntime().map_value(
-            AsyncIORuntime().ensure_wrapped(42), raiser(ValueError)
+            AsyncIORuntime().ensure_wrapped(42),
+            raiser(ValueError),
         )
 
 

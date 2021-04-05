@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -193,7 +190,7 @@ def test_missing_one_non_nullable_argument(schema):
         """,
         [
             'Field "multipleReqs" argument "req1" of type Int! is required '
-            "but not provided"
+            "but not provided",
         ],
         [[(32, 53)]],
     )
@@ -232,7 +229,7 @@ def test_incorrect_value_and_missing_argument(schema):
         """,
         [
             'Field "multipleReqs" argument "req2" of type Int! is required '
-            "but not provided"
+            "but not provided",
         ],
     )
 

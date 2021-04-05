@@ -52,7 +52,8 @@ class StringType(ScalarType):
     ) -> Any:
         if not isinstance(node, ast.StringValue):
             raise ScalarParsingError(
-                "Invalid literal %s" % node.__class__.__name__, [node]
+                f"Invalid literal {node.__class__.__name__}",
+                [node],
             )
         return self.parse(node.value)
 
@@ -87,15 +88,14 @@ class RegexType(StringType):
             self._regex = regex
 
         if description is None:
-            description = "String matching pattern /%s/" % self._regex.pattern
+            description = f"String matching pattern /{self._regex.pattern}/"
 
         def _coerce(value: Any) -> str:
             string_value = coerce_string(value)
 
             if not self._regex.match(string_value):
                 raise ValueError(
-                    '"%s" does not match pattern "%s"'
-                    % (string_value, self._regex.pattern)
+                    f'"{string_value}" does not match pattern "{self._regex.pattern}"',
                 )
             return string_value
 

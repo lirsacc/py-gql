@@ -173,7 +173,7 @@ def loc_to_index(body: str, loc: Tuple[int, int]) -> int:
             break
         if char == "\n":
             lines += 1
-    raise IndexError("%s:%s" % (lineo, col))
+    raise IndexError(f"{lineo}:{col}")
 
 
 def highlight_location(body: str, position: int, delta: int = 2) -> str:
@@ -208,7 +208,7 @@ def highlight_location(body: str, position: int, delta: int = 2) -> str:
         [
             ws(2) + lineno(x) + ":" + lines[x]
             for x in range(min_line, line_index)
-        ]
+        ],
     )
     output.append(ws(2) + lineno(line_index) + ":" + lines[line_index])
     output.append(ws(2) + ws(len(str(max_line + 1)) + col) + "^")
@@ -216,13 +216,14 @@ def highlight_location(body: str, position: int, delta: int = 2) -> str:
         [
             ws(2) + lineno(x) + ":" + lines[x]
             for x in range(line_index + 1, max_line + 1)
-        ]
+        ],
     )
     return "\n".join(output) + "\n"
 
 
 def _split_words_with_boundaries(
-    string: str, word_boundaries: Container[str]
+    string: str,
+    word_boundaries: Container[str],
 ) -> Iterator[str]:
     """
     Split a string around given separators, conserving the separators.
@@ -245,7 +246,9 @@ def _split_words_with_boundaries(
 
 
 def wrapped_lines(
-    lines: Iterable[str], max_len: int, word_boundaries: Container[str] = " -_"
+    lines: Iterable[str],
+    max_len: int,
+    word_boundaries: Container[str] = " -_",
 ) -> Iterator[str]:
     """
     Wrap provided lines to a given length.
@@ -383,7 +386,7 @@ def quoted_options_list(
         return ""
 
     if len(options) == 1:
-        return '"%s"' % options[0]
+        return f'"{options[0]}"'
 
     return "%s%s%s" % (
         separator.join(('"%s"' % option for option in options[:-1])),
@@ -412,9 +415,9 @@ def stringify_path(path: ResponsePath) -> str:
     path_str = ""
     for entry in path:
         if isinstance(entry, int):
-            path_str += "[%s]" % entry
+            path_str += f"[{entry}]"
         else:
-            path_str += ".%s" % entry
+            path_str += f".{entry}"
     return path_str.lstrip(".")
 
 
@@ -507,5 +510,7 @@ def camelcase_to_snakecase(value: str) -> str:
         return value
 
     return value[0].lower() + re.sub(
-        r"[A-Z]", lambda matched: "_" + matched.group(0).lower(), value[1:]
+        r"[A-Z]",
+        lambda matched: "_" + matched.group(0).lower(),
+        value[1:],
     )

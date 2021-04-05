@@ -36,7 +36,8 @@ Resolver = Callable[..., Any]
 TResolver = TypeVar("TResolver", bound=Resolver)
 
 TypeResolver = Callable[
-    [Any, Any, "ResolveInfo"], Optional[Union["ObjectType", str]]
+    [Any, Any, "ResolveInfo"],
+    Optional[Union["ObjectType", str]],
 ]
 TTypeResolver = TypeVar("TTypeResolver", bound=TypeResolver)
 
@@ -205,10 +206,10 @@ class InputField(InputValue):
     """
 
     def __str__(self) -> str:
-        return "InputField(%s: %s)" % (self.name, self.type)
+        return f"InputField({self.name}: {self.type})"
 
     def __repr__(self) -> str:
-        return "InputField(%s: %s)" % (self.name, self.type)
+        return f"InputField({self.name}: {self.type})"
 
 
 class InputObjectType(NamedType):
@@ -335,7 +336,8 @@ class EnumValue:
 
     @classmethod
     def from_def(
-        cls: Type[_EV], definition: Union[_EV, str, Tuple[str, Any]]
+        cls: Type[_EV],
+        definition: Union[_EV, str, Tuple[str, Any]],
     ) -> _EV:
         """
         Create an enum value from various source objects.
@@ -352,7 +354,7 @@ class EnumValue:
             name, value = definition
             return cls(name, value)
         else:
-            raise TypeError("Invalid enum value definition %s" % definition)
+            raise TypeError(f"Invalid enum value definition {definition}")
 
     def __init__(
         self,
@@ -363,7 +365,7 @@ class EnumValue:
         node: Optional[_ast.EnumValueDefinition] = None,
     ):
         if name in ("true", "false", "null"):
-            raise ValueError('Invalid name "%s" for enum value' % name)
+            raise ValueError(f'Invalid name "{name}" for enum value')
 
         self.name = name
         self.value = value if value is not _UNSET else name
@@ -439,7 +441,8 @@ class EnumType(GraphQLLeafType, NamedType):
         self._set_values(values)
 
     def _set_values(
-        self, values: Iterable[Union[EnumValue, str, Tuple[str, Any]]]
+        self,
+        values: Iterable[Union[EnumValue, str, Tuple[str, Any]]],
     ) -> None:
         self.values = []  # type: List[EnumValue]
         self._values = {}  # type: Dict[str, EnumValue]
@@ -449,7 +452,7 @@ class EnumType(GraphQLLeafType, NamedType):
             v = EnumValue.from_def(v)
 
             if v.name in self._values:
-                raise ValueError("Duplicate enum value %s" % v.name)
+                raise ValueError(f"Duplicate enum value {v.name}")
 
             self.values.append(v)
             self._reverse_values[v.value] = self._values[v.name] = v
@@ -470,9 +473,7 @@ class EnumType(GraphQLLeafType, NamedType):
         try:
             return self._values[name].value
         except KeyError:
-            raise UnknownEnumValue(
-                "Invalid name %s for enum %s" % (name, self.name)
-            )
+            raise UnknownEnumValue(f"Invalid name {name} for enum {self.name}")
 
     def get_name(self, value: Any) -> str:
         """
@@ -491,12 +492,15 @@ class EnumType(GraphQLLeafType, NamedType):
             return self._reverse_values[value].name
         except KeyError:
             raise UnknownEnumValue(
-                "Invalid value %r for enum %s" % (value, self.name)
+                f"Invalid value {value!r} for enum {self.name}",
             )
 
 
 _ScalarValueNode = Union[
-    _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
+    _ast.IntValue,
+    _ast.FloatValue,
+    _ast.StringValue,
+    _ast.BooleanValue,
 ]
 
 _ScalarValue = Union[str, int, float, bool, None]
@@ -695,10 +699,10 @@ class Argument(InputValue):
     """
 
     def __str__(self) -> str:
-        return "Argument(%s: %s)" % (self.name, self.type)
+        return f"Argument({self.name}: {self.type})"
 
     def __repr__(self) -> str:
-        return "Argument(%s: %s)" % (self.name, self.type)
+        return f"Argument({self.name}: {self.type})"
 
 
 class Field:
@@ -798,10 +802,10 @@ class Field:
         return {arg.name: arg for arg in self.arguments}
 
     def __str__(self) -> str:
-        return "Field(%s: %s)" % (self.name, self.type)
+        return f"Field({self.name}: {self.type})"
 
     def __repr__(self) -> str:
-        return "Field(%s: %s)" % (self.name, self.type)
+        return f"Field({self.name}: {self.type})"
 
 
 class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
@@ -1074,7 +1078,7 @@ class Directive:
         if any(x not in DIRECTIVE_LOCATIONS for x in locations):
             raise ValueError(
                 "Locations must be one of %s but received %r"
-                % (DIRECTIVE_LOCATIONS, locations)
+                % (DIRECTIVE_LOCATIONS, locations),
             )
 
         self.name = name
@@ -1093,7 +1097,8 @@ def is_input_type(type_: GraphQLType) -> bool:
     These types may be used as input types for arguments and directives.
     """
     return isinstance(
-        unwrap_type(type_), (ScalarType, EnumType, InputObjectType)
+        unwrap_type(type_),
+        (ScalarType, EnumType, InputObjectType),
     )
 
 

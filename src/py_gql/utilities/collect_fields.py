@@ -31,7 +31,8 @@ T = TypeVar("T")
 GroupedFields = Dict[str, List[ast.Field]]
 
 InclueCallable = Callable[
-    [Union[ast.Field, ast.InlineFragment, ast.FragmentSpread]], bool
+    [Union[ast.Field, ast.InlineFragment, ast.FragmentSpread]],
+    bool,
 ]
 
 
@@ -59,9 +60,13 @@ def collect_fields(
             grouped_fields[key].append(selection)
 
         elif isinstance(selection, ast.InlineFragment):
-            if _skip_selection(
-                selection, variables
-            ) or not _fragment_type_applies(schema, object_type, selection):
+            if (
+                _skip_selection(
+                    selection,
+                    variables,
+                )
+                or not _fragment_type_applies(schema, object_type, selection)
+            ):
                 continue
 
             _merge(
@@ -255,7 +260,9 @@ def selected_fields(
     fieldnames = []
 
     collected = collect_fields_untyped(
-        field.selection_set.selections, fragments, variables
+        field.selection_set.selections,
+        fragments,
+        variables,
     )
 
     if isinstance(pattern, str):
@@ -279,7 +286,7 @@ def selected_fields(
                     maxdepth=maxdepth,
                     pattern=pattern,
                     _path=child_path,
-                )
+                ),
             )
 
     return fieldnames

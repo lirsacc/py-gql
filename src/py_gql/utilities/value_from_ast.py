@@ -63,7 +63,8 @@ def value_from_ast(
     if isinstance(type_, InputObjectType):
         if not isinstance(node, _ast.ObjectValue):
             raise InvalidValue(
-                "Expected Object but got %s" % node.__class__.__name__, [node]
+                f"Expected Object but got {node.__class__.__name__}",
+                [node],
             )
         return _extract_input_object(node, type_, variables)
 
@@ -84,11 +85,11 @@ def value_from_ast(
         ):
             raise InvalidValue(
                 "Invalid literal %s for scalar type %s"
-                % (node.__class__.__name__, type_.name)
+                % (node.__class__.__name__, type_.name),
             )
         return type_.parse_literal(node, variables)
 
-    raise TypeError("Invalid type for input coercion %s" % type_)
+    raise TypeError(f"Invalid type for input coercion {type_}")
 
 
 def _extract_input_object(
@@ -105,7 +106,7 @@ def _extract_input_object(
             if field.has_default_value:
                 coerced[target_name] = field.default_value
             elif isinstance(field.type, NonNullType):
-                raise InvalidValue("Missing field %s" % name, [node])
+                raise InvalidValue(f"Missing field {name}", [node])
         else:
             value = node_fields[name].value
             coerced[target_name] = value_from_ast(value, field.type, variables)
@@ -124,8 +125,7 @@ def _extract_variable(
     variable_value = variables[varname]
     if isinstance(type_, NonNullType) and variable_value is None:
         raise InvalidValue(
-            'Variable "$%s" used for type "%s" must not be null.'
-            % (varname, type_),
+            f'Variable "${varname}" used for type "{type_}" must not be null.',
             [node],
         )
     return variable_value

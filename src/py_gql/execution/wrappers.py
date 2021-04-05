@@ -151,7 +151,9 @@ class ResolutionContext:
             return result
 
     def field_definition(
-        self, parent_type: ObjectType, name: str
+        self,
+        parent_type: ObjectType,
+        name: str,
     ) -> Optional[Field]:
 
         key = parent_type.name, name
@@ -182,14 +184,18 @@ class ResolutionContext:
             return field_def
 
     def argument_values(
-        self, field_definition: Field, node: ast.Field
+        self,
+        field_definition: Field,
+        node: ast.Field,
     ) -> Dict[str, Any]:
         cache_key = field_definition, node
         try:
             return self._argument_values[cache_key]
         except KeyError:
             av = self._argument_values[cache_key] = coerce_argument_values(
-                field_definition, node, self.variables
+                field_definition,
+                node,
+                self.variables,
             )
             return av
 
@@ -304,7 +310,10 @@ class ResolveInfo:
             return args
 
     def selected_fields(
-        self, *, maxdepth: int = 1, pattern: Optional[str] = None
+        self,
+        *,
+        maxdepth: int = 1,
+        pattern: Optional[str] = None,
     ) -> List[str]:
         """
         Extract the list of fields selected by the field currently being resolved.
@@ -389,7 +398,7 @@ class GraphQLResult:
             ValueError: Extension with the same name has already been added
         """
         if ext.name in self.extensions:
-            raise ValueError('Duplicate extension "%s"' % ext.name)
+            raise ValueError(f'Duplicate extension "{ext.name}"')
         self.extensions[ext.name] = ext
 
     def response(self) -> Dict[str, Any]:

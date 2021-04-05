@@ -123,7 +123,9 @@ DATETIME_PATTERN = re.compile(
 
 
 def to_int(
-    key: str, value: Optional[str], default: Optional[int] = None
+    key: str,
+    value: Optional[str],
+    default: Optional[int] = None,
 ) -> int:
     """
     >>> to_int("foo", "42")
@@ -144,12 +146,12 @@ def to_int(
     if value is None or not value:
         if default is not None:
             return default
-        raise ValueError("Missing %s part." % key)
+        raise ValueError(f"Missing {key} part.")
 
     try:
         return int(value)
     except ValueError:
-        raise ValueError("Invalid %s part." % key)
+        raise ValueError(f"Invalid {key} part.")
 
 
 def offset(hours: int, minutes: int) -> datetime.timezone:
@@ -162,7 +164,7 @@ def _parse_microseconds(value: Optional[str]) -> int:
     else:
         return int(
             decimal.Decimal("0.%s" % (value or 0))
-            * decimal.Decimal("1000000.0")
+            * decimal.Decimal("1000000.0"),
         )
 
 
@@ -175,7 +177,7 @@ def parse_datetime(
     """
     match = DATETIME_PATTERN.match(value)
     if not match:
-        raise ValueError("Invalid ISO 8601 datetime %r." % value)
+        raise ValueError(f"Invalid ISO 8601 datetime {value!r}.")
 
     groups = match.groupdict()
 
@@ -203,7 +205,7 @@ def parse_datetime(
             tzinfo=tzinfo,
         )
     except ValueError as err:
-        raise ValueError("Cannot parse datetime from %s (%s)" % (value, err))
+        raise ValueError(f"Cannot parse datetime from {value} ({err})")
 
 
 def parse_time(value: str) -> datetime.time:
@@ -212,7 +214,7 @@ def parse_time(value: str) -> datetime.time:
     """
     match = TIME_PATTERN.match(value)
     if not match:
-        raise ValueError("Invalid ISO 8601 time %r." % value)
+        raise ValueError(f"Invalid ISO 8601 time {value!r}.")
 
     groups = match.groupdict()
 
@@ -224,7 +226,7 @@ def parse_time(value: str) -> datetime.time:
             microsecond=_parse_microseconds(groups["microsecond"]),
         )
     except ValueError as err:
-        raise ValueError("Cannot parse time from %s (%s)" % (value, err))
+        raise ValueError(f"Cannot parse time from {value} ({err})")
 
 
 def parse_date(value: str) -> datetime.date:
@@ -233,7 +235,7 @@ def parse_date(value: str) -> datetime.date:
     """
     match = DATE_PATTERN.match(value)
     if not match:
-        raise ValueError("Invalid ISO 8601 date %r." % value)
+        raise ValueError(f"Invalid ISO 8601 date {value!r}.")
 
     groups = match.groupdict()
 
@@ -244,7 +246,7 @@ def parse_date(value: str) -> datetime.date:
             day=to_int("day", groups["day"] or groups["daydash"], 1),
         )
     except ValueError as err:
-        raise ValueError("Cannot parse date from %s (%s)" % (value, err))
+        raise ValueError(f"Cannot parse date from {value} ({err})")
 
 
 def serialize_datetime(value: Any) -> str:
@@ -259,7 +261,7 @@ def serialize_datetime(value: Any) -> str:
     '1997-08-29T06:14:00.000123+00:00'
     """
     if not isinstance(value, datetime.date):
-        raise TypeError("Expected datetime instance but got %r" % value)
+        raise TypeError(f"Expected datetime instance but got {value!r}")
     return value.isoformat()
 
 
@@ -277,7 +279,7 @@ def serialize_date(value: Any) -> str:
     '1997-08-29'
     """
     if not isinstance(value, datetime.date):
-        raise TypeError("Expected date instance but got %r" % value)
+        raise TypeError(f"Expected date instance but got {value!r}")
     if isinstance(value, datetime.datetime):
         value = value.date()
     return value.isoformat()
@@ -293,5 +295,5 @@ def serialize_time(value: Any) -> str:
     '06:14:00.000123'
     """
     if not isinstance(value, datetime.time):
-        raise TypeError("Expected time instance but got %r" % value)
+        raise TypeError(f"Expected time instance but got {value!r}")
     return value.isoformat()

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.schema import Directive
@@ -53,13 +51,13 @@ GROUPED_TEST_CASES = [
             """
             type Type1 { field1: String }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
             type Type2 { field1: String }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (TypeRemoved, "Type Type1 was removed."),
@@ -72,14 +70,14 @@ GROUPED_TEST_CASES = [
             """
             interface Type1 { field1: String }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
             type ObjectType { field1: String }
             union Type1 = ObjectType
             type Query { field1: String }
-            """
+            """,
         ),
         [(TypeChangedKind, "Type1 changed from Interface type to Union type.")],
     ),
@@ -112,7 +110,7 @@ GROUPED_TEST_CASES = [
                 field21: Int
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -141,7 +139,7 @@ GROUPED_TEST_CASES = [
                 field21: Int @deprecated
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (FieldRemoved, "Field field2 was removed from type Type1."),
@@ -230,7 +228,7 @@ GROUPED_TEST_CASES = [
                 field21: Int
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -259,7 +257,7 @@ GROUPED_TEST_CASES = [
                 field21: Int @deprecated
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (FieldRemoved, "Field field2 was removed from interface Type1."),
@@ -338,7 +336,7 @@ GROUPED_TEST_CASES = [
             type Type2 { field1: String }
             union UnionType1 = Type1 | Type2
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -346,7 +344,7 @@ GROUPED_TEST_CASES = [
             type Type3 { field1: String }
             union UnionType1 = Type1 | Type3
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (
@@ -369,7 +367,7 @@ GROUPED_TEST_CASES = [
                 VALUE5
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -382,7 +380,7 @@ GROUPED_TEST_CASES = [
                 VALUE6
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (EnumValueRemoved, "VALUE1 was removed from enum EnumType1."),
@@ -405,14 +403,14 @@ GROUPED_TEST_CASES = [
             directive @fooDirective on SCHEMA
             directive @bazDirective on FIELD_DEFINITION | OBJECT
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
             directive @barDirective on SCHEMA
             directive @bazDirective on FIELD_DEFINITION | SCALAR
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (DirectiveRemoved, "Directive fooDirective was removed."),
@@ -451,7 +449,7 @@ GROUPED_TEST_CASES = [
                 arg16: String = "test"
             ) on SCHEMA
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -477,7 +475,7 @@ GROUPED_TEST_CASES = [
                 arg19: Int,
             ) on SCHEMA
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (
@@ -588,7 +586,7 @@ GROUPED_TEST_CASES = [
                 ) : String
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -616,7 +614,7 @@ GROUPED_TEST_CASES = [
                 ) : String
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (
@@ -710,7 +708,7 @@ GROUPED_TEST_CASES = [
             type Type1 implements Iface1 { field1: String }
             type Type2 implements Iface2 { field1: String }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -719,7 +717,7 @@ GROUPED_TEST_CASES = [
             type Type1 implements Iface2 { field1: String }
             type Type2 implements Iface1 { field1: String }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (TypeRemovedFromInterface, "Type1 no longer implements Iface1."),
@@ -738,7 +736,7 @@ GROUPED_TEST_CASES = [
                 field3: String
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -750,7 +748,7 @@ GROUPED_TEST_CASES = [
                 optionalField2: Boolean! = false
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (
@@ -797,7 +795,7 @@ GROUPED_TEST_CASES = [
                 field15: [[Int]!]
             }
             type Query { field1: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -818,7 +816,7 @@ GROUPED_TEST_CASES = [
                 field15: [[Int!]!]
             }
             type Query { field1: String }
-            """
+            """,
         ),
         [
             (
@@ -886,7 +884,7 @@ GROUPED_TEST_CASES = [
             directive @baz repeatable on SCHEMA
 
             type Query { noop: String }
-            """
+            """,
         ),
         build_schema(
             """
@@ -895,7 +893,7 @@ GROUPED_TEST_CASES = [
             directive @baz on SCHEMA
 
             type Query { noop: String }
-            """
+            """,
         ),
         [
             (DirectiveIsNowRepeatable, "Directive @foo is now repeatable."),
@@ -917,10 +915,10 @@ def assert_change_found(changes, expected):
     hashed_changes = [(c.__class__, c.message) for c in changes]
 
     print("\nTest case:")
-    print('{}("{}"),'.format(expected[0].__name__, expected[1]))
+    print(f'{expected[0].__name__}("{expected[1]}"),')
     print("Found diffs:")
     for change_cls, change_str in hashed_changes:
-        print('{}("{}"),'.format(change_cls.__name__, change_str))
+        print(f'{change_cls.__name__}("{change_str}"),')
 
     assert expected in hashed_changes
 
@@ -929,9 +927,7 @@ def assert_change_found(changes, expected):
     "old_schema, new_schema, expected",
     # Isolate each test case.
     [
-        pytest.param(
-            old_schema, new_schema, change, id="{}:{}".format(group, change[1])
-        )
+        pytest.param(old_schema, new_schema, change, id=f"{group}:{change[1]}")
         for group, old_schema, new_schema, changes in GROUPED_TEST_CASES
         for change in changes  # type: ignore
     ],
@@ -974,7 +970,7 @@ def test_no_incompatible_changes(old_schema, new_schema):
             build_schema(old_schema),
             build_schema(new_schema),
             min_severity=SchemaChangeSeverity.DANGEROUS,
-        )
+        ),
     )
 
 
@@ -985,16 +981,16 @@ def test_minimum_severity():
                 """
                 type Type1 { field1: String }
                 type Query { field1: String }
-                """
+                """,
             ),
             build_schema(
                 """
                 type Type2 { field1: String }
                 type Query { field1: String }
-                """
+                """,
             ),
             min_severity=SchemaChangeSeverity.BREAKING,
-        )
+        ),
     )
 
     assert len(changes) == 1
@@ -1004,14 +1000,14 @@ def test_minimum_severity():
 def test_repeatable_directive_severity():
     assert (
         DirectiveIsNotRepeatableAnymore(
-            Directive("foo", repeatable=True, locations=["SCHEMA"])
+            Directive("foo", repeatable=True, locations=["SCHEMA"]),
         ).severity
         is SchemaChangeSeverity.DANGEROUS
     )
 
     assert (
         DirectiveIsNotRepeatableAnymore(
-            Directive("foo", repeatable=True, locations=["SCHEMA", "FIELD"])
+            Directive("foo", repeatable=True, locations=["SCHEMA", "FIELD"]),
         ).severity
         is SchemaChangeSeverity.BREAKING
     )

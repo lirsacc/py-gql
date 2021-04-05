@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -152,7 +149,7 @@ def test_different_object_into_object(schema):
         """,
         [
             'Fragment "dogFragment" cannot be spread here as types "Dog" and '
-            '"Cat" do not overlap.'
+            '"Cat" do not overlap.',
         ],
     )
 
@@ -168,7 +165,7 @@ def test_different_object_into_object_in_inline_fragment(schema):
         """,
         [
             'Inline fragment cannot be spread here as types "Dog" and "Cat" '
-            "do not overlap."
+            "do not overlap.",
         ],
     )
 
@@ -183,7 +180,7 @@ def test_object_into_not_implementing_interface(schema):
         """,
         [
             'Fragment "humanFragment" cannot be spread here as types "Human" '
-            'and "Pet" do not overlap.'
+            'and "Pet" do not overlap.',
         ],
     )
 
@@ -198,7 +195,7 @@ def test_object_into_not_containing_union(schema):
         """,
         [
             'Fragment "humanFragment" cannot be spread here as types "Human" '
-            'and "CatOrDog" do not overlap.'
+            'and "CatOrDog" do not overlap.',
         ],
     )
 
@@ -213,7 +210,7 @@ def test_union_into_not_contained_object(schema):
         """,
         [
             'Fragment "catOrDogFragment" cannot be spread here as types '
-            '"CatOrDog" and "Human" do not overlap.'
+            '"CatOrDog" and "Human" do not overlap.',
         ],
     )
 
@@ -228,7 +225,7 @@ def test_union_into_non_overlapping_interface(schema):
         """,
         [
             'Fragment "humanOrAlienFragment" cannot be spread here as types '
-            '"HumanOrAlien" and "Pet" do not overlap.'
+            '"HumanOrAlien" and "Pet" do not overlap.',
         ],
     )
 
@@ -243,7 +240,7 @@ def test_union_into_non_overlapping_union(schema):
         """,
         [
             'Fragment "humanOrAlienFragment" cannot be spread here as types '
-            '"HumanOrAlien" and "CatOrDog" do not overlap.'
+            '"HumanOrAlien" and "CatOrDog" do not overlap.',
         ],
     )
 
@@ -258,7 +255,7 @@ def test_interface_into_non_implementing_object(schema):
         """,
         [
             'Fragment "intelligentFragment" cannot be spread here as types '
-            '"Intelligent" and "Cat" do not overlap.'
+            '"Intelligent" and "Cat" do not overlap.',
         ],
     )
 
@@ -275,7 +272,7 @@ def test_interface_into_non_overlapping_interface(schema):
         """,
         [
             'Fragment "intelligentFragment" cannot be spread here as types '
-            '"Intelligent" and "Pet" do not overlap.'
+            '"Intelligent" and "Pet" do not overlap.',
         ],
     )
 
@@ -291,7 +288,7 @@ def test_interface_into_non_overlapping_interface_in_inline_fragment(schema):
         """,
         [
             'Inline fragment cannot be spread here as types "Intelligent" '
-            'and "Pet" do not overlap.'
+            'and "Pet" do not overlap.',
         ],
     )
 
@@ -306,6 +303,6 @@ def test_interface_into_non_overlapping_union(schema):
         """,
         [
             'Fragment "petFragment" cannot be spread here as types "Pet" and '
-            '"HumanOrAlien" do not overlap.'
+            '"HumanOrAlien" do not overlap.',
         ],
     )

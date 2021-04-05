@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -305,7 +302,7 @@ def test_string_over_boolean(schema):
         """,
         [
             'Variable "$stringVar" of type String used in position expecting '
-            "type Boolean"
+            "type Boolean",
         ],
     )
 
@@ -323,7 +320,7 @@ def test_string_to_list_of_string(schema):
         """,
         [
             'Variable "$stringVar" of type String used in position expecting '
-            "type [String]"
+            "type [String]",
         ],
     )
 
@@ -339,7 +336,7 @@ def test_boolean_to_required_boolean_in_directive(schema):
         """,
         [
             'Variable "$boolVar" of type Boolean used in position expecting '
-            "type Boolean!"
+            "type Boolean!",
         ],
     )
 
@@ -355,7 +352,7 @@ def test_string_to_required_boolean_in_directive(schema):
         """,
         [
             'Variable "$stringVar" of type String used in position expecting '
-            "type Boolean!"
+            "type Boolean!",
         ],
     )
 
@@ -373,7 +370,7 @@ def test_list_of_string_to_list_of_required_string(schema):
         """,
         [
             'Variable "$stringListVar" of type [String] used in position '
-            "expecting type [String!]"
+            "expecting type [String!]",
         ],
     )
 

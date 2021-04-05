@@ -15,7 +15,7 @@ IncludeDirective = Directive(
     ),
     locations=["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
     args=[
-        Argument("if", NonNullType(Boolean), description="Included when true")
+        Argument("if", NonNullType(Boolean), description="Included when true"),
     ],
 )
 
@@ -27,7 +27,7 @@ SkipDirective = Directive(
     ),
     locations=["FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"],
     args=[
-        Argument("if", NonNullType(Boolean), description="Skipped when true")
+        Argument("if", NonNullType(Boolean), description="Skipped when true"),
     ],
 )
 
@@ -48,7 +48,7 @@ DeprecatedDirective = Directive(
                 "similar data. Formatted in [Markdown](https://daringfireball"
                 ".net/projects/markdown/)."
             ),
-        )
+        ),
     ],
 )
 

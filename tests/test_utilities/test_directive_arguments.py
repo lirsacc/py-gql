@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.exc import CoercionError
@@ -9,7 +7,9 @@ from py_gql.utilities import all_directive_arguments, directive_arguments
 
 
 CustomDirective = Directive(
-    "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+    "custom",
+    ["FIELD"],
+    [Argument("a", String), Argument("b", Int)],
 )
 
 
@@ -99,7 +99,7 @@ class TestDirectiveArguments:
 
     def test_repeatable_directive_multiple(self):
         doc = parse(
-            '{ a @customRepeat(a: "foo", b: $b) @customRepeat(a: "bar", b: 41) }'
+            '{ a @customRepeat(a: "foo", b: $b) @customRepeat(a: "bar", b: 41) }',
         )
         assert (
             directive_arguments(
@@ -136,7 +136,7 @@ class TestAllDirectiveArguments:
 
     def test_repeatable_directive_multiple(self):
         doc = parse(
-            '{ a @customRepeat(a: "foo", b: $b) @customRepeat(a: "bar", b: 41) }'
+            '{ a @customRepeat(a: "foo", b: $b) @customRepeat(a: "bar", b: 41) }',
         )
         assert (
             all_directive_arguments(

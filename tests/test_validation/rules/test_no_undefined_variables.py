@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 from py_gql.validation.rules import NoUndefinedVariablesChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -197,7 +194,7 @@ def test_variable_in_fragment_not_defined_by_unnamed_query(schema):
         """,
         [
             'Variable "$a" from fragment "FragA" is not defined on anonymous'
-            " operation"
+            " operation",
         ],
     )
 
@@ -225,7 +222,7 @@ def test_variable_in_fragment_not_defined_by_operation(schema):
         }
         """,
         [
-            'Variable "$c" from fragment "FragC" is not defined on "Foo" operation'
+            'Variable "$c" from fragment "FragC" is not defined on "Foo" operation',
         ],
     )
 

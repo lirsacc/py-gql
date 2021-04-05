@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import cast
 
 import pytest
@@ -24,13 +22,16 @@ from py_gql.schema import (
 Interface = InterfaceType("Interface", [Field("fieldName", String)])
 
 Implementing = ObjectType(
-    "Object", [Field("fieldName", String)], interfaces=[Interface]
+    "Object",
+    [Field("fieldName", String)],
+    interfaces=[Interface],
 )
 
 DirInput = InputObjectType("DirInput", [InputField("field", String)])
 
 WrappedDirInput = InputObjectType(
-    "WrappedDirInput", [InputField("field", String)]
+    "WrappedDirInput",
+    [InputField("field", String)],
 )
 
 Dir = Directive(
@@ -40,7 +41,8 @@ Dir = Directive(
 )
 
 BlogImage = ObjectType(
-    "Image", [Field("url", String), Field("width", Int), Field("height", Int)]
+    "Image",
+    [Field("url", String), Field("width", Int), Field("height", Int)],
 )
 
 BlogAuthor = ObjectType(
@@ -49,7 +51,9 @@ BlogAuthor = ObjectType(
         Field("id", String),
         Field("name", String),
         Field(
-            "pic", BlogImage, [Argument("width", Int), Argument("height", Int)]
+            "pic",
+            BlogImage,
+            [Argument("width", Int), Argument("height", Int)],
         ),
         Field("recentArticle", lambda: BlogArticle),
     ],
@@ -89,7 +93,8 @@ def _null_resolver(*_a, **_kw):
 def test_Schema_is_possible_type_is_accurate():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+            "Query",
+            [Field("getObject", Interface, resolver=_null_resolver)],
         ),
         directives=[Dir],
     )
@@ -99,7 +104,8 @@ def test_Schema_is_possible_type_is_accurate():
 def test_Schema_is_possible_handles_non_object_types():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+            "Query",
+            [Field("getObject", Interface, resolver=_null_resolver)],
         ),
         directives=[Dir],
     )
@@ -109,7 +115,8 @@ def test_Schema_is_possible_handles_non_object_types():
 def test_Schema_is_possible_rejects_non_abstract_types():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+            "Query",
+            [Field("getObject", Interface, resolver=_null_resolver)],
         ),
         directives=[Dir],
     )
@@ -121,7 +128,8 @@ def test_Schema_is_possible_rejects_non_abstract_types():
 def test_Schema_includes_input_types_only_used_in_directives():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+            "Query",
+            [Field("getObject", Interface, resolver=_null_resolver)],
         ),
         directives=[Dir],
     )
@@ -132,7 +140,8 @@ def test_Schema_includes_input_types_only_used_in_directives():
 def test_Schema_get_type_raises_on_unknown_type():
     schema = Schema(
         ObjectType(
-            "Query", [Field("getObject", Interface, resolver=_null_resolver)]
+            "Query",
+            [Field("getObject", Interface, resolver=_null_resolver)],
         ),
         directives=[Dir],
     )
@@ -142,10 +151,12 @@ def test_Schema_get_type_raises_on_unknown_type():
 
 def test_Schema_includes_nested_input_objects_in_the_map():
     NestedInputObject = InputObjectType(
-        "NestedInputObject", [InputField("value", String)]
+        "NestedInputObject",
+        [InputField("value", String)],
     )
     SomeInputObject = InputObjectType(
-        "SomeInputObject", [InputField("nested", NestedInputObject)]
+        "SomeInputObject",
+        [InputField("nested", NestedInputObject)],
     )
     SomeMutation = ObjectType(
         "SomeMutation",
@@ -154,7 +165,7 @@ def test_Schema_includes_nested_input_objects_in_the_map():
                 "mutateSomething",
                 BlogArticle,
                 [Argument("input", SomeInputObject)],
-            )
+            ),
         ],
     )
     SomeSubscription = ObjectType(
@@ -164,7 +175,7 @@ def test_Schema_includes_nested_input_objects_in_the_map():
                 "subscribeToSomething",
                 BlogArticle,
                 [Argument("input", SomeInputObject)],
-            )
+            ),
         ],
     )
 
@@ -181,7 +192,9 @@ def test_Schema_includes_interface_possible_types_in_the_type_map():
     SomeInterface = InterfaceType("SomeInterface", [Field("f", Int)])
 
     SomeSubtype = ObjectType(
-        "SomeSubtype", [Field("f", Int)], lambda: [SomeInterface]
+        "SomeSubtype",
+        [Field("f", Int)],
+        lambda: [SomeInterface],
     )
 
     schema = Schema(
@@ -375,7 +388,9 @@ def test_register_default_resolver_allow_override():
 
     schema.register_default_resolver("Query", query_default)
     schema.register_default_resolver(
-        "Query", query_default_2, allow_override=True
+        "Query",
+        query_default_2,
+        allow_override=True,
     )
 
     assert (
@@ -439,7 +454,9 @@ def test_register_type_resolver_override():
         schema.register_type_resolver("Interface", type_resolver2)
 
     schema.register_type_resolver(
-        "Interface", type_resolver2, allow_override=True
+        "Interface",
+        type_resolver2,
+        allow_override=True,
     )
     assert (
         cast(InterfaceType, schema.get_type("Interface")).resolve_type

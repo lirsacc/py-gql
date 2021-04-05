@@ -82,7 +82,8 @@ class ExecutableDefinitionsChecker(ValidationVisitor):
                     else definition.name.value
                 )
                 self.add_error(
-                    "The %s definition is not executable." % name, [definition]
+                    f"The {name} definition is not executable.",
+                    [definition],
                 )
                 skip_doc = True
 
@@ -103,7 +104,7 @@ class UniqueOperationNameChecker(ValidationVisitor):
     def enter_operation_definition(self, node):
         op_name = node.name.value if node.name else node.operation
         if op_name in self._names:
-            self.add_error('Duplicate operation "%s".' % op_name, [node])
+            self.add_error(f'Duplicate operation "{op_name}".', [node])
             raise SkipNode()
         self._names.add(op_name)
 
@@ -170,7 +171,7 @@ class KnownTypeNamesChecker(ValidationVisitor):
         try:
             self.schema.get_type_from_literal(node)
         except UnknownType as err:
-            self.add_error('Unknown type "%s"' % err, [node])
+            self.add_error(f'Unknown type "{err}"', [node])
 
     enter_named_type = _enter_type_literal
     enter_list_type = _enter_type_literal
@@ -189,8 +190,7 @@ class FragmentsOnCompositeTypesChecker(ValidationVisitor):
             type_ = self.schema.get_type_from_literal(node.type_condition)
             if not isinstance(type_, GraphQLCompositeType):
                 self.add_error(
-                    'Fragment cannot condition on non composite type "%s".'
-                    % type_,
+                    f'Fragment cannot condition on non composite type "{type_}".',
                     [node.type_condition],
                 )
                 raise SkipNode()
@@ -215,7 +215,7 @@ class VariablesAreInputTypesChecker(ValidationVisitor):
     def enter_variable_definition(self, node):
         def _err():
             self.add_error(
-                'Variable "$%s" must be input type' % node.variable.name.value,
+                f'Variable "${node.variable.name.value}" must be input type',
                 [node],
             )
 
@@ -279,7 +279,8 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
         if field_def is None:
 
             if isinstance(
-                self.type_info.parent_type, (ObjectType, InterfaceType)
+                self.type_info.parent_type,
+                (ObjectType, InterfaceType),
             ):
                 fieldnames = [f.name for f in self.type_info.parent_type.fields]
                 suggestions = infer_suggestions(node.name.value, fieldnames)
@@ -302,7 +303,7 @@ class FieldsOnCorrectTypeChecker(ValidationVisitor):
 
             elif isinstance(self.type_info.parent_type, UnionType):
                 options = quoted_options_list(
-                    [t.name for t in self.type_info.parent_type.types]
+                    [t.name for t in self.type_info.parent_type.types],
                 )
                 self.add_error(
                     'Cannot query field "%s" on type "%s". Did you mean to use '
@@ -337,7 +338,8 @@ class UniqueFragmentNamesChecker(ValidationVisitor):
         name = node.name.value
         if name in self._names:
             self.add_error(
-                'There can only be one fragment named "%s"' % name, [node]
+                f'There can only be one fragment named "{name}"',
+                [node],
             )
         self._names.add(name)
 
@@ -357,13 +359,13 @@ class KnownFragmentNamesChecker(ValidationVisitor):
                 definition.name.value
                 for definition in node.definitions
                 if type(definition) == _ast.FragmentDefinition
-            ]
+            ],
         )
 
     def enter_fragment_spread(self, node):
         name = node.name.value
         if name not in self._fragment_names:
-            self.add_error('Unknown fragment "%s"' % name, [node])
+            self.add_error(f'Unknown fragment "{name}"', [node])
 
 
 class NoUnusedFragmentsChecker(ValidationVisitor):
@@ -387,8 +389,8 @@ class NoUnusedFragmentsChecker(ValidationVisitor):
     def leave_document(self, _node):
         unused = self._fragments - self._used_fragments
         if unused:
-            quoted = ", ".join('"%s"' % x for x in sorted(unused))
-            self.add_error("Unused fragment(s) %s" % quoted)
+            quoted = ", ".join(f'"{x}"' for x in sorted(unused))
+            self.add_error(f"Unused fragment(s) {quoted}")
 
 
 class PossibleFragmentSpreadsChecker(ValidationVisitor):
@@ -406,11 +408,11 @@ class PossibleFragmentSpreadsChecker(ValidationVisitor):
         self._fragment_types.update(
             {
                 definition.name.value: self.schema.get_type_from_literal(
-                    definition.type_condition
+                    definition.type_condition,
                 )
                 for definition in node.definitions
                 if type(definition) == _ast.FragmentDefinition
-            }
+            },
         )
 
     def enter_fragment_spread(self, node):
@@ -471,7 +473,8 @@ class NoFragmentCyclesChecker(ValidationVisitor):
         if self._current is not None:
             if self._current and name == self._current:
                 self.add_error(
-                    'Cannot spread fragment "%s" withing itself' % name, [node]
+                    f'Cannot spread fragment "{name}" withing itself',
+                    [node],
                 )
                 raise SkipNode()
 
@@ -532,7 +535,7 @@ class UniqueVariableNamesChecker(ValidationVisitor):
     def enter_variable_definition(self, node):
         name = node.variable.name.value
         if name in self._variables:
-            self.add_error('Duplicate variable "$%s"' % name, [node])
+            self.add_error(f'Duplicate variable "${name}"', [node])
         self._variables.add(name)
 
 
@@ -597,7 +600,7 @@ class NoUnusedVariablesChecker(VariablesCollector):
             used = used_variables[op]
             for var, node in defined.items():
                 if var not in used:
-                    self.add_error('Unused variable "$%s"' % var, [node])
+                    self.add_error(f'Unused variable "${var}"', [node])
 
 
 class KnownDirectivesChecker(ValidationVisitor):
@@ -708,13 +711,13 @@ class KnownDirectivesChecker(ValidationVisitor):
         name = node.name.value
         schema_directive = self.schema.directives.get(name)
         if schema_directive is None:
-            self.add_error('Unknown directive "%s".' % name, [node])
+            self.add_error(f'Unknown directive "{name}".', [node])
             raise SkipNode()
         else:
             location = self._current_location()
             if location not in schema_directive.locations:
                 self.add_error(
-                    'Directive "%s" may not be used on %s.' % (name, location),
+                    f'Directive "{name}" may not be used on {location}.',
                     [node],
                 )
 
@@ -735,7 +738,7 @@ class UniqueDirectivesPerLocationChecker(ValidationVisitor):
                 continue
 
             if name in seen:
-                self.add_error('Duplicate directive "@%s"' % name, [directive])
+                self.add_error(f'Duplicate directive "@{name}"', [directive])
 
             seen.add(name)
 
@@ -821,7 +824,7 @@ class UniqueArgumentNamesChecker(ValidationVisitor):
         for arg in node.arguments:
             name = arg.name.value
             if name in argnames:
-                self.add_error('Duplicate argument "%s"' % name, [arg])
+                self.add_error(f'Duplicate argument "{name}"', [arg])
             argnames.add(name)
 
     enter_field = _check_duplicate_args
@@ -888,7 +891,7 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
 
                     try:
                         var_type = self.schema.get_type_from_literal(
-                            vardef.type
+                            vardef.type,
                         )
                     except UnknownType:
                         continue
@@ -896,7 +899,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
                     var_default = vardef.default_value
 
                     if isinstance(input_type, NonNullType) and not isinstance(
-                        var_type, NonNullType
+                        var_type,
+                        NonNullType,
                     ):
                         non_null_var_default = (
                             var_default is not None
@@ -909,7 +913,8 @@ class VariablesInAllowedPositionChecker(VariablesCollector):
                         if (
                             not non_null_var_default and not location_default
                         ) or not self.schema.is_subtype(
-                            var_type, input_type.type
+                            var_type,
+                            input_type.type,
                         ):
                             self.add_error(
                                 'Variable "$%s" of type %s used in position '
@@ -948,7 +953,7 @@ class UniqueInputFieldNamesChecker(ValidationVisitor):
         _, names = self._stack[-1]
         if fieldname in names:
             self.add_error(
-                "There can be only one input field named %s." % fieldname,
+                f"There can be only one input field named {fieldname}.",
                 [node],
             )
         names.add(fieldname)

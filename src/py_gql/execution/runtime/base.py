@@ -96,7 +96,9 @@ class SubscriptionRuntime(Runtime):
 
     @abc.abstractmethod
     def map_stream(
-        self, source_stream: Any, map_value: Callable[[Any], Any]
+        self,
+        source_stream: Any,
+        map_value: Callable[[Any], Any],
     ) -> Any:
         """
         Apply a mapping function to a stream / iterable of values."""

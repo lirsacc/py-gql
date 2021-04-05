@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.

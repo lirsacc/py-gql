@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from py_gql.execution import Instrumentation, MultiInstrumentation
@@ -26,7 +25,8 @@ fragment characterFragment on Character {
 
 
 async def test_instrumentation_does_not_raise(
-    assert_execution, starwars_schema
+    assert_execution,
+    starwars_schema,
 ):
     await process_request(
         starwars_schema,
@@ -36,7 +36,8 @@ async def test_instrumentation_does_not_raise(
 
 
 async def test_multi_instrumentation_stack_ordering(  # noqa: C901
-    assert_execution, starwars_schema
+    assert_execution,
+    starwars_schema,
 ):
     class TrackingInstrumentation(Instrumentation):
         def __init__(self, prefix, stack):
@@ -76,7 +77,8 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
     stack = []  # type: ignore
 
     instrumentation = MultiInstrumentation(
-        TrackingInstrumentation("a", stack), TrackingInstrumentation("b", stack)
+        TrackingInstrumentation("a", stack),
+        TrackingInstrumentation("b", stack),
     )
 
     await process_request(
@@ -110,7 +112,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             ("<", "a", "execution"),
             ("<", "b", "query"),
             ("<", "a", "query"),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -119,7 +121,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero",))),
             ("<", "b", ("field", ("hero",))),
             ("<", "a", ("field", ("hero",))),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -128,7 +130,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero", "name"))),
             ("<", "b", ("field", ("hero", "name"))),
             ("<", "a", ("field", ("hero", "name"))),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -137,7 +139,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero", "friends"))),
             ("<", "b", ("field", ("hero", "friends"))),
             ("<", "a", ("field", ("hero", "friends"))),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -146,7 +148,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero", "friends", 0, "name"))),
             ("<", "b", ("field", ("hero", "friends", 0, "name"))),
             ("<", "a", ("field", ("hero", "friends", 0, "name"))),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -155,7 +157,7 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero", "friends", 1, "name"))),
             ("<", "b", ("field", ("hero", "friends", 1, "name"))),
             ("<", "a", ("field", ("hero", "friends", 1, "name"))),
-        ]
+        ],
     )
 
     assert_ordered_subset_in_stack(
@@ -164,5 +166,5 @@ async def test_multi_instrumentation_stack_ordering(  # noqa: C901
             (">", "b", ("field", ("hero", "friends", 2, "name"))),
             ("<", "b", ("field", ("hero", "friends", 2, "name"))),
             ("<", "a", ("field", ("hero", "friends", 2, "name"))),
-        ]
+        ],
     )

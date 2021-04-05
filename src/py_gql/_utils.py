@@ -55,7 +55,8 @@ def lazy(maybe_callable: Union[T, Callable[[], T]]) -> T:
 
 
 def map_and_filter(
-    func: Callable[[T], Optional[T]], iterable: Iterable[T]
+    func: Callable[[T], Optional[T]],
+    iterable: Iterable[T],
 ) -> List[T]:
     """
     Map an iterable filtering out None.
@@ -68,7 +69,8 @@ def map_and_filter(
 
 
 def deduplicate(
-    iterable: Iterable[H], key: Optional[Callable[[H], Hashable]] = None
+    iterable: Iterable[H],
+    key: Optional[Callable[[H], Hashable]] = None,
 ) -> Iterator[H]:
     """
     Deduplicate an iterable.
@@ -103,7 +105,8 @@ def deduplicate(
 
 
 def maybe_first(
-    iterable: Iterable[T], default: Optional[T] = None
+    iterable: Iterable[T],
+    default: Optional[T] = None,
 ) -> Optional[T]:
     """
     Return the first item in an iterable or None.
@@ -142,7 +145,8 @@ def find_one(
 
     """
     return maybe_first(
-        (entry for entry in iterable if predicate(entry)), default=default
+        (entry for entry in iterable if predicate(entry)),
+        default=default,
     )
 
 
@@ -226,7 +230,10 @@ if sys.version < "3.6":  # noqa: C901
         __slots__ = ("_inner", "default_factory")
 
         def __init__(
-            self, default_factory: Callable[[], V], *args: Any, **kwargs: Any
+            self,
+            default_factory: Callable[[], V],
+            *args: Any,
+            **kwargs: Any,
         ):
             if default_factory is not None and not callable(default_factory):
                 raise TypeError("default_factory must be callable")
@@ -287,7 +294,10 @@ else:
 
 
 def classdispatch(
-    value: Any, registry: Mapping[TType, C], *args: Any, **kwargs: Any
+    value: Any,
+    registry: Mapping[TType, C],
+    *args: Any,
+    **kwargs: Any,
 ) -> T:
     """
     Poor man's singledispatch to be used inline.
@@ -333,7 +343,8 @@ def classdispatch(
 
 
 def apply_middlewares(
-    func: Callable[..., Any], middlewares: Sequence[Callable[..., Any]]
+    func: Callable[..., Any],
+    middlewares: Sequence[Callable[..., Any]],
 ) -> Callable[..., Any]:
     """
     Apply a list of middlewares to a source function.

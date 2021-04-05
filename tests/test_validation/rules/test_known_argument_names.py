@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql.validation.rules import KnownArgumentNamesChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -136,7 +134,7 @@ def test_invalid_arg_name(schema):
         }
         """,
         [
-            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".'
+            'Unknown argument "unknown" on field "doesKnowCommand" of type "Dog".',
         ],
         [(53, 66)],
     )
@@ -153,7 +151,7 @@ def test_misspelled_arg_name_is_reported(schema):
         """,
         [
             'Unknown argument "dogcommand" on field "doesKnowCommand" of type '
-            '"Dog". Did you mean "dogCommand"?'
+            '"Dog". Did you mean "dogCommand"?',
         ],
     )
 

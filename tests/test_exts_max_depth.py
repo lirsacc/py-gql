@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.exts.max_depth import MaxDepthValidator

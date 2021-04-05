@@ -81,7 +81,9 @@ def _cross(iter_1: Sequence[T], iter_2: Sequence[G]) -> Iterator[Tuple[T, G]]:
 
 
 def _at(
-    lst: Sequence[T], index: int, default: Optional[T] = None
+    lst: Sequence[T],
+    index: int,
+    default: Optional[T] = None,
 ) -> Optional[T]:
     """
     Safely extract value from a list at a given index.
@@ -113,7 +115,8 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
 
     def __init__(self, schema, type_info):
         super(OverlappingFieldsCanBeMergedChecker, self).__init__(
-            schema, type_info
+            schema,
+            type_info,
         )
         self.ctx = Context(self.schema, {}, set(), {})
 
@@ -124,7 +127,7 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
                 d.name.value: d
                 for d in node.definitions
                 if isinstance(d, _ast.FragmentDefinition)
-            }
+            },
         )
 
     def enter_selection_set(self, node):
@@ -144,7 +147,9 @@ class OverlappingFieldsCanBeMergedChecker(ValidationVisitor):
 
 
 def find_conflicts_within_selection_set(
-    ctx: Context, selection_set: _ast.SelectionSet, parent_type: GraphQLType
+    ctx: Context,
+    selection_set: _ast.SelectionSet,
+    parent_type: GraphQLType,
 ) -> List[Conflict]:
     """
     Find all conflicts found "within" a selection set, including those found
@@ -212,7 +217,9 @@ def find_conflicts_within_selection_set(
     conflicts = []  # type: List[Conflict]
 
     field_map, fragment_names = _fields_and_fragments(
-        ctx, parent_type, selection_set
+        ctx,
+        parent_type,
+        selection_set,
     )
 
     # (A) Find find all conflicts "within" the fields of this selection set.
@@ -224,7 +231,11 @@ def find_conflicts_within_selection_set(
         # (B) Then collect conflicts between these fields and those represented
         # by each spread fragment name found.
         for conflict in _conflicts_between_fields_and_fragment(
-            ctx, False, field_map, fragment_name, compared_fragments
+            ctx,
+            False,
+            field_map,
+            fragment_name,
+            compared_fragments,
         ):
             conflicts.append(conflict)
 
@@ -234,7 +245,10 @@ def find_conflicts_within_selection_set(
     # item in that same list (except for itself).
     for frag_1, frag_2 in _permutations(fragment_names):
         for conflict in _conflicts_between_fragments(
-            ctx, False, frag_1, frag_2
+            ctx,
+            False,
+            frag_1,
+            frag_2,
         ):
             conflicts.append(conflict)
 
@@ -260,7 +274,9 @@ def _fields_and_fragments(
     # provide that response name. For every response name, if there are
     # multiple fields, they must be compared to find a potential conflict.
     field_map, fragment_names = _collect_fields_and_fragments(
-        ctx, parent_type, selection_set
+        ctx,
+        parent_type,
+        selection_set,
     )
 
     ctx.fields_and_fragments[selection_set] = (field_map, fragment_names)
@@ -268,7 +284,8 @@ def _fields_and_fragments(
 
 
 def _referenced_fields_and_fragments(
-    ctx: Context, fragment: _ast.FragmentDefinition
+    ctx: Context,
+    fragment: _ast.FragmentDefinition,
 ) -> FieldsAndFragments:
     """
     Given a fragment definition, return the represented collection of
@@ -316,7 +333,7 @@ def _collect_fields_and_fragments(
                 node_and_defs[response_name] = []
 
             node_and_defs[response_name].append(
-                (parent_type, selection, fielddef)
+                (parent_type, selection, fielddef),
             )
 
         elif isinstance(selection, _ast.FragmentSpread):
@@ -424,7 +441,10 @@ def _conflicts_between_fields_and_fragment(
     # (D) First collect any conflicts between the provided collection of fields
     # and the collection of fields represented by the given fragment.
     for c in _conflicts_between(
-        ctx, mutually_exclusive, field_map, fragment_field_map
+        ctx,
+        mutually_exclusive,
+        field_map,
+        fragment_field_map,
     ):
         yield c
 
@@ -432,7 +452,11 @@ def _conflicts_between_fields_and_fragment(
     # and any fragment names found in the given fragment.
     for fragment in fragment_fragment_names:
         for c in _conflicts_between_fields_and_fragment(
-            ctx, mutually_exclusive, field_map, fragment, compared_fragments
+            ctx,
+            mutually_exclusive,
+            field_map,
+            fragment,
+            compared_fragments,
         ):
             yield c
 
@@ -476,7 +500,10 @@ def _conflicts_between_fragments(
     # fragments spread in the second fragment.
     for i, fragment in enumerate(fragments_1):
         for c in _conflicts_between_fragments(
-            ctx, mutually_exclusive, fragment, _at(fragment_2, i)
+            ctx,
+            mutually_exclusive,
+            fragment,
+            _at(fragment_2, i),
         ):
             yield c
 
@@ -484,7 +511,10 @@ def _conflicts_between_fragments(
     # fragments spread in the first fragment.
     for i, fragment in enumerate(fragments_2):
         for c in _conflicts_between_fragments(
-            ctx, mutually_exclusive, _at(fragment_1, i), fragment
+            ctx,
+            mutually_exclusive,
+            _at(fragment_1, i),
+            fragment,
         ):
             yield c
 
@@ -526,16 +556,16 @@ def _find_conflict(
     if not mutually_exclusive:
         # Two aliases must refer to the same field.
         if name_1 != name_2:
-            reason = '"%s" and "%s" are different fields' % (name_1, name_2)
+            reason = f'"{name_1}" and "{name_2}" are different fields'
             return response_name, reason, (node_1, node_2)
 
         # Two field calls must have the same arguments.
         if not _same_arguments(node_1.arguments or [], node_2.arguments or []):
-            reason = '"%s" and "%s" have different arguments' % (name_1, name_2)
+            reason = f'"{name_1}" and "{name_2}" have different arguments'
             return response_name, reason, (node_1, node_2)
 
     if type_1 and type_2 and _types_conflict(type_1, type_2):
-        reason = "they return conflicting types %s and %s" % (type_1, type_2)
+        reason = f"they return conflicting types {type_1} and {type_2}"
         return response_name, reason, (node_1, node_2)
 
     # Collect and compare sub-fields. Use the same "visited fragment names" list
@@ -550,14 +580,14 @@ def _find_conflict(
                 node_1.selection_set,
                 unwrap_type(type_2) if type_2 else None,
                 node_2.selection_set,
-            )
+            ),
         )
         if subconflicts:
             reason = " and ".join(
                 [
-                    'subfields "%s" conflict (%s)' % (name, reason_)
+                    f'subfields "{name}" conflict ({reason_})'
                     for name, reason_, _ in subconflicts
-                ]
+                ],
             )
             nodes = sorted(
                 [
@@ -590,7 +620,10 @@ def _conflicts_between_subselections(
 
     # (H) First, collect all conflicts between these two collections of field.
     for c in _conflicts_between(
-        ctx, mutually_exclusive, field_map_1, field_map_2
+        ctx,
+        mutually_exclusive,
+        field_map_1,
+        field_map_2,
     ):
         yield c
 
@@ -598,7 +631,11 @@ def _conflicts_between_subselections(
     # those referenced by each fragment name associated with the second.
     for fragment in fragments_2:
         for c in _conflicts_between_fields_and_fragment(
-            ctx, mutually_exclusive, field_map_1, fragment, set()
+            ctx,
+            mutually_exclusive,
+            field_map_1,
+            fragment,
+            set(),
         ):
             yield c
 
@@ -606,7 +643,11 @@ def _conflicts_between_subselections(
     # those referenced by each fragment name associated with the first.
     for fragment in fragments_1:
         for c in _conflicts_between_fields_and_fragment(
-            ctx, mutually_exclusive, field_map_2, fragment, set()
+            ctx,
+            mutually_exclusive,
+            field_map_2,
+            fragment,
+            set(),
         ):
             yield c
 
@@ -615,13 +656,17 @@ def _conflicts_between_subselections(
     # names to each item in the second set of names.
     for fragment_1, fragment_2 in _cross(fragments_1, fragments_2):
         for c in _conflicts_between_fragments(
-            ctx, mutually_exclusive, fragment_1, fragment_2
+            ctx,
+            mutually_exclusive,
+            fragment_1,
+            fragment_2,
         ):
             yield c
 
 
 def _same_arguments(
-    args_1: List[_ast.Argument], args_2: List[_ast.Argument]
+    args_1: List[_ast.Argument],
+    args_2: List[_ast.Argument],
 ) -> bool:
     """
     Given two lists of arguments, check all arguments have the same name
@@ -635,13 +680,11 @@ def _same_arguments(
 
     return all(
         (
-            (
-                a1.name.value == a2.name.value
-                and type(a1.value) == type(a2.value)  # noqa: E721
-                and a1.value.value == a2.value.value  # type: ignore
-            )
-            for a1, a2 in zip(s1, s2)
+            a1.name.value == a2.name.value
+            and type(a1.value) == type(a2.value)  # noqa: E721
+            and a1.value.value == a2.value.value  # type: ignore
         )
+        for a1, a2 in zip(s1, s2)
     )
 
 
@@ -654,11 +697,13 @@ def _types_conflict(type_1: GraphQLType, type_2: GraphQLType) -> bool:
     """
     if isinstance(type_1, WrappingType) or isinstance(type_2, WrappingType):
         return type(type_1) != type(type_2) or _types_conflict(
-            type_1.type, type_2.type  # type: ignore
+            type_1.type,  # type: ignore
+            type_2.type,  # type: ignore
         )
 
     if isinstance(type_1, GraphQLLeafType) or isinstance(
-        type_2, GraphQLLeafType
+        type_2,
+        GraphQLLeafType,
     ):
         return type_1 != type_2
 

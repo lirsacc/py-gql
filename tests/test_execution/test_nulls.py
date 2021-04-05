@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.exc import ResolverError
@@ -53,7 +51,11 @@ async def test_nulls_and_report_error_on_non_nullable_field(assert_execution):
         initial_value=dict(scalarNonNull=None),
         expected_data={"scalarNonNull": None},
         expected_errors=[
-            ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
+            (
+                'Field "scalarNonNull" is not nullable',
+                (10, 23),
+                "scalarNonNull",
+            ),
         ],
     )
 
@@ -67,7 +69,11 @@ async def test_nulls_and_report_error_on_lazy_non_nullable_field(
         initial_value=_obj(scalarNonNull=lambda *_: None),
         expected_data={"scalarNonNull": None},
         expected_errors=[
-            ('Field "scalarNonNull" is not nullable', (10, 23), "scalarNonNull")
+            (
+                'Field "scalarNonNull" is not nullable',
+                (10, 23),
+                "scalarNonNull",
+            ),
         ],
     )
 
@@ -92,13 +98,13 @@ async def test_nulls_tree_of_nullable_fields(assert_execution):
             "nested": {
                 "scalar": None,
                 "nested": {"scalar": None, "nested": None},
-            }
+            },
         },
         expected_data={
             "nested": {
                 "nested": {"nested": None, "scalar": None},
                 "scalar": None,
-            }
+            },
         },
         expected_errors=[],
     )
@@ -176,7 +182,7 @@ async def test_nulls_out_errored_subtrees(raiser, assert_execution):
                 ),
                 Field("resolver", String, resolver=lambda *_: "resolver"),
             ],
-        )
+        ),
     )
 
     await assert_execution(

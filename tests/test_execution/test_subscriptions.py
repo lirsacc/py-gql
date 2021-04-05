@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import asyncio
 
 import pytest
@@ -61,7 +59,7 @@ async def test_raises_on_unsupported_runtime():
             args=[Argument("delay", NonNullType(Float))],
             subscription_resolver=lambda *_, delay: AsyncCounter(delay, 10),
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     with pytest.raises(RuntimeError):
@@ -91,14 +89,14 @@ async def test_raises_on_multiple_fields(starwars_schema):
             args=[Argument("delay", NonNullType(Float))],
             subscription_resolver=lambda *_, delay: AsyncCounter(delay, 10),
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     with pytest.raises(ExecutionError):
         subscribe(
             schema,
             parse(
-                "subscription { counter(delay: 0.001), other: counter(delay: 0.001) }"
+                "subscription { counter(delay: 0.001), other: counter(delay: 0.001) }",
             ),
             runtime=AsyncIORuntime(),
         )
@@ -113,7 +111,7 @@ async def test_raises_on_invalid_fields(starwars_schema):
             args=[Argument("delay", NonNullType(Float))],
             subscription_resolver=lambda *_, delay: AsyncCounter(delay, 10),
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     with pytest.raises(RuntimeError):
@@ -132,7 +130,7 @@ async def test_raises_on_missing_subscription_resolver(starwars_schema):
             NonNullType(Int),
             args=[Argument("delay", NonNullType(Float))],
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     with pytest.raises(RuntimeError):
@@ -151,7 +149,7 @@ async def test_simple_counter_subscription():
             NonNullType(Int),
             args=[Argument("delay", NonNullType(Float))],
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     @schema.subscription("Subscription.counter")
@@ -182,7 +180,7 @@ async def test_async_subscription_resolver():
             args=[Argument("delay", NonNullType(Float))],
             subscription_resolver=subscription_resolver,
             resolver=lambda event, *_, **__: event,
-        )
+        ),
     )
 
     response_stream = await subscribe(
@@ -210,7 +208,7 @@ async def test_simple_counter_subscription_with_error():
             args=[Argument("delay", NonNullType(Float))],
             subscription_resolver=lambda *_, delay: AsyncCounter(delay, 10),
             resolver=resolver,
-        )
+        ),
     )
 
     response_stream = await subscribe(
@@ -231,7 +229,7 @@ async def test_simple_counter_subscription_with_error():
                             "locations": [{"column": 16, "line": 1}],
                             "message": "I don't like odd numbers.",
                             "path": ["counter"],
-                        }
+                        },
                     ],
                 }
             )

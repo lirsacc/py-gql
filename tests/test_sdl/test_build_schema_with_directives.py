@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import functools as ft
 import hashlib
 from typing import Any, cast
@@ -212,7 +210,7 @@ def test_object_modifier_and_field_modifier():
         type Query {
             foo: Foo
         }
-        """
+        """,
     )
 
     assert graphql_blocking(
@@ -228,8 +226,8 @@ def test_object_modifier_and_field_modifier():
                 ),
                 "name": "SOME LOWER CASE NAME",
                 "id": 42,
-            }
-        }
+            },
+        },
     }
 
 
@@ -336,7 +334,7 @@ def test_input_values():
             self.max = max if max is not None else float("inf")
             assert self.min >= 0
             assert self.max >= 0
-            self.name = "LimitedLenth%s_%s_%s" % (type.name, self.min, self.max)
+            self.name = f"LimitedLenth{type.name}_{self.min}_{self.max}"
 
         def serialize(self, value):
             return self.type.serialize(value)
@@ -348,7 +346,7 @@ def test_input_values():
             if not (self.min <= len(parsed) <= self.max):
                 raise ScalarParsingError(
                     "%s length must be between %s and %s but was %s"
-                    % (self.name, self.min, self.max, len(parsed))
+                    % (self.name, self.min, self.max, len(parsed)),
                 )
             return parsed
 
@@ -361,13 +359,17 @@ def test_input_values():
 
         def on_argument(self, arg):
             arg.type = LimitedLengthScalarType.wrap(
-                arg.type, self.min, self.max
+                arg.type,
+                self.min,
+                self.max,
             )
             return arg
 
         def on_input_field(self, input_field):
             input_field.type = LimitedLengthScalarType.wrap(
-                input_field.type, self.min, self.max
+                input_field.type,
+                self.min,
+                self.max,
             )
             return input_field
 
@@ -402,7 +404,7 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
         type Query {
             foo(bar: BarInput, foo: LimitedLenthString_0_4): String
         }
-        """
+        """,
     )
 
     class Root:
@@ -425,8 +427,8 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
                     '"abcdef" (LimitedLenthString_0_4 length must be '
                     "between 0 and 4 but was 6)"
                 ),
-            }
-        ]
+            },
+        ],
     }
 
     assert (
@@ -460,8 +462,8 @@ on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
                     "(LimitedLenthString_3_inf length must be between 3 "
                     "and inf but was 1)"
                 ),
-            }
-        ]
+            },
+        ],
     }
 
 
@@ -547,7 +549,7 @@ def test_enum_type_directive():
         type Query {
             color: Color
         }
-        """
+        """,
     )
 
     enum = cast(EnumType, schema.get_type("Color"))

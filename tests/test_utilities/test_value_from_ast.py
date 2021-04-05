@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import uuid
 
 import pytest
@@ -146,7 +144,10 @@ class TestTyped:
         ],
     )
     def test_it_converts_according_to_input_coercion_rules(
-        self, type_, value, expected
+        self,
+        type_,
+        value,
+        expected,
     ):
         self._run_test_case(value, type_, expected, None)
 
@@ -165,7 +166,9 @@ class TestTyped:
         ],
     )
     def test_it_does_not_convert_when_input_coercion_rules_reject_a_value(
-        self, type_, value
+        self,
+        type_,
+        value,
     ):
         self._run_test_case(value, type_, None, InvalidValue)
 
@@ -181,7 +184,10 @@ class TestTyped:
         ],
     )
     def test_it_converts_enum_values_according_to_input_coercion_rules(
-        self, value, expected, error
+        self,
+        value,
+        expected,
+        error,
     ):
         self._run_test_case(value, Color, expected, error)
 
@@ -221,7 +227,11 @@ class TestTyped:
         ],
     )
     def test_it_coerces_non_null_lists_of_values(
-        self, type_, value, expected, error
+        self,
+        type_,
+        value,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error)
 
@@ -238,7 +248,11 @@ class TestTyped:
         ],
     )
     def test_it_coerces_lists_of_non_null_values(
-        self, type_, value, expected, error
+        self,
+        type_,
+        value,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error)
 
@@ -255,7 +269,11 @@ class TestTyped:
         ],
     )
     def test_it_coerces_non_null_lists_of_non_null_values(
-        self, type_, value, expected, error
+        self,
+        type_,
+        value,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error)
 
@@ -299,7 +317,12 @@ class TestTyped:
         ],
     )
     def test_it_accepts_variable_values_assuming_already_coerced(
-        self, type_, value, variables, expected, error
+        self,
+        type_,
+        value,
+        variables,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error, variables)
 
@@ -331,7 +354,12 @@ class TestTyped:
         ],
     )
     def test_it_asserts_variables_are_provided_as_items_in_lists(
-        self, type_, value, variables, expected, error
+        self,
+        type_,
+        value,
+        variables,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error, variables)
 
@@ -361,6 +389,11 @@ class TestTyped:
         ],
     )
     def test_it_omits_input_object_fields_for_unprovided_variables(
-        self, type_, value, variables, expected, error
+        self,
+        type_,
+        value,
+        variables,
+        expected,
+        error,
     ):
         self._run_test_case(value, type_, expected, error, variables)

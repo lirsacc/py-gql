@@ -128,7 +128,9 @@ class ASTTypeBuilder:
         self._delayed[:] = []
 
     def _collect_extensions(
-        self, target_name: str, ext_type: TTypeExtension
+        self,
+        target_name: str,
+        ext_type: TTypeExtension,
     ) -> List[TTypeExtension]:
         res = []
         for ext in self._extensions.get(target_name) or []:
@@ -148,7 +150,8 @@ class ASTTypeBuilder:
         return res
 
     def build_type(
-        self, type_node: Union[_ast.Type, _ast.TypeDefinition]
+        self,
+        type_node: Union[_ast.Type, _ast.TypeDefinition],
     ) -> GraphQLType:
         if isinstance(type_node, _ast.NonNullType):
             return NonNullType(self.build_type(type_node.type), node=type_node)
@@ -165,7 +168,7 @@ class ASTTypeBuilder:
                         type_def = self._type_defs[type_name]
                     except KeyError:
                         raise SDLError(
-                            "Type %s not found in document" % type_name,
+                            f"Type {type_name} not found in document",
                             [type_node],
                         )
                 else:
@@ -173,7 +176,7 @@ class ASTTypeBuilder:
 
                 if isinstance(type_def, _ast.ObjectTypeDefinition):
                     built = self._build_object_type(
-                        type_def
+                        type_def,
                     )  # type: GraphQLType
                 elif isinstance(type_def, _ast.InterfaceTypeDefinition):
                     built = self._build_interface_type(type_def)
@@ -192,7 +195,8 @@ class ASTTypeBuilder:
                 return built
 
     def build_directive(
-        self, directive_def: _ast.DirectiveDefinition
+        self,
+        directive_def: _ast.DirectiveDefinition,
     ) -> Directive:
         return Directive(
             name=directive_def.name.value,
@@ -254,7 +258,8 @@ class ASTTypeBuilder:
         )
 
     def _build_object_type(
-        self, type_def: _ast.ObjectTypeDefinition
+        self,
+        type_def: _ast.ObjectTypeDefinition,
     ) -> ObjectType:
         return ObjectType(
             name=type_def.name.value,
@@ -274,7 +279,8 @@ class ASTTypeBuilder:
         )
 
     def _build_interface_type(
-        self, type_def: _ast.InterfaceTypeDefinition
+        self,
+        type_def: _ast.InterfaceTypeDefinition,
     ) -> InterfaceType:
         return InterfaceType(
             name=type_def.name.value,
@@ -318,7 +324,8 @@ class ASTTypeBuilder:
         )
 
     def _build_union_type(
-        self, type_def: _ast.UnionTypeDefinition
+        self,
+        type_def: _ast.UnionTypeDefinition,
     ) -> UnionType:
         return UnionType(
             name=type_def.name.value,
@@ -331,7 +338,8 @@ class ASTTypeBuilder:
         )
 
     def _build_scalar_type(
-        self, type_def: _ast.ScalarTypeDefinition
+        self,
+        type_def: _ast.ScalarTypeDefinition,
     ) -> ScalarType:
         return default_scalar(
             name=type_def.name.value,
@@ -340,7 +348,8 @@ class ASTTypeBuilder:
         )
 
     def _build_input_object_type(
-        self, type_def: _ast.InputObjectTypeDefinition
+        self,
+        type_def: _ast.InputObjectTypeDefinition,
     ) -> InputObjectType:
         return InputObjectType(
             name=type_def.name.value,
@@ -378,7 +387,7 @@ class ASTTypeBuilder:
                 lambda: value_from_ast(
                     cast(_ast.Value, node.default_value),
                     lazy(self.build_type(node.type)),
-                )
+                ),
             )
 
         return InputField(
@@ -426,7 +435,7 @@ class ASTTypeBuilder:
                     cast(
                         InterfaceType,
                         self.extend_type(self.build_type(ext_interface)),
-                    )
+                    ),
                 )
 
         return ObjectType(
@@ -449,7 +458,8 @@ class ASTTypeBuilder:
         )
 
     def _extend_interface_type(
-        self, interface_type: InterfaceType
+        self,
+        interface_type: InterfaceType,
     ) -> InterfaceType:
         name = interface_type.name
         extensions = self._collect_extensions(name, _ast.InterfaceTypeExtension)
@@ -519,8 +529,9 @@ class ASTTypeBuilder:
                     )
                 member_types.append(
                     cast(
-                        ObjectType, self.extend_type(self.build_type(type_def))
-                    )
+                        ObjectType,
+                        self.extend_type(self.build_type(type_def)),
+                    ),
                 )
                 member_names.add(type_def.name.value)
 
@@ -531,11 +542,13 @@ class ASTTypeBuilder:
         )
 
     def _extend_input_object_type(
-        self, input_object_type: InputObjectType
+        self,
+        input_object_type: InputObjectType,
     ) -> InputObjectType:
         name = input_object_type.name
         extensions = self._collect_extensions(
-            name, _ast.InputObjectTypeExtension
+            name,
+            _ast.InputObjectTypeExtension,
         )
 
         field_names = set(f.name for f in input_object_type.fields)
@@ -560,7 +573,9 @@ class ASTTypeBuilder:
                     )
                 field_names.add(ext_field.name.value)
                 fields.append(
-                    self._extend_input_field(self._build_input_field(ext_field))
+                    self._extend_input_field(
+                        self._build_input_field(ext_field),
+                    ),
                 )
 
         return InputObjectType(
@@ -603,7 +618,7 @@ class ASTTypeBuilder:
 
 
 def _deprecation_reason(
-    node: Union[_ast.FieldDefinition, _ast.EnumValueDefinition]
+    node: Union[_ast.FieldDefinition, _ast.EnumValueDefinition],
 ) -> Optional[str]:
     args = directive_arguments(DeprecatedDirective, node, {})
     return args.get("reason", None) if args else None

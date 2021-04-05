@@ -86,7 +86,11 @@ class GraphQLWSHandler:
         logger.info("[%r] Closed", self)
 
     async def handle_query_or_mutation(
-        self, msg_id, document, variables, operation_name
+        self,
+        msg_id,
+        document,
+        variables,
+        operation_name,
     ):
         async def run():
             try:
@@ -107,14 +111,20 @@ class GraphQLWSHandler:
                 )
             else:
                 await self.send(
-                    ServerMessage.DATA, id=msg_id, payload=result.response()
+                    ServerMessage.DATA,
+                    id=msg_id,
+                    payload=result.response(),
                 )
                 await self.send(ServerMessage.COMPLETE, id=msg_id)
 
         self.operations[msg_id] = asyncio.create_task(run())
 
     async def handle_subscription(
-        self, msg_id, document, variables, operation_name
+        self,
+        msg_id,
+        document,
+        variables,
+        operation_name,
     ):
         async def run():
             try:
@@ -234,9 +244,15 @@ class GraphQLWSHandler:
                 else:
                     if operation.operation in ("query", "mutation"):
                         await self.handle_query_or_mutation(
-                            msg_id, document, variables, operation_name
+                            msg_id,
+                            document,
+                            variables,
+                            operation_name,
                         )
                     else:
                         await self.handle_subscription(
-                            msg_id, document, variables, operation_name
+                            msg_id,
+                            document,
+                            variables,
+                            operation_name,
                         )

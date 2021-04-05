@@ -120,10 +120,12 @@ __DirectiveLocation__ = EnumType(
     "__DirectiveLocation",
     [
         EnumValue(
-            "QUERY", description="Location adjacent to a query operation."
+            "QUERY",
+            description="Location adjacent to a query operation.",
         ),
         EnumValue(
-            "MUTATION", description="Location adjacent to a mutation operation."
+            "MUTATION",
+            description="Location adjacent to a mutation operation.",
         ),
         EnumValue(
             "SUBSCRIPTION",
@@ -143,10 +145,12 @@ __DirectiveLocation__ = EnumType(
             description="Location adjacent to an inline fragment.",
         ),
         EnumValue(
-            "SCHEMA", description="Location adjacent to a schema definition."
+            "SCHEMA",
+            description="Location adjacent to a schema definition.",
         ),
         EnumValue(
-            "SCALAR", description="Location adjacent to a scalar definition."
+            "SCALAR",
+            description="Location adjacent to a scalar definition.",
         ),
         EnumValue(
             "OBJECT",
@@ -165,10 +169,12 @@ __DirectiveLocation__ = EnumType(
             description="Location adjacent to an interface definition.",
         ),
         EnumValue(
-            "UNION", description="Location adjacent to a union definition."
+            "UNION",
+            description="Location adjacent to a union definition.",
         ),
         EnumValue(
-            "ENUM", description="Location adjacent to an enum definition."
+            "ENUM",
+            description="Location adjacent to an enum definition.",
         ),
         EnumValue(
             "ENUM_VALUE",
@@ -211,7 +217,7 @@ def _resolve_type_kind(type_, *_):
         return "LIST"
     elif isinstance(type_, NonNullType):
         return "NON_NULL"
-    raise TypeError("Unknown kind of type: %s" % type_)
+    raise TypeError(f"Unknown kind of type: {type_}")
 
 
 __Type__ = ObjectType(
@@ -314,7 +320,7 @@ __EnumValue__ = ObjectType(
 
 
 def _format_default_value(
-    input_value: Union[InputField, Argument]
+    input_value: Union[InputField, Argument],
 ) -> Optional[str]:
     if not input_value.has_default_value:
         return None
@@ -324,7 +330,7 @@ def _format_default_value(
     elif dv is None:
         return "null"
     elif isinstance(dv, str):
-        return '"%s"' % dv
+        return f'"{dv}"'
     return json.dumps(dv)
 
 

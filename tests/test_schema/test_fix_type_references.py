@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from typing import cast
 
 import pytest
@@ -61,7 +60,8 @@ def schema() -> Schema:
             ],
         ),
         mutation_type=ObjectType(
-            "Mutation", fields=[Field("createPerson", CreatePersonInput)]
+            "Mutation",
+            fields=[Field("createPerson", CreatePersonInput)],
         ),
     )
 
@@ -122,7 +122,8 @@ def test_replace_mutation_type(schema: Schema) -> None:
 
 def test_root_type_is_not_created(schema: Schema) -> None:
     Subscription = ObjectType(
-        "Subscription", fields=[Field("some_number", Int)]
+        "Subscription",
+        fields=[Field("some_number", Int)],
     )
     schema._replace_types_and_directives({"Subscription": Subscription})
     assert schema.subscription_type is None

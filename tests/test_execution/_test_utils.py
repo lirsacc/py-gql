@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pprint
 from concurrent.futures import Future
 from inspect import isawaitable
@@ -22,7 +20,7 @@ ExpectedExcDef = Union[Type[Exception], Tuple[Type[Exception], Optional[str]]]
 def create_test_schema(field_or_type, **kwargs):
     if isinstance(field_or_type, GraphQLType):
         return Schema(
-            ObjectType("Query", [Field("test", field_or_type, **kwargs)])
+            ObjectType("Query", [Field("test", field_or_type, **kwargs)]),
         )
     else:
         return Schema(ObjectType("Query", [field_or_type]))
@@ -132,7 +130,9 @@ async def assert_execution(
 
 
 async def process_request(
-    schema: Schema, query: str, **kwargs: Any
+    schema: Schema,
+    query: str,
+    **kwargs: Any,
 ) -> GraphQLResult:
     result = process_graphql_query(schema, query, **kwargs)
     if isawaitable(result):

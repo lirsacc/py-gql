@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import collections
 import inspect
 from typing import List
@@ -32,9 +30,9 @@ def test_sync_path_collector(starwars_schema):
             self.log = []  # type: List[str]
 
         def __call__(self, next_, root, ctx, info, **args):
-            self.log.append("> %s" % stringify_path(info.path))
+            self.log.append(f"> {stringify_path(info.path)}")
             res = next_(root, ctx, info, **args)
-            self.log.append("< %s" % stringify_path(info.path))
+            self.log.append(f"< {stringify_path(info.path)}")
             return res
 
     path_collector = PathCollector()
@@ -65,11 +63,11 @@ async def test_async_path_collector(starwars_schema):
             self.log = []  # type: List[str]
 
         async def __call__(self, next_, root, ctx, info, **args):
-            self.log.append("> %s" % stringify_path(info.path))
+            self.log.append(f"> {stringify_path(info.path)}")
             res = next_(root, ctx, info, **args)
             if inspect.isawaitable(res):
                 res = await res
-            self.log.append("< %s" % stringify_path(info.path))
+            self.log.append(f"< {stringify_path(info.path)}")
             return res
 
     path_collector = PathCollector()
@@ -93,7 +91,7 @@ async def test_async_path_collector(starwars_schema):
                 "< hero.friends[1].name",
                 "> hero.friends[2].name",
                 "< hero.friends[2].name",
-            ]
+            ],
         )
         == set(path_collector.log)
     )

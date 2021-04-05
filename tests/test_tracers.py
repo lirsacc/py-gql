@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 
 from py_gql import graphql_blocking

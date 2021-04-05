@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Execution tests related to abstract types (Interface, Union).
 """
@@ -52,11 +51,14 @@ async def test_type_resolution_on_interface_yields_useful_error(
 
     def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
-            type(value), None
+            type(value),
+            None,
         )
 
     PetType = InterfaceType(
-        "Pet", [Field("name", String)], resolve_type=_resolve_pet_type
+        "Pet",
+        [Field("name", String)],
+        resolve_type=_resolve_pet_type,
     )
 
     HumanType = ObjectType("Human", [Field("name", String)])
@@ -85,7 +87,7 @@ async def test_type_resolution_on_interface_yields_useful_error(
                         Cat("Garfield", False),
                         Human("Jon"),
                     ],
-                )
+                ),
             ],
         ),
         types=[DogType, CatType],
@@ -116,21 +118,26 @@ async def test_type_resolution_on_union_yields_useful_error(assert_execution):
 
     def _resolve_pet_type(value, *_):
         return {Dog: DogType, Cat: CatType, Human: HumanType}.get(
-            type(value), None
+            type(value),
+            None,
         )
 
     HumanType = ObjectType("Human", [Field("name", String)])
 
     DogType = ObjectType(
-        "Dog", [Field("name", String), Field("woofs", Boolean)]
+        "Dog",
+        [Field("name", String), Field("woofs", Boolean)],
     )
 
     CatType = ObjectType(
-        "Cat", [Field("name", String), Field("meows", Boolean)]
+        "Cat",
+        [Field("name", String), Field("meows", Boolean)],
     )
 
     PetType = UnionType(
-        "Pet", [DogType, CatType], resolve_type=_resolve_pet_type
+        "Pet",
+        [DogType, CatType],
+        resolve_type=_resolve_pet_type,
     )
 
     schema = Schema(
@@ -145,7 +152,7 @@ async def test_type_resolution_on_union_yields_useful_error(assert_execution):
                         Cat("Garfield", False),
                         Human("Jon"),
                     ],
-                )
+                ),
             ],
         ),
         types=[DogType, CatType],
@@ -175,7 +182,9 @@ async def test_type_resolution_supports_strings(assert_execution):
         return type(value).__name__
 
     PetType = InterfaceType(
-        "Pet", [Field("name", String)], resolve_type=_resolve_pet_type
+        "Pet",
+        [Field("name", String)],
+        resolve_type=_resolve_pet_type,
     )
 
     DogType = ObjectType(
@@ -201,7 +210,7 @@ async def test_type_resolution_supports_strings(assert_execution):
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],
-                )
+                ),
             ],
         ),
         types=[DogType, CatType],
@@ -260,7 +269,7 @@ async def test_type_resolution_supports_object_attribute(assert_execution):
                         Dog("Odie", True),
                         Cat("Garfield", False),
                     ],
-                )
+                ),
             ],
         ),
         types=[DogType, CatType],

@@ -33,15 +33,18 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         node: _ast.Node,
         extra: Optional[str] = None,
     ) -> None:
-        msg = "Expected type %s, found %s" % (input_type, node)
+        msg = f"Expected type {input_type}, found {node}"
         if extra:
-            msg += " (%s)" % extra
+            msg += f" ({extra})"
         self.add_error(msg, [node])
 
     def _check_scalar(
         self,
         node: Union[
-            _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
+            _ast.IntValue,
+            _ast.FloatValue,
+            _ast.StringValue,
+            _ast.BooleanValue,
         ],
     ) -> None:
         input_type = self.type_info.input_type
@@ -122,7 +125,8 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
         field_type = self.type_info.input_type
         if field_type is None and isinstance(parent_type, InputObjectType):
             suggestions = infer_suggestions(
-                node.name.value, [f.name for f in parent_type.fields]
+                node.name.value,
+                [f.name for f in parent_type.fields],
             )
             if suggestions:
                 self.add_error(
@@ -136,7 +140,6 @@ class ValuesOfCorrectTypeChecker(ValidationVisitor):
                 )
             else:
                 self.add_error(
-                    "Field %s is not defined by type %s"
-                    % (node.name.value, parent_type),
+                    f"Field {node.name.value} is not defined by type {parent_type}",
                     [node],
                 )

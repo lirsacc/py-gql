@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql._string_utils import dedent
 from py_gql.lang import ast as _ast, parse, print_ast
 from py_gql.lang.printer import ASTPrinter
@@ -16,27 +14,24 @@ def test_query_operation_without_name():
       id
       name
     }
-    """
+    """,
     )
 
 
 def test_query_operation_without_name_and_artifacts():
-    assert (
-        print_ast(
-            parse(
-                """
-        query ($foo: TestType) @testDirective { id, name }
-    """
-            )
-        )
-        == dedent(
+    assert print_ast(
+        parse(
             """
+        query ($foo: TestType) @testDirective { id, name }
+    """,
+        ),
+    ) == dedent(
+        """
     query ($foo: TestType) @testDirective {
       id
       name
     }
-    """
-        )
+    """,
     )
 
 
@@ -47,46 +42,40 @@ def test_mutation_operation_without_name():
       id
       name
     }
-    """
+    """,
     )
 
 
 def test_mutation_operation_without_name_and_artifacts():
-    assert (
-        print_ast(
-            parse(
-                """
-        mutation ($foo: TestType) @testDirective { id, name }
-    """
-            )
-        )
-        == dedent(
+    assert print_ast(
+        parse(
             """
+        mutation ($foo: TestType) @testDirective { id, name }
+    """,
+        ),
+    ) == dedent(
+        """
     mutation ($foo: TestType) @testDirective {
       id
       name
     }
-    """
-        )
+    """,
     )
 
 
 def test_block_string_single_line_with_leading_space():
-    assert (
-        print_ast(
-            parse(
-                '''
-        { field(arg: """    space-led value""") }
-    '''
-            )
-        )
-        == dedent(
+    assert print_ast(
+        parse(
             '''
+        { field(arg: """    space-led value""") }
+    ''',
+        ),
+    ) == dedent(
+        '''
     {
       field(arg: """    space-led value""")
     }
-    '''
-        )
+    ''',
     )
 
 
@@ -100,7 +89,7 @@ def test_block_string_string_with_a_first_line_indentation():
             indentation
           """)
         }
-    '''
+    ''',
     )
     assert print_ast(ast) == dedent(
         '''
@@ -111,7 +100,7 @@ def test_block_string_string_with_a_first_line_indentation():
         indentation
       """)
     }
-    '''
+    ''',
     )
 
 
@@ -122,7 +111,7 @@ def test_block_string_single_line_with_leading_space_and_quotation():
       field(arg: """    space-led value "quoted string"
       """)
     }
-    '''
+    ''',
     )
     assert print_ast(ast) == dedent(
         '''
@@ -130,7 +119,7 @@ def test_block_string_single_line_with_leading_space_and_quotation():
       field(arg: """    space-led value "quoted string"
       """)
     }
-    '''
+    ''',
     )
 
 
@@ -149,7 +138,7 @@ def test_fragment_defined_variables():
     fragment Foo($a: ComplexType, $b: Boolean = false) on TestType {
       id
     }
-    """
+    """,
     )
 
 
@@ -167,10 +156,9 @@ def test_schema_kitchen_sink(fixture_file):
 
 # From a broken case
 def test_custom_indentation_object():
-    assert (
-        ASTPrinter(indent=4)(
-            parse(
-                """
+    assert ASTPrinter(indent=4)(
+        parse(
+            """
             {
                 bar {
                     one
@@ -186,11 +174,10 @@ def test_custom_indentation_object():
                 four
             five
             }
-            """
-            )
-        )
-        == dedent(
-            """
+            """,
+        ),
+    ) == dedent(
+        """
             {
                 bar {
                     one
@@ -206,16 +193,14 @@ def test_custom_indentation_object():
                 four
                 five
             }
-            """
-        )
+            """,
     )
 
 
 def test_variable_definitions():
-    assert (
-        print_ast(
-            parse(
-                """
+    assert print_ast(
+        parse(
+            """
                 query Query(
                     $a: ComplexType,
                     $b: Boolean = false,
@@ -225,14 +210,12 @@ def test_variable_definitions():
                     id
                 }
                 """,
-            )
-        )
-        == dedent(
-            """
+        ),
+    ) == dedent(
+        """
         query Query($a: ComplexType, $b: Boolean = false, $c: String @foo, \
 $d: Int! = 42 @bar(value: 42)) {
           id
         }
-        """
-        )
+        """,
     )

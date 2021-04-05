@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import List, Tuple
 
 from py_gql._string_utils import dedent
@@ -122,7 +120,7 @@ def test_node_removal():
           bar
           baz
         }
-        """
+        """,
     )
 
 
@@ -144,7 +142,7 @@ def test_node_inline_modification():
           bar
           baz
         }
-        """
+        """,
     )
 
 
@@ -155,7 +153,7 @@ def test_node_return_modification():
                 return _ast.Field(
                     name=_ast.Name("Foo"),
                     arguments=[
-                        _ast.Argument(_ast.Name("arg"), _ast.IntValue("42"))
+                        _ast.Argument(_ast.Name("arg"), _ast.IntValue("42")),
                     ],
                 )
             return field
@@ -171,5 +169,5 @@ def test_node_return_modification():
           bar
           baz
         }
-        """
+        """,
     )

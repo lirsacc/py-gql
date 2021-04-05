@@ -52,14 +52,14 @@ class Node:
 
     def __copy__(self):
         return self.__class__(  # type: ignore
-            **{k: getattr(self, k) for k in self.__slots__}  # type: ignore
+            **{k: getattr(self, k) for k in self.__slots__},  # type: ignore
         )
 
     def __deepcopy__(self, memo):
         return self.__class__(  # type: ignore
             **{  # type: ignore
                 k: copy.deepcopy(getattr(self, k), memo) for k in self.__slots__
-            }
+            },
         )
 
     copy = __copy__
@@ -441,9 +441,9 @@ class StringValue(Value):
 
     def __str__(self):
         if self.block:
-            return '"""%s"""' % self.value
+            return f'"""{self.value}"""'
         else:
-            return '"%s"' % self.value
+            return f'"{self.value}"'
 
 
 class BooleanValue(Value):

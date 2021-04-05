@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql import graphql_blocking
@@ -26,7 +24,7 @@ def test_built_schema_is_executable():
             }
             """,
             allow_type_system=True,
-        )
+        ),
     )
     data, _ = graphql_blocking(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
@@ -38,7 +36,7 @@ def test_accepts_strings():
         type Query {
             str: String
         }
-        """
+        """,
     )
     data, _ = graphql_blocking(schema, "{ str }", root={"str": 123})
     assert data == {"str": "123"}
@@ -115,7 +113,7 @@ def test_specified_directives_are_enforced():
         type Query {
             str: String
         }
-        """
+        """,
     )
     for d in SPECIFIED_DIRECTIVES:
         assert d is schema.directives[d.name]
@@ -131,7 +129,7 @@ def test_type_modifiers():
             nonNullListOfStrs: [String]!
             nonNullListOfNonNullStrs: [String!]!
         }
-        """
+        """,
     )
 
 
@@ -142,7 +140,7 @@ def test_recursive_type():
             str: String
             recurse: Query
         }
-        """
+        """,
     )
 
 
@@ -162,7 +160,7 @@ def test_circular_types():
             str: String
             typeOne: TypeOne
         }
-        """
+        """,
     )
 
 
@@ -176,7 +174,7 @@ def test_single_argument_field():
             booleanToStr(bool: Boolean): String
             strToStr(bool: String): String
         }
-        """
+        """,
     )
 
 
@@ -186,7 +184,7 @@ def test_multiple_arguments():
         type Query {
             str(int: Int, bool: Boolean): String
         }
-        """
+        """,
     )
 
 
@@ -200,7 +198,7 @@ def test_simple_interface():
         interface WorldInterface {
             str: String
         }
-        """
+        """,
     )
 
 
@@ -214,7 +212,7 @@ def test_simple_output_enum():
         type Query {
             hello: Hello
         }
-        """
+        """,
     )
 
 
@@ -228,7 +226,7 @@ def test_simple_input_enum():
         type Query {
             str(hello: Hello): String
         }
-        """
+        """,
     )
 
 
@@ -243,7 +241,7 @@ def test_multiple_values_enum():
         type Query {
             hello: Hello
         }
-        """
+        """,
     )
 
 
@@ -263,7 +261,7 @@ def test_union():
         type WorldTwo {
             str: String
         }
-        """
+        """,
     )
 
 
@@ -283,7 +281,7 @@ def test_executing_union_default_resolve_type():
         type Banana {
             length: Int
         }
-        """
+        """,
     )
 
     data, _ = graphql_blocking(
@@ -304,7 +302,7 @@ def test_executing_union_default_resolve_type():
             "fruits": [
                 {"color": "green", "__typename__": "Apple"},
                 {"length": 5, "__typename__": "Banana"},
-            ]
+            ],
         },
     )
 
@@ -331,7 +329,7 @@ def test_executing_interface_default_resolve_type():
             name: String!
             primaryFunction: String
         }
-        """
+        """,
     )
 
     data, _ = graphql_blocking(
@@ -361,7 +359,7 @@ def test_executing_interface_default_resolve_type():
                     "primaryFunction": "Astromech",
                     "__typename__": "Droid",
                 },
-            ]
+            ],
         },
     )
 
@@ -369,7 +367,7 @@ def test_executing_interface_default_resolve_type():
         "characters": [
             {"name": "Han Solo", "totalCredits": 10},
             {"name": "R2-D2", "primaryFunction": "Astromech"},
-        ]
+        ],
     }
 
 
@@ -381,7 +379,7 @@ def test_custom_scalar():
         type Query {
             customScalar: CustomScalar
         }
-        """
+        """,
     )
     scalar = schema.types["CustomScalar"]
     assert scalar.parse("foo") == "foo"
@@ -398,7 +396,7 @@ def test_input_object():
         type Query {
             field(in: Input): String
         }
-        """
+        """,
     )
 
 
@@ -412,7 +410,7 @@ def test_input_object_with_default_value():
         type Query {
             field(in: Input): String
         }
-        """
+        """,
     )
 
 
@@ -422,7 +420,7 @@ def test_simple_argument_field_with_default():
         type Query {
             str(int: Int = 2): String
         }
-        """
+        """,
     )
 
 
@@ -434,7 +432,7 @@ def test_custom_scalar_argument_field_with_default():
         type Query {
             str(int: CustomScalar = 2): String
         }
-        """
+        """,
     )
 
 
@@ -455,7 +453,7 @@ def test_simple_type_with_mutation():
         type Mutation {
             addHelloScalars(str: String, int: Int, bool: Boolean): HelloScalars
         }
-        """
+        """,
     )
 
 
@@ -476,7 +474,7 @@ def test_simple_type_with_subscription():
         type Subscription {
             sbscribeHelloScalars(str: String, int: Int, bool: Boolean): HelloScalars
         }
-        """
+        """,
     )
 
 
@@ -494,7 +492,7 @@ def test_unreferenced_type_implementing_referenced_interface():
         type Query {
             iface: Iface
         }
-        """
+        """,
     )
 
 
@@ -510,7 +508,7 @@ def test_unreferenced_type_implementing_referenced_union():
         }
 
         union Union = Concrete
-        """
+        """,
     )
 
 
@@ -528,7 +526,7 @@ def test_supports_deprecated():
             field2: Int @deprecated(reason: "Because I said so")
             enum: MyEnum
         }
-        """
+        """,
     )
 
 
@@ -543,7 +541,7 @@ def test_root_operation_types_with_custom_names():
         type SomeQuery { str: String }
         type SomeMutation { str: String }
         type SomeSubscription { str: String }
-        """
+        """,
     )
 
     assert schema.query_type.name == "SomeQuery"  # type: ignore
@@ -557,7 +555,7 @@ def test_default_root_operation_type_names():
         type Query { str: String }
         type Mutation { str: String }
         type Subscription { str: String }
-        """
+        """,
     )
 
     assert schema.query_type.name == "Query"  # type: ignore
@@ -580,7 +578,7 @@ def test_allows_only_a_single_schema_definition():
             type Hello {
                 bar: Bar
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 6}],
@@ -598,7 +596,7 @@ def test_schema_description():
             query: SomeQuery
         }
         type SomeQuery { str: String }
-        '''
+        ''',
     )
 
     assert schema.description == "This is the schema."
@@ -620,7 +618,7 @@ def test_allows_only_a_single_query_type():
             type Yellow {
                 isColor: Boolean
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 4}],
@@ -645,7 +643,7 @@ def test_allows_only_a_single_mutation_type():
             type Yellow {
                 isColor: Boolean
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
@@ -670,7 +668,7 @@ def test_allows_only_a_single_subscription_type():
             type Yellow {
                 isColor: Boolean
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 2}, {"column": 17, "line": 5}],
@@ -689,7 +687,7 @@ def test_unknown_type_referenced():
             type Hello {
                 bar: Bar
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 22, "line": 7}],
@@ -712,7 +710,7 @@ def test_unknown_type_in_union_list():
             """
             union TestUnion = Bar
             type Query { testUnion: TestUnion }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 31, "line": 2}],
@@ -731,7 +729,7 @@ def test_unknown_query_type():
             type Hello {
                 str: String
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 24, "line": 3}],
@@ -751,7 +749,7 @@ def test_unknown_mutation_type():
             type Hello {
                 str: String
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 27, "line": 4}],
@@ -771,7 +769,7 @@ def test_unknown_subscription_type():
             type Hello {
                 str: String
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 31, "line": 4}],
@@ -790,7 +788,7 @@ def test_does_not_consider_operation_names_or_fragment_name():
             query Foo { field }
 
             fragment Foo on Type { field }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 24, "line": 3}],
@@ -813,7 +811,7 @@ def test_forbids_duplicate_type_definitions():
             type Repeated {
                 id: String
             }
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 10}],
@@ -831,7 +829,7 @@ def test_forbids_duplicate_directive_definition():
 
             directive @foo on FIELD
             directive @foo on MUTATION
-            """
+            """,
         )
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 13, "line": 7}],
@@ -852,9 +850,8 @@ def test_inject_custom_types():
 
 
 def test_build_schema_ignores_extensions_if_specified():
-    assert (
-        build_schema(
-            """
+    assert build_schema(
+        """
             type Query {
                 one: Int
             }
@@ -867,15 +864,13 @@ def test_build_schema_ignores_extensions_if_specified():
                 two: String
             }
             """,
-            ignore_extensions=True,
-        ).to_string()
-        == dedent(
-            """
+        ignore_extensions=True,
+    ).to_string() == dedent(
+        """
             type Query {
                 one: Int
             }
-            """
-        )
+            """,
     )
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from py_gql.execution import BlockingExecutor, Executor
@@ -17,7 +16,7 @@ from ._test_utils import assert_execution as assert_execution_original
         pytest.param((BlockingExecutor, BlockingRuntime), id="blocking"),
         pytest.param((Executor, AsyncIORuntime), id="asyncio"),
         pytest.param((Executor, ThreadPoolRuntime), id="threadpool"),
-    )
+    ),
 )
 def assert_execution(request):
 
@@ -25,7 +24,10 @@ def assert_execution(request):
 
     async def _assert_execution(*args, **kwargs):
         return await assert_execution_original(
-            *args, executor_cls=executor_cls, runtime=runtime_cls(), **kwargs
+            *args,
+            executor_cls=executor_cls,
+            runtime=runtime_cls(),
+            **kwargs,
         )
 
     yield _assert_execution

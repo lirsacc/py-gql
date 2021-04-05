@@ -100,7 +100,8 @@ class Lexer:
         self._position = 0
 
     def _read_over_whitespace(
-        self, __ignored: Container[str] = IGNORED_CHARS
+        self,
+        __ignored: Container[str] = IGNORED_CHARS,
     ) -> None:
         pos = self._position
         while True:
@@ -140,7 +141,7 @@ class Lexer:
 
             if char != ".":
                 raise UnexpectedCharacter(
-                    'Expected "." but found "%s"' % char,
+                    f'Expected "." but found "{char}"',
                     self._position,
                     self._source,
                 )
@@ -184,7 +185,9 @@ class Lexer:
             if self._source[self._position : self._position + 3] == '"""':
                 self._position += 3
                 return BlockString(
-                    start, self._position, parse_block_string("".join(acc))
+                    start,
+                    self._position,
+                    parse_block_string("".join(acc)),
                 )
 
             self._position += 1
@@ -201,7 +204,8 @@ class Lexer:
                 acc.append(char)
 
     def _read_escape_sequence(
-        self, __quoted_chars: Mapping[str, str] = QUOTED_CHARS
+        self,
+        __quoted_chars: Mapping[str, str] = QUOTED_CHARS,
     ) -> str:
 
         try:
@@ -220,7 +224,9 @@ class Lexer:
             return self._read_escaped_unicode()
         else:
             raise InvalidEscapeSequence(
-                "\\%s" % char, self._position - 1, self._source
+                f"\\{char}",
+                self._position - 1,
+                self._source,
             )
 
     def _read_escaped_unicode(self) -> str:
@@ -239,16 +245,12 @@ class Lexer:
         escape = self._source[start : self._position]
 
         if len(escape) != 4:
-            raise InvalidEscapeSequence(
-                "\\u%s" % escape, start - 1, self._source
-            )
+            raise InvalidEscapeSequence(f"\\u{escape}", start - 1, self._source)
 
         try:
             return str(chr(int(escape, 16)))
         except ValueError:
-            raise InvalidEscapeSequence(
-                "\\u%s" % escape, start - 1, self._source
-            )
+            raise InvalidEscapeSequence(f"\\u{escape}", start - 1, self._source)
 
     def _read_number(self) -> Union[Integer, Float]:  # noqa: C901
         start = self._position
@@ -301,7 +303,7 @@ class Lexer:
         else:
             if next_char == "_" or next_char in ascii_letters:
                 raise UnexpectedCharacter(
-                    'Unexpected character "%s"' % char,
+                    f'Unexpected character "{char}"',
                     self._position,
                     self._source,
                 )
@@ -327,7 +329,7 @@ class Lexer:
             else:
                 if char.isdigit():
                     raise UnexpectedCharacter(
-                        'Unexpected character "%s"' % char,
+                        f'Unexpected character "{char}"',
                         self._position,
                         self._source,
                     )
@@ -342,7 +344,9 @@ class Lexer:
 
         if not (char.isdigit()):
             raise UnexpectedCharacter(
-                'Unexpected character "%s"' % char, self._position, self._source
+                f'Unexpected character "{char}"',
+                self._position,
+                self._source,
             )
 
         while True:
@@ -356,7 +360,8 @@ class Lexer:
                 break
 
     def _read_name(
-        self, __ascii_letters: Container[str] = ascii_letters
+        self,
+        __ascii_letters: Container[str] = ascii_letters,
     ) -> Name:
         start = self._position
         while True:
@@ -421,5 +426,7 @@ class Lexer:
             return self._read_name()
         else:
             raise UnexpectedCharacter(
-                'Unexpected character "%s"' % char, self._position, self._source
+                f'Unexpected character "{char}"',
+                self._position,
+                self._source,
             )

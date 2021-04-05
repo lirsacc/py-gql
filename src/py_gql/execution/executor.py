@@ -83,7 +83,9 @@ class Executor(ResolutionContext):
         self._resolver_cache = {}  # type: Dict[Optional[Resolver], Resolver]
 
     def field_resolver(
-        self, parent_type: ObjectType, field_definition: Field
+        self,
+        parent_type: ObjectType,
+        field_definition: Field,
     ) -> Resolver:
         base = field_definition.resolver or parent_type.default_resolver
         try:
@@ -110,7 +112,9 @@ class Executor(ResolutionContext):
 
         if abstract_type.resolve_type is not None:
             maybe_type = abstract_type.resolve_type(
-                value, self.context_value, info
+                value,
+                self.context_value,
+                info,
             )
         else:
             # Default type resolution
@@ -140,26 +144,41 @@ class Executor(ResolutionContext):
         resolver = self.field_resolver(parent_type, field_definition)
         node = nodes[0]
         info = ResolveInfo(
-            field_definition, path, parent_type, nodes, runtime, self
+            field_definition,
+            path,
+            parent_type,
+            nodes,
+            runtime,
+            self,
         )
 
         self.instrumentation.on_field_start(
-            parent_value, self.context_value, info
+            parent_value,
+            self.context_value,
+            info,
         )
 
         def fail(err):
             self.add_error(err, path, node)
             self.instrumentation.on_field_end(
-                parent_value, self.context_value, info
+                parent_value,
+                self.context_value,
+                info,
             )
             return None
 
         def complete(res):
             self.instrumentation.on_field_end(
-                parent_value, self.context_value, info
+                parent_value,
+                self.context_value,
+                info,
             )
             return self.complete_value(
-                field_definition.type, nodes, path, info, res
+                field_definition.type,
+                nodes,
+                path,
+                info,
+                res,
             )
 
         try:
@@ -176,11 +195,11 @@ class Executor(ResolutionContext):
                             self.context_value,
                             info,
                             **coerced_args,
-                        )
+                        ),
                     ),
                     complete,
                     else_=(ResolverError, fail),
-                )
+                ),
             )
         except ResolverError as err:
             return fail(err)
@@ -201,7 +220,11 @@ class Executor(ResolutionContext):
                 continue
 
             resolved = self.resolve_field(
-                parent_type, root, field_def, nodes, path + [key]
+                parent_type,
+                root,
+                field_def,
+                nodes,
+                path + [key],
             )
 
             keys.append(key)
@@ -211,7 +234,8 @@ class Executor(ResolutionContext):
             return OrderedDict(zip(keys, done))
 
         return self.runtime.map_value(
-            self.runtime.gather_values(pending), _collect
+            self.runtime.gather_values(pending),
+            _collect,
         )
 
     def execute_fields_serially(
@@ -241,7 +265,8 @@ class Executor(ResolutionContext):
                     return _next()
 
                 return self.runtime.map_value(
-                    self.resolve_field(parent_type, root, f, n, path + [k]), cb
+                    self.resolve_field(parent_type, root, f, n, path + [k]),
+                    cb,
                 )
 
         return _next()
@@ -283,7 +308,11 @@ class Executor(ResolutionContext):
 
         if isinstance(field_type, NonNullType):
             return self.complete_non_nullable_value(
-                field_type.type, nodes, path, info, resolved_value
+                field_type.type,
+                nodes,
+                path,
+                info,
+                resolved_value,
             )
 
         if resolved_value is None:
@@ -293,10 +322,14 @@ class Executor(ResolutionContext):
             if not is_iterable(resolved_value, False):
                 raise RuntimeError(
                     'Field "%s" is a list type and resolved value should be '
-                    "iterable" % stringify_path(path)
+                    "iterable" % stringify_path(path),
                 )
             return self.complete_list_value(
-                field_type.type, nodes, path, info, resolved_value
+                field_type.type,
+                nodes,
+                path,
+                info,
+                resolved_value,
             )
 
         if isinstance(field_type, ScalarType):
@@ -305,7 +338,7 @@ class Executor(ResolutionContext):
             except ScalarSerializationError as err:
                 raise RuntimeError(
                     'Field "%s" cannot be serialized as "%s": %s'
-                    % (stringify_path(path), field_type, err)
+                    % (stringify_path(path), field_type, err),
                 ) from err
 
         if isinstance(field_type, EnumType):
@@ -314,7 +347,7 @@ class Executor(ResolutionContext):
             except UnknownEnumValue as err:
                 raise RuntimeError(
                     'Field "%s" cannot be serialized as "%s": %s'
-                    % (stringify_path(path), field_type, err)
+                    % (stringify_path(path), field_type, err),
                 ) from err
 
         if isinstance(field_type, GraphQLCompositeType):
@@ -322,24 +355,35 @@ class Executor(ResolutionContext):
                 runtime_type = field_type
             elif isinstance(field_type, GraphQLAbstractType):
                 maybe_runtime_type = self.resolve_type(
-                    resolved_value, info, field_type
+                    resolved_value,
+                    info,
+                    field_type,
                 )
 
                 if not isinstance(maybe_runtime_type, ObjectType):
                     raise RuntimeError(
                         'Abstract type "%s" must resolve to an ObjectType at '
                         'runtime for field "%s". Received "%s"'
-                        % (field_type, stringify_path(path), maybe_runtime_type)
+                        % (
+                            field_type,
+                            stringify_path(path),
+                            maybe_runtime_type,
+                        ),
                     )
 
                 # Backup check in case of badly implemented `resolve_type`
                 if not self.schema.is_possible_type(
-                    field_type, maybe_runtime_type
+                    field_type,
+                    maybe_runtime_type,
                 ):
                     raise RuntimeError(
                         'Runtime ObjectType "%s" is not a possible type for '
                         'field "%s" of type "%s".'
-                        % (maybe_runtime_type, stringify_path(path), field_type)
+                        % (
+                            maybe_runtime_type,
+                            stringify_path(path),
+                            field_type,
+                        ),
                     )
 
                 runtime_type = maybe_runtime_type
@@ -362,11 +406,14 @@ class Executor(ResolutionContext):
             )
 
         raise TypeError(
-            "Invalid field type %s at %s" % (field_type, stringify_path(path))
+            f"Invalid field type {field_type} at {stringify_path(path)}",
         )
 
     def _handle_non_nullable_value(
-        self, nodes: List[_ast.Field], path: ResponsePath, resolved_value: Any
+        self,
+        nodes: List[_ast.Field],
+        path: ResponsePath,
+        resolved_value: Any,
     ) -> Any:
         if resolved_value is None:
             # REVIEW: Shouldn't this be a RuntimeError? As in the developer
@@ -374,9 +421,9 @@ class Executor(ResolutionContext):
             # if the query lead to this behavior could be valid outcome.
             self.add_error(
                 ResolverError(
-                    'Field "%s" is not nullable' % stringify_path(path),
+                    f'Field "{stringify_path(path)}" is not nullable',
                     nodes=nodes,
                     path=path,
-                )
+                ),
             )
         return resolved_value

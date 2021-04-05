@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql.validation.rules import KnownTypeNamesChecker
 
 from .._test_utils import assert_checker_validation_result as run_test

@@ -67,7 +67,7 @@ def nested_list_resolver(key, resource):
             return None
         ids = [int(u.split("/")[-2]) for u in obj[key]]
         return await asyncio.gather(
-            *[swapi.fetch_one(resource, id) for id in ids]
+            *[swapi.fetch_one(resource, id) for id in ids],
         )
 
     return resolve

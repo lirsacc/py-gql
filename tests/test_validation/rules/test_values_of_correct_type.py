@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -214,7 +211,10 @@ def test_null_into_nullable_type_2(schema):
     "value,expected_err,loc",
     [
         pytest.param(
-            "1", "Expected type String, found 1", (54, 55), id="int -> string"
+            "1",
+            "Expected type String, found 1",
+            (54, 55),
+            id="int -> string",
         ),
         pytest.param(
             "1.0",
@@ -257,7 +257,10 @@ def test_invalid_string_values(schema, value, expected_err, loc):
     "value,expected_err,loc",
     [
         pytest.param(
-            '"3"', 'Expected type Int, found "3"', (48, 51), id="string -> int"
+            '"3"',
+            'Expected type Int, found "3"',
+            (48, 51),
+            id="string -> int",
         ),
         pytest.param(
             "829384293849283498239482938",
@@ -266,13 +269,22 @@ def test_invalid_string_values(schema, value, expected_err, loc):
             id="big int -> int",
         ),
         pytest.param(
-            "FOO", "Expected type Int, found FOO", (48, 51), id="enum -> int"
+            "FOO",
+            "Expected type Int, found FOO",
+            (48, 51),
+            id="enum -> int",
         ),
         pytest.param(
-            "3.0", "Expected type Int, found 3.0", (48, 51), id="float -> int"
+            "3.0",
+            "Expected type Int, found 3.0",
+            (48, 51),
+            id="float -> int",
         ),
         pytest.param(
-            "true", "Expected type Int, found true", (48, 52), id="bool -> int"
+            "true",
+            "Expected type Int, found true",
+            (48, 52),
+            id="bool -> int",
         ),
         pytest.param(
             "3.333",
@@ -349,7 +361,10 @@ def test_invalid_float_values(schema, value, expected_err, loc):
     "value,expected_err,loc",
     [
         pytest.param(
-            "2", "Expected type Boolean, found 2", (56, 57), id="int -> boolean"
+            "2",
+            "Expected type Boolean, found 2",
+            (56, 57),
+            id="int -> boolean",
         ),
         pytest.param(
             "1.0",
@@ -392,10 +407,16 @@ def test_invalid_boolean_values(schema, value, expected_err, loc):
     "value,expected_err,loc",
     [
         pytest.param(
-            "1.0", "Expected type ID, found 1.0", (46, 49), id="float -> ID"
+            "1.0",
+            "Expected type ID, found 1.0",
+            (46, 49),
+            id="float -> ID",
         ),
         pytest.param(
-            "true", "Expected type ID, found true", (46, 50), id="boolean -> ID"
+            "true",
+            "Expected type ID, found true",
+            (46, 50),
+            id="boolean -> ID",
         ),
         pytest.param(
             "SOMETHING",
@@ -426,7 +447,10 @@ def test_invalid_id_values(schema, value, expected_err, loc):
     "value,expected_err,loc",
     [
         pytest.param(
-            "1", "Expected type DogCommand, found 1", (48, 49), id="int -> enum"
+            "1",
+            "Expected type DogCommand, found 1",
+            (48, 49),
+            id="int -> enum",
         ),
         pytest.param(
             "1.0",
@@ -797,7 +821,7 @@ def test_valid_input_object_value(schema, value):
             """,
             [
                 "Required field ComplexInput.requiredField of type Boolean! was "
-                "not provided"
+                "not provided",
             ],
             [[(52, 67)]],
             id="Partial object, missing required",
@@ -845,7 +869,7 @@ def test_valid_input_object_value(schema, value):
             """,
             [
                 "Field unknownField is not defined by type ComplexInput. "
-                'Did you mean "nonNullField", "intField" or "booleanField"?'
+                'Did you mean "nonNullField", "intField" or "booleanField"?',
             ],
             [[(83, 104)]],
             id="Partial object, unknown field arg",
@@ -857,7 +881,7 @@ def test_valid_input_object_value(schema, value):
             }
             """,
             [
-                "Expected type Invalid, found 123 (Invalid scalar is always invalid)"
+                "Expected type Invalid, found 123 (Invalid scalar is always invalid)",
             ],
             [[(18, 21)]],
             id="reports original error for custom scalar which throws",
@@ -1006,7 +1030,7 @@ def test_complex_variables_missing_required_field(schema):
         """,
         [
             "Required field ComplexInput.requiredField of type Boolean! "
-            "was not provided"
+            "was not provided",
         ],
     )
 

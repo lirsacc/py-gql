@@ -49,7 +49,7 @@ class CaseSchemaTransform(abc.ABC, SchemaVisitor):
                 description=arg.description,
                 node=arg.node,
                 python_name=arg.python_name,
-            )
+            ),
         )
 
     def on_input_field(self, input_field: InputField) -> Optional[InputField]:
@@ -61,7 +61,7 @@ class CaseSchemaTransform(abc.ABC, SchemaVisitor):
                 description=input_field.description,
                 node=input_field.node,
                 python_name=input_field.python_name,
-            )
+            ),
         )
 
     def on_field(self, field: Field) -> Optional[Field]:
@@ -76,7 +76,7 @@ class CaseSchemaTransform(abc.ABC, SchemaVisitor):
                 deprecation_reason=field.deprecation_reason,
                 node=field.node,
                 python_name=field.python_name,
-            )
+            ),
         )
 
 

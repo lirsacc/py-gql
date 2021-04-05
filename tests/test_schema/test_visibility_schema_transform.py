@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql import build_schema
@@ -43,7 +41,7 @@ def schema():
         union Thing = Foo | Bar
 
         scalar UUID
-        """
+        """,
     )
 
 
@@ -90,7 +88,7 @@ def test_hides_object(schema):
             union Thing = Bar
 
             scalar UUID
-            """
+            """,
         )
         == _sdl(transform_schema(schema, _hide_type_transform("Foo")))
     )
@@ -127,7 +125,7 @@ def test_hides_interface(schema):
             union Thing = Foo | Bar
 
             scalar UUID
-            """
+            """,
         )
         == _sdl(transform_schema(schema, _hide_type_transform("IFace")))
     )
@@ -166,7 +164,7 @@ def test_hides_union(schema):
             }
 
             scalar UUID
-            """
+            """,
         )
         == _sdl(transform_schema(schema, _hide_type_transform("Thing")))
     )
@@ -203,7 +201,7 @@ def test_hides_enum(schema):
             union Thing = Foo | Bar
 
             scalar UUID
-            """
+            """,
         )
         == _sdl(transform_schema(schema, _hide_type_transform("SomeEnum")))
     )
@@ -242,7 +240,7 @@ def test_hides_custom_scalar(schema):
             }
 
             union Thing = Foo | Bar
-            """
+            """,
         )
         == _sdl(transform_schema(schema, _hide_type_transform("UUID")))
     )
@@ -250,7 +248,7 @@ def test_hides_custom_scalar(schema):
 
 def test_does_not_hide_specified_scalar(schema):
     assert _sdl(schema) == _sdl(
-        transform_schema(schema, _hide_type_transform("String"))
+        transform_schema(schema, _hide_type_transform("String")),
     )
 
 
@@ -292,7 +290,7 @@ def test_hides_directive(schema):
             union Thing = Foo | Bar
 
             scalar UUID
-            """
+            """,
         )
         == _sdl(transform_schema(schema, HideDirective()))
     )
@@ -314,7 +312,7 @@ def test_hides_input_type_field():
         type Query {
             field(foo: Foo, bar: Bar): String
         }
-        """
+        """,
     )
 
     class HideInputField(VisibilitySchemaTransform):
@@ -336,7 +334,7 @@ def test_hides_input_type_field():
             type Query {
                 field(foo: Foo, bar: Bar): String
             }
-            """
+            """,
         )
         == _sdl(transform_schema(schema, HideInputField()))
     )

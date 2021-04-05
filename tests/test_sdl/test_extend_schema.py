@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests for extend schema from a pre-built schema.
 """
@@ -29,7 +28,8 @@ from py_gql.sdl import build_schema, extend_schema
 BASE_SCHEMA = Schema(ObjectType("Query", [Field("foo", Int)]))
 
 build_schema_ignoring_extensions = functools.partial(
-    build_schema, ignore_extensions=True
+    build_schema,
+    ignore_extensions=True,
 )
 
 
@@ -97,16 +97,17 @@ def test_raises_on_unknown_type_in_strict_mode():
 
 def test_ignores_unknown_type_in_non_strict_mode():
     new_schema = extend_schema(
-        BASE_SCHEMA, "extend scalar UUID @foo", strict=False
+        BASE_SCHEMA,
+        "extend scalar UUID @foo",
+        strict=False,
     )
     assert new_schema is BASE_SCHEMA
 
 
 def test_it_adds_new_type_definitions_and_opeations_to_schema():
-    assert (
-        extend_schema(
-            BASE_SCHEMA,
-            """
+    assert extend_schema(
+        BASE_SCHEMA,
+        """
             scalar UUID
 
             type SomeMutation {
@@ -117,9 +118,8 @@ def test_it_adds_new_type_definitions_and_opeations_to_schema():
                 mutation: SomeMutation
             }
             """,
-        ).to_string()
-        == dedent(
-            """
+    ).to_string() == dedent(
+        """
             schema {
                 query: Query
                 mutation: SomeMutation
@@ -134,8 +134,7 @@ def test_it_adds_new_type_definitions_and_opeations_to_schema():
             }
 
             scalar UUID
-            """
-        )
+            """,
     )
 
 
@@ -152,7 +151,8 @@ def test_it_rejects_duplicate_operation():
 
 def test_it_adds_new_directives_to_schema():
     assert extend_schema(
-        BASE_SCHEMA, "directive @some(a: Boolean!) on FIELD"
+        BASE_SCHEMA,
+        "directive @some(a: Boolean!) on FIELD",
     ).to_string() == dedent(
         """
         directive @some(a: Boolean!) on FIELD
@@ -160,7 +160,7 @@ def test_it_adds_new_directives_to_schema():
         type Query {
             foo: Int
         }
-        """
+        """,
     )
 
 
@@ -174,7 +174,7 @@ def test_it_correctly_updates_references():
                     "foo",
                     ObjectType("Foo", [Field("a", Int)]),
                     [Argument("bar", arg_type)],
-                )
+                ),
             ],
         ),
         directives=[Directive("baz", ["FIELD"], [Argument("bar", arg_type)])],
@@ -210,7 +210,7 @@ def test_it_correctly_updates_references():
         type Query {
             foo(bar: Bar): Foo
         }
-        """
+        """,
     )
 
     query_type = cast(ObjectType, update_schema.get_type("Query"))

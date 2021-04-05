@@ -14,7 +14,8 @@ __all__ = ("TimingTracer", "ApolloTracer")
 
 
 def _ns(
-    start: Optional[datetime.datetime], end: Optional[datetime.datetime]
+    start: Optional[datetime.datetime],
+    end: Optional[datetime.datetime],
 ) -> Optional[int]:
     return (
         int((end - start).total_seconds() * 1e9)
@@ -108,10 +109,12 @@ class ApolloTracer(TimingTracer, GraphQLExtension):
             "fieldName": field_timing.info.field_definition.name,
             "returnType": str(field_timing.info.field_definition.type),
             "startOffset": _ns(
-                cast(datetime.datetime, self.start), field_timing.start
+                cast(datetime.datetime, self.start),
+                field_timing.start,
             ),
             "duration": _ns(
-                field_timing.start, cast(datetime.datetime, field_timing.end)
+                field_timing.start,
+                cast(datetime.datetime, field_timing.end),
             ),
         }
 

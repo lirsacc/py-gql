@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test the main entry point.
 """
@@ -24,7 +23,9 @@ async def _execute_query_async(*args, **kwargs):
 
 async def _execute_query_threaded(*args, **kwargs):
     return process_graphql_query(
-        *args, runtime=ThreadPoolRuntime(), **kwargs
+        *args,
+        runtime=ThreadPoolRuntime(),
+        **kwargs,
     ).result()
 
 
@@ -37,7 +38,8 @@ _with_execution_strategies = pytest.mark.parametrize(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_it_correctly_identifies_r2_d2_as_the_hero_sync(
-    starwars_schema, execute_query
+    starwars_schema,
+    execute_query,
 ):
     result = await execute_query(
         starwars_schema,
@@ -55,22 +57,24 @@ async def test_it_correctly_identifies_r2_d2_as_the_hero_sync(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_syntax_error_1(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     assert (await execute_query(starwars_schema, "")).response() == {
         "errors": [
             {
                 "message": 'Unexpected "<EOF>" (1:1):\n  1:\n    ^\n',
                 "locations": [{"columne": 1, "line": 1}],
-            }
-        ]
+            },
+        ],
     }
 
 
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_syntax_error_2(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameQuery {{
@@ -91,15 +95,16 @@ async def test_correct_response_on_syntax_error_2(
   4:           name
 """,
                 "locations": [{"columne": 26, "line": 2}],
-            }
-        ]
+            },
+        ],
     }
 
 
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_validation_errors(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameAndFriendsQuery($hero: Droid) {
@@ -132,14 +137,15 @@ async def test_correct_response_on_validation_errors(
                 "locations": [{"column": 35, "line": 2}],
                 "message": 'Unused variable "$hero"',
             },
-        ]
+        ],
     }
 
 
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_argument_validation_error(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameQuery {
@@ -156,15 +162,16 @@ async def test_correct_response_on_argument_validation_error(
                     "is required but not provided"
                 ),
                 "locations": [{"line": 3, "column": 9}],
-            }
-        ]
+            },
+        ],
     }
 
 
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_execution_error(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameAndFriendsQuery {
@@ -185,9 +192,11 @@ async def test_correct_response_on_execution_error(
     assert (await execute_query(starwars_schema, query)).response() == {
         "errors": [
             {
-                "message": "Operation name is required when document contains "
-                "multiple operation definitions"
-            }
+                "message": (
+                    "Operation name is required when document contains "
+                    "multiple operation definitions"
+                ),
+            },
         ],
         "data": None,
     }
@@ -196,7 +205,8 @@ async def test_correct_response_on_execution_error(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_execution_error_2(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameAndFriendsQuery {
@@ -225,7 +235,8 @@ async def test_correct_response_on_execution_error_2(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_execution_error_3(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     mutation  {
@@ -246,7 +257,8 @@ async def test_correct_response_on_execution_error_3(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_variables_error(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query ($episode: Episode!, $human: String!) {
@@ -260,7 +272,12 @@ async def test_correct_response_on_variables_error(
     """
     assert (
         await execute_query(
-            starwars_schema, query, variables={"episode": 42, "id": 42}
+            starwars_schema,
+            query,
+            variables={
+                "episode": 42,
+                "id": 42,
+            },
         )
     ).response() == {
         "errors": [
@@ -286,7 +303,8 @@ async def test_correct_response_on_variables_error(
 @pytest.mark.asyncio
 @_with_execution_strategies
 async def test_correct_response_on_resolver_error(
-    execute_query, starwars_schema
+    execute_query,
+    starwars_schema,
 ):
     query = """
     query HeroNameQuery {
@@ -303,7 +321,7 @@ async def test_correct_response_on_resolver_error(
                 "locations": [{"line": 5, "column": 13}],
                 "path": ["mainHero", "story"],
                 "extensions": {"code": 42},
-            }
+            },
         ],
         "data": {"mainHero": {"name": "R2-D2", "story": None}},
     }
@@ -327,7 +345,7 @@ async def test_graphql_with_async_resolvers():
             bar(value: Int!): Int
             baz: String
         }
-        """
+        """,
     )
 
     @schema.resolver("Query.foo")
@@ -352,6 +370,6 @@ async def test_graphql_with_async_resolvers():
                 "locations": [{"column": 24, "line": 1}],
                 "message": "Baz Error",
                 "path": ["baz"],
-            }
+            },
         ],
     } == result.response()

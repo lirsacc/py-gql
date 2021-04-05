@@ -75,7 +75,7 @@ _DIRECTIVE_LOCATIONS = frozenset(DIRECTIVE_LOCATIONS)
 
 
 EXECUTABLE_DEFINITIONS_KEYWORDS = frozenset(
-    ["query", "mutation", "subscription", "fragment"]
+    ["query", "mutation", "subscription", "fragment"],
 )
 
 
@@ -89,7 +89,7 @@ SCHEMA_DEFINITIONS_KEYWORDS = frozenset(
         "enum",
         "input",
         "directive",
-    ]
+    ],
 )
 
 OPERATION_TYPES_KEYWORDS = frozenset(["query", "mutation", "subscription"])
@@ -119,7 +119,8 @@ def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
 
 
 def parse_value(
-    source: Union[str, bytes], **kwargs: Any
+    source: Union[str, bytes],
+    **kwargs: Any,
 ) -> Union[_ast.Variable, _ast.Value]:
     """
     Parse a string as a single GraphQL value.
@@ -326,7 +327,7 @@ class Parser:
             return self.advance()
 
         raise UnexpectedToken(
-            'Expected %s but found "%s"' % (kind.__name__, next_token),
+            f'Expected {kind.__name__} but found "{next_token}"',
             next_token.start,
             self._lexer._source,
         )
@@ -350,7 +351,7 @@ class Parser:
             return cast(Name, self.advance())
 
         raise UnexpectedToken(
-            'Expected "%s" but found "%s"' % (keyword, next_token),
+            f'Expected "{keyword}" but found "{next_token}"',
             next_token.start,
             self._lexer._source,
         )
@@ -393,7 +394,10 @@ class Parser:
         return False
 
     def many(
-        self, open_kind: Kind, parse_fn: Callable[[], N], close_kind: Kind
+        self,
+        open_kind: Kind,
+        parse_fn: Callable[[], N],
+        close_kind: Kind,
     ) -> List[N]:
         """
         Parse a non-empty list of nodes surrounded by ``open_kind`` and ``close_kind``.
@@ -424,7 +428,10 @@ class Parser:
         return nodes
 
     def any_(
-        self, open_kind: Kind, parse_fn: Callable[[], N], close_kind: Kind
+        self,
+        open_kind: Kind,
+        parse_fn: Callable[[], N],
+        close_kind: Kind,
     ) -> List[N]:
         """
         Parse a list of nodes surrounded by ``open_kind`` and ``close_kind``.
@@ -453,7 +460,9 @@ class Parser:
         return nodes
 
     def delimited_list(
-        self, delimiter: Kind, parse_fn: Callable[[], N]
+        self,
+        delimiter: Kind,
+        parse_fn: Callable[[], N],
     ) -> List[N]:
         """
         Parse a list of nodes separated by ``delimiter`` tokens.
@@ -494,7 +503,9 @@ class Parser:
                 break
 
         return _ast.Document(
-            definitions=definitions, loc=self._loc(start), source=self._source
+            definitions=definitions,
+            loc=self._loc(start),
+            source=self._source,
         )
 
     def parse_definition(self) -> _ast.Definition:
@@ -521,7 +532,7 @@ class Parser:
             return self.parse_type_system_definition()
 
         raise UnexpectedToken(
-            'Unexpected "%s"' % start,
+            f'Unexpected "{start}"',
             start.start,
             self._lexer._source,
         )
@@ -532,7 +543,9 @@ class Parser:
         """
         token = self.expect(Name)
         return _ast.Name(
-            value=token.value, loc=self._loc(token), source=self._source
+            value=token.value,
+            loc=self._loc(token),
+            source=self._source,
         )
 
     def parse_executable_definition(self) -> _ast.ExecutableDefinition:
@@ -548,7 +561,7 @@ class Parser:
         elif start.__class__ is CurlyOpen:
             return self.parse_operation_definition()
         raise UnexpectedToken(
-            'Unexpected "%s"' % start,
+            f'Unexpected "{start}"',
             start.start,
             self._lexer._source,
         )
@@ -588,7 +601,7 @@ class Parser:
         if token.value in ("query", "mutation", "subscription"):
             return token.value
         raise UnexpectedToken(
-            'Unexpected "%s"' % token,
+            f'Unexpected "{token}"',
             token.start,
             self._lexer._source,
         )
@@ -599,7 +612,9 @@ class Parser:
         """
         if self.peek().__class__ is ParenOpen:
             return self.many(
-                ParenOpen, self.parse_variable_definition, ParenClose
+                ParenOpen,
+                self.parse_variable_definition,
+                ParenClose,
             )
         return []
 
@@ -611,7 +626,8 @@ class Parser:
         return _ast.VariableDefinition(
             variable=self.parse_variable(),
             type=cast(
-                _ast.Type, self.expect(Colon) and self.parse_type_reference()
+                _ast.Type,
+                self.expect(Colon) and self.parse_type_reference(),
             ),
             default_value=(
                 cast(_ast.Value, self.parse_value_literal(True))
@@ -630,7 +646,9 @@ class Parser:
         start = self.peek()
         self.expect(Dollar)
         return _ast.Variable(
-            name=self.parse_name(), loc=self._loc(start), source=self._source
+            name=self.parse_name(),
+            loc=self._loc(start),
+            source=self._source,
         )
 
     def parse_selection_set(self) -> _ast.SelectionSet:
@@ -686,7 +704,9 @@ class Parser:
         """
         if self.peek().__class__ is ParenOpen:
             return self.many(
-                ParenOpen, ft.partial(self.parse_argument, const), ParenClose
+                ParenOpen,
+                ft.partial(self.parse_argument, const),
+                ParenClose,
             )
         return []
 
@@ -769,14 +789,15 @@ class Parser:
         token = self.peek()
         if token.value == "on":
             raise UnexpectedToken(
-                'Unexpected "%s"' % token,
+                f'Unexpected "{token}"',
                 token.start,
                 self._lexer._source,
             )
         return self.parse_name()
 
     def parse_value_literal(
-        self, const: bool = False
+        self,
+        const: bool = False,
     ) -> Union[_ast.Value, _ast.Variable]:
         """
         Value[Const] :
@@ -805,12 +826,16 @@ class Parser:
         elif kind is Integer:
             self.advance()
             return _ast.IntValue(
-                value=value, loc=self._loc(token), source=self._source
+                value=value,
+                loc=self._loc(token),
+                source=self._source,
             )
         elif kind is Float:
             self.advance()
             return _ast.FloatValue(
-                value=value, loc=self._loc(token), source=self._source
+                value=value,
+                loc=self._loc(token),
+                source=self._source,
             )
         elif kind in (String, BlockString):
             return self.parse_string_literal()
@@ -828,13 +853,15 @@ class Parser:
             else:
                 self.advance()
                 return _ast.EnumValue(
-                    value=value, loc=self._loc(token), source=self._source
+                    value=value,
+                    loc=self._loc(token),
+                    source=self._source,
                 )
         elif kind is Dollar and not const:
             return self.parse_variable()
 
         raise UnexpectedToken(
-            'Unexpected "%s"' % token,
+            f'Unexpected "{token}"',
             token.start,
             self._lexer._source,
         )
@@ -873,7 +900,9 @@ class Parser:
         while not self.skip(CurlyClose):
             fields.append(self.parse_object_field(const))
         return _ast.ObjectValue(
-            fields=fields, loc=self._loc(start), source=self._source
+            fields=fields,
+            loc=self._loc(start),
+            source=self._source,
         )
 
     def parse_object_field(self, const: bool = False) -> _ast.ObjectField:
@@ -922,14 +951,18 @@ class Parser:
             inner_type = self.parse_type_reference()
             self.expect(BracketClose)
             type_ = _ast.ListType(
-                type=inner_type, loc=self._loc(start), source=self._source
+                type=inner_type,
+                loc=self._loc(start),
+                source=self._source,
             )  # type: Union[_ast.ListType, _ast.NamedType]
         else:
             type_ = self.parse_named_type()
 
         if self.skip(ExclamationMark):
             return _ast.NonNullType(
-                type=type_, loc=self._loc(start), source=self._source
+                type=type_,
+                loc=self._loc(start),
+                source=self._source,
             )
 
         return type_
@@ -940,7 +973,9 @@ class Parser:
         """
         start = self.peek()
         return _ast.NamedType(
-            name=self.parse_name(), loc=self._loc(start), source=self._source
+            name=self.parse_name(),
+            loc=self._loc(start),
+            source=self._source,
         )
 
     def parse_type_system_definition(self) -> _ast.TypeSystemDefinition:
@@ -985,7 +1020,7 @@ class Parser:
                 return self.parse_directive_definition()
 
         raise UnexpectedToken(
-            'Unexpected "%s"' % keyword,
+            f'Unexpected "{keyword}"',
             keyword.start,
             self._lexer._source,
         )
@@ -1012,7 +1047,9 @@ class Parser:
         return _ast.SchemaDefinition(
             directives=self.parse_directives(True),
             operation_types=self.many(
-                CurlyOpen, self.parse_operation_type_definition, CurlyClose
+                CurlyOpen,
+                self.parse_operation_type_definition,
+                CurlyClose,
             ),
             description=desc,
             loc=self._loc(start),
@@ -1282,7 +1319,7 @@ class Parser:
                 return self.parse_input_object_type_extension()
 
         raise UnexpectedToken(
-            'Unexpected "%s"' % keyword,
+            f'Unexpected "{keyword}"',
             keyword.start,
             self._lexer._source,
         )
@@ -1299,7 +1336,9 @@ class Parser:
         directives = self.parse_directives(True)
         if self.peek().__class__ is CurlyOpen:
             operation_types = self.many(
-                CurlyOpen, self.parse_operation_type_definition, CurlyClose
+                CurlyOpen,
+                self.parse_operation_type_definition,
+                CurlyClose,
             )
         else:
             operation_types = []
@@ -1321,7 +1360,7 @@ class Parser:
         directives = self.parse_directives(True)
         if not directives:
             raise UnexpectedToken(
-                'Unexpected "%s"' % start,
+                f'Unexpected "{start}"',
                 start.start,
                 self._lexer._source,
             )
@@ -1349,7 +1388,7 @@ class Parser:
         if (not interfaces) and (not directives) and (not fields):
             tok = self.peek()
             raise UnexpectedToken(
-                'Unexpected "%s"' % tok,
+                f'Unexpected "{tok}"',
                 tok.start,
                 self._lexer._source,
             )
@@ -1377,7 +1416,7 @@ class Parser:
         if (not directives) and (not fields):
             tok = self.peek()
             raise UnexpectedToken(
-                'Unexpected "%s"' % tok,
+                f'Unexpected "{tok}"',
                 tok.start,
                 self._lexer._source,
             )
@@ -1405,7 +1444,7 @@ class Parser:
         if (not directives) and (not types):
             tok = self.peek()
             raise UnexpectedToken(
-                'Unexpected "%s"' % tok,
+                f'Unexpected "{tok}"',
                 tok.start,
                 self._lexer._source,
             )
@@ -1433,7 +1472,7 @@ class Parser:
         if (not directives) and (not values):
             tok = self.peek()
             raise UnexpectedToken(
-                'Unexpected "%s"' % tok,
+                f'Unexpected "{tok}"',
                 tok.start,
                 self._lexer._source,
             )
@@ -1519,5 +1558,7 @@ class Parser:
         if name.value in _DIRECTIVE_LOCATIONS:
             return name
         raise UnexpectedToken(
-            "Unexpected Name %s" % name.value, start.start, self._lexer._source
+            f"Unexpected Name {name.value}",
+            start.start,
+            self._lexer._source,
         )

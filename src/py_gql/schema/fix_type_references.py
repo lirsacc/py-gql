@@ -34,7 +34,8 @@ class _HealSchemaVisitor(SchemaVisitor):
     def on_object(self, object_type: ObjectType) -> Optional[ObjectType]:
         updated = cast(ObjectType, super().on_object(object_type))
         updated.interfaces = map_and_filter(
-            self._healed, updated.interfaces  # type: ignore
+            self._healed,  # type: ignore
+            updated.interfaces,
         )
         return updated
 
@@ -61,7 +62,8 @@ class _HealSchemaVisitor(SchemaVisitor):
     def on_union(self, union: UnionType) -> Optional[UnionType]:
         updated = cast(UnionType, super().on_union(union))
         updated.types = map_and_filter(
-            self._healed, updated.types  # type: ignore
+            self._healed,  # type: ignore
+            updated.types,
         )
         return updated
 

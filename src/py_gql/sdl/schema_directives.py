@@ -95,7 +95,8 @@ class SchemaDirective(SchemaVisitor):
 
 
 def apply_schema_directives(
-    schema: Schema, schema_directives: Sequence[TSchemaDirective]
+    schema: Schema,
+    schema_directives: Sequence[TSchemaDirective],
 ) -> Schema:
     """
     Apply :class:`~py_gql.schema.SchemaDirective` implementers to a given schema.
@@ -122,7 +123,8 @@ def apply_schema_directives(
 
     """
     return _SchemaDirectivesApplicationVisitor(
-        schema_directives, schema.directives
+        schema_directives,
+        schema.directives,
     ).on_schema(schema)
 
 
@@ -138,7 +140,7 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
         for sd in schema_directives:
             if not isinstance(sd, type) or not issubclass(sd, SchemaDirective):
                 raise TypeError(
-                    'Expected SchemaDirective subclass but got "%r"' % sd
+                    f'Expected SchemaDirective subclass but got "{sd!r}"',
                 )
 
             if isinstance(sd.definition, str):
@@ -150,13 +152,15 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
                         "The definition attribute must either be an explicit "
                         "Directive instance or a string. When using a string, a "
                         "directive with that name must be present in the schema."
-                        % sd.definition
+                        % sd.definition,
                     )
             else:
                 self._defs[sd.definition.name] = sd.definition, sd
 
     def _collect_schema_directives(
-        self, definition: _HasDirectives, loc: str
+        self,
+        definition: _HasDirectives,
+        loc: str,
     ) -> Iterator[SchemaDirective]:
         applied = set()  # type: Set[str]
 
@@ -169,16 +173,16 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
             try:
                 directive_def, schema_directive_cls = self._defs[name]
             except KeyError:
-                raise SDLError('Unknown directive "@%s"' % name, [node])
+                raise SDLError(f'Unknown directive "@{name}"', [node])
 
             if loc not in directive_def.locations:
                 raise SDLError(
-                    'Directive "@%s" not applicable to "%s"' % (name, loc),
+                    f'Directive "@{name}" not applicable to "{loc}"',
                     [node],
                 )
 
             if name in applied and not directive_def.repeatable:
-                raise SDLError('Directive "@%s" already applied' % name, [node])
+                raise SDLError(f'Directive "@{name}" already applied', [node])
 
             args = coerce_argument_values(directive_def, node)
             applied.add(name)
@@ -253,7 +257,8 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
         return super().on_enum_value(enum_value)
 
     def on_input_object(
-        self, input_object: InputObjectType
+        self,
+        input_object: InputObjectType,
     ) -> Optional[InputObjectType]:
         for sd in self._collect_schema_directives(input_object, "INPUT_OBJECT"):
             input_object = sd.on_input_object(input_object)  # type: ignore
@@ -263,7 +268,8 @@ class _SchemaDirectivesApplicationVisitor(SchemaVisitor):
 
     def on_input_field(self, field: InputField) -> Optional[InputField]:
         for sd in self._collect_schema_directives(
-            field, "INPUT_FIELD_DEFINITION"
+            field,
+            "INPUT_FIELD_DEFINITION",
         ):
             field = sd.on_input_field(field)  # type: ignore
             if field is None:

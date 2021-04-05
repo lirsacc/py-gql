@@ -72,7 +72,8 @@ def run_setup():
         include_package_data=True,
         python_requires=">=3.6",
         ext_modules=_ext_modules(
-            "src/py_gql", exclude=["src/py_gql/schema/_types.py"]
+            "src/py_gql",
+            exclude=["src/py_gql/schema/_types.py"],
         ),
         classifiers=[
             "License :: OSI Approved :: MIT License",
@@ -123,8 +124,8 @@ def _ext_modules(*packages, exclude=()):
                     },
                 )
                 for package in packages
-            )
-        )
+            ),
+        ),
     )
 
     if CYTHON_TRACE:
@@ -145,7 +146,7 @@ def _split_requirements(*requirements_files):
                     for line in lines
                     if line
                     and not (line.startswith("#") or line.startswith("-"))
-                ]
+                ],
             )
     return req
 

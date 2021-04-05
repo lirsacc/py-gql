@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -86,7 +84,7 @@ def test_scalar_is_invalid_fragment_type(schema):
         """,
         [
             'Fragment "scalarFragment" cannot condition on non composite type '
-            '"Boolean".'
+            '"Boolean".',
         ],
     )
 
@@ -102,7 +100,7 @@ def test_enum_is_invalid_fragment_type(schema):
         """,
         [
             'Fragment "scalarFragment" cannot condition on non composite type '
-            '"FurColor".'
+            '"FurColor".',
         ],
     )
 
@@ -118,7 +116,7 @@ def test_input_object_is_invalid_fragment_type(schema):
         """,
         [
             'Fragment "inputFragment" cannot condition on non composite type '
-            '"ComplexInput".'
+            '"ComplexInput".',
         ],
     )
 

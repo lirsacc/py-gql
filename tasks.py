@@ -14,7 +14,7 @@ import invoke
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = "src/py_gql"
-DEFAULT_TARGETS = "%s tests examples" % PACKAGE
+DEFAULT_TARGETS = f"{PACKAGE} tests examples"
 
 VALID_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.(dev|a|b|rc)\d+)?$")
 
@@ -61,7 +61,7 @@ def test(
     shortcuts and defaults.
     """
     ignore = ignore or []
-    files = ("%s tests" % PACKAGE) if not files else " ".join(files)
+    files = f"{PACKAGE} tests" if not files else " ".join(files)
 
     with ctx.cd(ROOT):
         ctx.run(
@@ -70,8 +70,8 @@ def test(
                 "-c setup.cfg",
                 "--exitfirst" if bail else None,
                 (
-                    "--cov %s --cov-config setup.cfg --no-cov-on-fail --cov-report="
-                    % PACKAGE
+                    f"--cov {PACKAGE} --cov-config setup.cfg --no-cov-on-fail"
+                    "--cov-report="
                     if coverage
                     else None
                 ),
@@ -79,13 +79,9 @@ def test(
                 "--looponfail" if watch else None,
                 "-vvl --full-trace" if verbose else "-q",
                 "-rf",
-                "-k %s" % grep if grep else None,
+                f"-k {grep}" if grep else None,
                 "-n auto" if parallel else None,
-                (
-                    " ".join("--ignore %s" % i for i in ignore)
-                    if ignore
-                    else None
-                ),
+                " ".join(f"--ignore {i}" for i in ignore) if ignore else None,
                 files,
             ),
             echo=True,
@@ -95,7 +91,7 @@ def test(
 
 @invoke.task(iterable=["files"])
 def flake8(ctx, files=None, junit=False):
-    files = DEFAULT_TARGETS if not files else " ".join(files)
+    files = f"{DEFAULT_TARGETS} setup.py" if not files else " ".join(files)
     try:
         ctx.run(
             _join(
@@ -126,29 +122,12 @@ def fmt(ctx, files=None):
     """
     Run formatters.
     """
+    targets = (
+        f"{DEFAULT_TARGETS} setup.py tasks.py" if not files else " ".join(files)
+    )
     with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                "isort",
-                (
-                    "-rc %s setup.py tasks.py" % DEFAULT_TARGETS
-                    if not files
-                    else " ".join(files)
-                ),
-            ),
-            echo=True,
-        )
-        ctx.run(
-            _join(
-                "black",
-                (
-                    "%s setup.py tasks.py" % DEFAULT_TARGETS
-                    if not files
-                    else " ".join(files)
-                ),
-            ),
-            echo=True,
-        )
+        ctx.run(_join("isort", targets), echo=True)
+        ctx.run(_join("black", targets), echo=True)
 
 
 @invoke.task(pre=[flake8, mypy, test])
@@ -224,7 +203,7 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
                 "--rm",
                 "-v $(pwd):/workspace",
                 "-w /workspace",
-                "-e PYTHON_VERSIONS=%s" % python_versions,
+                f"-e PYTHON_VERSIONS={python_versions}",
                 "-e PY_GQL_USE_CYTHON=1" if cythonize_module else None,
                 "quay.io/pypa/manylinux2010_x86_64",
                 "bash -c /workspace/scripts/build-manylinux-wheels.sh",
@@ -252,8 +231,7 @@ def update_version(ctx, version, force=False, push=False):
     with ctx.cd(ROOT):
         if not VALID_VERSION_RE.match(version):
             raise invoke.exceptions.Exit(
-                "Invalid version format, must match /%s/."
-                % VALID_VERSION_RE.pattern
+                f"Invalid version format, must match /{VALID_VERSION_RE.pattern}/.",
             )
 
         pkg = {}
@@ -265,7 +243,7 @@ def update_version(ctx, version, force=False, push=False):
 
         if (not force) and local_version >= version:
             raise invoke.exceptions.Exit(
-                "Must increment the version (current %s)." % local_version
+                f"Must increment the version (current {local_version}).",
             )
 
         with open(os.path.join(PACKAGE, "version.py")) as f:
@@ -276,15 +254,15 @@ def update_version(ctx, version, force=False, push=False):
 
         modified = ctx.run("git ls-files -m", hide=True)
 
-        if (not force) and modified.stdout.strip() != "%s/version.py" % PACKAGE:
+        if (not force) and modified.stdout.strip() != f"{PACKAGE}/version.py":
             raise invoke.exceptions.Exit(
                 "There are still modified files in your directory. "
-                "Commit or stash them."
+                "Commit or stash them.",
             )
 
-        ctx.run("git add %s/version.py" % PACKAGE)
-        ctx.run("git commit -m v%s" % version)
-        ctx.run("git tag v%s" % version)
+        ctx.run(f"git add {PACKAGE}/version.py")
+        ctx.run(f"git commit -m v{version}")
+        ctx.run(f"git tag v{version}")
 
         if push:
             ctx.run("git push && git push --tags")

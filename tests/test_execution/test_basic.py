@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from inspect import isawaitable
 
 import pytest
@@ -117,7 +115,7 @@ async def test_it_raises_if_operation_type_is_not_supported(assert_execution):
     with pytest.raises(ExecutionError) as exc_info:
         await assert_execution(
             Schema(
-                mutation_type=ObjectType("Mutation", [Field("test", String)])
+                mutation_type=ObjectType("Mutation", [Field("test", String)]),
             ),
             "{ test }",
             initial_value={"test": "foo"},
@@ -126,7 +124,8 @@ async def test_it_raises_if_operation_type_is_not_supported(assert_execution):
 
 
 async def test_uses_mutation_schema_for_mutation_operation(
-    mocker, assert_execution
+    mocker,
+    assert_execution,
 ):
     query = mocker.Mock(return_value="foo")
     mutation = mocker.Mock(return_value="foo")
@@ -214,7 +213,7 @@ async def test_merge_of_parallel_fragments(assert_execution):
                 c
                 deep { c, deeper: deep { c } }
             }
-            """
+            """,
         ),
         expected_data={
             "a": "Apple",
@@ -230,7 +229,8 @@ async def test_merge_of_parallel_fragments(assert_execution):
 
 
 async def test_full_response_path_is_included_on_error(
-    raiser, assert_execution
+    raiser,
+    assert_execution,
 ):
     A = ObjectType(
         "A",
@@ -248,8 +248,9 @@ async def test_full_response_path_is_included_on_error(
     await assert_execution(
         Schema(
             ObjectType(
-                "query", [Field("nullableA", lambda: A, resolver=lambda *_: {})]
-            )
+                "query",
+                [Field("nullableA", lambda: A, resolver=lambda *_: {})],
+            ),
         ),
         """
         query {
@@ -266,15 +267,15 @@ async def test_full_response_path_is_included_on_error(
         """,
         expected_data={
             "nullableA": {
-                "aliasedA": {"nonNullA": {"anotherA": {"raises": None}}}
-            }
+                "aliasedA": {"nonNullA": {"anotherA": {"raises": None}}},
+            },
         },
         expected_errors=[
             (
                 "Catch me if you can",
                 (134, 140),
                 "nullableA.aliasedA.nonNullA.anotherA.raises",
-            )
+            ),
         ],
     )
 
@@ -321,7 +322,8 @@ _JOHN_SMITH = {
 }
 
 BlogImage = ObjectType(
-    "Image", [Field("url", String), Field("width", Int), Field("height", Int)]
+    "Image",
+    [Field("url", String), Field("width", Int), Field("height", Int)],
 )
 
 BlogArticle = ObjectType(
@@ -523,11 +525,12 @@ async def test_result_is_ordered_according_to_query():
 async def test_custom_scalar(assert_execution):
 
     Email = RegexType(
-        "Email", r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+        "Email",
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
     )
 
     schema = Schema(
-        ObjectType("Query", [Field("foo", UUID), Field("bar", Email)])
+        ObjectType("Query", [Field("foo", UUID), Field("bar", Email)]),
     )
 
     await assert_execution(
@@ -567,7 +570,8 @@ async def test_invalid_scalar(assert_execution):
 
 
 async def test_spreading_fragments_with_interfaces(
-    assert_execution, starwars_schema
+    assert_execution,
+    starwars_schema,
 ):
     # Fragment should spread in all 3 cases:
     # - Spread Implementer { ... on Interface }

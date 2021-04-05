@@ -68,16 +68,20 @@ def subscribe(
     instrumentation = instrumentation or Instrumentation()
 
     operation, root_type = get_operation_with_type(
-        schema, document, operation_name
+        schema,
+        document,
+        operation_name,
     )
     coerced_variables = coerce_variable_values(
-        schema, operation, variables or {}
+        schema,
+        operation,
+        variables or {},
     )
 
     if operation.operation != "subscription":
         raise RuntimeError(
             "`subscribe` does not support %s operation, "
-            "use the `execute` helper." % operation.operation
+            "use the `execute` helper." % operation.operation,
         )
 
     executor = executor_cls(
@@ -94,12 +98,14 @@ def subscribe(
 
     if not isinstance(runtime, SubscriptionRuntime):
         raise RuntimeError(
-            "Runtime of type '%s' doesn't support subscriptions."
-            % type(runtime)
+            f"Runtime of type '{type(runtime)}' doesn't support subscriptions.",
         )
 
     _on_event = ft.partial(
-        execute_subscription_event, executor, root_type, operation
+        execute_subscription_event,
+        executor,
+        root_type,
+        operation,
     )
 
     instrumentation.on_execution_start()
@@ -115,10 +121,13 @@ def subscribe(
     return runtime.ensure_wrapped(
         runtime.map_value(
             create_source_event_stream(
-                executor, root_type, operation, initial_value
+                executor,
+                root_type,
+                operation,
+                initial_value,
             ),
             _on_stream_created,
-        )
+        ),
     )
 
 
@@ -129,12 +138,13 @@ def create_source_event_stream(
     initial_value: Optional[Any] = None,
 ) -> Any:
     fields = executor.collect_fields(
-        root_type, operation.selection_set.selections
+        root_type,
+        operation.selection_set.selections,
     )
 
     if len(fields) != 1:
         raise ExecutionError(
-            "Subscription operation must specify only one field."
+            "Subscription operation must specify only one field.",
         )
 
     key, field_def, nodes = fields[0]
@@ -142,13 +152,13 @@ def create_source_event_stream(
 
     if field_def is None:
         raise RuntimeError(
-            "No field definition found for subscription field %s." % key
+            f"No field definition found for subscription field {key}.",
         )
 
     if field_def.subscription_resolver is None:
         raise RuntimeError(
             "Subscription field %s should provide a subscription resolver."
-            % field_def.name
+            % field_def.name,
         )
 
     info = ResolveInfo(
@@ -163,7 +173,10 @@ def create_source_event_stream(
     coerced_args = executor.argument_values(field_def, node)
 
     return field_def.subscription_resolver(
-        initial_value, executor.context_value, info, **coerced_args
+        initial_value,
+        executor.context_value,
+        info,
+        **coerced_args,
     )
 
 
@@ -187,10 +200,11 @@ def execute_subscription_event(
                     event,
                     [],
                     executor.collect_fields(
-                        root_type, operation.selection_set.selections
+                        root_type,
+                        operation.selection_set.selections,
                     ),
-                )
+                ),
             ),
             lambda data: GraphQLResult(data=data, errors=executor.errors),
-        )
+        ),
     )

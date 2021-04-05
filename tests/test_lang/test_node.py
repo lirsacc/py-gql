@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import copy
 
 import pytest
@@ -32,9 +30,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             _ast.Field(
@@ -43,9 +41,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             True,
@@ -57,9 +55,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             _ast.Field(
@@ -68,9 +66,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             False,
@@ -82,9 +80,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             _ast.Field(
@@ -93,9 +91,9 @@ from py_gql.lang import ast as _ast, parse
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-bytes character."
+                            value="Has a \u0A0A multi-bytes character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             False,
@@ -123,9 +121,9 @@ def test_eq(rhs, lhs, eq):
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-bytes character."
+                            value="Has a \u0A0A multi-bytes character.",
                         ),
-                    )
+                    ),
                 ],
             ),
             {
@@ -146,7 +144,7 @@ def test_eq(rhs, lhs, eq):
                             "loc": None,
                             "value": "Has a ਊ multi-bytes character.",
                         },
-                    }
+                    },
                 ],
                 "directives": [],
                 "loc": None,

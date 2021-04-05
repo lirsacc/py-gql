@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import collections
 import random
 
@@ -8,7 +6,7 @@ import py_gql
 
 SIZE = 10000
 
-FooType = collections.namedtuple("Object", ["x", "y", "z"])
+FooType = collections.namedtuple("FooType", ["x", "y", "z"])
 
 LIST_OF_INTS = range(SIZE)
 LIST_OF_FLOATS = [random.random() for x in range(SIZE)]
@@ -35,7 +33,7 @@ schema = py_gql.build_schema(
         list_of_objects: [Foo],
         list_of_dicts: [Foo],
     }
-    """
+    """,
 )
 
 

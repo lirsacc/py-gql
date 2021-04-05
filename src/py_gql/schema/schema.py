@@ -142,7 +142,7 @@ class Schema(ResolverMap):
         self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
 
         self.implementations = defaultdict(
-            list
+            list,
         )  # type: Dict[str, List[ObjectType]]
 
         for type_ in self.types.values():
@@ -165,7 +165,7 @@ class Schema(ResolverMap):
             else:
                 if original_type in _PROTECTED_TYPES:
                     raise SchemaError(
-                        "Cannot replace specified type %s" % original_type
+                        f"Cannot replace specified type {original_type}",
                     )
 
                 busted_cache = new_type != original_type
@@ -176,7 +176,7 @@ class Schema(ResolverMap):
                     if type(original_type) != type(new_type):
                         raise SchemaError(
                             "Cannot replace type %r with a different kind of type %r."
-                            % (original_type, new_type)
+                            % (original_type, new_type),
                         )
                     self.types[type_name] = new_type
 
@@ -188,8 +188,7 @@ class Schema(ResolverMap):
             else:
                 if original_directive in SPECIFIED_DIRECTIVES:
                     raise SchemaError(
-                        "Cannot replace specified directive %s"
-                        % original_directive
+                        f"Cannot replace specified directive {original_directive}",
                     )
 
             if new_directive is None:
@@ -288,10 +287,11 @@ class Schema(ResolverMap):
             t3 = self.get_type(ast_node.name.value)
             self._literal_types_cache[ast_node] = t3
             return t3
-        raise TypeError("Invalid type node %r" % ast_node)
+        raise TypeError(f"Invalid type node {ast_node!r}")
 
     def get_possible_types(
-        self, abstract_type: GraphQLAbstractType
+        self,
+        abstract_type: GraphQLAbstractType,
     ) -> Sequence[ObjectType]:
         """
         Get the possible implementations of an abstract type.
@@ -314,14 +314,17 @@ class Schema(ResolverMap):
             return self._possible_types[abstract_type]
         elif isinstance(abstract_type, InterfaceType):
             self._possible_types[abstract_type] = self.implementations.get(
-                abstract_type.name, []
+                abstract_type.name,
+                [],
             )
             return self._possible_types[abstract_type]
 
-        raise TypeError("Not an abstract type: %s" % abstract_type)
+        raise TypeError(f"Not an abstract type: {abstract_type}")
 
     def is_possible_type(
-        self, abstract_type: GraphQLAbstractType, type_: GraphQLType
+        self,
+        abstract_type: GraphQLAbstractType,
+        type_: GraphQLType,
     ) -> bool:
         """
         Check that ``type_`` is a possible realization of ``abstract_type``.
@@ -382,7 +385,8 @@ class Schema(ResolverMap):
             return True
 
         if isinstance(rhs, GraphQLAbstractType) and isinstance(
-            lhs, GraphQLAbstractType
+            lhs,
+            GraphQLAbstractType,
         ):
             rhs_types = self.get_possible_types(rhs)
             lhs_types = self.get_possible_types(lhs)
@@ -418,10 +422,16 @@ class Schema(ResolverMap):
         )
 
     def register_default_resolver(
-        self, typename: str, resolver: Resolver, *, allow_override: bool = False
+        self,
+        typename: str,
+        resolver: Resolver,
+        *,
+        allow_override: bool = False,
     ) -> None:
         super().register_default_resolver(
-            typename, resolver, allow_override=allow_override
+            typename,
+            resolver,
+            allow_override=allow_override,
         )
 
         try:
@@ -432,12 +442,12 @@ class Schema(ResolverMap):
         if not isinstance(object_type, ObjectType):
             raise SchemaError(
                 'Cannot assign default resolver to %s "%s".'
-                % (object_type.__class__.__name__, typename)
+                % (object_type.__class__.__name__, typename),
             )
 
         if object_type.default_resolver and not allow_override:
             raise ValueError(
-                'Type "%s" already has a default resolver.' % (typename,)
+                f'Type "{typename}" already has a default resolver.',
             )
 
         object_type.default_resolver = resolver
@@ -453,7 +463,10 @@ class Schema(ResolverMap):
         allow_override: bool = False,
     ) -> None:
         super().register_resolver(
-            typename, fieldname, resolver, allow_override=allow_override
+            typename,
+            fieldname,
+            resolver,
+            allow_override=allow_override,
         )
 
         try:
@@ -464,7 +477,7 @@ class Schema(ResolverMap):
         if not isinstance(object_type, ObjectType):
             raise SchemaError(
                 'Cannot assign resolver to %s "%s".'
-                % (object_type.__class__.__name__, typename)
+                % (object_type.__class__.__name__, typename),
             )
 
         if fieldname == "*":
@@ -474,8 +487,7 @@ class Schema(ResolverMap):
             field = object_type.field_map[fieldname]
         except KeyError:
             raise SchemaError(
-                'Cannot assign resolver to unknown field "%s.%s".'
-                % (typename, fieldname)
+                f'Cannot assign resolver to unknown field "{typename}.{fieldname}".',
             )
 
         if (
@@ -484,8 +496,7 @@ class Schema(ResolverMap):
             and field.resolver is not resolver
         ):
             raise ValueError(
-                'Field "%s" of type "%s" already has a resolver.'
-                % (fieldname, typename)
+                f'Field "{fieldname}" of type "{typename}" already has a resolver.',
             )
 
         field.resolver = resolver
@@ -501,7 +512,10 @@ class Schema(ResolverMap):
         allow_override: bool = False,
     ) -> None:
         super().register_subscription(
-            typename, fieldname, resolver, allow_override=allow_override
+            typename,
+            fieldname,
+            resolver,
+            allow_override=allow_override,
         )
 
         try:
@@ -511,16 +525,16 @@ class Schema(ResolverMap):
 
         if not isinstance(object_type, ObjectType):
             raise SchemaError(
-                'Cannot assign subscription to %s "%s".'
-                % (object_type.__class__.__name__, typename)
+                "Cannot assign subscription to "
+                f'{object_type.__class__.__name__} "{typename}".',
             )
 
         try:
             field = object_type.field_map[fieldname]
         except KeyError:
             raise SchemaError(
-                'Cannot assign subscription to unknown field "%s.%s".'
-                % (typename, fieldname)
+                "Cannot assign subscription to unknown field"
+                f'"{typename}.{fieldname}".',
             )
 
         if (
@@ -529,8 +543,7 @@ class Schema(ResolverMap):
             and field.subscription_resolver is not resolver
         ):
             raise ValueError(
-                'Field "%s" of type "%s" already has a subscription.'
-                % (fieldname, typename)
+                f'Field "{fieldname}" of type "{typename}" already has a subscription.',
             )
 
         field.subscription_resolver = resolver
@@ -545,7 +558,9 @@ class Schema(ResolverMap):
         allow_override: bool = False,
     ) -> None:
         super().register_type_resolver(
-            typename, resolver, allow_override=allow_override
+            typename,
+            resolver,
+            allow_override=allow_override,
         )
 
         try:
@@ -556,7 +571,7 @@ class Schema(ResolverMap):
         if not isinstance(abstract_type, GraphQLAbstractType):
             raise SchemaError(
                 'Cannot assign type resolver to %s "%s".'
-                % (abstract_type.__class__.__name__, typename)
+                % (abstract_type.__class__.__name__, typename),
             )
 
         abstract_type.resolve_type = resolver
@@ -598,8 +613,7 @@ def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
     for value in maybe_directives:
         if not isinstance(value, Directive):
             raise SchemaError(
-                'Expected directive but got "%r" of type "%s"'
-                % (value, type(value))
+                f'Expected directive but got "{value!r}" of type "{type(value)}"',
             )
 
         name = value.name
@@ -607,13 +621,13 @@ def _build_directive_map(maybe_directives: List[Any]) -> Dict[str, Directive]:
         if name in _SPECIFIED_DIRECTIVE_NAMES:
             if value is not directives[name]:
                 raise SchemaError(
-                    'Cannot override specified directive "%s"' % name
+                    f'Cannot override specified directive "{name}"',
                 )
             continue
 
         if name in directives:
             if value is not directives[name]:
-                raise SchemaError('Duplicate directive "%s"' % name)
+                raise SchemaError(f'Duplicate directive "{name}"')
             continue
 
         directives[name] = value
@@ -648,15 +662,14 @@ def _build_type_map(
 
         if not isinstance(inner_type, NamedType):
             raise SchemaError(
-                'Expected NamedType but got "%s" of type %s'
-                % (inner_type, type(inner_type))
+                f'Expected NamedType but got "{inner_type}" of type {type(inner_type)}',
             )
 
         name = inner_type.name
 
         if name in type_map:
             if inner_type is not type_map[name]:
-                raise SchemaError('Duplicate type "%s"' % name)
+                raise SchemaError(f'Duplicate type "{name}"')
             continue
 
         type_map[name] = inner_type
@@ -682,7 +695,7 @@ def _build_type_map(
         directive_types = []  # type: List[GraphQLType]
         for directive in directives:
             directive_types.extend(
-                [arg.type for arg in directive.arguments or []]
+                [arg.type for arg in directive.arguments or []],
             )
 
         type_map.update(_build_type_map(directive_types, _type_map=type_map))

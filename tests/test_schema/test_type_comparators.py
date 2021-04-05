@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 from py_gql.schema.scalars import Float, Int, String
 from py_gql.schema.schema import Schema
 from py_gql.schema.types import (
@@ -115,7 +112,7 @@ def test_disjoint_unions_do_not_overlap():
     union1 = UnionType("Union1", [member2])
     union2 = UnionType("Union2", [member1])
     schema = Schema(
-        ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
+        ObjectType("Query", [Field("field1", union1), Field("field2", union2)]),
     )
     assert not schema.types_overlap(union1, union2)
 
@@ -126,7 +123,7 @@ def test_common_unions_not_overlap():
     union1 = UnionType("Union1", [member2])
     union2 = UnionType("Union2", [member1, member2])
     schema = Schema(
-        ObjectType("Query", [Field("field1", union1), Field("field2", union2)])
+        ObjectType("Query", [Field("field1", union1), Field("field2", union2)]),
     )
     assert schema.types_overlap(union1, union2)
 
@@ -136,6 +133,6 @@ def test_union_and_interface_with_common_types_overlap():
     impl = ObjectType("Object", [Field("field", String)], [iface])
     union = UnionType("Union", [impl])
     schema = Schema(
-        ObjectType("Query", [Field("field1", union), Field("field2", iface)])
+        ObjectType("Query", [Field("field1", union), Field("field2", iface)]),
     )
     assert schema.types_overlap(iface, union)

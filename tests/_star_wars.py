@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This defines a basic set of data and the Star Wars Schema used for testing
 and examples. It describes the major characters in the original
@@ -139,7 +138,9 @@ Character = InterfaceType(
     "Character",
     [
         Field(
-            "id", NonNullType(String), description="The id of the character."
+            "id",
+            NonNullType(String),
+            description="The id of the character.",
         ),
         Field("name", String, description="The name of the character."),
         Field(
@@ -259,7 +260,7 @@ Query = ObjectType(
                         "If omitted, returns the hero of the whole saga. If "
                         "provided, returns the hero of that particular episode."
                     ),
-                )
+                ),
             ],
             resolver=lambda *_, **args: get_hero(args.get("episode")),
         ),
@@ -268,8 +269,10 @@ Query = ObjectType(
             Human,
             [
                 Argument(
-                    "id", NonNullType(String), description="Id of the human"
-                )
+                    "id",
+                    NonNullType(String),
+                    description="Id of the human",
+                ),
             ],
             resolver=lambda *_, **args: get_human(args.get("id")),
         ),
@@ -278,8 +281,10 @@ Query = ObjectType(
             Droid,
             [
                 Argument(
-                    "id", NonNullType(String), description="Id of the droid"
-                )
+                    "id",
+                    NonNullType(String),
+                    description="Id of the droid",
+                ),
             ],
             resolver=lambda *_, **args: get_droid(args.get("id")),
         ),

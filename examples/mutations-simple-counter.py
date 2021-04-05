@@ -19,7 +19,7 @@ schema = build_schema(
         increment(amount: Int = 1): Int
         decrement(amount: Int = 1): Int
     }
-    """
+    """,
 )
 
 
@@ -38,7 +38,7 @@ def dec(root, *, amount):
 # 2. Execute queries against the schema
 
 assert graphql_blocking(schema, "{ counter }", root=ROOT).response() == {
-    "data": {"counter": 0}
+    "data": {"counter": 0},
 }
 
 assert graphql_blocking(schema, "{ counte }", root=ROOT).response() == {
@@ -49,21 +49,31 @@ assert graphql_blocking(schema, "{ counte }", root=ROOT).response() == {
                 'mean "counter"?'
             ),
             "locations": [{"line": 1, "column": 3}],
-        }
-    ]
+        },
+    ],
 }
 
-assert graphql_blocking(
-    schema, "mutation { counter: increment }", root=ROOT
-).response() == {"data": {"counter": 1}}
+assert (
+    graphql_blocking(
+        schema,
+        "mutation { counter: increment }",
+        root=ROOT,
+    ).response()
+    == {"data": {"counter": 1}}
+)
 
 assert graphql_blocking(schema, "{ counter }", root=ROOT).response() == {
-    "data": {"counter": 1}
+    "data": {"counter": 1},
 }
 
-assert graphql_blocking(
-    schema, "mutation { counter: decrement(amount: 2) }", root=ROOT
-).response() == {"data": {"counter": -1}}
+assert (
+    graphql_blocking(
+        schema,
+        "mutation { counter: decrement(amount: 2) }",
+        root=ROOT,
+    ).response()
+    == {"data": {"counter": -1}}
+)
 
 assert (
     graphql_blocking(

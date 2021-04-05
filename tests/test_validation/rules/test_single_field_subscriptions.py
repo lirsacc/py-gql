@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -36,7 +33,7 @@ def test_fails_with_more_than_one_root_field(schema):
         """,
         [
             'Subscription "ImportantEmails" must select only one '
-            "top level field."
+            "top level field.",
         ],
     )
 
@@ -53,7 +50,7 @@ def test_fails_with_more_than_one_root_field_including_introspection(schema):
         """,
         [
             'Subscription "ImportantEmails" must select only one '
-            "top level field."
+            "top level field.",
         ],
     )
 
@@ -71,7 +68,7 @@ def test_fails_with_many_more_than_one_root_field(schema):
         """,
         [
             'Subscription "ImportantEmails" must select only one '
-            "top level field."
+            "top level field.",
         ],
     )
 

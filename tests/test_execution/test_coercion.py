@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests related to how raw JSON variables are coerced and forwared to the
 execution context.
@@ -64,7 +63,10 @@ def _inspect(name):
 
 
 _field = lambda name, argType, **kw: Field(
-    name, String, [Argument("input", argType, **kw)], resolver=_inspect("input")
+    name,
+    String,
+    [Argument("input", argType, **kw)],
+    resolver=_inspect("input"),
 )
 
 TestType = ObjectType(
@@ -79,7 +81,9 @@ TestType = ObjectType(
             default_value="Hello World",
         ),
         _field(
-            "fieldWithDefaultArgumentValue", String, default_value="Hello World"
+            "fieldWithDefaultArgumentValue",
+            String,
+            default_value="Hello World",
         ),
         _field("fieldWithNestedObjectInput", TestNestedInputObject),
         _field("list", ListType(String)),
@@ -101,7 +105,7 @@ async def test_complex_input_inline_struct():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}'
+            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}',
         },
         expected_errors=[],
     )
@@ -116,7 +120,7 @@ async def test_single_value_to_list_inline_struct():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}'
+            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}',
         },
         expected_errors=[],
     )
@@ -131,7 +135,7 @@ async def test_null_value_inline_struct():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": null, "b": null, "c": "C", "d": null}'
+            "fieldWithObjectInput": '{"a": null, "b": null, "c": "C", "d": null}',
         },
         expected_errors=[],
     )
@@ -146,7 +150,7 @@ async def test_null_value_in_list_inline_struct():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"b": ["A", null, "C"], "c": "C"}'
+            "fieldWithObjectInput": '{"b": ["A", null, "C"], "c": "C"}',
         },
         expected_errors=[],
     )
@@ -167,7 +171,7 @@ async def test_does_not_use_incorrect_value_inline_struct():
                 'value ["foo", "bar", "baz"] (Expected Object but got ListValue)',
                 (6, 56),
                 "fieldWithObjectInput",
-            )
+            ),
         ],
     )
 
@@ -181,7 +185,7 @@ async def test_uses_parse_literal_on_scalar_types_inline_struct():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"c": "foo", "d": "DeserializedValue"}'
+            "fieldWithObjectInput": '{"c": "foo", "d": "DeserializedValue"}',
         },
         expected_errors=[],
     )
@@ -196,7 +200,7 @@ async def test_complex_input_variable():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}'
+            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}',
         },
         expected_errors=[],
         variables={"input": {"a": "foo", "b": ["bar"], "c": "baz"}},
@@ -212,7 +216,7 @@ async def test_uses_default_value_when_not_provided():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}'
+            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}',
         },
         expected_errors=[],
         variables={},
@@ -228,7 +232,7 @@ async def test_single_value_to_list_variable():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}'
+            "fieldWithObjectInput": '{"a": "foo", "b": ["bar"], "c": "baz"}',
         },
         expected_errors=[],
         variables={"input": {"a": "foo", "b": "bar", "c": "baz"}},
@@ -244,7 +248,7 @@ async def test_complex_scalar_input_variable():
         }
         """,
         expected_data={
-            "fieldWithObjectInput": '{"c": "foo", "d": "DeserializedValue"}'
+            "fieldWithObjectInput": '{"c": "foo", "d": "DeserializedValue"}',
         },
         expected_errors=[],
         variables={"input": {"c": "foo", "d": "SerializedValue"}},
@@ -338,7 +342,7 @@ async def test_fail_on_addition_of_unknown_input_field():
         }
         """,
         variables={
-            "input": {"a": "foo", "b": "bar", "c": "baz", "extra": "dog"}
+            "input": {"a": "foo", "b": "bar", "c": "baz", "extra": "dog"},
         },
         expected_exc=(
             VariablesCoercionError,
@@ -499,7 +503,7 @@ async def test_reports_error_for_missing_non_nullable_inputs():
                 'Argument "input" of required type "String!" was not provided',
                 (2, 33),
                 "fieldWithNonNullableStringInput",
-            )
+            ),
         ],
     )
 
@@ -540,7 +544,7 @@ async def test_reports_error_for_non_provided_variables_for_non_nullable_inputs(
                 'missing variable "$foo"',
                 (6, 50),
                 "fieldWithNonNullableStringInput",
-            )
+            ),
         ],
     )
 
@@ -554,7 +558,7 @@ async def test_uses_default_when_no_runtime_value_is_provided_to_a_non_null_argu
         }
         """,
         expected_data={
-            "fieldWithNonNullableStringInputAndDefaultArgumentValue": '"Hello World"'
+            "fieldWithNonNullableStringInputAndDefaultArgumentValue": '"Hello World"',
         },
         expected_errors=[],
     )
@@ -724,7 +728,7 @@ async def test_does_not_allow_unknown_types_to_be_used_as_values():
         )
 
     assert 'Unknown type "UnknownType!" for variable "$input"' in str(
-        exc_info.value
+        exc_info.value,
     )
 
 
@@ -763,7 +767,7 @@ async def test_argument_default_value_when_argument_cannot_be_coerced():
                 "scalar type String)",
                 (2, 50),
                 "fieldWithDefaultArgumentValue",
-            )
+            ),
         ],
     )
 
@@ -778,11 +782,11 @@ class TestNonNullArguments:
                     String,
                     args=[Argument("cannotBeNull", NonNullType(String))],
                     resolver=lambda *_, **args: json.dumps(
-                        args.get("cannotBeNull", "NOT PROVIDED")
+                        args.get("cannotBeNull", "NOT PROVIDED"),
                     ),
-                )
+                ),
             ],
-        )
+        ),
     )
 
     async def test_non_null_literal(self):
@@ -837,7 +841,7 @@ class TestNonNullArguments:
                     "not provided",
                     (12, 26),
                     "withNonNullArg",
-                )
+                ),
             ],
         )
 
@@ -856,7 +860,7 @@ class TestNonNullArguments:
                     "invalid value null (Expected non null value.)",
                     (12, 47),
                     "withNonNullArg",
-                )
+                ),
             ],
         )
 

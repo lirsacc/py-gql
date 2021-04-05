@@ -114,5 +114,5 @@ def introspection_query(description: bool = True) -> str:
         }
     }
     """ % {
-        "description_field": "" if not description else "description"
+        "description_field": "" if not description else "description",
     }

@@ -41,12 +41,12 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
 
     """
     if not is_input_type(input_type):
-        raise TypeError('Expected input type but got "%r"' % input_type)
+        raise TypeError(f'Expected input type but got "{input_type!r}"')
 
     if isinstance(input_type, NonNullType):
         node = ast_node_from_value(value, input_type.type)
         if isinstance(node, _ast.NullValue):
-            raise ValueError('Value of type "%s" cannot be null' % input_type)
+            raise ValueError(f'Value of type "{input_type}" cannot be null')
         return node
 
     if value is None:
@@ -58,7 +58,7 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
                 values=[
                     ast_node_from_value(entry, input_type.type)
                     for entry in value
-                ]
+                ],
             )
         return ast_node_from_value(value, input_type.type)
 
@@ -82,39 +82,40 @@ def ast_node_from_value(value: Any, input_type: GraphQLType) -> _ast.Value:
     except ValueError:
         pass
 
-    raise ValueError(
-        'Cannot convert value %r for type "%s"' % (value, input_type)
-    )
+    raise ValueError(f'Cannot convert value {value!r} for type "{input_type}"')
 
 
 def _object_value_node_from_value(
-    input_type: InputObjectType, value: Any
+    input_type: InputObjectType,
+    value: Any,
 ) -> _ast.ObjectValue:
     if not isinstance(value, dict):
-        raise ValueError('Value of type "%s" must be a dict' % input_type)
+        raise ValueError(f'Value of type "{input_type}" must be a dict')
 
     field_nodes = []
     for field_def in input_type.fields:
         if field_def.name in value:
             field_value = ast_node_from_value(
-                value[field_def.name], field_def.type
+                value[field_def.name],
+                field_def.type,
             )
             field_nodes.append(
                 _ast.ObjectField(
-                    name=_ast.Name(value=field_def.name), value=field_value
-                )
+                    name=_ast.Name(value=field_def.name),
+                    value=field_value,
+                ),
             )
         elif field_def.required:
             raise ValueError(
-                'Field "%s" of type "%s" is required'
-                % (field_def.name, input_type)
+                f'Field "{field_def.name}" of type "{input_type}" is required',
             )
 
     return _ast.ObjectValue(fields=field_nodes)
 
 
 def _scalar_node_from_value(
-    input_type: GraphQLType, scalar_value: Any
+    input_type: GraphQLType,
+    scalar_value: Any,
 ) -> _ast.Value:
     if isinstance(scalar_value, bool):
         return _ast.BooleanValue(value=scalar_value)

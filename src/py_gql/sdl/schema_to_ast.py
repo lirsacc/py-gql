@@ -114,22 +114,23 @@ class ASTSchemaConverter:
         if schema.query_type:
             operation_types.append(
                 ast.OperationTypeDefinition(
-                    "query", _named_type(schema.query_type)
-                )
+                    "query",
+                    _named_type(schema.query_type),
+                ),
             )
         if schema.mutation_type:
             operation_types.append(
                 ast.OperationTypeDefinition(
                     "mutation",
                     _named_type(schema.mutation_type),
-                )
+                ),
             )
         if schema.subscription_type:
             operation_types.append(
                 ast.OperationTypeDefinition(
                     "subscription",
                     _named_type(schema.subscription_type),
-                )
+                ),
             )
 
         return ast.SchemaDefinition(
@@ -148,7 +149,8 @@ class ASTSchemaConverter:
         )
 
     def interface_type(
-        self, interface_type: InterfaceType
+        self,
+        interface_type: InterfaceType,
     ) -> ast.InterfaceTypeDefinition:
         return ast.InterfaceTypeDefinition(
             name=ast.Name(value=interface_type.name),
@@ -166,7 +168,8 @@ class ASTSchemaConverter:
         )
 
     def input_type(
-        self, input_type: InputObjectType
+        self,
+        input_type: InputObjectType,
     ) -> ast.InputObjectTypeDefinition:
         return ast.InputObjectTypeDefinition(
             name=ast.Name(value=input_type.name),
@@ -266,14 +269,14 @@ class ASTSchemaConverter:
                             ast.Argument(
                                 name=ast.Name("reason"),
                                 value=ast.StringValue(
-                                    value=definition.deprecation_reason
+                                    value=definition.deprecation_reason,
                                 ),
-                            )
+                            ),
                         ]
                         if definition.deprecation_reason
                         and definition.deprecation_reason != DEFAULT_DEPRECATION
                         else [],
-                    )
+                    ),
                 )
 
         if not self.include_custom_schema_directives:

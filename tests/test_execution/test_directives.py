@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Execution tests related to directive handling.
 """
@@ -50,11 +49,17 @@ async def test_without_directives(assert_execution):
     ],
 )
 async def test_built_ins_on_scalars(
-    assert_execution, directive, value, expected
+    assert_execution,
+    directive,
+    value,
+    expected,
 ):
     query = "{ a @%s(if: %s), b }" % (directive, value)
     await assert_execution(
-        schema, query, initial_value=root, expected_data=expected
+        schema,
+        query,
+        initial_value=root,
+        expected_data=expected,
     )
 
 
@@ -68,7 +73,10 @@ async def test_built_ins_on_scalars(
     ],
 )
 async def test_built_ins_on_fragment_spreads(
-    assert_execution, directive, value, expected
+    assert_execution,
+    directive,
+    value,
+    expected,
 ):
     query = """
     { ...f @%s(if: %s) }
@@ -78,7 +86,10 @@ async def test_built_ins_on_fragment_spreads(
         value,
     )
     await assert_execution(
-        schema, query, initial_value=root, expected_data=expected
+        schema,
+        query,
+        initial_value=root,
+        expected_data=expected,
     )
 
 
@@ -92,7 +103,10 @@ async def test_built_ins_on_fragment_spreads(
     ],
 )
 async def test_built_ins_on_inline_fragments(
-    assert_execution, directive, value, expected
+    assert_execution,
+    directive,
+    value,
+    expected,
 ):
     query = """{
         b
@@ -102,7 +116,10 @@ async def test_built_ins_on_inline_fragments(
         value,
     )
     await assert_execution(
-        schema, query, initial_value=root, expected_data=expected
+        schema,
+        query,
+        initial_value=root,
+        expected_data=expected,
     )
 
 
@@ -116,7 +133,10 @@ async def test_built_ins_on_inline_fragments(
     ],
 )
 async def test_built_ins_on_anonymous_inline_fragments(
-    assert_execution, directive, value, expected
+    assert_execution,
+    directive,
+    value,
+    expected,
 ):
     query = """{
         b
@@ -126,7 +146,10 @@ async def test_built_ins_on_anonymous_inline_fragments(
         value,
     )
     await assert_execution(
-        schema, query, initial_value=root, expected_data=expected
+        schema,
+        query,
+        initial_value=root,
+        expected_data=expected,
     )
 
 
@@ -142,13 +165,18 @@ async def test_built_ins_on_anonymous_inline_fragments(
 async def test_include_and_skip(assert_execution, include, skip, expected):
     query = "{ a @include(if: %s) @skip(if: %s), b }" % (include, skip)
     await assert_execution(
-        schema, query, initial_value=root, expected_data=expected
+        schema,
+        query,
+        initial_value=root,
+        expected_data=expected,
     )
 
 
 async def test_get_directive_arguments_known(assert_execution, mocker):
     CustomDirective = Directive(
-        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+        "custom",
+        ["FIELD"],
+        [Argument("a", String), Argument("b", Int)],
     )
 
     resolver = mocker.Mock(return_value=42)
@@ -169,10 +197,13 @@ async def test_get_directive_arguments_known(assert_execution, mocker):
 
 
 async def test_get_directive_arguments_known_with_variables(
-    assert_execution, mocker
+    assert_execution,
+    mocker,
 ):
     CustomDirective = Directive(
-        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+        "custom",
+        ["FIELD"],
+        [Argument("a", String), Argument("b", Int)],
     )
 
     resolver = mocker.Mock(return_value=42)
@@ -195,7 +226,9 @@ async def test_get_directive_arguments_known_with_variables(
 
 async def test_get_directive_arguments_missing(assert_execution, mocker):
     CustomDirective = Directive(
-        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+        "custom",
+        ["FIELD"],
+        [Argument("a", String), Argument("b", Int)],
     )
 
     resolver = mocker.Mock(return_value=42)
@@ -214,7 +247,9 @@ async def test_get_directive_arguments_missing(assert_execution, mocker):
 
 async def test_get_directive_arguments_unknown(assert_execution, mocker):
     CustomDirective = Directive(
-        "custom", ["FIELD"], [Argument("a", String), Argument("b", Int)]
+        "custom",
+        ["FIELD"],
+        [Argument("a", String), Argument("b", Int)],
     )
 
     resolver = mocker.Mock(return_value=42)

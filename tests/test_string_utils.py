@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql._string_utils import (
@@ -74,7 +72,7 @@ def test_highlight_location_2():
                     "",
                     "    Yours,",
                     "      GraphQL.",
-                ]
+                ],
             ),
             "\n".join(["Hello,", "  World!", "", "Yours,", "  GraphQL."]),
             id="Removes uniform indentation from a string",
@@ -91,7 +89,7 @@ def test_highlight_location_2():
                     "      GraphQL.",
                     "",
                     "",
-                ]
+                ],
             ),
             "\n".join(["Hello,", "  World!", "", "Yours,", "  GraphQL."]),
             id="Removes empty leading and trailing lines",
@@ -104,7 +102,7 @@ def test_highlight_location_2():
                     "",
                     "    Yours,",
                     "      GraphQL.",
-                ]
+                ],
             ),
             "\n".join(["    Hello,", "  World!", "", "Yours,", "  GraphQL."]),
             id="Retains indentation from first line",
@@ -119,7 +117,7 @@ def test_highlight_location_2():
                     "    Yours,     ",
                     "      GraphQL. ",
                     "               ",
-                ]
+                ],
             ),
             "\n".join(
                 [
@@ -128,7 +126,7 @@ def test_highlight_location_2():
                     "           ",
                     "Yours,     ",
                     "  GraphQL. ",
-                ]
+                ],
             ),
             id="Does not alter trailing spaces",
         ),

@@ -78,7 +78,8 @@ class VisibilitySchemaTransform(SchemaVisitor):
         )
 
     def _filter_type(
-        self, named_type: Optional[TNamedType]
+        self,
+        named_type: Optional[TNamedType],
     ) -> Optional[TNamedType]:
         if named_type is None or not self._is_type_visible(named_type):
             return None
@@ -105,7 +106,8 @@ class VisibilitySchemaTransform(SchemaVisitor):
         return super().on_object(object_type)
 
     def on_interface(
-        self, interface_type: InterfaceType
+        self,
+        interface_type: InterfaceType,
     ) -> Optional[InterfaceType]:
         if not self._is_type_visible(interface_type):
             return None
@@ -130,14 +132,16 @@ class VisibilitySchemaTransform(SchemaVisitor):
         return self._filter_type(super().on_enum(enum_type))
 
     def on_input_object(
-        self, input_object_type: InputObjectType
+        self,
+        input_object_type: InputObjectType,
     ) -> Optional[InputObjectType]:
 
         updated_fields = map_and_filter(
             lambda input_field: (
                 input_field
                 if self.is_input_field_visible(
-                    input_object_type.name, input_field.name
+                    input_object_type.name,
+                    input_field.name,
                 )
                 else None
             ),

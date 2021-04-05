@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.schema import (
@@ -29,15 +27,18 @@ from py_gql.schema import (
 def schema():
 
     Being = InterfaceType(
-        "Being", [Field("name", String, [Argument("surname", Boolean)])]
+        "Being",
+        [Field("name", String, [Argument("surname", Boolean)])],
     )
 
     Pet = InterfaceType(
-        "Pet", [Field("name", String, [Argument("surname", Boolean)])]
+        "Pet",
+        [Field("name", String, [Argument("surname", Boolean)])],
     )
 
     Canine = InterfaceType(
-        "Canine", [Field("name", String, [Argument("surname", Boolean)])]
+        "Canine",
+        [Field("name", String, [Argument("surname", Boolean)])],
     )
 
     DogCommand = EnumType(
@@ -65,7 +66,9 @@ def schema():
             Field("barkVolume", Int),
             Field("barks", Boolean),
             Field(
-                "doesKnowCommand", Boolean, [Argument("dogCommand", DogCommand)]
+                "doesKnowCommand",
+                Boolean,
+                [Argument("dogCommand", DogCommand)],
             ),
             Field(
                 "isHousetrained",
@@ -127,7 +130,9 @@ def schema():
         [
             InputField("requiredField", NonNullType(Boolean)),
             InputField(
-                "nonNullField", NonNullType(Boolean), default_value=False
+                "nonNullField",
+                NonNullType(Boolean),
+                default_value=False,
             ),
             InputField("intField", Int),
             InputField("stringField", String),
@@ -160,8 +165,9 @@ def schema():
                 String,
                 [
                     Argument(
-                        "stringListNonNullArg", ListType(NonNullType(String))
-                    )
+                        "stringListNonNullArg",
+                        ListType(NonNullType(String)),
+                    ),
                 ],
             ),
             Field(
@@ -287,7 +293,8 @@ def schema_2():
     )  # type: ObjectType
 
     NonNullStringBox1 = InterfaceType(
-        "NonNullStringBox1", [Field("scalar", NonNullType(String))]
+        "NonNullStringBox1",
+        [Field("scalar", NonNullType(String))],
     )
 
     NonNullStringBox1Impl = ObjectType(
@@ -301,7 +308,8 @@ def schema_2():
     )
 
     NonNullStringBox2 = InterfaceType(
-        "NonNullStringBox2", [Field("scalar", NonNullType(String))]
+        "NonNullStringBox2",
+        [Field("scalar", NonNullType(String))],
     )
 
     NonNullStringBox2Impl = ObjectType(
@@ -329,11 +337,11 @@ def schema_2():
                                     "Node",
                                     [Field("id", ID), Field("name", String)],
                                 ),
-                            )
+                            ),
                         ],
-                    )
+                    ),
                 ),
-            )
+            ),
         ],
     )
 

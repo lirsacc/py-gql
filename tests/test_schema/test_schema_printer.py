@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql._string_utils import dedent
@@ -62,7 +60,7 @@ def test_single_field_schema(type_, opts, expected):
                 singleField: %s
             }
             """
-            % expected
+            % expected,
         )
         == print_schema(_single_field_schema(type_, **opts), indent="    ")
     )
@@ -86,7 +84,7 @@ def test_schema_description_with_standard_root_types():
             type Query {
                 field: String
             }
-            '''
+            ''',
         )
         == print_schema(schema, indent=4)
     )
@@ -110,31 +108,27 @@ def test_schema_description_with_custom_root_types():
             type RootQuery {
                 field: String
             }
-            '''
+            ''',
         )
         == print_schema(schema, indent=4)
     )
 
 
 def test_mutation():
-    assert (
-        dedent(
-            """
+    assert dedent(
+        """
             type Mutation {
                 foo: Int
             }
-            """
-        )
-        == print_schema(
-            Schema(mutation_type=ObjectType("Mutation", [Field("foo", Int)]))
-        )
+            """,
+    ) == print_schema(
+        Schema(mutation_type=ObjectType("Mutation", [Field("foo", Int)])),
     )
 
 
 def test_custom_mutation():
-    assert (
-        dedent(
-            """
+    assert dedent(
+        """
             schema {
                 mutation: CustomMutation
             }
@@ -142,39 +136,34 @@ def test_custom_mutation():
             type CustomMutation {
                 foo: Int
             }
-            """
-        )
-        == print_schema(
-            Schema(
-                mutation_type=ObjectType("CustomMutation", [Field("foo", Int)])
-            )
-        )
+            """,
+    ) == print_schema(
+        Schema(
+            mutation_type=ObjectType("CustomMutation", [Field("foo", Int)]),
+        ),
     )
 
 
 def test_subscription():
-    assert (
-        dedent(
-            """
+    assert dedent(
+        """
             type Subscription {
                 foo: Int
             }
-            """
-        )
-        == print_schema(
-            Schema(
-                subscription_type=ObjectType(
-                    "Subscription", [Field("foo", Int)]
-                )
-            )
-        )
+            """,
+    ) == print_schema(
+        Schema(
+            subscription_type=ObjectType(
+                "Subscription",
+                [Field("foo", Int)],
+            ),
+        ),
     )
 
 
 def test_custom_subscription():
-    assert (
-        dedent(
-            """
+    assert dedent(
+        """
             schema {
                 subscription: CustomSubscription
             }
@@ -182,15 +171,14 @@ def test_custom_subscription():
             type CustomSubscription {
                 foo: Int
             }
-            """
-        )
-        == print_schema(
-            Schema(
-                subscription_type=ObjectType(
-                    "CustomSubscription", [Field("foo", Int)]
-                )
-            )
-        )
+            """,
+    ) == print_schema(
+        Schema(
+            subscription_type=ObjectType(
+                "CustomSubscription",
+                [Field("foo", Int)],
+            ),
+        ),
     )
 
 
@@ -205,7 +193,7 @@ def test_object_field():
         type Query {
             singleField: Foo
         }
-        """
+        """,
     )
 
 
@@ -216,20 +204,21 @@ def test_string_field_with_int_arg():
         type Query {
             singleField(argOne: Int): String
         }
-        """
+        """,
     )
 
 
 def test_string_field_with_int_arg_with_default_value():
     schema = _single_field_schema(
-        String, args=[Argument("argOne", Int, default_value=2)]
+        String,
+        args=[Argument("argOne", Int, default_value=2)],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
             singleField(argOne: Int = 2): String
         }
-        """
+        """,
     )
 
 
@@ -243,46 +232,49 @@ def test_string_field_with_string_arg_with_default_value():
         type Query {
             singleField(argOne: String = "tes\\t de\\fault"): String
         }
-        """
+        """,
     )
 
 
 def test_string_field_with_int_arg_with_null_default_value():
     schema = _single_field_schema(
-        String, args=[Argument("argOne", Int, default_value=None)]
+        String,
+        args=[Argument("argOne", Int, default_value=None)],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
             singleField(argOne: Int = null): String
         }
-        """
+        """,
     )
 
 
 def test_string_field_with_non_null_int_arg():
     schema = _single_field_schema(
-        String, args=[Argument("argOne", NonNullType(Int))]
+        String,
+        args=[Argument("argOne", NonNullType(Int))],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
             singleField(argOne: Int!): String
         }
-        """
+        """,
     )
 
 
 def test_string_field_with_multiple_args():
     schema = _single_field_schema(
-        String, args=[Argument("argOne", Int), Argument("argTwo", String)]
+        String,
+        args=[Argument("argOne", Int), Argument("argTwo", String)],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
         type Query {
             singleField(argOne: Int, argTwo: String): String
         }
-        """
+        """,
     )
 
 
@@ -299,7 +291,7 @@ def test_string_field_with_multiple_args_with_default():
         type Query {
             singleField(argOne: Int = 2, argTwo: String): String
         }
-        """
+        """,
     )
 
 
@@ -316,7 +308,7 @@ def test_custom_query_root_type():
         type CustomQueryType {
             foo: String
         }
-        """
+        """,
     )
 
 
@@ -324,7 +316,9 @@ def test_interfaces():
     Foo = InterfaceType("Foo", [Field("str", String)])
     Baz = InterfaceType("Baz", [Field("int", Int)])
     Bar = ObjectType(
-        "Bar", [Field("str", String), Field("int", Int)], interfaces=[Foo, Baz]
+        "Bar",
+        [Field("str", String), Field("int", Int)],
+        interfaces=[Foo, Baz],
     )
     Query = ObjectType("Query", [Field("bar", Bar)])
     assert print_schema(Schema(Query), indent="    ") == dedent(
@@ -345,7 +339,7 @@ def test_interfaces():
         type Query {
             bar: Bar
         }
-        """
+        """,
     )
 
 
@@ -355,7 +349,8 @@ def test_unions():
     SingleUnion = UnionType("SingleUnion", types=[Foo])
     MultiUnion = UnionType("MultiUnion", types=[Foo, Bar])
     Query = ObjectType(
-        "Query", [Field("single", SingleUnion), Field("multi", MultiUnion)]
+        "Query",
+        [Field("single", SingleUnion), Field("multi", MultiUnion)],
     )
     assert print_schema(Schema(Query), indent="    ") == dedent(
         """
@@ -375,14 +370,15 @@ def test_unions():
         }
 
         union SingleUnion = Foo
-        """
+        """,
     )
 
 
 def test_input_type():
     Input = InputObjectType("InputType", [InputField("int", Int)])
     Query = ObjectType(
-        "Query", [Field("str", String, [Argument("argOne", Input)])]
+        "Query",
+        [Field("str", String, [Argument("argOne", Input)])],
     )
     assert print_schema(Schema(Query), indent="    ") == dedent(
         """
@@ -393,7 +389,7 @@ def test_input_type():
         type Query {
             str(argOne: InputType): String
         }
-        """
+        """,
     )
 
 
@@ -409,13 +405,14 @@ def test_custom_scalar_uuid():
 (https://tools.ietf.org/html/rfc4122)
         """
         scalar UUID
-        '''
+        ''',
     )
 
 
 def test_custom_scalar_regex_type():
     assert print_schema(
-        _single_field_schema(RegexType("BBQ", r"^BBQ$")), indent="    "
+        _single_field_schema(RegexType("BBQ", r"^BBQ$")),
+        indent="    ",
     ) == dedent(
         '''
         """
@@ -426,14 +423,15 @@ def test_custom_scalar_regex_type():
         type Query {
             singleField: BBQ
         }
-        '''
+        ''',
     )
 
 
 def test_enum():
     Enum = EnumType("RGB", [("RED", 0), ("GREEN", 1), ("BLUE", 2)])
     assert print_schema(
-        Schema(ObjectType("Query", [Field("rgb", Enum)])), indent="    "
+        Schema(ObjectType("Query", [Field("rgb", Enum)])),
+        indent="    ",
     ) == dedent(
         """
         type Query {
@@ -445,7 +443,7 @@ def test_enum():
             GREEN
             BLUE
         }
-        """
+        """,
     )
 
 
@@ -456,7 +454,8 @@ def test_custom_directive():
         args=[Argument("argOne", String)],
     )
     schema = Schema(
-        ObjectType("Query", [Field("foo", String)]), directives=[directive]
+        ObjectType("Query", [Field("foo", String)]),
+        directives=[directive],
     )
     assert print_schema(schema, indent="    ") == dedent(
         """
@@ -465,7 +464,7 @@ def test_custom_directive():
         type Query {
             foo: String
         }
-        """
+        """,
     )
 
 
@@ -481,7 +480,7 @@ def test_description_fits_on_one_line():
             """This field is awesome"""
             singleField: String
         }
-        '''
+        ''',
     )
 
 
@@ -498,7 +497,7 @@ def test_description_ends_with_a_quote():
             """
             singleField: String
         }
-        '''
+        ''',
     )
 
 
@@ -514,7 +513,7 @@ def test_description_respects_whitespace():
             """
             singleField: String
         }
-        '''
+        ''',
     )
 
 
@@ -571,9 +570,13 @@ without: Int\
     """
 
     schema = build_schema(sdl, schema_directives=(CustomDirective,))
-    assert print_schema(
-        schema, include_custom_schema_directives=True
-    ) == dedent(sdl)
+    assert (
+        print_schema(
+            schema,
+            include_custom_schema_directives=True,
+        )
+        == dedent(sdl)
+    )
 
 
 class CustomDirective1(SchemaDirective):
@@ -607,7 +610,8 @@ def test_custom_directives_whitelist():
         ),
     )
     assert print_schema(
-        schema, include_custom_schema_directives=["custom1"]
+        schema,
+        include_custom_schema_directives=["custom1"],
     ) == dedent(
         """
         directive @custom1(arg: Int!) on SCHEMA
@@ -621,7 +625,7 @@ def test_custom_directives_whitelist():
         type Query {
             foo: Int
         }
-        """
+        """,
     )
 
 
@@ -663,5 +667,5 @@ def test_repeatable_directive():
         type Query {
             foo: Int
         }
-        """
+        """,
     )

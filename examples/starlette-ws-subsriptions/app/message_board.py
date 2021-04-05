@@ -70,7 +70,10 @@ class MessageBoard:
             cb(msg)
 
     def create_message(
-        self, room_id: uuid.UUID, text: str, author: str
+        self,
+        room_id: uuid.UUID,
+        text: str,
+        author: str,
     ) -> Message:
         try:
             room = self.rooms[room_id]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Generic mutations handling tests.
 """
@@ -48,7 +47,7 @@ schema = Schema(
                 number_holder,
                 args=[Argument("steps", Int)],
                 resolver=lambda obj, *_, **args: obj.incrementTheNumber(
-                    args["steps"]
+                    args["steps"],
                 ),
             ),
             Field(

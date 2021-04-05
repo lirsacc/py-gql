@@ -35,7 +35,8 @@ def untyped_value_from_ast(
     elif isinstance(node, _ast.FloatValue):
         return float(node.value)
     elif isinstance(
-        node, (_ast.StringValue, _ast.EnumValue, _ast.BooleanValue)
+        node,
+        (_ast.StringValue, _ast.EnumValue, _ast.BooleanValue),
     ):
         return node.value
     elif isinstance(node, _ast.ListValue):
@@ -54,4 +55,4 @@ def untyped_value_from_ast(
             raise UnknownVariable(varname, [node])
         return variables[varname]
 
-    raise TypeError("Unexpected node %s" % node.__class__)
+    raise TypeError(f"Unexpected node {node.__class__}")

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 from py_gql.validation.rules import OverlappingFieldsCanBeMergedChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -110,7 +107,7 @@ def test_same_aliases_with_different_field_targets(schema):
         [
             'Field(s) "fido" conflict because "name" and "nickname" are '
             "different fields. Use different aliases on the fields to fetch "
-            "both if this was intentional."
+            "both if this was intentional.",
         ],
         [[(59, 69), (74, 88)]],
     )
@@ -146,7 +143,7 @@ def test_alias_masking_direct_field_access(schema):
         [
             'Field(s) "name" conflict because "nickname" and "name" are different '
             "fields. Use different aliases on the fields to fetch both if this "
-            "was intentional."
+            "was intentional.",
         ],
         [[(52, 66), (71, 75)]],
     )
@@ -165,7 +162,7 @@ def test_different_args_second_adds_an_argument(schema):
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
-            "aliases on the fields to fetch both if this was intentional."
+            "aliases on the fields to fetch both if this was intentional.",
         ],
     )
 
@@ -183,7 +180,7 @@ def test_different_args_second_missing_an_argument(schema):
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
-            "aliases on the fields to fetch both if this was intentional."
+            "aliases on the fields to fetch both if this was intentional.",
         ],
     )
 
@@ -201,7 +198,7 @@ def test_conflicting_args(schema):
         [
             'Field(s) "doesKnowCommand" conflict because "doesKnowCommand" '
             'and "doesKnowCommand" have different arguments. Use different '
-            "aliases on the fields to fetch both if this was intentional."
+            "aliases on the fields to fetch both if this was intentional.",
         ],
     )
 
@@ -241,7 +238,7 @@ def test_encounters_conflict_in_fragments(schema):
         """,
         [
             'Field(s) "x" conflict because "a" and "b" are different fields. Use '
-            "different aliases on the fields to fetch both if this was intentional."
+            "different aliases on the fields to fetch both if this was intentional.",
         ],
         [[(47, 51), (79, 83)]],
     )
@@ -310,7 +307,7 @@ def test_deep_conflict(schema):
         [
             'Field(s) "field" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases '
-            "on the fields to fetch both if this was intentional."
+            "on the fields to fetch both if this was intentional.",
         ],
         [[(6, 32), (22, 26), (38, 64), (54, 58)]],
     )
@@ -336,7 +333,7 @@ def test_deep_conflict_with_multiple_issues(schema):
             'Field(s) "field" conflict because subfields "x" conflict '
             '("a" and "b" are different fields) and subfields "y" conflict '
             '("c" and "d" are different fields). Use different aliases on the '
-            "fields to fetch both if this was intentional."
+            "fields to fetch both if this was intentional.",
         ],
         [[(6, 45), (22, 26), (35, 39), (51, 90), (67, 71), (80, 84)]],
     )
@@ -364,7 +361,7 @@ def test_very_deep_conflict(schema):
             'Field(s) "field" conflict because subfields "deepField" conflict '
             '(subfields "x" conflict ("a" and "b" are different fields)). '
             "Use different aliases on the fields to fetch both if this was "
-            "intentional."
+            "intentional.",
         ],
         [[(6, 66), (22, 60), (46, 50), (72, 132), (88, 126), (112, 116)]],
     )
@@ -394,7 +391,7 @@ def test_reports_deep_conflict_to_nearest_common_ancestor(schema):
         [
             'Field(s) "deepField" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases on the '
-            "fields to fetch both if this was intentional."
+            "fields to fetch both if this was intentional.",
         ],
         [[(22, 60), (46, 50), (69, 107), (93, 97)]],
     )
@@ -432,7 +429,7 @@ def test_reports_deep_conflict_to_nearest_common_ancestor_in_fragments(schema):
         [
             'Field(s) "deeperField" conflict because subfields "x" conflict '
             '("a" and "b" are different fields). Use different aliases on the '
-            "fields to fetch both if this was intentional."
+            "fields to fetch both if this was intentional.",
         ],
         [[(108, 148), (134, 138), (157, 197), (183, 187)]],
     )
@@ -471,7 +468,7 @@ def test_reports_deep_conflict_in_nested_fragments(schema):
             '"d" are different fields) and subfields "x" conflict ("a" and "b" '
             "are different fields). "
             "Use different aliases on the fields to fetch both if this was "
-            "intentional."
+            "intentional.",
         ],
     )
 
@@ -514,7 +511,7 @@ def test_conflicting_return_types_which_potentially_overlap(schema_2):
         [
             'Field(s) "scalar" conflict because they return '
             "conflicting types Int and String!. Use different aliases on the "
-            "fields to fetch both if this was intentional."
+            "fields to fetch both if this was intentional.",
         ],
     )
 
@@ -561,7 +558,7 @@ def test_disallows_differing_return_types_despite_no_overlap(schema_2):
         [
             'Field(s) "scalar" conflict because they return conflicting types '
             "Int and String. Use different aliases on the fields to fetch both "
-            "if this was intentional."
+            "if this was intentional.",
         ],
     )
 
@@ -617,7 +614,7 @@ def test_reports_correctly_when_a_non_exclusive_follows_an_exclusive(schema_2):
         [
             'Field(s) "other" conflict because subfields "scalar" conflict '
             '("scalar" and "unrelatedField" are different fields). Use different '
-            "aliases on the fields to fetch both if this was intentional."
+            "aliases on the fields to fetch both if this was intentional.",
         ],
         [[(456, 491), (496, 531), (562, 568), (599, 621)]],
     )
@@ -644,7 +641,7 @@ def test_disallows_differing_return_type_nullability_despite_no_overlap(
         [
             'Field(s) "scalar" conflict because they return conflicting types '
             "String! and String. Use different aliases on the fields to fetch "
-            "both if this was intentional."
+            "both if this was intentional.",
         ],
         [[(63, 69), (119, 125)]],
     )
@@ -673,7 +670,7 @@ def test_disallows_differing_return_type_list_despite_no_overlap_0(schema_2):
         [
             'Field(s) "box" conflict because they return conflicting types '
             "[StringBox] and StringBox. Use different aliases on the fields to "
-            "fetch both if this was intentional."
+            "fetch both if this was intentional.",
         ],
     )
 
@@ -701,7 +698,7 @@ def test_disallows_differing_return_type_list_despite_no_overlap_1(schema_2):
         [
             'Field(s) "box" conflict because they return conflicting types '
             "StringBox and [StringBox]. Use different aliases on the fields to "
-            "fetch both if this was intentional."
+            "fetch both if this was intentional.",
         ],
     )
 
@@ -730,7 +727,7 @@ def test_disallows_differing_subfields(schema_2):
         [
             'Field(s) "val" conflict because "scalar" and "unrelatedField" are '
             "different fields. Use different aliases on the fields to fetch both "
-            "if this was intentional."
+            "if this was intentional.",
         ],
     )
 
@@ -758,7 +755,7 @@ def test_disallows_differing_deep_return_types_despite_no_overlap(schema_2):
         [
             'Field(s) "box" conflict because subfields "scalar" conflict '
             "(they return conflicting types String and Int). Use different "
-            "aliases on the fields to fetch both if this was intentional."
+            "aliases on the fields to fetch both if this was intentional.",
         ],
     )
 
@@ -844,7 +841,7 @@ def test_compares_deep_types_including_list(schema_2):
             'Field(s) "edges" conflict because subfields "node" conflict '
             '(subfields "id" conflict ("name" and "id" are different fields)). '
             "Use different aliases on the fields to fetch both if this was "
-            "intentional."
+            "intentional.",
         ],
     )
 
@@ -914,6 +911,6 @@ def test_finds_invalid_case_even_with_immediately_recursive_fragment(schema):
         [
             'Field(s) "fido" conflict because "name" and "nickname" are different '
             "fields. Use different aliases on the fields to fetch both if this "
-            "was intentional."
+            "was intentional.",
         ],
     )

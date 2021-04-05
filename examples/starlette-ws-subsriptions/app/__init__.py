@@ -19,7 +19,8 @@ from .schema import SDL, schema
 logger = logging.getLogger(__name__)
 
 PLAYGROUND_FILEPATH = os.path.join(
-    os.path.dirname(__file__), "./playground.html"
+    os.path.dirname(__file__),
+    "./playground.html",
 )
 
 DB_FILE = "./db.pickle"
@@ -87,5 +88,6 @@ async def ws_graphql_route(ws: WebSocket) -> None:
         handler.close()
     except Exception:
         logger.error(
-            "Error when handling GraphqQL over websocket", exc_info=True
+            "Error when handling GraphqQL over websocket",
+            exc_info=True,
         )

@@ -41,7 +41,8 @@ async def fetch_one(resource, id):
 
 async def fetch_many(resource, **kw):
     resp = await fetch(
-        _url(resource), query={k: v for k, v in kw.items() if v is not None}
+        _url(resource),
+        query={k: v for k, v in kw.items() if v is not None},
     )
     res = resp["results"]
     return [dict(r, id=int(r["url"].split("/")[-2])) for r in res]

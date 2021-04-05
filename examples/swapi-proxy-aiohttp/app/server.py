@@ -37,7 +37,8 @@ async def graphql_handler(request):
     result.add_extension(tracer)
 
     return web.Response(
-        text=json.dumps(result.response()), content_type="application/json"
+        text=json.dumps(result.response()),
+        content_type="application/json",
     )
 
 
@@ -52,6 +53,6 @@ def init(argv=None):
             web.get("/sdl", sdl),
             web.get("/graphiql", graphiql),
             web.post("/graphql", graphql_handler),
-        ]
+        ],
     )
     return app

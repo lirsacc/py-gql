@@ -58,14 +58,20 @@ class Instrumentation:
         """
 
     def on_field_start(
-        self, root: Any, context: Any, info: ResolveInfo
+        self,
+        root: Any,
+        context: Any,
+        info: ResolveInfo,
     ) -> None:  # noqa: D401
         """
         This will be called before field resolution starts.
         """
 
     def on_field_end(
-        self, root: Any, context: Any, info: ResolveInfo
+        self,
+        root: Any,
+        context: Any,
+        info: ResolveInfo,
     ) -> None:  # noqa: D401
         """
         This will be called after field resolution ends.
@@ -116,7 +122,10 @@ class MultiInstrumentation(Instrumentation):
             i.on_execution_end()
 
     def on_field_start(
-        self, root: Any, context: Any, info: ResolveInfo
+        self,
+        root: Any,
+        context: Any,
+        info: ResolveInfo,
     ) -> None:
         for i in self.instrumentations:
             i.on_field_start(root, context, info)

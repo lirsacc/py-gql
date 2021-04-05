@@ -100,7 +100,7 @@ def process_graphql_query(
         # Make sure the value is wrapped similarly to the execution result to
         # make it easier for consumers.
         return cast(Runtime, runtime).ensure_wrapped(
-            _on_end(GraphQLResult(*args, **kwargs))
+            _on_end(GraphQLResult(*args, **kwargs)),
         )
 
     def _on_end(result: GraphQLResult) -> GraphQLResult:

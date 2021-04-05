@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql.exc import (
@@ -28,7 +26,7 @@ def test_disallow_uncommon_control_characters():
 
 def test_ignore_trailing_whitespace():
     assert [token.SOF(0, 0), token.Name(1, 4, "foo"), token.EOF(9, 9)] == list(
-        Lexer(" foo     ")
+        Lexer(" foo     "),
     )
 
 
@@ -56,7 +54,7 @@ def test_skip_whitespace_and_comments_1():
     foo
 
 
-    """
+    """,
         )
         == token.Name(6, 9, "foo")
     )
@@ -68,7 +66,7 @@ def test_skip_whitespace_and_comments_2():
             """
     #comment
     foo#comment
-    """
+    """,
         )
         == token.Name(18, 21, "foo")
     )
@@ -85,7 +83,7 @@ def test_errors_respect_whitespace():
 
                 ?
 
-            """
+            """,
         )
 
     assert str(exc_info.value) == (
@@ -333,8 +331,8 @@ def test_multiple_tokens():
             name
         }
     }
-    """
-        )
+    """,
+        ),
     ) == [
         token.SOF(0, 0),
         token.Name(5, 10, "query"),

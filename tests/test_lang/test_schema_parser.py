@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Test naming is not very 'pythonic' as I tried to keep a close match with the
 # original ones for easy reference. Others were kept while they were specific
 # to the implementation and are kept as skipped.
@@ -31,7 +29,11 @@ def _type(loc, value):
 
 def _field(loc, name, type_, args=None):
     return _ast.FieldDefinition(
-        loc=loc, name=name, type=type_, arguments=args or [], directives=[]
+        loc=loc,
+        name=name,
+        type=type_,
+        arguments=args or [],
+        directives=[],
     )
 
 
@@ -69,9 +71,9 @@ type Hello {
                             (16, 29),
                             _name((16, 21), "world"),
                             _type((23, 29), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -96,16 +98,17 @@ type Hello {
                     interfaces=[],
                     directives=[],
                     description=_ast.StringValue(
-                        loc=(1, 14), value="Description"
+                        loc=(1, 14),
+                        value="Description",
                     ),
                     fields=[
                         _field(
                             (30, 43),
                             _name((30, 35), "world"),
                             _type((37, 43), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -132,16 +135,18 @@ type Hello {
                     interfaces=[],
                     directives=[],
                     description=_ast.StringValue(
-                        loc=(1, 20), value="Description", block=True
+                        loc=(1, 20),
+                        value="Description",
+                        block=True,
                     ),
                     fields=[
                         _field(
                             (70, 83),
                             _name((70, 75), "world"),
                             _type((77, 83), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -168,9 +173,9 @@ extend type Hello {
                             (23, 36),
                             _name((23, 28), "world"),
                             _type((30, 36), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -188,7 +193,7 @@ def test_it_parses_extension_without_fields():
                     interfaces=[_type((29, 37), "Greeting")],
                     fields=[],
                     directives=[],
-                )
+                ),
             ],
         ),
     )
@@ -280,11 +285,12 @@ type Hello {
                             (16, 30),
                             _name((16, 21), "world"),
                             _ast.NonNullType(
-                                loc=(23, 30), type=_type((23, 29), "String")
+                                loc=(23, 30),
+                                type=_type((23, 29), "String"),
                             ),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -307,9 +313,9 @@ def test_it_parses_simple_type_inheriting_interface():
                             (30, 43),
                             _name((30, 35), "field"),
                             _type((37, 43), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -332,9 +338,9 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces():
                             (33, 46),
                             _name((33, 38), "field"),
                             _type((40, 46), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -357,9 +363,9 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_amper
                             (35, 48),
                             _name((35, 40), "field"),
                             _type((42, 48), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -378,10 +384,11 @@ def test_it_parses_single_value_enum():
                     directives=[],
                     values=[
                         _ast.EnumValueDefinition(
-                            loc=(13, 18), name=_name((13, 18), "WORLD")
-                        )
+                            loc=(13, 18),
+                            name=_name((13, 18), "WORLD"),
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -400,13 +407,15 @@ def test_it_parses_double_value_enum():
                     directives=[],
                     values=[
                         _ast.EnumValueDefinition(
-                            loc=(13, 15), name=_name((13, 15), "WO")
+                            loc=(13, 15),
+                            name=_name((13, 15), "WO"),
                         ),
                         _ast.EnumValueDefinition(
-                            loc=(17, 20), name=_name((17, 20), "RLD")
+                            loc=(17, 20),
+                            name=_name((17, 20), "RLD"),
                         ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -431,9 +440,9 @@ interface Hello {
                             (21, 34),
                             _name((21, 26), "world"),
                             _type((28, 34), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -464,11 +473,11 @@ type Hello {
                                     (22, 35),
                                     _name((22, 26), "flag"),
                                     _type((28, 35), "Boolean"),
-                                )
+                                ),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -500,11 +509,11 @@ type Hello {
                                     _name((22, 26), "flag"),
                                     _type((28, 35), "Boolean"),
                                     _ast.BooleanValue(loc=(38, 42), value=True),
-                                )
+                                ),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -538,11 +547,11 @@ type Hello {
                                         loc=(30, 38),
                                         type=_type((31, 37), "String"),
                                     ),
-                                )
+                                ),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -580,9 +589,9 @@ type Hello {
                                     _type((47, 50), "Int"),
                                 ),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -599,7 +608,7 @@ def test_it_parses_simple_union():
                     name=_name((6, 11), "Hello"),
                     directives=[],
                     types=[_type((14, 19), "World")],
-                )
+                ),
             ],
         ),
     )
@@ -616,7 +625,7 @@ def test_it_parses_union_with_two_types():
                     name=_name((6, 11), "Hello"),
                     directives=[],
                     types=[_type((14, 16), "Wo"), _type((19, 22), "Rld")],
-                )
+                ),
             ],
         ),
     )
@@ -633,7 +642,7 @@ def test_it_parses_union_with_two_types_and_leading_pipe():
                     name=_name((6, 11), "Hello"),
                     directives=[],
                     types=[_type((16, 18), "Wo"), _type((21, 24), "Rld")],
-                )
+                ),
             ],
         ),
     )
@@ -674,8 +683,10 @@ def test_it_parses_scalar():
             (0, 12),
             [
                 _ast.ScalarTypeDefinition(
-                    loc=(0, 12), name=_name((7, 12), "Hello"), directives=[]
-                )
+                    loc=(0, 12),
+                    name=_name((7, 12), "Hello"),
+                    directives=[],
+                ),
             ],
         ),
     )
@@ -700,9 +711,9 @@ input Hello {
                             (17, 30),
                             _name((17, 22), "world"),
                             _type((24, 30), "String"),
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )

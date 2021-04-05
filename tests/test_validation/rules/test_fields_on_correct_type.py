@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql.validation.rules import FieldsOnCorrectTypeChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
@@ -110,7 +108,7 @@ def test_field_not_defined_on_fragment(schema):
         """,
         [
             'Cannot query field "meowVolume" on type "Dog". '
-            'Did you mean "barkVolume"?'
+            'Did you mean "barkVolume"?',
         ],
     )
 
@@ -158,7 +156,7 @@ def test_field_not_defined_on_inline_fragment(schema):
         """,
         [
             'Cannot query field "meowVolume" on type "Dog". '
-            'Did you mean "barkVolume"?'
+            'Did you mean "barkVolume"?',
         ],
     )
 
@@ -174,7 +172,7 @@ def test_aliased_field_target_not_defined(schema):
         """,
         [
             'Cannot query field "mooVolume" on type "Dog". '
-            'Did you mean "barkVolume"?'
+            'Did you mean "barkVolume"?',
         ],
     )
 
@@ -190,7 +188,7 @@ def test_aliased_lying_field_target_not_defined(schema):
         """,
         [
             'Cannot query field "kawVolume" on type "Dog". '
-            'Did you mean "barkVolume"?'
+            'Did you mean "barkVolume"?',
         ],
     )
 
@@ -244,7 +242,7 @@ def test_direct_field_selection_on_union(schema):
         """,
         [
             'Cannot query field "directField" on type "CatOrDog". '
-            'Did you mean to use an inline fragment on "Dog" or "Cat"?'
+            'Did you mean to use an inline fragment on "Dog" or "Cat"?',
         ],
     )
 
@@ -260,7 +258,7 @@ def test_defined_on_implementers_queried_on_union(schema):
         """,
         [
             'Cannot query field "name" on type "CatOrDog". '
-            'Did you mean to use an inline fragment on "Dog" or "Cat"?'
+            'Did you mean to use an inline fragment on "Dog" or "Cat"?',
         ],
     )
 

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql import build_schema, graphql_blocking
@@ -23,7 +21,7 @@ def schema() -> Schema:
             snake_case_field: Int,
             field_with_arguments(arg_one: Int!, arg_two: InputObject): String,
         }
-        """
+        """,
     )
 
 
@@ -42,14 +40,16 @@ def test_it_renames_relevant_schema_elements(schema: Schema) -> None:
             snakeCaseField: Int
             fieldWithArguments(argOne: Int!, argTwo: InputObject): String
         }
-        """
+        """,
     )
 
 
 def test_default_resolver_still_works(schema: Schema) -> None:
     new_schema = transform_schema(schema, CamelCaseSchemaTransform())
     result = graphql_blocking(
-        new_schema, "{ snakeCaseField }", root={"snake_case_field": 42}
+        new_schema,
+        "{ snakeCaseField }",
+        root={"snake_case_field": 42},
     )
     assert result and result.response()["data"] == {"snakeCaseField": 42}
 

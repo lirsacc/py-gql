@@ -71,7 +71,7 @@ def coerce_value(
     if isinstance(type_, NonNullType):
         if value is None:
             raise CoercionError(
-                "Expected non-nullable type %s not to be null" % type_,
+                f"Expected non-nullable type {type_} not to be null",
                 node,
                 value_path=_path(path),
             )
@@ -94,7 +94,9 @@ def coerce_value(
                 raise CoercionError(str(err), node, value_path=_path(path))
         else:
             raise CoercionError(
-                "Expected type %s" % type_, node, value_path=_path(path)
+                f"Expected type {type_}",
+                node,
+                value_path=_path(path),
             )
 
     if isinstance(type_, ListType):
@@ -118,8 +120,11 @@ def _coerce_list_value(
             try:
                 coerced.append(
                     coerce_value(
-                        entry, type_.type, node=node, path=path + [index]
-                    )
+                        entry,
+                        type_.type,
+                        node=node,
+                        path=path + [index],
+                    ),
                 )
             except MultiCoercionError as err:
                 for child_err in err.errors:
@@ -138,11 +143,14 @@ def _coerce_list_value(
 
 
 def _coerce_input_object(
-    value: Any, type_: InputObjectType, node: Optional[_ast.Node], path: Path
+    value: Any,
+    type_: InputObjectType,
+    node: Optional[_ast.Node],
+    path: Path,
 ) -> Dict[str, Any]:
     if not isinstance(value, dict):
         raise CoercionError(
-            "Expected type %s to be an object" % type_.name,
+            f"Expected type {type_.name} to be an object",
             node,
             value_path=_path(path),
         )
@@ -161,12 +169,15 @@ def _coerce_input_object(
                         % (field_name, field.type),
                         node,
                         value_path=_path(path + [field_name]),
-                    )
+                    ),
                 )
         else:
             try:
                 coerced[field.python_name] = coerce_value(
-                    value[field_name], field.type, node, path + [field_name]
+                    value[field_name],
+                    field.type,
+                    node,
+                    path + [field_name],
                 )
             except MultiCoercionError as err:
                 for child_err in err.errors:
@@ -182,7 +193,7 @@ def _coerce_input_object(
     for fieldname in value.keys():
         if fieldname not in type_.field_map:
             raise CoercionError(
-                "Field %s is not defined by type %s" % (fieldname, type_),
+                f"Field {fieldname} is not defined by type {type_}",
                 node,
                 value_path=_path(path),
             )
@@ -252,7 +263,9 @@ def coerce_argument_values(
             else:
                 try:
                     coerced_values[target_name] = value_from_ast(
-                        arg.value, arg_type, variables=variables
+                        arg.value,
+                        arg_type,
+                        variables=variables,
                     )
                 except InvalidValue as err:
                     raise CoercionError(
@@ -320,7 +333,8 @@ def directive_arguments(
         CoercionError: If any argument fails to coerce, is missing, etc.
     """
     directive = find_one(
-        node.directives, lambda d: d.name.value == definition.name
+        node.directives,
+        lambda d: d.name.value == definition.name,
     )
 
     return (
@@ -368,10 +382,9 @@ def coerce_variable_values(  # noqa: C901
         except UnknownType:
             errors.append(
                 VariableCoercionError(
-                    'Unknown type "%s" for variable "$%s"'
-                    % (print_ast(var_def.type), name),
+                    f'Unknown type "{print_ast(var_def.type)}" for variable "${name}"',
                     [var_def],
-                )
+                ),
             )
             continue
 
@@ -381,7 +394,7 @@ def coerce_variable_values(  # noqa: C901
                     'Variable "$%s" expected value of type "%s" which cannot be used '
                     "as an input type." % (name, print_ast(var_def.type)),
                     [var_def],
-                )
+                ),
             )
             continue
 
@@ -389,7 +402,8 @@ def coerce_variable_values(  # noqa: C901
             if var_def.default_value is not None:
                 try:
                     coerced[name] = value_from_ast(
-                        var_def.default_value, var_type
+                        var_def.default_value,
+                        var_type,
                     )
                 except InvalidValue as err:
                     errors.append(
@@ -397,7 +411,7 @@ def coerce_variable_values(  # noqa: C901
                             'Variable "$%s" got invalid default value %s (%s)'
                             % (name, print_ast(var_def.default_value), err),
                             [var_def],
-                        )
+                        ),
                     )
             elif isinstance(var_type, NonNullType):
                 errors.append(
@@ -405,7 +419,7 @@ def coerce_variable_values(  # noqa: C901
                         'Variable "$%s" of required type "%s" was not provided.'
                         % (name, var_type),
                         [var_def],
-                    )
+                    ),
                 )
         else:
             value = variables[name]
@@ -415,7 +429,7 @@ def coerce_variable_values(  # noqa: C901
                         'Variable "$%s" of required type "%s" must not be null.'
                         % (name, var_type),
                         [var_def],
-                    )
+                    ),
                 )
             else:
                 try:
@@ -431,7 +445,7 @@ def coerce_variable_values(  # noqa: C901
                                     child_err,
                                 ),
                                 [var_def],
-                            )
+                            ),
                         )
                 except (InvalidValue, CoercionError) as err:
                     errors.append(
@@ -439,7 +453,7 @@ def coerce_variable_values(  # noqa: C901
                             'Variable "$%s" got invalid value %s (%s)'
                             % (name, json.dumps(value, sort_keys=True), err),
                             [var_def],
-                        )
+                        ),
                     )
 
     if errors:

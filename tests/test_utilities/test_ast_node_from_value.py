@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import Any
 
 import pytest
@@ -36,7 +34,9 @@ class _Object:
 
 
 CustomScalar = ScalarType(
-    name="CustomScalar", serialize=_custom_serialize, parse=lambda x: x
+    name="CustomScalar",
+    serialize=_custom_serialize,
+    parse=lambda x: x,
 )  # type: ScalarType
 
 
@@ -147,7 +147,7 @@ def test_ast_node_from_value_with_enums(value, expected):
                 values=[
                     _ast.StringValue(value="FOO"),
                     _ast.StringValue(value="BAR"),
-                ]
+                ],
             ),
         ),
         (
@@ -157,7 +157,7 @@ def test_ast_node_from_value_with_enums(value, expected):
                 values=[
                     _ast.EnumValue(value="HELLO"),
                     _ast.EnumValue(value="GOODBYE"),
-                ]
+                ],
             ),
         ),
         ("FOO", ListType(String), _ast.StringValue(value="FOO")),
@@ -193,7 +193,7 @@ InputObject = InputObjectType(
                         name=_ast.Name(value="bar"),
                         value=_ast.EnumValue(value="HELLO"),
                     ),
-                ]
+                ],
             ),
         ),
         (
@@ -201,13 +201,14 @@ InputObject = InputObjectType(
             _ast.ObjectValue(
                 fields=[
                     _ast.ObjectField(
-                        name=_ast.Name(value="foo"), value=_ast.NullValue()
+                        name=_ast.Name(value="foo"),
+                        value=_ast.NullValue(),
                     ),
                     _ast.ObjectField(
                         name=_ast.Name(value="bar"),
                         value=_ast.EnumValue(value="HELLO"),
                     ),
-                ]
+                ],
             ),
         ),
         (
@@ -217,8 +218,8 @@ InputObject = InputObjectType(
                     _ast.ObjectField(
                         name=_ast.Name(value="bar"),
                         value=_ast.EnumValue(value="HELLO"),
-                    )
-                ]
+                    ),
+                ],
             ),
         ),
         (42, ValueError('Value of type "MyInputObj" must be a dict')),

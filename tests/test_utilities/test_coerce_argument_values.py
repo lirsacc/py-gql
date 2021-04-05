@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import List
 
 import pytest
@@ -23,8 +21,9 @@ def _test_node(argument_value=None, argument_name="foo"):
     else:
         arguments = [
             _ast.Argument(
-                name=_ast.Name(value=argument_name), value=argument_value
-            )
+                name=_ast.Name(value=argument_name),
+                value=argument_value,
+            ),
         ]
     return _ast.Field(name=_ast.Name(value="test"), arguments=arguments)
 
@@ -125,7 +124,7 @@ def test_custom_python_name_in_input_object():
             InputObjectType(
                 "Foo",
                 [InputField("field", NonNullType(Int), python_name="value")],
-            )
+            ),
         ),
     )
     field = Field("test", Int, [arg])

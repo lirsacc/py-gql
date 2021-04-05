@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Execution tests related to list types handling and resolution.
 """
@@ -88,7 +87,9 @@ _FRUITS = ["apple", "banana", "apple", "coconut"]
     ],
 )
 async def test_it_accepts_iterables_for_list_type(
-    assert_execution, iterable, result
+    assert_execution,
+    iterable,
+    result,
 ):
     await run_test(
         ListType(String),
@@ -100,7 +101,8 @@ async def test_it_accepts_iterables_for_list_type(
 
 @pytest.mark.parametrize("not_iterable", ["apple", 42, object()])
 async def test_it_raises_on_non_iterable_value_for_list_type(
-    assert_execution, not_iterable
+    assert_execution,
+    not_iterable,
 ):
     await run_test(
         ListType(String),
@@ -121,14 +123,18 @@ async def test_it_raises_on_non_iterable_value_for_list_type(
         pytest.param([1, None, 2], [1, None, 2], id="[T], contains null"),
         pytest.param(_lazy([1, 2]), [1, 2], id="[T], callable"),
         pytest.param(
-            _lazy([1, None, 2]), [1, None, 2], id="[T], callable, contains null"
+            _lazy([1, None, 2]),
+            [1, None, 2],
+            id="[T], callable, contains null",
         ),
         pytest.param(None, None, id="[T], null"),
         pytest.param(_lazy(None), None, id="[T], callable, null"),
     ],
 )
 async def test_nullable_list_of_nullable_items(
-    assert_execution, data, expected
+    assert_execution,
+    data,
+    expected,
 ):
     await run_test(
         ListType(Int),
@@ -152,7 +158,9 @@ async def test_nullable_list_of_nullable_items(
     ],
 )
 async def test_non_nullable_list_of_nullable_items_ok(
-    assert_execution, data, expected
+    assert_execution,
+    data,
+    expected,
 ):
     await run_test(
         NonNullType(ListType(Int)),
@@ -173,7 +181,9 @@ async def test_non_nullable_list_of_nullable_items_ok(
     ],
 )
 async def test_non_nullable_list_of_nullable_items_fail(
-    assert_execution, data, expected_err
+    assert_execution,
+    data,
+    expected_err,
 ):
     await run_test(
         NonNullType(ListType(Int)),
@@ -193,7 +203,9 @@ async def test_non_nullable_list_of_nullable_items_fail(
     ],
 )
 async def test_nullable_list_of_non_nullable_items_ok(
-    assert_execution, data, expected
+    assert_execution,
+    data,
+    expected,
 ):
     await run_test(
         ListType(NonNullType(Int)),
@@ -217,7 +229,9 @@ async def test_nullable_list_of_non_nullable_items_ok(
     ],
 )
 async def test_nullable_list_of_non_nullable_items_fail(
-    assert_execution, data, expected_err
+    assert_execution,
+    data,
+    expected_err,
 ):
     await run_test(
         ListType(NonNullType(Int)),

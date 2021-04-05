@@ -47,7 +47,9 @@ VariableUsages = MMap[
 
 
 def _peek(
-    lst: Sequence[T], count: int = 1, default: Optional[T] = None
+    lst: Sequence[T],
+    count: int = 1,
+    default: Optional[T] = None,
 ) -> Optional[T]:
     return lst[-1 * count] if len(lst) >= count else default
 
@@ -99,7 +101,9 @@ class ValidationVisitor(DispatchingVisitor):
         self.errors = []  # type: List[ValidationError]
 
     def add_error(
-        self, message: str, nodes: Optional[Sequence[_ast.Node]] = None
+        self,
+        message: str,
+        nodes: Optional[Sequence[_ast.Node]] = None,
     ) -> None:
         """
         Register an error
@@ -125,15 +129,15 @@ class VariablesCollector(ValidationVisitor):
 
         self._op = None
         self._op_variables = DefaultOrderedDict(
-            OrderedDict
+            OrderedDict,
         )  # type: VariableUsages
         self._op_defined_variables = DefaultOrderedDict(
-            OrderedDict
+            OrderedDict,
         )  # type: MMap[_ast.VariableDefinition]
         self._op_fragments = DefaultOrderedDict(list)  # type: LMap[str]
         self._fragment = None
         self._fragment_variables = DefaultOrderedDict(
-            OrderedDict
+            OrderedDict,
         )  # type: VariableUsages
         self._fragment_fragments = DefaultOrderedDict(list)  # type: LMap[str]
         self._in_var_def = False
@@ -300,7 +304,9 @@ class TypeInfoVisitor(DispatchingVisitor):
     def enter_selection_set(self, node):
         named_type = unwrap_type(self.type) if self.type else None
         self._parent_type_stack.append(
-            named_type if isinstance(named_type, GraphQLCompositeType) else None
+            named_type
+            if isinstance(named_type, GraphQLCompositeType)
+            else None,
         )
         return node
 
@@ -313,7 +319,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         self._type_stack.append(
             field_def.type
             if field_def and is_output_type(field_def.type)
-            else None
+            else None,
         )
         return node
 
@@ -335,7 +341,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             "subscription": self._schema.subscription_type,
         }.get(node.operation, None)
         self._type_stack.append(
-            type_ if isinstance(type_, ObjectType) else None
+            type_ if isinstance(type_, ObjectType) else None,
         )
         return node
 
@@ -356,7 +362,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             self._type_stack.append(type_ if is_output_type(type_) else None)
         else:
             self._type_stack.append(
-                self.type if self.type and is_output_type(self.type) else None
+                self.type if self.type and is_output_type(self.type) else None,
             )
         return node
 
@@ -380,7 +386,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             self._input_type_stack.append(
                 self.argument.type
                 if self.argument and is_input_type(self.argument.type)
-                else None
+                else None,
             )
         else:
             self.argument = None
@@ -397,7 +403,7 @@ class TypeInfoVisitor(DispatchingVisitor):
         item_type = unwrap_type(self.input_type) if self.input_type else None
 
         self._input_type_stack.append(
-            item_type if item_type and is_input_type(item_type) else None
+            item_type if item_type and is_input_type(item_type) else None,
         )
         # List positions never have a default value.
         self._input_value_def_stack.append(None)
@@ -415,7 +421,7 @@ class TypeInfoVisitor(DispatchingVisitor):
             self._input_type_stack.append(
                 field_def.type
                 if field_def and is_input_type(field_def.type)
-                else None
+                else None,
             )
         else:
             self._input_type_stack.append(None)

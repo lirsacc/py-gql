@@ -111,7 +111,9 @@ __all__ = (
 
 
 def _iterate_matching_pairs(
-    old_schema: Schema, new_schema: Schema, cls: Type[TGraphQLType]
+    old_schema: Schema,
+    new_schema: Schema,
+    cls: Type[TGraphQLType],
 ) -> Iterator[Tuple[TGraphQLType, TGraphQLType]]:
     old_types = {
         n: t for n, t in old_schema.types.items() if isinstance(t, cls)
@@ -195,7 +197,9 @@ def _find_changed_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
         else:
             if old_type.__class__ != new_type.__class__:
                 yield TypeChangedKind(
-                    name, old_type.__class__, new_type.__class__
+                    name,
+                    old_type.__class__,
+                    new_type.__class__,
                 )
 
 
@@ -222,11 +226,15 @@ def _diff_enum_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
                 if old_ev.deprecated:
                     if not new_ev.deprecated:
                         yield EnumValueDeprecationRemoved(
-                            old_enum, old_ev, new_ev
+                            old_enum,
+                            old_ev,
+                            new_ev,
                         )
                     elif old_ev.deprecation_reason != new_ev.deprecation_reason:
                         yield EnumValueDeprecationReasonChanged(
-                            old_enum, old_ev, new_ev
+                            old_enum,
+                            old_ev,
+                            new_ev,
                         )
                 elif new_ev.deprecated:
                     yield EnumValueDeprecated(old_enum, old_ev, new_ev)
@@ -273,7 +281,8 @@ def _diff_directives(old: Schema, new: Schema) -> Iterator[SchemaChange]:
 
 
 def _diff_directive_arguments(
-    old_directive: Directive, new_directive: Directive
+    old_directive: Directive,
+    new_directive: Directive,
 ) -> Iterator[SchemaChange]:
 
     old_args = old_directive.argument_map
@@ -287,7 +296,9 @@ def _diff_directive_arguments(
         else:
             if not _is_safe_input_type_change(old_arg.type, new_arg.type):
                 yield DirectiveArgumentChangedType(
-                    old_directive, old_arg, new_arg
+                    old_directive,
+                    old_arg,
+                    new_arg,
                 )
             elif (
                 (old_arg.has_default_value and not new_arg.has_default_value)
@@ -298,7 +309,9 @@ def _diff_directive_arguments(
                 )
             ):
                 yield DirectiveArgumentDefaultValueChange(
-                    old_directive, old_arg, new_arg
+                    old_directive,
+                    old_arg,
+                    new_arg,
                 )
 
     for name, new_arg in new_args.items():
@@ -307,7 +320,9 @@ def _diff_directive_arguments(
 
 
 def _diff_field_arguments(
-    parent: Union[ObjectType, InterfaceType], old_field: Field, new_field: Field
+    parent: Union[ObjectType, InterfaceType],
+    old_field: Field,
+    new_field: Field,
 ) -> Iterator[SchemaChange]:
 
     old_args = old_field.argument_map
@@ -321,7 +336,10 @@ def _diff_field_arguments(
         else:
             if not _is_safe_input_type_change(old_arg.type, new_arg.type):
                 yield FieldArgumentChangedType(
-                    parent, old_field, old_arg, new_arg
+                    parent,
+                    old_field,
+                    old_arg,
+                    new_arg,
                 )
             elif (
                 (old_arg.has_default_value and not new_arg.has_default_value)
@@ -332,7 +350,10 @@ def _diff_field_arguments(
                 )
             ):
                 yield FieldArgumentDefaultValueChange(
-                    parent, old_field, old_arg, new_arg
+                    parent,
+                    old_field,
+                    old_arg,
+                    new_arg,
                 )
 
     for name, new_arg in new_args.items():
@@ -341,15 +362,17 @@ def _diff_field_arguments(
 
 
 def _is_safe_input_type_change(
-    old_type: GraphQLType, new_type: GraphQLType
+    old_type: GraphQLType,
+    new_type: GraphQLType,
 ) -> bool:
     if isinstance(old_type, NamedType):
         return bool(
-            isinstance(new_type, NamedType) and old_type.name == new_type.name
+            isinstance(new_type, NamedType) and old_type.name == new_type.name,
         )
     elif isinstance(old_type, ListType):
         return isinstance(new_type, ListType) and _is_safe_input_type_change(
-            old_type.type, new_type.type
+            old_type.type,
+            new_type.type,
         )
     elif isinstance(old_type, NonNullType):
         return (
@@ -363,7 +386,8 @@ def _is_safe_input_type_change(
 
 
 def _is_safe_output_type_change(
-    old_type: GraphQLType, new_type: GraphQLType
+    old_type: GraphQLType,
+    new_type: GraphQLType,
 ) -> bool:
     if isinstance(old_type, NamedType):
         return (
@@ -381,9 +405,13 @@ def _is_safe_output_type_change(
             and _is_safe_output_type_change(old_type, new_type.type)
         )
     elif isinstance(old_type, NonNullType):
-        return isinstance(
-            new_type, NonNullType
-        ) and _is_safe_output_type_change(old_type.type, new_type.type)
+        return (
+            isinstance(
+                new_type,
+                NonNullType,
+            )
+            and _is_safe_output_type_change(old_type.type, new_type.type)
+        )
     return False
 
 
@@ -416,7 +444,9 @@ def _diff_object_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
 
 def _diff_interface_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
     for old_interface, new_interface in _iterate_matching_pairs(
-        old, new, InterfaceType
+        old,
+        new,
+        InterfaceType,
     ):
         for field_name, old_field in old_interface.field_map.items():
             try:
@@ -433,7 +463,9 @@ def _diff_interface_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
 
 
 def _diff_field(
-    old: Field, new: Field, parent_type: Union[ObjectType, InterfaceType]
+    old: Field,
+    new: Field,
+    parent_type: Union[ObjectType, InterfaceType],
 ) -> Iterator[SchemaChange]:
     if not _is_safe_output_type_change(old.type, new.type):
         yield FieldChangedType(parent_type, old, new)
@@ -452,7 +484,9 @@ def _diff_field(
 
 def _diff_input_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
     for old_type, new_type in _iterate_matching_pairs(
-        old, new, InputObjectType
+        old,
+        new,
+        InputObjectType,
     ):
         old_fields = old_type.field_map
         new_fields = new_type.field_map
@@ -464,7 +498,8 @@ def _diff_input_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
                 yield InputFieldRemoved(old_type, old_field)
             else:
                 if not _is_safe_input_type_change(
-                    old_field.type, new_field.type
+                    old_field.type,
+                    new_field.type,
                 ):
                     yield InputFieldChangedType(old_type, old_field, new_field)
                 elif (
@@ -482,7 +517,9 @@ def _diff_input_types(old: Schema, new: Schema) -> Iterator[SchemaChange]:
                     )
                 ):
                     yield InputFieldDefaultValueChange(
-                        old_type, old_field, new_field
+                        old_type,
+                        old_field,
+                        new_field,
                     )
 
         for name, new_field in new_fields.items():

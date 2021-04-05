@@ -44,7 +44,10 @@ class AsyncIORuntime(SubscriptionRuntime):
         )
 
     def submit(
-        self, fn: AnyFnGen[T], *args: Any, **kwargs: Any
+        self,
+        fn: AnyFnGen[T],
+        *args: Any,
+        **kwargs: Any,
     ) -> MaybeAwaitable[T]:
         if (
             self._execute_blocking_functions_in_thread
@@ -52,7 +55,8 @@ class AsyncIORuntime(SubscriptionRuntime):
         ):
 
             return self.loop.run_in_executor(
-                None, ft.partial(fn, *args, **kwargs)
+                None,
+                ft.partial(fn, *args, **kwargs),
             )
 
         return fn(*args, **kwargs)
@@ -67,7 +71,8 @@ class AsyncIORuntime(SubscriptionRuntime):
         return _make_awaitable()
 
     def gather_values(
-        self, values: Iterable[MaybeAwaitable[T]]
+        self,
+        values: Iterable[MaybeAwaitable[T]],
     ) -> MaybeAwaitable[Iterable[T]]:
 
         pending = []  # type: List[Awaitable[T]]
@@ -91,7 +96,8 @@ class AsyncIORuntime(SubscriptionRuntime):
 
             async def _await_values() -> Iterable[T]:
                 for i, awaited in zip(
-                    pending_idx, await asyncio.gather(*pending)
+                    pending_idx,
+                    await asyncio.gather(*pending),
                 ):
                     done[i] = awaited
                 return done
@@ -155,7 +161,8 @@ class AsyncIORuntime(SubscriptionRuntime):
 
             async def wrapped(*args, **kwargs):
                 return await self.loop.run_in_executor(
-                    None, ft.partial(func, *args, **kwargs)
+                    None,
+                    ft.partial(func, *args, **kwargs),
                 )
 
             return wrapped
@@ -177,7 +184,7 @@ class AsyncMap:
 
     async def __anext__(self):
         return await self.map_value(
-            await type(self.source_stream).__anext__(self.source_stream)
+            await type(self.source_stream).__anext__(self.source_stream),
         )
 
 

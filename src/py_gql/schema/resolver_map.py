@@ -12,7 +12,8 @@ Resolver = Callable[..., Any]
 TResolver = TypeVar("TResolver", bound=Resolver)
 
 TypeResolver = Callable[
-    [Any, Any, "ResolveInfo"], Optional[Union[ObjectType, str]]
+    [Any, Any, "ResolveInfo"],
+    Optional[Union[ObjectType, str]],
 ]
 TTypeResolver = TypeVar("TTypeResolver", bound=TypeResolver)
 
@@ -37,7 +38,11 @@ class ResolverMap:
         self.type_resolvers = {}  # type: Dict[str, Resolver]
 
     def register_default_resolver(
-        self, typename: str, resolver: Resolver, *, allow_override: bool = False
+        self,
+        typename: str,
+        resolver: Resolver,
+        *,
+        allow_override: bool = False,
     ) -> None:
         """
         Register a callable as a default resolver for a given type.
@@ -53,7 +58,7 @@ class ResolverMap:
         """
         if typename in self.default_resolvers and not allow_override:
             raise ValueError(
-                'Type "%s" already has a default resolver.' % (typename,)
+                f'Type "{typename}" already has a default resolver.',
             )
 
         self.default_resolvers[typename] = resolver
@@ -86,14 +91,16 @@ class ResolverMap:
         else:
             if fieldname in parent and not allow_override:
                 raise ValueError(
-                    'Field "%s" of type "%s" already has a resolver.'
-                    % (fieldname, typename)
+                    f'Field "{fieldname}" of type "{typename}" already has a resolver.',
                 )
 
             parent[fieldname] = resolver
 
     def resolver(
-        self, field: str, *, allow_override: bool = False
+        self,
+        field: str,
+        *,
+        allow_override: bool = False,
     ) -> Callable[[TResolver], TResolver]:
         """
         Decorate a function to register it as a resolver.
@@ -113,12 +120,15 @@ class ResolverMap:
         except (ValueError, IndexError):
             raise ValueError(
                 'Invalid field path "%s". Field path must of the form '
-                '"{Typename}.{Fieldname}"' % field
+                '"{Typename}.{Fieldname}"' % field,
             )
 
         def decorator(func: TResolver) -> TResolver:
             self.register_resolver(
-                typename, fieldname, func, allow_override=allow_override
+                typename,
+                fieldname,
+                func,
+                allow_override=allow_override,
             )
             return func
 
@@ -146,19 +156,22 @@ class ResolverMap:
                 ``allow_override`` was ``False``.
         """
         parent = self.subscriptions[typename] = self.subscriptions.get(
-            typename, {}
+            typename,
+            {},
         )
 
         if fieldname in parent and not allow_override:
             raise ValueError(
-                'Field "%s" of type "%s" already has a subscription.'
-                % (fieldname, typename)
+                f'Field "{fieldname}" of type "{typename}" already has a subscription.',
             )
 
         parent[fieldname] = resolver
 
     def subscription(
-        self, field: str, *, allow_override: bool = False
+        self,
+        field: str,
+        *,
+        allow_override: bool = False,
     ) -> Callable[[TResolver], TResolver]:
         """
         Decorate a function to register it as a subscription resolver.
@@ -178,12 +191,15 @@ class ResolverMap:
         except (ValueError, IndexError):
             raise ValueError(
                 'Invalid field path "%s". Field path must of the form '
-                '"{Typename}.{Fieldname}"' % field
+                '"{Typename}.{Fieldname}"' % field,
             )
 
         def decorator(func: TResolver) -> TResolver:
             self.register_subscription(
-                typename, fieldname, func, allow_override=allow_override
+                typename,
+                fieldname,
+                func,
+                allow_override=allow_override,
             )
             return func
 
@@ -209,13 +225,14 @@ class ResolverMap:
                 ``allow_override`` was ``False``.
         """
         if typename in self.type_resolvers and not allow_override:
-            raise ValueError(
-                'Type resolver already set for type "%s"' % typename
-            )
+            raise ValueError(f'Type resolver already set for type "{typename}"')
         self.type_resolvers[typename] = type_resolver
 
     def type_resolver(
-        self, typename: str, *, allow_override: bool = False
+        self,
+        typename: str,
+        *,
+        allow_override: bool = False,
     ) -> Callable[[TTypeResolver], TTypeResolver]:
         """
         Decorate a function to register it as a type resolver.
@@ -230,14 +247,19 @@ class ResolverMap:
 
         def decorator(func: TTypeResolver) -> TTypeResolver:
             self.register_type_resolver(
-                typename, func, allow_override=allow_override
+                typename,
+                func,
+                allow_override=allow_override,
             )
             return func
 
         return decorator
 
     def merge_resolvers(
-        self, other: "ResolverMap", *, allow_override: bool = False
+        self,
+        other: "ResolverMap",
+        *,
+        allow_override: bool = False,
     ) -> None:
         """
         Combine 2 collections by merging the target into the current instance.
@@ -253,7 +275,9 @@ class ResolverMap:
 
         for typename, default_resolver in other.default_resolvers.items():
             self.register_default_resolver(
-                typename, default_resolver, allow_override=allow_override
+                typename,
+                default_resolver,
+                allow_override=allow_override,
             )
 
         for typename, field_subscriptions in other.subscriptions.items():
@@ -267,5 +291,7 @@ class ResolverMap:
 
         for typename, type_resolver in other.type_resolvers.items():
             self.register_type_resolver(
-                typename, type_resolver, allow_override=allow_override
+                typename,
+                type_resolver,
+                allow_override=allow_override,
             )

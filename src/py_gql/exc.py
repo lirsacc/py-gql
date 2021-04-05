@@ -83,7 +83,7 @@ class GraphQLSyntaxError(GraphQLResponseError):
             return self._highlighted
 
         highlight = highlight_location(self.source, self.position)
-        self._highlighted = "%s %s" % (self.message, highlight)
+        self._highlighted = f"{self.message} {highlight}"
         return self._highlighted
 
     def __str__(self) -> str:
@@ -287,7 +287,7 @@ class CoercionError(GraphQLLocatedError):
 
     def __str__(self):
         if self.value_path:
-            return "%s at %s" % (self.message, stringify_path(self.value_path))
+            return f"{self.message} at {stringify_path(self.value_path)}"
         return self.message
 
 

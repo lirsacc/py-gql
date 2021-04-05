@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 # Tests were adapted from the one in the GraphQLJS reference implementation,
 # as our version exits early not all of the expected errors are aplicable but
 # they conserved as comments for reference.
@@ -35,7 +32,7 @@ def test_object_type_missing_selection(schema):
         """,
         [
             'Field "human" of type "Human" must have a selection of subfields. '
-            'Did you mean "human { ... }"?'
+            'Did you mean "human { ... }"?',
         ],
     )
 
@@ -51,7 +48,7 @@ def test_interface_type_missing_selection(schema):
         """,
         [
             'Field "pets" of type "[Pet]" must have a selection of subfields. '
-            'Did you mean "pets { ... }"?'
+            'Did you mean "pets { ... }"?',
         ],
     )
 
@@ -79,7 +76,7 @@ def test_scalar_selection_not_allowed_on_boolean(schema):
         """,
         [
             'Field "barks" must not have a selection since type "Boolean" '
-            "has no subfields."
+            "has no subfields.",
         ],
     )
 
@@ -95,7 +92,7 @@ def test_scalar_selection_not_allowed_on_enum(schema):
         """,
         [
             'Field "furColor" must not have a selection since type "FurColor" '
-            "has no subfields."
+            "has no subfields.",
         ],
     )
 
@@ -111,7 +108,7 @@ def test_scalar_selection_not_allowed_with_args(schema):
         """,
         [
             'Field "doesKnowCommand" must not have a selection since type '
-            '"Boolean" has no subfields.'
+            '"Boolean" has no subfields.',
         ],
     )
 
@@ -127,7 +124,7 @@ def test_scalar_selection_not_allowed_with_directives(schema):
         """,
         [
             'Field "name" must not have a selection since type "String" '
-            "has no subfields."
+            "has no subfields.",
         ],
     )
 
@@ -143,6 +140,6 @@ def test_scalar_selection_not_allowed_with_directives_and_args(schema):
         """,
         [
             'Field "doesKnowCommand" must not have a selection since type '
-            '"Boolean" has no subfields.'
+            '"Boolean" has no subfields.',
         ],
     )

@@ -66,7 +66,7 @@ class NamedType(GraphQLType):
         return self.name
 
     def __repr__(self) -> str:
-        return "%s(%s)" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}({self.name})"
 
 
 class WrappingType(GraphQLType, Generic[TGraphQLType]):
@@ -110,7 +110,9 @@ class NonNullType(WrappingType[TGraphQLType]):
     __slots__ = ("node", "_ltype", "_type")
 
     def __init__(
-        self, type_: Lazy[TGraphQLType], node: Optional[ast.NonNullType] = None
+        self,
+        type_: Lazy[TGraphQLType],
+        node: Optional[ast.NonNullType] = None,
     ):
         if isinstance(type_, NonNullType):
             raise ValueError("Cannot wrap NonNullType twice")
@@ -119,7 +121,7 @@ class NonNullType(WrappingType[TGraphQLType]):
         self.node = node
 
     def __str__(self) -> str:
-        return "%s!" % self.type
+        return f"{self.type}!"
 
 
 class ListType(WrappingType[TGraphQLType]):
@@ -144,10 +146,12 @@ class ListType(WrappingType[TGraphQLType]):
     __slots__ = ("node", "_ltype", "_type")
 
     def __init__(
-        self, type_: Lazy[TGraphQLType], node: Optional[ast.ListType] = None
+        self,
+        type_: Lazy[TGraphQLType],
+        node: Optional[ast.ListType] = None,
     ):
         super().__init__(type_)
         self.node = node
 
     def __str__(self):
-        return "[%s]" % self.type
+        return f"[{self.type}]"

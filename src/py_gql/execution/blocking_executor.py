@@ -38,12 +38,16 @@ class BlockingExecutor(Executor):
                 (
                     key,
                     self.resolve_field(
-                        parent_type, root, field_def, nodes, path + [key]
+                        parent_type,
+                        root,
+                        field_def,
+                        nodes,
+                        path + [key],
                     ),
                 )
                 for key, field_def, nodes in fields
                 if field_def is not None
-            ]
+            ],
         )
 
     execute_fields_serially = execute_fields
@@ -68,24 +72,35 @@ class BlockingExecutor(Executor):
         )
 
         self.instrumentation.on_field_start(
-            parent_value, self.context_value, info
+            parent_value,
+            self.context_value,
+            info,
         )
 
         try:
             coerced_args = self.argument_values(field_definition, node)
             resolved = resolver(
-                parent_value, self.context_value, info, **coerced_args
+                parent_value,
+                self.context_value,
+                info,
+                **coerced_args,
             )
         except (CoercionError, ResolverError) as err:
             self.add_error(err, path, node)
             return None
         finally:
             self.instrumentation.on_field_end(
-                parent_value, self.context_value, info
+                parent_value,
+                self.context_value,
+                info,
             )
 
         return self.complete_value(
-            field_definition.type, nodes, path, info, resolved
+            field_definition.type,
+            nodes,
+            path,
+            info,
+            resolved,
         )
 
     def complete_list_value(

@@ -12,7 +12,10 @@ from .types import ScalarType
 T = TypeVar("T")
 
 ScalarValueNode = Union[
-    _ast.IntValue, _ast.FloatValue, _ast.StringValue, _ast.BooleanValue
+    _ast.IntValue,
+    _ast.FloatValue,
+    _ast.StringValue,
+    _ast.BooleanValue,
 ]
 
 ScalarValue = Union[str, int, float, bool, None]
@@ -21,11 +24,12 @@ ScalarValue = Union[str, int, float, bool, None]
 # Shortcut to generate ``parse_literal`` from a simple
 # parsing function by adding node type validation.
 def _typed_coerce(
-    coerce_: Callable[[ScalarValue], T], *types: Type[ScalarValueNode]
+    coerce_: Callable[[ScalarValue], T],
+    *types: Type[ScalarValueNode],
 ) -> Callable[[ScalarValueNode, Mapping[str, Any]], T]:
     def _coerce(node: ScalarValueNode, _variables: Mapping[str, Any]) -> T:
         if type(node) not in types:
-            raise TypeError("Invalid literal %s" % node.__class__.__name__)
+            raise TypeError(f"Invalid literal {node.__class__.__name__}")
         return coerce_(node.value)
 
     return _coerce
@@ -91,7 +95,7 @@ def coerce_float(maybe_float: ScalarValue) -> float:
     """
     if maybe_float == "":
         raise ValueError(
-            "Float cannot represent non numeric value: (empty string)"
+            "Float cannot represent non numeric value: (empty string)",
         )
     if maybe_float is None:
         raise ValueError("Float cannot represent non numeric value: None")
@@ -100,7 +104,7 @@ def coerce_float(maybe_float: ScalarValue) -> float:
         return float(maybe_float)
     except ValueError:
         raise ValueError(
-            "Float cannot represent non numeric value: %s" % maybe_float
+            f"Float cannot represent non numeric value: {maybe_float}",
         )
 
 
@@ -135,7 +139,7 @@ Float = ScalarType(
 
 def _parse_string(value: ScalarValue) -> str:
     if isinstance(value, (list, tuple)):
-        raise ValueError('String cannot represent list value "%s"' % value)
+        raise ValueError(f'String cannot represent list value "{value}"')
     return str(value)
 
 
@@ -144,7 +148,7 @@ def coerce_string(value: Any) -> str:
         return str(value).lower()
 
     if isinstance(value, (list, tuple)):
-        raise ValueError('String cannot represent list value "%s"' % value)
+        raise ValueError(f'String cannot represent list value "{value}"')
 
     return str(value)
 

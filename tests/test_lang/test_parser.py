@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Test naming is not very 'pythonic' as I tried to keep a close match with the
 # original ones for easy reference. Others were kept while they were specific
 # to the implementation and are kept as skipped.
@@ -87,11 +85,11 @@ def test_it_parses_multi_bytes_characters():
                     _ast.Argument(
                         name=_ast.Name(value="arg"),
                         value=_ast.StringValue(
-                            value="Has a \u0A0A multi-byte character."
+                            value="Has a \u0A0A multi-byte character.",
                         ),
-                    )
+                    ),
                 ],
-            )
+            ),
         ],
     )
 
@@ -127,7 +125,7 @@ def test_it_allows_non_keywords_anywhere_a_name_is_allowed(keyword):
         %(keyword)s(%(keyword)s: $%(keyword)s)
             @%(keyword)s(%(keyword)s: %(keyword)s)
     }"""
-        % dict(keyword=keyword, fragment_name=fragment_name)
+        % dict(keyword=keyword, fragment_name=fragment_name),
     )
 
 
@@ -185,7 +183,7 @@ def test_it_creates_ast():
     name
   }
 }
-"""
+""",
         ),
         _ast.Document(
             loc=(0, 41),
@@ -208,9 +206,10 @@ def test_it_creates_ast():
                                         loc=(9, 14),
                                         name=_ast.Name(loc=(9, 11), value="id"),
                                         value=_ast.IntValue(
-                                            loc=(13, 14), value="4"
+                                            loc=(13, 14),
+                                            value="4",
                                         ),
-                                    )
+                                    ),
                                 ],
                                 directives=[],
                                 selection_set=_ast.SelectionSet(
@@ -220,7 +219,8 @@ def test_it_creates_ast():
                                             loc=(22, 24),
                                             alias=None,
                                             name=_ast.Name(
-                                                loc=(22, 24), value="id"
+                                                loc=(22, 24),
+                                                value="id",
                                             ),
                                             directives=[],
                                             arguments=[],
@@ -230,7 +230,8 @@ def test_it_creates_ast():
                                             loc=(30, 34),
                                             alias=None,
                                             name=_ast.Name(
-                                                loc=(30, 34), value="name"
+                                                loc=(30, 34),
+                                                value="name",
                                             ),
                                             directives=[],
                                             arguments=[],
@@ -238,10 +239,10 @@ def test_it_creates_ast():
                                         ),
                                     ],
                                 ),
-                            )
+                            ),
                         ],
                     ),
-                )
+                ),
             ],
         ),
     )
@@ -281,18 +282,19 @@ def test_it_creates_ast_from_nameless_query_without_variables():
                                             loc=(21, 23),
                                             alias=None,
                                             name=_ast.Name(
-                                                loc=(21, 23), value="id"
+                                                loc=(21, 23),
+                                                value="id",
                                             ),
                                             arguments=[],
                                             directives=[],
                                             selection_set=None,
-                                        )
+                                        ),
                                     ],
                                 ),
-                            )
+                            ),
                         ],
                     ),
-                )
+                ),
             ],
         ),
     )
@@ -367,7 +369,8 @@ def test_parse_type_it_parses_list_types():
         _ast.ListType(
             loc=(0, 8),
             type=_ast.NamedType(
-                loc=(1, 7), name=_ast.Name(loc=(1, 7), value="MyType")
+                loc=(1, 7),
+                name=_ast.Name(loc=(1, 7), value="MyType"),
             ),
         ),
     )
@@ -379,7 +382,8 @@ def test_parse_type_it_parses_non_null_types():
         _ast.NonNullType(
             loc=(0, 7),
             type=_ast.NamedType(
-                loc=(0, 6), name=_ast.Name(loc=(0, 6), value="MyType")
+                loc=(0, 6),
+                name=_ast.Name(loc=(0, 6), value="MyType"),
             ),
         ),
     )
@@ -393,7 +397,8 @@ def test_parse_type_it_parses_nested_types():
             type=_ast.NonNullType(
                 loc=(1, 8),
                 type=_ast.NamedType(
-                    loc=(1, 7), name=_ast.Name(loc=(1, 7), value="MyType")
+                    loc=(1, 7),
+                    name=_ast.Name(loc=(1, 7), value="MyType"),
                 ),
             ),
         ),
@@ -410,7 +415,8 @@ def test_parse_type_it_parses_nested_types_2():
                 type=_ast.NonNullType(
                     loc=(1, 8),
                     type=_ast.NamedType(
-                        loc=(1, 7), name=_ast.Name(loc=(1, 7), value="MyType")
+                        loc=(1, 7),
+                        name=_ast.Name(loc=(1, 7), value="MyType"),
                     ),
                 ),
             ),
@@ -427,7 +433,7 @@ def test_it_parses_inline_fragment_without_type():
             name
         }
     }
-    """
+    """,
         ),
         _ast.Document(
             loc=(0, 88),
@@ -436,7 +442,8 @@ def test_it_parses_inline_fragment_without_type():
                     loc=(5, 83),
                     name=_ast.Name(loc=(14, 27), value="validFragment"),
                     type_condition=_ast.NamedType(
-                        loc=(31, 34), name=_ast.Name(loc=(31, 34), value="Pet")
+                        loc=(31, 34),
+                        name=_ast.Name(loc=(31, 34), value="Pet"),
                     ),
                     variable_definitions=None,
                     selection_set=_ast.SelectionSet(
@@ -450,15 +457,16 @@ def test_it_parses_inline_fragment_without_type():
                                         _ast.Field(
                                             loc=(63, 67),
                                             name=_ast.Name(
-                                                loc=(63, 67), value="name"
+                                                loc=(63, 67),
+                                                value="name",
                                             ),
-                                        )
+                                        ),
                                     ],
                                 ),
-                            )
+                            ),
                         ],
                     ),
-                )
+                ),
             ],
         ),
     )
@@ -475,7 +483,7 @@ def test_it_parses_variable_definition_with_directives():
                         selections=[
                             _ast.Field(
                                 name=_ast.Name(value="foo"),
-                            )
+                            ),
                         ],
                     ),
                     variable_definitions=[
@@ -490,9 +498,9 @@ def test_it_parses_variable_definition_with_directives():
                                 _ast.Directive(name=_ast.Name(value="bar")),
                                 _ast.Directive(name=_ast.Name(value="baz")),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -509,7 +517,7 @@ def test_it_parses_variable_definition_with_default_and_directives():
                         selections=[
                             _ast.Field(
                                 name=_ast.Name(value="foo"),
-                            )
+                            ),
                         ],
                     ),
                     variable_definitions=[
@@ -525,9 +533,9 @@ def test_it_parses_variable_definition_with_default_and_directives():
                                 _ast.Directive(name=_ast.Name(value="bar")),
                                 _ast.Directive(name=_ast.Name(value="baz")),
                             ],
-                        )
+                        ),
                     ],
-                )
+                ),
             ],
         ),
     )
@@ -551,18 +559,19 @@ def test_it_parses_schema_definition():
             definitions=[
                 _ast.SchemaDefinition(
                     directives=[
-                        _ast.Directive(name=_ast.Name(value="someDirective"))
+                        _ast.Directive(name=_ast.Name(value="someDirective")),
                     ],
                     description=_ast.StringValue(
-                        "This a schema description.", block=True
+                        "This a schema description.",
+                        block=True,
                     ),
                     operation_types=[
                         _ast.OperationTypeDefinition(
                             operation="query",
                             type=_ast.NamedType(name=_ast.Name("RootQuery")),
-                        )
+                        ),
                     ],
-                )
-            ]
+                ),
+            ],
         ),
     )

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from typing import cast
 
 from py_gql.lang import ast, parse
@@ -36,7 +34,8 @@ def _first_field(doc: ast.Document) -> ast.Field:
     return cast(
         ast.Field,
         cast(
-            ast.OperationDefinition, doc.definitions[0]
+            ast.OperationDefinition,
+            doc.definitions[0],
         ).selection_set.selections[0],
     )
 
@@ -45,7 +44,9 @@ def test_default_case():
     document = parse(DOCUMENT)
     field = _first_field(document)
     fieldnames = selected_fields(
-        field, fragments=document.fragments, variables={}
+        field,
+        fragments=document.fragments,
+        variables={},
     )
     assert fieldnames == [
         "field",
@@ -67,7 +68,7 @@ def test_example_case():
                 }
             }
         }
-        """
+        """,
     )
     field = _first_field(document)
     fieldnames = selected_fields(field, fragments={}, variables={}, maxdepth=0)
@@ -78,7 +79,10 @@ def test_nesting():
     document = parse(DOCUMENT)
     field = _first_field(document)
     fieldnames = selected_fields(
-        field, fragments=document.fragments, variables={}, maxdepth=2
+        field,
+        fragments=document.fragments,
+        variables={},
+        maxdepth=2,
     )
     assert fieldnames == [
         "field",
@@ -94,7 +98,10 @@ def test_nesting_no_maxdepth():
     document = parse(DOCUMENT)
     field = _first_field(document)
     fieldnames = selected_fields(
-        field, fragments=document.fragments, variables={}, maxdepth=0
+        field,
+        fragments=document.fragments,
+        variables={},
+        maxdepth=0,
     )
     assert fieldnames == [
         "field",
@@ -139,11 +146,14 @@ def test_skip_and_include_directives_on_fields():
                 }
             }
         }
-    """
+    """,
     )
     field = _first_field(document)
     fieldnames = selected_fields(
-        field, fragments=document.fragments, variables={}, maxdepth=3
+        field,
+        fragments=document.fragments,
+        variables={},
+        maxdepth=3,
     )
     assert fieldnames == [
         "default",

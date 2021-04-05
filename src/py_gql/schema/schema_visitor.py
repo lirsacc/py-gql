@@ -123,7 +123,8 @@ class SchemaVisitor(object):
         return argument
 
     def on_interface(
-        self, interface_type: InterfaceType
+        self,
+        interface_type: InterfaceType,
     ) -> Optional[InterfaceType]:
         updated_fields = map_and_filter(self.on_field, interface_type.fields)
         if updated_fields != interface_type.fields:
@@ -154,10 +155,12 @@ class SchemaVisitor(object):
         return enum_value
 
     def on_input_object(
-        self, input_object_type: InputObjectType
+        self,
+        input_object_type: InputObjectType,
     ) -> Optional[InputObjectType]:
         updated_fields = map_and_filter(
-            self.on_input_field, input_object_type.fields
+            self.on_input_field,
+            input_object_type.fields,
         )
         if updated_fields != input_object_type.fields:
             return InputObjectType(

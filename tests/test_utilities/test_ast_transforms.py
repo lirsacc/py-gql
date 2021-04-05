@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql._string_utils import dedent
 from py_gql.lang import parse, print_ast
 from py_gql.utilities import ast_transforms
@@ -21,11 +19,11 @@ def test_RemoveFieldAliasesVisitor():
         fragment A on Object {
             foo_three: three
         }
-        """
+        """,
     )
 
     visited_query = ast_transforms.RemoveFieldAliasesVisitor().visit(
-        query.deepcopy()
+        query.deepcopy(),
     )
 
     assert visited_query
@@ -45,7 +43,7 @@ def test_RemoveFieldAliasesVisitor():
         fragment A on Object {
             three
         }
-        """
+        """,
     )
 
 
@@ -64,11 +62,11 @@ def test_CamelCaseToSnakeCaseVisitor():
         fragment A on Object {
             fooBaz
         }
-        """
+        """,
     )
 
     visited_query = ast_transforms.CamelCaseToSnakeCaseVisitor().visit(
-        query.deepcopy()
+        query.deepcopy(),
     )
 
     assert visited_query
@@ -87,7 +85,7 @@ def test_CamelCaseToSnakeCaseVisitor():
         fragment A on Object {
             foo_baz
         }
-        """
+        """,
     )
 
 
@@ -106,11 +104,11 @@ def test_SnakeCaseToCamelCaseVisitor():
         fragment A on Object {
             foo_baz
         }
-        """
+        """,
     )
 
     visited_query = ast_transforms.SnakeCaseToCamelCaseVisitor().visit(
-        query.deepcopy()
+        query.deepcopy(),
     )
 
     assert visited_query
@@ -129,5 +127,5 @@ def test_SnakeCaseToCamelCaseVisitor():
         fragment A on Object {
             fooBaz
         }
-        """
+        """,
     )

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql import build_schema, graphql_blocking
@@ -42,7 +40,8 @@ def test_resolver_decorator_multiple_applications():
         return "foo"
 
     assert {"foo": "foo", "bar": "foo"} == graphql_blocking(
-        schema, "{ foo, bar }"
+        schema,
+        "{ foo, bar }",
     ).response()["data"]
 
 

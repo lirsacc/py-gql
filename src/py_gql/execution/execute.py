@@ -78,10 +78,14 @@ def execute(
     runtime = runtime or BlockingRuntime()
 
     operation, root_type = get_operation_with_type(
-        schema, document, operation_name
+        schema,
+        document,
+        operation_name,
     )
     coerced_variables = coerce_variable_values(
-        schema, operation, variables or {}
+        schema,
+        operation,
+        variables or {},
     )
 
     executor = executor_cls(
@@ -102,10 +106,10 @@ def execute(
     elif operation.operation == "subscription":
         raise RuntimeError(
             "`execute` does not support subscriptions, "
-            "use the `subscribe` helper."
+            "use the `subscribe` helper.",
         )
     else:
-        raise RuntimeError("Unknown operation type %s." % operation.operation)
+        raise RuntimeError(f"Unknown operation type {operation.operation}.")
 
     instrumentation.on_execution_start()
 
@@ -121,10 +125,11 @@ def execute(
                     initial_value,
                     [],
                     executor.collect_fields(
-                        root_type, operation.selection_set.selections
+                        root_type,
+                        operation.selection_set.selections,
                     ),
-                )
+                ),
             ),
             _on_finish,
-        )
+        ),
     )

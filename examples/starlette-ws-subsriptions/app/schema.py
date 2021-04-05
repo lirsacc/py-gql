@@ -16,7 +16,8 @@ from .message_board import Message, MessageBoard, Room
 CreateRoomInput = TypedDict("CreateRoomInput", {"name": str})
 
 CreateMessageInput = TypedDict(
-    "CreateMessageInput", {"text": str, "author": str}
+    "CreateMessageInput",
+    {"text": str, "author": str},
 )
 
 NewMessageEvent = TypedDict("NewMessageEvent", {"new_message": Message})
@@ -89,7 +90,11 @@ def resolve_room_messages(
 
 @schema.resolver("Query.message")
 def resolve_message(
-    _root: Any, board: MessageBoard, _info: Any, *, id: uuid.UUID
+    _root: Any,
+    board: MessageBoard,
+    _info: Any,
+    *,
+    id: uuid.UUID,
 ) -> Message:
     try:
         return board.messages[id]
@@ -99,7 +104,11 @@ def resolve_message(
 
 @schema.resolver("Query.room")
 def resolve_room(
-    _root: Any, board: MessageBoard, _info: Any, *, id: uuid.UUID
+    _root: Any,
+    board: MessageBoard,
+    _info: Any,
+    *,
+    id: uuid.UUID,
 ) -> Room:
     try:
         return board.rooms[id]
@@ -109,7 +118,11 @@ def resolve_room(
 
 @schema.resolver("Mutation.create_room")
 def resolve_create_room(
-    _root: Any, board: MessageBoard, _info: Any, *, data: CreateRoomInput
+    _root: Any,
+    board: MessageBoard,
+    _info: Any,
+    *,
+    data: CreateRoomInput,
 ) -> Room:
     try:
         return board.create_room(data["name"])
@@ -157,7 +170,10 @@ class NewMessageIterator:
 
 @schema.subscription("Subscription.new_message")
 async def create_messages_subscription(
-    _root: Any, board: MessageBoard, _info: Any, room_id: uuid.UUID
+    _root: Any,
+    board: MessageBoard,
+    _info: Any,
+    room_id: uuid.UUID,
 ) -> NewMessageIterator:
 
     try:

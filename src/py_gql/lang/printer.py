@@ -99,7 +99,7 @@ class ASTPrinter:
         return node.value
 
     def print_variable(self, node: _ast.Variable) -> str:
-        return "$%s" % node.name.value
+        return f"${node.name.value}"
 
     def print_document(self, node: _ast.Document) -> str:
         if node.definitions:
@@ -122,7 +122,8 @@ class ASTPrinter:
         if use_short_form:
             return selection_set
         return _join(
-            [op, _join([name, var_defs]), directives, selection_set], " "
+            [op, _join([name, var_defs]), directives, selection_set],
+            " ",
         )
 
     def print_variable_definition(self, node: _ast.VariableDefinition) -> str:
@@ -140,7 +141,8 @@ class ASTPrinter:
         )
 
     def print_variable_definitions(
-        self, node: Union[_ast.OperationDefinition, _ast.FragmentDefinition]
+        self,
+        node: Union[_ast.OperationDefinition, _ast.FragmentDefinition],
     ) -> str:
         return _wrap(
             "(",
@@ -186,17 +188,16 @@ class ASTPrinter:
 
     def print_arguments(self, node: Union[_ast.Field, _ast.Directive]) -> str:
         return _wrap(
-            "(", _join(map(self.print_argument, node.arguments), ", "), ")"
+            "(",
+            _join(map(self.print_argument, node.arguments), ", "),
+            ")",
         )
 
     def print_argument(self, node: _ast.Argument) -> str:
-        return "%s: %s" % (node.name.value, self(node.value))
+        return f"{node.name.value}: {self(node.value)}"
 
     def print_fragment_spread(self, node: _ast.FragmentSpread) -> str:
-        return "...%s%s" % (
-            node.name.value,
-            _wrap(" ", self.print_directives(node)),
-        )
+        return f"...{node.name.value}{_wrap(' ', self.print_directives(node))}"
 
     def print_inline_fragment(self, node: _ast.InlineFragment) -> str:
         return _join(
@@ -233,28 +234,28 @@ class ASTPrinter:
         )
 
     def print_list_value(self, node: _ast.ListValue) -> str:
-        return "[%s]" % _join(map(self, node.values), ", ")
+        return f"[{_join(map(self, node.values), ', ')}]"
 
     def print_object_value(self, node: _ast.ObjectValue) -> str:
         return "{%s}" % _join(map(self.print_object_field, node.fields), ", ")
 
     def print_object_field(self, node: _ast.ObjectField) -> str:
-        return "%s: %s" % (node.name.value, self(node.value))
+        return f"{node.name.value}: {self(node.value)}"
 
     def print_directives(self, node: _ast.SupportDirectives) -> str:
         return _join(map(self.print_directive, node.directives), " ")
 
     def print_directive(self, node: _ast.Directive) -> str:
-        return "@%s%s" % (node.name.value, self.print_arguments(node))
+        return f"@{node.name.value}{self.print_arguments(node)}"
 
     def print_named_type(self, node: _ast.NamedType) -> str:
         return node.name.value
 
     def print_list_type(self, node: _ast.ListType) -> str:
-        return "[%s]" % self(node.type)
+        return f"[{self(node.type)}]"
 
     def print_non_null_type(self, node: _ast.NonNullType) -> str:
-        return "%s!" % self(node.type)
+        return f"{self(node.type)}!"
 
     # NOTE: fragment variable definitions are experimental and may be
     # changed or removed in the future.
@@ -291,29 +292,35 @@ class ASTPrinter:
         )
 
     def print_operation_type_definition(
-        self, node: _ast.OperationTypeDefinition
+        self,
+        node: _ast.OperationTypeDefinition,
     ) -> str:
-        return "%s: %s" % (node.operation, self(node.type))
+        return f"{node.operation}: {self(node.type)}"
 
     def print_scalar_type_definition(
-        self, node: _ast.ScalarTypeDefinition
+        self,
+        node: _ast.ScalarTypeDefinition,
     ) -> str:
         return self._with_desc(
             _join(
-                ["scalar", node.name.value, self.print_directives(node)], " "
+                ["scalar", node.name.value, self.print_directives(node)],
+                " ",
             ),
             node.description,
         )
 
     def print_scalar_type_extension(
-        self, node: _ast.ScalarTypeExtension
+        self,
+        node: _ast.ScalarTypeExtension,
     ) -> str:
         return _join(
-            ["extend scalar", node.name.value, self.print_directives(node)], " "
+            ["extend scalar", node.name.value, self.print_directives(node)],
+            " ",
         )
 
     def print_object_type_definition(
-        self, node: _ast.ObjectTypeDefinition
+        self,
+        node: _ast.ObjectTypeDefinition,
     ) -> str:
         return self._with_desc(
             _join(
@@ -321,7 +328,8 @@ class ASTPrinter:
                     "type",
                     node.name.value,
                     _wrap(
-                        "implements ", _join(map(self, node.interfaces), " & ")
+                        "implements ",
+                        _join(map(self, node.interfaces), " & "),
                     ),
                     self.print_directives(node),
                     _block(map(self, node.fields), self.indent),
@@ -332,7 +340,8 @@ class ASTPrinter:
         )
 
     def print_object_type_extension(
-        self, node: _ast.ObjectTypeExtension
+        self,
+        node: _ast.ObjectTypeExtension,
     ) -> str:
         return _join(
             [
@@ -354,13 +363,14 @@ class ASTPrinter:
                     ": ",
                     self(node.type),
                     _wrap(" ", self.print_directives(node)),
-                ]
+                ],
             ),
             node.description,
         )
 
     def print_input_value_definition(
-        self, node: _ast.InputValueDefinition
+        self,
+        node: _ast.InputValueDefinition,
     ) -> str:
         return self._with_desc(
             _join(
@@ -368,13 +378,14 @@ class ASTPrinter:
                     _join([node.name.value, ": ", self(node.type)]),
                     _wrap(" = ", self(node.default_value)),
                     _wrap(" ", self.print_directives(node)),
-                ]
+                ],
             ),
             node.description,
         )
 
     def print_interface_type_definition(
-        self, node: _ast.InterfaceTypeDefinition
+        self,
+        node: _ast.InterfaceTypeDefinition,
     ) -> str:
         return self._with_desc(
             _join(
@@ -390,7 +401,8 @@ class ASTPrinter:
         )
 
     def print_interface_type_extension(
-        self, node: _ast.InterfaceTypeExtension
+        self,
+        node: _ast.InterfaceTypeExtension,
     ) -> str:
         return _join(
             [
@@ -403,7 +415,8 @@ class ASTPrinter:
         )
 
     def print_union_type_definition(
-        self, node: _ast.UnionTypeDefinition
+        self,
+        node: _ast.UnionTypeDefinition,
     ) -> str:
         return self._with_desc(
             _join(
@@ -455,7 +468,8 @@ class ASTPrinter:
         )
 
     def print_enum_value_definition(
-        self, node: _ast.EnumValueDefinition
+        self,
+        node: _ast.EnumValueDefinition,
     ) -> str:
         return self._with_desc(
             _join([node.name.value, self.print_directives(node)], " "),
@@ -463,7 +477,8 @@ class ASTPrinter:
         )
 
     def print_input_object_type_definition(
-        self, node: _ast.InputObjectTypeDefinition
+        self,
+        node: _ast.InputObjectTypeDefinition,
     ) -> str:
         return self._with_desc(
             _join(
@@ -479,7 +494,8 @@ class ASTPrinter:
         )
 
     def print_input_object_type_extension(
-        self, node: _ast.InputObjectTypeExtension
+        self,
+        node: _ast.InputObjectTypeExtension,
     ) -> str:
         return _join(
             [
@@ -501,13 +517,14 @@ class ASTPrinter:
                     " repeatable" if node.repeatable else "",
                     " on ",
                     _join(map(self, node.locations), " | "),
-                ]
+                ],
             ),
             node.description,
         )
 
     def print_argument_definitions(
-        self, node: Union[_ast.FieldDefinition, _ast.DirectiveDefinition]
+        self,
+        node: Union[_ast.FieldDefinition, _ast.DirectiveDefinition],
     ) -> str:
         args = list(map(self, node.arguments))
         if not any("\n" in a for a in args):
@@ -528,7 +545,7 @@ class ASTPrinter:
 
 
 def _wrap(start: str, maybe_string: Optional[str], end: str = "") -> str:
-    return "%s%s%s" % (start, maybe_string, end) if maybe_string else ""
+    return f"{start}{maybe_string}{end}" if maybe_string else ""
 
 
 def _join(entries: Iterable[str], separator: str = "") -> str:
@@ -538,9 +555,7 @@ def _join(entries: Iterable[str], separator: str = "") -> str:
 
 
 def _indent(maybe_string: str, indent: str) -> str:
-    return maybe_string and (
-        indent + maybe_string.replace("\n", "\n%s" % indent)
-    )
+    return maybe_string and (indent + maybe_string.replace("\n", f"\n{indent}"))
 
 
 def _block(iterator: Iterable[str], indent: str, spaced: bool = True) -> str:
@@ -574,9 +589,9 @@ def _block_string(value: str, indent: str, is_description: bool = False) -> str:
     if (value[0] == " " or value[0] == "\t") and "\n" not in value:
         if escaped.endswith('"'):
             escaped = escaped + "\n"
-        return '"""%s"""' % escaped
-    return '"""\n%s\n"""' % (
-        escaped if is_description else _indent(escaped, indent)
+        return f'"""{escaped}"""'
+    return (
+        f'"""\n{escaped if is_description else _indent(escaped, indent)}\n"""'
     )
 
 
@@ -599,5 +614,5 @@ def print_ast(
 
     """
     return ASTPrinter(indent=indent, include_descriptions=include_descriptions)(
-        node
+        node,
     )

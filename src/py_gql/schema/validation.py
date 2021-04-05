@@ -137,7 +137,9 @@ def _is_valid_name(name: str) -> bool:
 # make more sense.
 class SchemaValidator:
     def __init__(
-        self, schema: "Schema", enable_resolver_validation: bool = True
+        self,
+        schema: "Schema",
+        enable_resolver_validation: bool = True,
     ):
         self.schema = schema
         self.enable_resolver_validation = enable_resolver_validation
@@ -151,7 +153,7 @@ class SchemaValidator:
 
     def check_valid_name(self, name: str) -> None:
         if not _is_valid_name(name):
-            self.add_error('Invalid name "%s".' % name)
+            self.add_error(f'Invalid name "{name}".')
 
     def __call__(self) -> None:
         self.validate_root_types()
@@ -161,7 +163,7 @@ class SchemaValidator:
                 continue
 
             if not _is_valid_name(type_.name):
-                self.add_error('Invalid type name "%s"' % type_.name)
+                self.add_error(f'Invalid type name "{type_.name}"')
                 continue
 
             if isinstance(type_, ObjectType):
@@ -176,7 +178,7 @@ class SchemaValidator:
             elif isinstance(type_, InputObjectType):
                 self.validate_input_fields(type_)
             elif not isinstance(type_, NamedType):
-                self.add_error("%s is not a valid schema type" % type_)
+                self.add_error(f"{type_} is not a valid schema type")
 
         self.validate_directives()
         self.validate_cyclic_input_types()
@@ -190,31 +192,32 @@ class SchemaValidator:
             self.add_error("Must provide Query type")
 
         if query is not None and not isinstance(query, ObjectType):
-            self.add_error('Query must be ObjectType but got "%s"' % query)
+            self.add_error(f'Query must be ObjectType but got "{query}"')
 
         if mutation is not None and not isinstance(mutation, ObjectType):
-            self.add_error(
-                'Mutation must be ObjectType but got "%s"' % mutation
-            )
+            self.add_error(f'Mutation must be ObjectType but got "{mutation}"')
 
         if subscription is not None and not isinstance(
-            subscription, ObjectType
+            subscription,
+            ObjectType,
         ):
             self.add_error(
-                'Subscription must be ObjectType but got "%s"' % subscription
+                f'Subscription must be ObjectType but got "{subscription}"',
             )
 
     def validate_directives(self) -> None:
         for directive in self.schema.directives.values():
             if not isinstance(directive, Directive):
-                self.add_error("Expected Directive but got %r" % directive)
+                self.add_error(f"Expected Directive but got {directive!r}")
                 continue
 
             self.check_valid_name(directive.name)
-            self.validate_arguments(directive.arguments, "@%s" % directive)
+            self.validate_arguments(directive.arguments, f"@{directive}")
 
     def validate_arguments(
-        self, arguments: Sequence[Argument], loc_str: str
+        self,
+        arguments: Sequence[Argument],
+        loc_str: str,
     ) -> None:
         argnames = set()  # type: Set[str]
 
@@ -223,42 +226,42 @@ class SchemaValidator:
 
             if arg.name in argnames:
                 self.add_error(
-                    'Duplicate argument "%s" on "%s"' % (arg.name, loc_str)
+                    f'Duplicate argument "{arg.name}" on "{loc_str}"',
                 )
                 continue
 
             if not is_input_type(arg.type):
                 self.add_error(
                     'Expected input type for argument "%s" on "%s" but got "%s"'
-                    % (arg.name, loc_str, arg.type)
+                    % (arg.name, loc_str, arg.type),
                 )
 
             argnames.add(arg.name)
 
     def validate_fields(
-        self, composite_type: Union[ObjectType, InterfaceType]
+        self,
+        composite_type: Union[ObjectType, InterfaceType],
     ) -> None:
         if not composite_type.fields:
             self.add_error(
-                'Type "%s" must define at least one field' % composite_type
+                f'Type "{composite_type}" must define at least one field',
             )
 
         fieldnames = set()  # type: Set[str]
         for field in composite_type.fields:
             self.check_valid_name(field.name)
-            path = "%s.%s" % (composite_type, field.name)
+            path = f"{composite_type}.{field.name}"
 
             if field.name in fieldnames:
                 self.add_error(
-                    'Duplicate field "%s" on "%s"'
-                    % (field.name, composite_type)
+                    f'Duplicate field "{field.name}" on "{composite_type}"',
                 )
                 continue
 
             if not is_output_type(field.type):
                 self.add_error(
                     'Expected output type for field "%s" on "%s" but got "%s"'
-                    % (field.name, composite_type, field.type)
+                    % (field.name, composite_type, field.type),
                 )
 
             fieldnames.add(field.name)
@@ -326,7 +329,7 @@ class SchemaValidator:
                         % (
                             arg.name,
                             path,
-                        )
+                        ),
                     )
             else:
                 if param.kind is Parameter.POSITIONAL_ONLY:
@@ -337,7 +340,7 @@ class SchemaValidator:
                         % (
                             arg.name,
                             path,
-                        )
+                        ),
                     )
                 elif (
                     param.default is Parameter.empty
@@ -353,7 +356,7 @@ class SchemaValidator:
                         % (
                             arg.name,
                             path,
-                        )
+                        ),
                     )
 
         remaining = [
@@ -375,7 +378,7 @@ class SchemaValidator:
                         [p.name for p in remaining_positional],
                         final_separator=" and ",
                     ),
-                )
+                ),
             )
 
         for param in remaining[3:]:
@@ -383,7 +386,7 @@ class SchemaValidator:
                 self.add_error(
                     'Required resolver parameter "%s" on "%s" does not match '
                     "any known argument or expected positional parameter"
-                    % (param.name, path)
+                    % (param.name, path),
                 )
 
     def validate_interfaces(self, type_: ObjectType) -> None:
@@ -393,7 +396,7 @@ class SchemaValidator:
             if interface.name in imlemented_types:
                 self.add_error(
                     'Type "%s" mut only implement interface "%s" once'
-                    % (type_, interface.name)
+                    % (type_, interface.name),
                 )
                 continue
 
@@ -401,24 +404,26 @@ class SchemaValidator:
             self.validate_implementation(type_, interface)
 
     def validate_implementation(
-        self, type_: ObjectType, interface: InterfaceType
+        self,
+        type_: ObjectType,
+        interface: InterfaceType,
     ) -> None:
         for field in interface.fields:
             object_field = type_.field_map.get(field.name, None)
-            interface_path = "%s.%s" % (interface.name, field.name)
-            obj_path = "%s.%s" % (type_, field.name)
+            interface_path = f"{interface.name}.{field.name}"
+            obj_path = f"{type_}.{field.name}"
 
             if object_field is None:
                 self.add_error(
                     'Interface field "%s" is not implemented by type "%s"'
-                    % (interface_path, type_)
+                    % (interface_path, type_),
                 )
                 continue
 
             if not self.schema.is_subtype(object_field.type, field.type):
                 self.add_error(
                     'Interface field "%s" expects type "%s" but "%s" is type "%s"'
-                    % (interface_path, field.type, obj_path, object_field.type)
+                    % (interface_path, field.type, obj_path, object_field.type),
                 )
                 continue
 
@@ -428,7 +433,7 @@ class SchemaValidator:
                 if object_arg is None:
                     self.add_error(
                         'Interface field argument "%s.%s" is not provided by "%s"'
-                        % (interface_path, arg.name, obj_path)
+                        % (interface_path, arg.name, obj_path),
                     )
                     continue
 
@@ -444,7 +449,7 @@ class SchemaValidator:
                             obj_path,
                             arg.name,
                             object_arg.type,
-                        )
+                        ),
                     )
 
                 # TODO: Validate default values
@@ -456,13 +461,13 @@ class SchemaValidator:
                         self.add_error(
                             'Object field argument "%s.%s" is of required type '
                             '"%s" but is not provided by interface field "%s"'
-                            % (obj_path, arg.name, arg.type, interface_path)
+                            % (obj_path, arg.name, arg.type, interface_path),
                         )
 
     def validate_union_members(self, union_type: UnionType) -> None:
         if not union_type.types:
             self.add_error(
-                'UnionType "%s" must at least define one member' % union_type
+                f'UnionType "{union_type}" must at least define one member',
             )
 
         member_type_names = set()  # type: Set[str]
@@ -470,7 +475,7 @@ class SchemaValidator:
             if not isinstance(member_type, ObjectType):
                 self.add_error(
                     'UnionType "%s" expects object types but got "%s"'
-                    % (union_type, member_type)
+                    % (union_type, member_type),
                 )
                 continue
 
@@ -478,7 +483,7 @@ class SchemaValidator:
             if member_type.name in member_type_names:
                 self.add_error(
                     'UnionType "%s" can only include type "%s" once'
-                    % (union_type, member_type)
+                    % (union_type, member_type),
                 )
 
             member_type_names.add(member_type.name)
@@ -486,14 +491,14 @@ class SchemaValidator:
     def validate_enum_values(self, enum_type: EnumType) -> None:
         if not enum_type.values:
             self.add_error(
-                'EnumType "%s" must at least define one value' % enum_type
+                f'EnumType "{enum_type}" must at least define one value',
             )
 
         for enum_value in enum_type.values:
             if not isinstance(enum_value, EnumValue):
                 self.add_error(
                     'Enum "%s" expects value to be EnumValue but got "%s"'
-                    % (enum_type, enum_value)
+                    % (enum_type, enum_value),
                 )
 
             self.check_valid_name(enum_value.name)
@@ -501,7 +506,7 @@ class SchemaValidator:
     def validate_input_fields(self, input_object: InputObjectType) -> None:
         if not input_object.fields:
             self.add_error(
-                'Type "%s" must define at least one field' % input_object
+                f'Type "{input_object}" must define at least one field',
             )
 
         fieldnames = set()  # type: Set[str]
@@ -509,14 +514,14 @@ class SchemaValidator:
         for field in input_object.fields:
             if field.name in fieldnames:
                 self.add_error(
-                    'Duplicate field "%s" on "%s"' % (field.name, input_object)
+                    f'Duplicate field "{field.name}" on "{input_object}"',
                 )
                 continue
 
             if not is_input_type(field.type):
                 self.add_error(
                     'Expected input type for field "%s" on "%s" but got "%s"'
-                    % (field.name, input_object, field.type)
+                    % (field.name, input_object, field.type),
                 )
 
             fieldnames.add(field.name)
@@ -589,5 +594,5 @@ class SchemaValidator:
                             [typename, *path, typename],
                             separator=" > ",
                             final_separator=" > ",
-                        )
+                        ),
                     )

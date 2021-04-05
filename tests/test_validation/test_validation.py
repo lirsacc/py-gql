@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Test default validation.
 """
@@ -34,7 +33,7 @@ def test_it_detects_bad_scalar_parse(schema):
         """,
         [
             'Expected type Invalid, found "bad value" '
-            "(Invalid scalar is always invalid)"
+            "(Invalid scalar is always invalid)",
         ],
     )
 
@@ -90,7 +89,7 @@ def test_requires_fields_on_objects(starwars_schema):
         """,
         [
             'Field "hero" of type "Character" must have a selection of subfields. '
-            'Did you mean "hero { ... }"?'
+            'Did you mean "hero { ... }"?',
         ],
     )
 
@@ -109,7 +108,7 @@ def test_disallows_fields_on_scalars(starwars_schema):
         """,
         [
             'Field "name" must not have a selection since type "String" '
-            "has no subfields."
+            "has no subfields.",
         ],
     )
 

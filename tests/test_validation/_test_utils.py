@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from py_gql._string_utils import dedent
 from py_gql.lang import parse
 from py_gql.validation import SPECIFIED_RULES, validate_with_rules
@@ -13,7 +11,11 @@ def _ensure_list(value):
 
 
 def assert_validation_result(
-    schema, source, expected_msgs=None, expected_locs=None, checkers=None
+    schema,
+    source,
+    expected_msgs=None,
+    expected_locs=None,
+    checkers=None,
 ):
     # Prints are here so we can more easily debug when running pytest with -v
     expected_msgs = expected_msgs or []
@@ -37,7 +39,11 @@ def assert_validation_result(
 
 
 def assert_checker_validation_result(
-    checker, schema, source, expected_msgs=None, expected_locs=None
+    checker,
+    schema,
+    source,
+    expected_msgs=None,
+    expected_locs=None,
 ):
     assert_validation_result(
         schema,

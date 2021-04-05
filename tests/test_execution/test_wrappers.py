@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 
 from py_gql._string_utils import dedent
@@ -18,7 +16,7 @@ def test_GraphQLResult_json():
             "data": {
                 "foo": 42
             }
-        }"""
+        }""",
     )
 
 
