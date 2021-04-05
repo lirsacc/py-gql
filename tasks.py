@@ -24,27 +24,47 @@ def _join(*cmd):
 
 
 @invoke.task()
-def benchmark(ctx):
+def clean(ctx, full=False):
     """
-    Run benchmarks.
+    Remove artifacts and local caches.
     """
     with ctx.cd(ROOT):
-        ctx.run(
-            _join(
-                "py.test",
-                "--benchmark-only",
-                "--benchmark-group-by=fullname",
-                "tests/benchmarks",
-            ),
-            echo=True,
-            pty=True,
-        )
+        # Delete usual suspects for caching issues.
+        ctx.run('find src tests -type f -name "*.pyc" -delete')
+        ctx.run('find src tests -type f -name "*.pyo" -delete')
+        ctx.run('find src tests -type f -name "*.pyd" -delete')
+        ctx.run('find src tests -type d -name "__pycache__" -delete')
+        ctx.run('find src tests -type f -name "*.c" -delete')
+        ctx.run('find src tests -type f -name "*.so" -delete')
+        ctx.run('find . src tests -type f -path "*.egg-info*" -delete')
+
+        if full:
+            # These can be useful to keep across test / lint runs so we keep
+            # them by default. Pass --full to get as close to a fresh state as
+            # possible.
+            ctx.run(
+                _join(
+                    "rm",
+                    "-rf ",
+                    ".pytest_cache",
+                    ".mypy_cache",
+                    "junit*.xml",
+                    "htmlcov*",
+                    "coverage*.xml",
+                    ".coverage*",
+                    "flake8.*",
+                    "dist",
+                    "build",
+                    "docs/_build",
+                ),
+            )
 
 
 @invoke.task(iterable=["files", "ignore"])
 def test(
     ctx,
     coverage=False,
+    hide_coverage_stats=False,
     bail=True,
     verbose=False,
     grep=None,
@@ -71,10 +91,10 @@ def test(
                 "--exitfirst" if bail else None,
                 (
                     f"--cov {PACKAGE} --cov-config setup.cfg --no-cov-on-fail"
-                    "--cov-report="
                     if coverage
                     else None
                 ),
+                "--cov-report=" if coverage and hide_coverage_stats else None,
                 "--junit-xml junit.xml" if junit else None,
                 "--looponfail" if watch else None,
                 "-vvl --full-trace" if verbose else "-q",
@@ -83,6 +103,24 @@ def test(
                 "-n auto" if parallel else None,
                 " ".join(f"--ignore {i}" for i in ignore) if ignore else None,
                 files,
+            ),
+            echo=True,
+            pty=True,
+        )
+
+
+@invoke.task(aliases=["bench"])
+def benchmark(ctx):
+    """
+    Run benchmarks.
+    """
+    with ctx.cd(ROOT):
+        ctx.run(
+            _join(
+                "py.test",
+                "--benchmark-only",
+                "--benchmark-group-by=fullname",
+                "tests/benchmarks",
             ),
             echo=True,
             pty=True,
@@ -110,7 +148,7 @@ def flake8(ctx, files=None, junit=False):
 
 @invoke.task(aliases=["typecheck"], iterable=["files"])
 def mypy(ctx, files=None, junit=False):
-    files = DEFAULT_TARGETS if not files else " ".join(files)
+    files = f"{PACKAGE} tests" if not files else " ".join(files)
     ctx.run(
         _join("mypy", "--junit-xml mypy.junit.xml" if junit else None, files),
         echo=True,

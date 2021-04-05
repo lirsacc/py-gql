@@ -28,6 +28,8 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+        # Only run max os latest on one version to make sure the dev environment
+        # mostly works.
         exclude:
           - os: macos-latest
             python: 3.6
@@ -63,7 +65,7 @@ jobs:
         if: matrix.python != 'pypy3'
         run: |
           mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade -r requirements-dev.txt
+          pip install --cache-dir .pip-cache --upgrade -e '.[dev]'
 
       # Some dev dependencies don't build under pypy but testing deps and
       # py-gql itself should work.
@@ -71,10 +73,7 @@ jobs:
         if: matrix.python == 'pypy3'
         run: |
           mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt
-
-      - name: Install package
-        run: pip install -e .
+          pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt -e .
 
       - name: (Debug) dependency versions
         run: |
@@ -85,31 +84,33 @@ jobs:
       - name: Flake 8
         if: matrix.python != 'pypy3'
         run: |
-          flake8 --output-file flake8.txt --tee src/py_gql tests examples
-          flake8_junit flake8.txt test-results/${{ matrix.python }}/flake8.junit.xml
+          inv flake8 --junit
+          mv flake8.junit.xml test-results/${{ matrix.python }} || true
 
       - name: Mypy
         if: matrix.python != 'pypy3'
         run: |
-          mypy --junit-xml test-results/${{ matrix.python }}/mypy.junit.xml src/py_gql tests examples
+          inv mypy --junit
+          mv mypy.junit.xml test-results/${{ matrix.python }} || true
 
       - name: Test & Coverage
         if: matrix.python != 'pypy3'
         env:
-          COVERAGE_FILE: test-results/${{ matrix.python }}/coverage
+          COVERAGE_FILE: coverage
         run: |
-          coverage run -m pytest \
-            -rf src/py_gql tests -c setup.cfg \
-            --junit-xml test-results/${{ matrix.python }}/junit.xml
+          inv test --coverage --hide-coverage-stats
+          mv junit.xml test-results/${{ matrix.python }} || true
+          mv coverage test-results/${{ matrix.python }} || true
+
 
       - name: Test - No Coverage
         if: matrix.python == 'pypy3'
         run: |
-          pytest -q -rf src/py_gql tests -c setup.cfg
+          inv test
 
       - name: Check benchmarks run
         if: matrix.python != 'pypy3'
-        run: pytest --benchmark-only --benchmark-group-by=fullname tests/benchmarks
+        run: inv bench
 
       - name: Upload test results
         if: matrix.python != 'pypy3' && matrix.os != 'macos-latest'
