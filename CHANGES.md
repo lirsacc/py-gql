@@ -10,6 +10,7 @@ Unreleased
 - Removed `ASTSchemaPrinter` in favor of combining `ASTSchemaConverter` and `ASTPrinter`. `Schema.to_string()` is not affected.
 - Drop deprecated methods on `SchemaVisitor`.
 - Moved `py_gql.utilities.MaxDepthValidationRule` to `py_gql.exts.max_depth.MaxDepthValidator`.
+- Drop support for Python 3.5 as it reached EOL in September 2020.
 
 ### Fixed
 

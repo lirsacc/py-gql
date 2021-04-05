@@ -20,7 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - 3.5
           - 3.6
           - 3.7
           - 3.8
@@ -30,8 +29,6 @@ jobs:
           - ubuntu-latest
           - macos-latest
         exclude:
-          - os: macos-latest
-            python: 3.5
           - os: macos-latest
             python: 3.6
           - os: macos-latest
@@ -63,24 +60,18 @@ jobs:
             ${{ runner.os }}-python-
 
       - name: Dependencies
-        if: matrix.python != 'pypy3' && matrix.python != '3.5'
+        if: matrix.python != 'pypy3'
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade -r requirements-dev.txt
 
-      # Some dev dependencies don't build under pypy / 3.5 but testing deps and
+      # Some dev dependencies don't build under pypy but testing deps and
       # py-gql itself should work.
       - name: Dependencies (PyPy)
         if: matrix.python == 'pypy3'
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt
-
-      - name: Dependencies (3.5)
-        if: matrix.python == '3.5'
-        run: |
-          mkdir -p .pip-cache
-          pip install --cache-dir .pip-cache --upgrade invoke -r requirements-tests.txt -r requirements-mypy.txt
 
       - name: Install package
         run: pip install -e .
@@ -92,7 +83,7 @@ jobs:
           pip freeze
 
       - name: Flake 8
-        if: matrix.python != 'pypy3' && matrix.python != '3.5'
+        if: matrix.python != 'pypy3'
         run: |
           flake8 --output-file flake8.txt --tee src/py_gql tests examples
           flake8_junit flake8.txt test-results/${{ matrix.python }}/flake8.junit.xml
@@ -135,7 +126,6 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - 3.5
           - 3.6
           - 3.7
           - 3.8
@@ -206,11 +196,6 @@ jobs:
         run: |
           mkdir -p .pip-cache
           pip install --cache-dir .pip-cache --upgrade coverage -e .
-
-      - name: Download test results (3.5)
-        uses: actions/download-artifact@v1
-        with:
-          name: test-results-3.5
 
       - name: Download test results (3.6)
         uses: actions/download-artifact@v1
@@ -332,7 +317,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - 3.5
           - 3.6
           - 3.7
           - 3.8
@@ -376,11 +360,6 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: dist.any
-
-      - name: Download build artifacts (3.5)
-        uses: actions/download-artifact@v1
-        with:
-          name: dist.3.5
 
       - name: Download build artifacts (3.6)
         uses: actions/download-artifact@v1

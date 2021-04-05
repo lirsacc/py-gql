@@ -61,7 +61,7 @@ def run_setup():
         install_requires=_split_requirements("requirements.txt"),
         tests_require=_split_requirements("requirements-tests.txt"),
         include_package_data=True,
-        python_requires=">=3.5",
+        python_requires=">=3.6",
         ext_modules=_ext_modules(
             "src/py_gql", exclude=["src/py_gql/schema/_types.py"]
         ),
@@ -73,7 +73,6 @@ def run_setup():
             "Programming Language :: Python :: Implementation :: PyPy",
             "Programming Language :: Python :: 3 :: Only",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

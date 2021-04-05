@@ -3,7 +3,7 @@
 py_gql
 
 py_gql is a pure python implementation of the `GraphQL <https://graphql.org/>`_
-query language for Python 3.5+.
+query language for Python 3.6+.
 
 The main :mod:`py_gql` package provides the minimum required to build GraphQL
 schemas and execute queries against them while the relevant submodules allow

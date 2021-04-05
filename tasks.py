@@ -8,18 +8,13 @@ You need ``invoke`` installed to run them.
 """
 import os
 import re
-import sys
 
 import invoke
 
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = "src/py_gql"
-DEFAULT_TARGETS = (
-    "%s tests examples" % PACKAGE
-    if sys.version >= "3.6"
-    else "%s tests" % PACKAGE
-)
+DEFAULT_TARGETS = "%s tests examples" % PACKAGE
 
 VALID_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:\.(dev|a|b|rc)\d+)?$")
 
@@ -217,7 +212,7 @@ def build_manylinux_wheels(ctx, python, cythonize_module=True, all_=False):
         raise invoke.exceptions.Exit("Must define at least one Python version.")
 
     if all_:
-        python_versions = "35,36,37,38,39"
+        python_versions = "36,37,38,39"
     else:
         python_versions = ",".join(python)
 

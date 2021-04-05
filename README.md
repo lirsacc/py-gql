@@ -82,9 +82,7 @@ Not all these points are satisfied yet, and some have been changed over time, bu
 Development setup
 -----------------
 
-Make sure you are using Python 3.6+ (you can run the tests under 3.5 but `other development tasks such as black are not guaranteed to work).
-
-Clone this repo and create a virtualenv before installing the development dependencies:
+Clone this repo and create a virtualenv before installing the development dependencies (make sure you are using Python 3.6+):
 
 ```bash
 git clone git@github.com:lirsacc/py-gql.git
