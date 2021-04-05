@@ -412,7 +412,7 @@ def _collect_extensions(  # noqa: C901
 
     for ext in _type_exts:
         target = ext.name.value
-        if not ((target in type_defs) or schema.has_type(target)):
+        if not ((target in type_defs) or target in schema.types):
             if strict:
                 raise ExtensionError(
                     f'Cannot extend undefined type "{target}".',

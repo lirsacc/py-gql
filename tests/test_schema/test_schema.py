@@ -227,258 +227,251 @@ def test_Schema_includes_introspection_types():
     assert schema.get_type("__TypeKind") is not None
 
 
-def test_register_resolver_on_root_type():
-    schema = Schema(ObjectType("Query", [Field("author", BlogAuthor)]))
-    resolver = lambda *_, **__: None
+class TestResolvers:
+    def test_register_resolver_on_root_type(self):
+        schema = Schema(ObjectType("Query", [Field("author", BlogAuthor)]))
+        resolver = lambda *_, **__: None
 
-    schema.register_resolver("Query", "author", resolver)
+        schema.register_resolver("Query", "author", resolver)
 
-    assert schema.query_type.fields[0].resolver is resolver  # type: ignore
+        assert schema.query_type.fields[0].resolver is resolver  # type: ignore
 
+    def test_register_resolver_on_child_type(self):
+        Object = ObjectType("Object", [Field("id", String)])
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+        resolver = lambda *_, **__: None
 
-def test_register_resolver_on_child_type():
-    Object = ObjectType("Object", [Field("id", String)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
-    resolver = lambda *_, **__: None
+        schema.register_resolver("Object", "id", resolver)
 
-    schema.register_resolver("Object", "id", resolver)
+        assert (
+            schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
+        )
 
-    assert (
-        schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
-    )
+    def test_register_resolver_raises_on_unknown_type(self):
+        Object = ObjectType("Object", [Field("id", String)])
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+        resolver = lambda *_, **__: None
 
+        with pytest.raises(UnknownType):
+            schema.register_resolver("Foo", "id", resolver)
 
-def test_register_resolver_raises_on_unknown_type():
-    Object = ObjectType("Object", [Field("id", String)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
-    resolver = lambda *_, **__: None
+    def test_register_resolver_raises_on_unknown_field(self):
+        Object = ObjectType("Object", [Field("id", String)])
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+        resolver = lambda *_, **__: None
 
-    with pytest.raises(UnknownType):
-        schema.register_resolver("Foo", "id", resolver)
+        with pytest.raises(SchemaError):
+            schema.register_resolver("Object", "foo", resolver)
 
+    def test_register_resolver_raises_on_override_by_default(self):
+        resolver = lambda *_, **__: None
+        Object = ObjectType("Object", [Field("id", String, resolver=resolver)])
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
 
-def test_register_resolver_raises_on_unknown_field():
-    Object = ObjectType("Object", [Field("id", String)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
-    resolver = lambda *_, **__: None
+        new_resolver = lambda *_, **__: None
 
-    with pytest.raises(SchemaError):
-        schema.register_resolver("Object", "foo", resolver)
+        with pytest.raises(ValueError):
+            schema.register_resolver("Object", "id", new_resolver)
 
+    def test_register_resolver_does_not_raise_on_same_resolver(self):
+        resolver = lambda *_, **__: None
+        Object = ObjectType("Object", [Field("id", String, resolver=resolver)])
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+        schema.register_resolver("Object", "id", resolver)
 
-def test_register_resolver_raises_on_override_by_default():
-    resolver = lambda *_, **__: None
-    Object = ObjectType("Object", [Field("id", String, resolver=resolver)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
+    def test_register_resolver_accepts_override_with_flag(self):
+        old_resolver = lambda *_, **__: None
+        Object = ObjectType(
+            "Object",
+            [Field("id", String, resolver=old_resolver)],
+        )
+        schema = Schema(ObjectType("Query", [Field("foo", Object)]))
 
-    new_resolver = lambda *_, **__: None
+        resolver = lambda *_, **__: None
+        schema.register_resolver("Object", "id", resolver, allow_override=True)
 
-    with pytest.raises(ValueError):
-        schema.register_resolver("Object", "id", new_resolver)
+        assert (
+            schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
+        )
 
+    def test_register_subscription_works(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        Subscription = ObjectType("Subscription", [Field("values", Int)])
+        schema = Schema(Query, subscription_type=Subscription)
 
-def test_register_resolver_does_not_raise_on_same_resolver():
-    resolver = lambda *_, **__: None
-    Object = ObjectType("Object", [Field("id", String, resolver=resolver)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
-    schema.register_resolver("Object", "id", resolver)
-
-
-def test_register_resolver_accepts_override_with_flag():
-    old_resolver = lambda *_, **__: None
-    Object = ObjectType("Object", [Field("id", String, resolver=old_resolver)])
-    schema = Schema(ObjectType("Query", [Field("foo", Object)]))
-
-    resolver = lambda *_, **__: None
-    schema.register_resolver("Object", "id", resolver, allow_override=True)
-
-    assert (
-        schema.get_type("Object").fields[0].resolver is resolver  # type: ignore
-    )
-
-
-def test_register_subscription_works():
-    Query = ObjectType("Query", [Field("id", String)])
-    Subscription = ObjectType("Subscription", [Field("values", Int)])
-    schema = Schema(Query, subscription_type=Subscription)
-
-    schema.register_subscription("Subscription", "values", lambda *_: 42)
-
-    assert (
-        schema.subscription_type.field_map[  # type: ignore
-            "values"
-        ].subscription_resolver()
-        == 42
-    )
-
-
-def test_register_subscription_raises_on_missing_subscription_type():
-    Query = ObjectType("Query", [Field("id", String)])
-    schema = Schema(Query)
-
-    with pytest.raises(UnknownType):
         schema.register_subscription("Subscription", "values", lambda *_: 42)
 
+        assert (
+            schema.subscription_type.field_map[  # type: ignore
+                "values"
+            ].subscription_resolver()
+            == 42
+        )
 
-def test_register_subscription_raises_on_missing_field():
-    Query = ObjectType("Query", [Field("id", String)])
-    Subscription = ObjectType("Subscription", [Field("values", Int)])
-    schema = Schema(Query, subscription_type=Subscription)
+    def test_register_subscription_raises_on_missing_subscription_type(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        schema = Schema(Query)
 
-    with pytest.raises(SchemaError):
-        schema.register_subscription("Subscription", "value", lambda *_: 42)
+        with pytest.raises(UnknownType):
+            schema.register_subscription(
+                "Subscription",
+                "values",
+                lambda *_: 42,
+            )
 
+    def test_register_subscription_raises_on_missing_field(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        Subscription = ObjectType("Subscription", [Field("values", Int)])
+        schema = Schema(Query, subscription_type=Subscription)
 
-def test_register_subscription_raises_on_existing_resolver():
-    Query = ObjectType("Query", [Field("id", String)])
-    Subscription = ObjectType("Subscription", [Field("values", Int)])
-    schema = Schema(Query, subscription_type=Subscription)
+        with pytest.raises(SchemaError):
+            schema.register_subscription("Subscription", "value", lambda *_: 42)
 
-    schema.register_subscription("Subscription", "values", lambda *_: 42)
+    def test_register_subscription_raises_on_existing_resolver(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        Subscription = ObjectType("Subscription", [Field("values", Int)])
+        schema = Schema(Query, subscription_type=Subscription)
 
-    with pytest.raises(ValueError):
         schema.register_subscription("Subscription", "values", lambda *_: 42)
 
+        with pytest.raises(ValueError):
+            schema.register_subscription(
+                "Subscription",
+                "values",
+                lambda *_: 42,
+            )
 
-def test_register_default_resolver():
-    Query = ObjectType("Query", [Field("id", String)])
-    schema = Schema(Query)
+    def test_register_default_resolver(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        schema = Schema(Query)
 
-    def query_default(root, ctx, info):
-        return 42
+        def query_default(root, ctx, info):
+            return 42
 
-    schema.register_default_resolver("Query", query_default)
+        schema.register_default_resolver("Query", query_default)
 
-    assert (
-        cast(ObjectType, schema.get_type("Query")).default_resolver
-        is query_default
-    )
+        assert (
+            cast(ObjectType, schema.get_type("Query")).default_resolver
+            is query_default
+        )
 
+    def test_register_default_resolver_already_set(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        schema = Schema(Query)
 
-def test_register_default_resolver_already_set():
-    Query = ObjectType("Query", [Field("id", String)])
-    schema = Schema(Query)
+        def query_default(root, ctx, info):
+            return 42
 
-    def query_default(root, ctx, info):
-        return 42
+        def query_default_2(root, ctx, info):
+            return 84
 
-    def query_default_2(root, ctx, info):
-        return 84
+        schema.register_default_resolver("Query", query_default)
 
-    schema.register_default_resolver("Query", query_default)
+        with pytest.raises(ValueError):
+            schema.register_default_resolver("Query", query_default_2)
 
-    with pytest.raises(ValueError):
-        schema.register_default_resolver("Query", query_default_2)
+        assert (
+            cast(ObjectType, schema.get_type("Query")).default_resolver
+            is query_default
+        )
 
-    assert (
-        cast(ObjectType, schema.get_type("Query")).default_resolver
-        is query_default
-    )
+    def test_register_default_resolver_allow_override(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        schema = Schema(Query)
 
+        def query_default(root, ctx, info):
+            return 42
 
-def test_register_default_resolver_allow_override():
-    Query = ObjectType("Query", [Field("id", String)])
-    schema = Schema(Query)
+        def query_default_2(root, ctx, info):
+            return 84
 
-    def query_default(root, ctx, info):
-        return 42
+        schema.register_default_resolver("Query", query_default)
+        schema.register_default_resolver(
+            "Query",
+            query_default_2,
+            allow_override=True,
+        )
 
-    def query_default_2(root, ctx, info):
-        return 84
+        assert (
+            cast(ObjectType, schema.get_type("Query")).default_resolver
+            is query_default_2
+        )
 
-    schema.register_default_resolver("Query", query_default)
-    schema.register_default_resolver(
-        "Query",
-        query_default_2,
-        allow_override=True,
-    )
+    def test_resolver_decorator_with_wildcard(self):
+        Query = ObjectType("Query", [Field("id", String)])
+        schema = Schema(Query)
 
-    assert (
-        cast(ObjectType, schema.get_type("Query")).default_resolver
-        is query_default_2
-    )
+        @schema.resolver("Query.*")
+        def query_default(root, ctx, info):
+            return 42
 
+        assert (
+            cast(ObjectType, schema.get_type("Query")).default_resolver
+            is query_default
+        )
 
-def test_resolver_decorator_with_wildcard():
-    Query = ObjectType("Query", [Field("id", String)])
-    schema = Schema(Query)
+    def test_register_type_resolver(self):
+        schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
 
-    @schema.resolver("Query.*")
-    def query_default(root, ctx, info):
-        return 42
+        def type_resolver(root, ctx, info):
+            return None
 
-    assert (
-        cast(ObjectType, schema.get_type("Query")).default_resolver
-        is query_default
-    )
+        schema.register_type_resolver("Interface", type_resolver)
+        assert (
+            cast(InterfaceType, schema.get_type("Interface")).resolve_type
+            is type_resolver
+        )
 
+    def test_type_resolver_decorator(self):
+        schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
 
-def test_register_type_resolver():
-    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+        @schema.type_resolver("Interface")
+        def type_resolver(root, ctx, info):
+            return None
 
-    def type_resolver(root, ctx, info):
-        return None
+        assert (
+            cast(InterfaceType, schema.get_type("Interface")).resolve_type
+            is type_resolver
+        )
 
-    schema.register_type_resolver("Interface", type_resolver)
-    assert (
-        cast(InterfaceType, schema.get_type("Interface")).resolve_type
-        is type_resolver
-    )
+    def test_register_type_resolver_override(self):
+        schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
 
+        def type_resolver(root, ctx, info):
+            return None
 
-def test_type_resolver_decorator():
-    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+        def type_resolver2(root, ctx, info):
+            return None
 
-    @schema.type_resolver("Interface")
-    def type_resolver(root, ctx, info):
-        return None
+        schema.register_type_resolver("Interface", type_resolver)
 
-    assert (
-        cast(InterfaceType, schema.get_type("Interface")).resolve_type
-        is type_resolver
-    )
+        with pytest.raises(ValueError):
+            schema.register_type_resolver("Interface", type_resolver2)
 
+        schema.register_type_resolver(
+            "Interface",
+            type_resolver2,
+            allow_override=True,
+        )
+        assert (
+            cast(InterfaceType, schema.get_type("Interface")).resolve_type
+            is type_resolver2
+        )
 
-def test_register_type_resolver_override():
-    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
+    def test_register_type_resolver_on_invalid_type(self):
+        schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
 
-    def type_resolver(root, ctx, info):
-        return None
+        def type_resolver(root, ctx, info):
+            return None
 
-    def type_resolver2(root, ctx, info):
-        return None
+        with pytest.raises(SchemaError):
+            schema.register_type_resolver("Object", type_resolver)
 
-    schema.register_type_resolver("Interface", type_resolver)
+    def test_register_type_resolver_on_unknown_type(self):
+        schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
 
-    with pytest.raises(ValueError):
-        schema.register_type_resolver("Interface", type_resolver2)
+        def type_resolver(root, ctx, info):
+            return None
 
-    schema.register_type_resolver(
-        "Interface",
-        type_resolver2,
-        allow_override=True,
-    )
-    assert (
-        cast(InterfaceType, schema.get_type("Interface")).resolve_type
-        is type_resolver2
-    )
-
-
-def test_register_type_resolver_on_invalid_type():
-    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
-
-    def type_resolver(root, ctx, info):
-        return None
-
-    with pytest.raises(SchemaError):
-        schema.register_type_resolver("Object", type_resolver)
-
-
-def test_register_type_resolver_on_unknown_type():
-    schema = Schema(ObjectType("Query", [Field("id", Implementing)]))
-
-    def type_resolver(root, ctx, info):
-        return None
-
-    with pytest.raises(UnknownType):
-        schema.register_type_resolver("IFace", type_resolver)
+        with pytest.raises(UnknownType):
+            schema.register_type_resolver("IFace", type_resolver)

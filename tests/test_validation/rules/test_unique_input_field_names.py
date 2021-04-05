@@ -1,8 +1,7 @@
 # Tests were adapted from the one in the GraphQLJS reference implementation,
-# as our version exits early not all of the expected errors are aplicable but
+# as our version exits early not all of the expected errors are applicable but
 # they conserved as comments for reference.
-# Tests related to suggestion list are kept for reference but skipped as this
-# feature is not implemented.
+
 
 from py_gql.validation.rules import UniqueInputFieldNamesChecker
 

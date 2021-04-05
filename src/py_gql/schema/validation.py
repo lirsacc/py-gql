@@ -416,9 +416,14 @@ class SchemaValidator:
             for i in interfaces:
                 if i.name == type_.name:
                     if path:
+                        options = quoted_options_list(
+                            path,
+                            separator=" > ",
+                            final_separator=" > ",
+                        )
                         msg = (
                             f'Interface "{type_.name}" cannot implement itself '
-                            f'(via: {quoted_options_list(path, separator=",")})'
+                            f"(via: {options})"
                         )
                     else:
                         msg = (

@@ -41,7 +41,7 @@ def test_non_null_is_not_equal_to_list():
 _schema = Schema(ObjectType("Query", [Field("field", String)]))
 
 
-def test_same_referaence_is_subtype():
+def test_same_reference_is_subtype():
     assert _schema.is_subtype(String, String)
 
 
@@ -96,6 +96,34 @@ def test_not_implementation_is_not_subtype_of_interface():
     impl = ObjectType("Object", [Field("field", String)])
     schema = Schema(ObjectType("Query", [Field("field", impl)]))
     assert not schema.is_subtype(impl, iface)
+
+
+def test_implementing_interface_is_subtype_of_interface():
+    iface = InterfaceType("Iface", [Field("field", String)])
+    iface2 = InterfaceType(
+        "Iface2",
+        [Field("field", String)],
+        interfaces=[iface],
+    )
+    impl = ObjectType(
+        "Object",
+        [Field("field", String)],
+        interfaces=[iface, iface2],
+    )
+    schema = Schema(ObjectType("Query", [Field("field", impl)]))
+    assert schema.is_subtype(iface2, iface)
+
+
+def test_not_implementing_interface_is_not_subtype_of_interface():
+    iface = InterfaceType("Iface", [Field("field", String)])
+    iface2 = InterfaceType("Iface2", [Field("field", String)])
+    impl = ObjectType(
+        "Object",
+        [Field("field", String)],
+        interfaces=[iface, iface2],
+    )
+    schema = Schema(ObjectType("Query", [Field("field", impl)]))
+    assert not schema.is_subtype(iface2, iface)
 
 
 def test_references_overlap():
