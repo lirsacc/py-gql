@@ -115,7 +115,7 @@ class UnexpectedEOF(GraphQLSyntaxError):
     """
 
     def __init__(self, position: int, source: str) -> None:
-        super().__init__("Unexpected <EOF>", position, source)
+        super().__init__('Unexpected "<EOF>"', position, source)
 
 
 class NonTerminatedString(GraphQLSyntaxError):

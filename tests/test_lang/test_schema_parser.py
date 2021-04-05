@@ -7,7 +7,7 @@
 
 import pytest
 
-from py_gql.exc import UnexpectedEOF, UnexpectedToken
+from py_gql.exc import UnexpectedToken
 from py_gql.lang import ast as _ast
 from py_gql.lang.parser import parse
 
@@ -227,10 +227,10 @@ def test_it_parses_extension_without_fields_followed_by_extension():
 
 
 def test_extension_without_anything_throws():
-    with pytest.raises(UnexpectedEOF) as exc_info:
+    with pytest.raises(UnexpectedToken) as exc_info:
         parse("extend type Hello", allow_type_system=True)
     assert exc_info.value.position == 17
-    assert exc_info.value.message == "Unexpected <EOF>"
+    assert exc_info.value.message == 'Unexpected "<EOF>"'
 
 
 def test_extension_do_not_include_descriptions_0():

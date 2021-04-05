@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from ..exc import GraphQLSyntaxError, UnexpectedEOF, UnexpectedToken
+from ..exc import UnexpectedEOF, UnexpectedToken
 from . import ast as _ast
 from .lexer import Lexer
 from .token import (
@@ -98,15 +98,6 @@ Kind = Type[Token]
 K = TypeVar("K", bound=Kind)
 N = TypeVar("N", bound=_ast.Node)
 LocCallable = Callable[[Token], Optional[Tuple[int, int]]]
-
-
-def _unexpected_token(
-    token: Token, position: int, source: str
-) -> GraphQLSyntaxError:
-    if isinstance(token, EOF):
-        return UnexpectedEOF(position, source)
-
-    return UnexpectedToken('Unexpected "%s"' % token, position, source)
 
 
 def parse(source: Union[str, bytes], **kwargs: Any) -> _ast.Document:
@@ -529,7 +520,11 @@ class Parser:
         ):
             return self.parse_type_system_definition()
 
-        raise _unexpected_token(start, start.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % start,
+            start.start,
+            self._lexer._source,
+        )
 
     def parse_name(self) -> _ast.Name:
         """
@@ -552,7 +547,11 @@ class Parser:
                 return self.parse_fragment_definition()
         elif start.__class__ is CurlyOpen:
             return self.parse_operation_definition()
-        raise _unexpected_token(start, start.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % start,
+            start.start,
+            self._lexer._source,
+        )
 
     def parse_operation_definition(self) -> _ast.OperationDefinition:
         """
@@ -588,7 +587,11 @@ class Parser:
         token = self.expect(Name)
         if token.value in ("query", "mutation", "subscription"):
             return token.value
-        raise _unexpected_token(token, token.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % token,
+            token.start,
+            self._lexer._source,
+        )
 
     def parse_variable_definitions(self) -> List[_ast.VariableDefinition]:
         """
@@ -765,7 +768,11 @@ class Parser:
         """
         token = self.peek()
         if token.value == "on":
-            raise _unexpected_token(token, token.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % token,
+                token.start,
+                self._lexer._source,
+            )
         return self.parse_name()
 
     def parse_value_literal(
@@ -826,7 +833,11 @@ class Parser:
         elif kind is Dollar and not const:
             return self.parse_variable()
 
-        raise _unexpected_token(token, token.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % token,
+            token.start,
+            self._lexer._source,
+        )
 
     def parse_string_literal(self) -> _ast.StringValue:
         token = self.advance()
@@ -973,7 +984,11 @@ class Parser:
             elif keyword.value == "directive":
                 return self.parse_directive_definition()
 
-        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % keyword,
+            keyword.start,
+            self._lexer._source,
+        )
 
     def parse_description(self) -> Optional[_ast.StringValue]:
         """
@@ -1266,7 +1281,11 @@ class Parser:
             elif keyword.value == "input":
                 return self.parse_input_object_type_extension()
 
-        raise _unexpected_token(keyword, keyword.start, self._lexer._source)
+        raise UnexpectedToken(
+            'Unexpected "%s"' % keyword,
+            keyword.start,
+            self._lexer._source,
+        )
 
     def parse_schema_extension(self) -> _ast.SchemaExtension:
         """
@@ -1301,7 +1320,11 @@ class Parser:
         name = self.parse_name()
         directives = self.parse_directives(True)
         if not directives:
-            raise _unexpected_token(start, start.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % start,
+                start.start,
+                self._lexer._source,
+            )
         return _ast.ScalarTypeExtension(
             name=name,
             directives=directives,
@@ -1325,7 +1348,11 @@ class Parser:
         fields = self.parse_fields_definition()
         if (not interfaces) and (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % tok,
+                tok.start,
+                self._lexer._source,
+            )
         return _ast.ObjectTypeExtension(
             name=name,
             interfaces=interfaces,
@@ -1349,7 +1376,11 @@ class Parser:
         fields = self.parse_fields_definition()
         if (not directives) and (not fields):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % tok,
+                tok.start,
+                self._lexer._source,
+            )
 
         return _ast.InterfaceTypeExtension(
             name=name,
@@ -1373,7 +1404,11 @@ class Parser:
         types = self.parse_union_member_types()
         if (not directives) and (not types):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % tok,
+                tok.start,
+                self._lexer._source,
+            )
 
         return _ast.UnionTypeExtension(
             name=name,
@@ -1397,7 +1432,11 @@ class Parser:
         values = self.parse_enum_values_definition()
         if (not directives) and (not values):
             tok = self.peek()
-            raise _unexpected_token(tok, tok.start, self._lexer._source)
+            raise UnexpectedToken(
+                'Unexpected "%s"' % tok,
+                tok.start,
+                self._lexer._source,
+            )
 
         return _ast.EnumTypeExtension(
             name=name,

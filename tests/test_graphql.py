@@ -60,7 +60,7 @@ async def test_correct_response_on_syntax_error_1(
     assert (await execute_query(starwars_schema, "")).response() == {
         "errors": [
             {
-                "message": "Unexpected <EOF> (1:1):\n  1:\n    ^\n",
+                "message": 'Unexpected "<EOF>" (1:1):\n  1:\n    ^\n',
                 "locations": [{"columne": 1, "line": 1}],
             }
         ]
