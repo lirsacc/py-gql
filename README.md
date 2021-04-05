@@ -87,11 +87,10 @@ Clone this repo and create a virtualenv before installing the development depend
 ```bash
 git clone git@github.com:lirsacc/py-gql.git
 python -m venv $WORKON_HOME/py-gql --copies
-pip install -U -r requirements-dev.txt
-pip install -e .
+pip install -e '.[dev]'
 ```
 
-Development tasks are available through [invoke](http://www.pyinvoke.org/). Check [`tasks.py`](./tasks.py) or use `inv -l` to list all available tasks and `inv --help {TASK}` to get help on a specific task. Most of the tools used should be usable directly, but the tasks provide some common aliases and targets.
+Development tasks are available through [invoke](http://www.pyinvoke.org/). Check [`tasks.py`](./tasks.py) or use `inv -l` to list all available tasks. Most of the tools used (e.g. pytest) should be usable directly, but the tasks provide some common aliases and targets.
 
 As a shortcut, `inv check` will run all checks that are normally run on CI (lint, typecheck and tests).
 

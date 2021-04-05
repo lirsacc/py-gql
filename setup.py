@@ -60,6 +60,15 @@ def run_setup():
         package_dir={"": "src"},
         install_requires=_split_requirements("requirements.txt"),
         tests_require=_split_requirements("requirements-tests.txt"),
+        extras_require={
+            "dev": _split_requirements(
+                "requirements-dev.txt",
+                "requirements-tests.txt",
+                "requirements-lint.txt",
+                "requirements-mypy.txt",
+                "requirements-docs.txt",
+            ),
+        },
         include_package_data=True,
         python_requires=">=3.6",
         ext_modules=_ext_modules(
@@ -129,11 +138,13 @@ def _split_requirements(*requirements_files):
     req = []
     for requirements_file in requirements_files:
         with open(os.path.join(DIR, requirements_file)) as f:
+            lines = (line.strip() for line in f.readlines())
             req.extend(
                 [
-                    line.strip()
-                    for line in f.readlines()
-                    if line.strip() and not line.startswith("#")
+                    line
+                    for line in lines
+                    if line
+                    and not (line.startswith("#") or line.startswith("-"))
                 ]
             )
     return req
