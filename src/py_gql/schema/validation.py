@@ -171,6 +171,8 @@ class SchemaValidator:
                 self.validate_interfaces(type_)
             elif isinstance(type_, InterfaceType):
                 self.validate_fields(type_)
+                self.validate_interfaces(type_)
+                self.validate_implementation_cycles(type_)
             elif isinstance(type_, UnionType):
                 self.validate_union_members(type_)
             elif isinstance(type_, EnumType):
@@ -389,7 +391,10 @@ class SchemaValidator:
                     % (param.name, path),
                 )
 
-    def validate_interfaces(self, type_: ObjectType) -> None:
+    def validate_interfaces(
+        self,
+        type_: Union[ObjectType, InterfaceType],
+    ) -> None:
         imlemented_types = set()  # type: Set[str]
         for interface in type_.interfaces:
             # TODO: This could be automatically fixed.
@@ -403,11 +408,46 @@ class SchemaValidator:
             imlemented_types.add(interface.name)
             self.validate_implementation(type_, interface)
 
+    def validate_implementation_cycles(self, type_: InterfaceType) -> None:
+        def _validate(
+            interfaces: Sequence[InterfaceType],
+            path: List[str],
+        ) -> None:
+            for i in interfaces:
+                if i.name == type_.name:
+                    if path:
+                        msg = (
+                            f'Interface "{type_.name}" cannot implement itself '
+                            f'(via: {quoted_options_list(path, separator=",")})'
+                        )
+                    else:
+                        msg = (
+                            f'Interface "{type_.name}" cannot implement itself'
+                        )
+
+                    self.add_error(msg)
+                else:
+                    _validate(i.interfaces, [*path, i.name])
+
+        _validate(type_.interfaces, [])
+
     def validate_implementation(
         self,
-        type_: ObjectType,
+        type_: Union[ObjectType, InterfaceType],
         interface: InterfaceType,
     ) -> None:
+
+        implemented_types = set(t.name for t in type_.interfaces)
+        for i in interface.interfaces:
+            if i.name not in implemented_types:
+                # TODO: This could be automated by automatically adding the
+                # interfaces from implemented interfaces when building an
+                # ObjectType or InterfaceType.
+                self.add_error(
+                    'Type "%s" must implement interface "%s" which is '
+                    'implemented by "%s"' % (type_, i, interface),
+                )
+
         for field in interface.fields:
             object_field = type_.field_map.get(field.name, None)
             interface_path = f"{interface.name}.{field.name}"
@@ -437,7 +477,6 @@ class SchemaValidator:
                     )
                     continue
 
-                # TODO: Should this use is_subtype ?
                 if arg.type != object_arg.type:
                     self.add_error(
                         'Interface field argument "%s.%s" expects type "%s" but '
@@ -451,8 +490,6 @@ class SchemaValidator:
                             object_arg.type,
                         ),
                     )
-
-                # TODO: Validate default values
 
             for arg in object_field.arguments:
                 interface_arg = field.argument_map.get(arg.name, None)

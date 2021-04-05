@@ -43,6 +43,12 @@ SomeUnion = UnionType("SomeUnion", [SomeObject])
 
 SomeInterface = InterfaceType("SomeInterface", [Field("f", String)])
 
+SomeOtherInterface = InterfaceType(
+    "SomeOtherInterface",
+    [Field("f", String)],
+    interfaces=[SomeInterface],
+)
+
 SomeEnum = EnumType("SomeEnum", [EnumValue("ONLY")])
 
 SomeInputObject = InputObjectType(
@@ -331,23 +337,6 @@ def test_reject_non_output_type_as_object_fields(type_):
     ) in str(exc_info.value)
 
 
-def test_reject_object_implementing_same_interface_twice():
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", String)],
-            interfaces=[SomeInterface, SomeInterface],
-        ),
-    )
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
-    assert (
-        'Type "SomeObject" mut only implement interface "SomeInterface" once'
-        in str(exc_info.value)
-    )
-
-
 @pytest.mark.parametrize("type_", output_types, ids=lambda t: f"type = {t}")
 def test_accept_interface_fields_with_output_type(type_):
     iface = InterfaceType("GoodInterface", [Field("f", type_)])
@@ -485,212 +474,564 @@ def test_reject_input_object_with_no_field():
     )
 
 
-def test_accept_object_which_implements_interface():
+class TestObjectImplementsInterface:
+    def test_accept_object_which_implements_interface(self):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_object_which_implements_interface_along_with_more_fields(
+        self,
+    ):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String), Field("f2", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_object_which_implements_interface_along_with_nullable_args(
+        self,
+    ):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String, [Argument("arg", String)])],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_reject_object_missing_interface_field(self):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("_f", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "SomeInterface.f" is not implemented '
+            'by type "SomeObject"' in str(exc_info.value)
+        )
+
+    def test_reject_object_with_incorrectly_typed_interface_field(self):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", Int)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "SomeInterface.f" expects type "String" '
+            'but "SomeObject.f" is type "Int"' in str(exc_info.value)
+        )
+
+    def test_accept_object_fields_with_interface_subtype_of_interface_field(
+        self,
+    ):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", lambda: iface)],
+        )  # type: InterfaceType
+        obj = ObjectType(
+            "Obj",
+            [Field("f", lambda: obj)],
+            interfaces=[iface],
+        )  # type: ObjectType
+        schema = _single_type_schema(obj)
+        schema.validate()
+
+    def test_accept_object_fields_with_union_subtype_of_interface_field(self):
+        union = UnionType("union", [SomeObject])
+        iface = InterfaceType("IFace", [Field("f", union)])
+        obj = ObjectType("Obj", [Field("f", SomeObject)], interfaces=[iface])
+        schema = _single_type_schema(obj)
+        schema.validate()
+
+    def test_reject_object_fields_with_missing_interface_argument(self):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", String, [Argument("arg", String)])],
+        )
+        obj = ObjectType("Obj", [Field("f", String)], interfaces=[iface])
+        schema = _single_type_schema(obj)
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field argument "IFace.f.arg" is not provided by "Obj.f"'
+            in str(exc_info.value)
+        )
+
+    def test_reject_object_fields_with_incorrectly_typed_interface_argument(
+        self,
+    ):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", String, [Argument("arg", String)])],
+        )
+        obj = ObjectType(
+            "Obj",
+            [Field("f", String, [Argument("arg", Int)])],
+            interfaces=[iface],
+        )
+        schema = _single_type_schema(obj)
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field argument "IFace.f.arg" expects '
+            'type "String" but "Obj.f.arg" is type "Int"' in str(exc_info.value)
+        )
+
+    def test_reject_object_which_implements_interface_along_with_required_args(
+        self,
+    ):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String, [Argument("arg", NonNullType(String))])],
+                interfaces=[iface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Object field argument "SomeObject.f.arg" is of required '
+            'type "String!" but is not provided by interface field "IFace.f"'
+        ) in str(exc_info.value)
+
+    def test_accept_object_with_list_interface_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", ListType(String))])
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", ListType(String))],
+                interfaces=[iface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_object_with_non_list_interface_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", ListType(String))])
+        schema = _single_type_schema(
+            ObjectType("SomeObject", [Field("f", String)], interfaces=[iface]),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "[String]" but '
+            '"SomeObject.f" is type "String"' in str(exc_info.value)
+        )
+
+    def test_accept_object_with_list_interface_non_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", ListType(String))],
+                interfaces=[iface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "String" but '
+            '"SomeObject.f" is type "[String]"' in str(exc_info.value)
+        )
+
+    def test_accept_object_with_non_null_interface_null_field(self):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", NonNullType(String))],
+                interfaces=[iface],
+            ),
+        )
+        schema.validate()
+
+    def test_reject_object_with_null_interface_non_null_field(self):
+        iface = InterfaceType("IFace", [Field("f", NonNullType(String))])
+        schema = _single_type_schema(
+            ObjectType("SomeObject", [Field("f", String)], interfaces=[iface]),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "String!" but '
+            '"SomeObject.f" is type "String"' in str(exc_info.value)
+        )
+
+    def test_reject_object_implementing_same_interface_twice(self):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String)],
+                interfaces=[SomeInterface, SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Type "SomeObject" mut only implement interface "SomeInterface" once'
+            in str(exc_info.value)
+        )
+
+
+class TestInterfaceImplementsInterface:
+    def test_accept_interface_which_implements_interface(self):
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("f", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_interface_which_implements_interface_along_with_more_fields(
+        self,
+    ):
+        schema = _single_type_schema(
+            ObjectType(
+                "SomeObject",
+                [Field("f", String), Field("f2", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_interface_which_implements_interface_along_with_nullable_args(
+        self,
+    ):
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("f", String, [Argument("arg", String)])],
+                interfaces=[SomeInterface],
+            ),
+        )
+        schema.validate()
+
+    def test_reject_interface_missing_interface_field(self):
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("_f", String)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "SomeInterface.f" is not implemented '
+            'by type "IFace"' in str(exc_info.value)
+        )
+
+    def test_reject_interface_with_incorrectly_typed_interface_field(self):
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("f", Int)],
+                interfaces=[SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "SomeInterface.f" expects type "String" '
+            'but "IFace.f" is type "Int"' in str(exc_info.value)
+        )
+
+    def test_accept_interface_fields_with_interface_subtype_of_interface_field(
+        self,
+    ):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", lambda: iface)],
+        )  # type: InterfaceType
+        obj = ObjectType(
+            "Obj",
+            [Field("f", lambda: obj)],
+            interfaces=[iface],
+        )  # type: ObjectType
+        schema = _single_type_schema(obj)
+        schema.validate()
+
+    def test_accept_interface_fields_with_union_subtype_of_interface_field(
+        self,
+    ):
+        union = UnionType("union", [SomeObject])
+        iface = InterfaceType("IFace", [Field("f", union)])
+        iface2 = InterfaceType(
+            "IFace2",
+            [Field("f", SomeObject)],
+            interfaces=[iface],
+        )
+        schema = _single_type_schema(iface2)
+        schema.validate()
+
+    def test_reject_interface_fields_with_missing_interface_argument(self):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", String, [Argument("arg", String)])],
+        )
+        obj = ObjectType("Obj", [Field("f", String)], interfaces=[iface])
+        schema = _single_type_schema(obj)
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field argument "IFace.f.arg" is not provided by "Obj.f"'
+            in str(exc_info.value)
+        )
+
+    def test_reject_interface_fields_with_incorrectly_typed_interface_argument(
+        self,
+    ):
+        iface = InterfaceType(
+            "IFace",
+            [Field("f", String, [Argument("arg", String)])],
+        )
+        obj = ObjectType(
+            "Obj",
+            [Field("f", String, [Argument("arg", Int)])],
+            interfaces=[iface],
+        )
+        schema = _single_type_schema(obj)
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field argument "IFace.f.arg" expects '
+            'type "String" but "Obj.f.arg" is type "Int"' in str(exc_info.value)
+        )
+
+    def test_reject_interface_which_implements_interface_along_with_required_args(
+        self,
+    ):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("f", String, [Argument("arg", NonNullType(String))])],
+                interfaces=[iface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Object field argument "IFace.f.arg" is of required '
+            'type "String!" but is not provided by interface field "IFace.f"'
+        ) in str(exc_info.value)
+
+    def test_accept_interface_with_list_interface_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", ListType(String))])
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace2",
+                [Field("f", ListType(String))],
+                interfaces=[iface],
+            ),
+        )
+        schema.validate()
+
+    def test_accept_interface_with_non_list_interface_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", ListType(String))])
+        schema = _single_type_schema(
+            InterfaceType("IFace2", [Field("f", String)], interfaces=[iface]),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "[String]" but '
+            '"IFace2.f" is type "String"' in str(exc_info.value)
+        )
+
+    def test_accept_interface_with_list_interface_non_list_field(self):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace",
+                [Field("f", ListType(String))],
+                interfaces=[iface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "String" but '
+            '"IFace.f" is type "[String]"' in str(exc_info.value)
+        )
+
+    def test_accept_interface_with_non_null_interface_null_field(self):
+        iface = InterfaceType("IFace", [Field("f", String)])
+        schema = _single_type_schema(
+            InterfaceType(
+                "IFace2",
+                [Field("f", NonNullType(String))],
+                interfaces=[iface],
+            ),
+        )
+        schema.validate()
+
+    def test_reject_interface_with_null_interface_non_null_field(self):
+        iface = InterfaceType("IFace", [Field("f", NonNullType(String))])
+        schema = _single_type_schema(
+            InterfaceType("IFace", [Field("f", String)], interfaces=[iface]),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Interface field "IFace.f" expects type "String!" but '
+            '"IFace.f" is type "String"' in str(exc_info.value)
+        )
+
+    def test_reject_interface_implementing_same_interface_twice(self):
+        schema = _single_type_schema(
+            InterfaceType(
+                "SomeInterface2",
+                [Field("f", String)],
+                interfaces=[SomeInterface, SomeInterface],
+            ),
+        )
+        with pytest.raises(SchemaError) as exc_info:
+            validate_schema(schema)
+
+        assert (
+            'Type "SomeInterface2" mut only implement interface "SomeInterface" once'
+            in str(exc_info.value)
+        )
+
+
+def test_complete_interface_chain_from_object():
     schema = _single_type_schema(
         ObjectType(
             "SomeObject",
             [Field("f", String)],
-            interfaces=[SomeInterface],
+            interfaces=[SomeOtherInterface, SomeInterface],
         ),
     )
-    schema.validate()
+    validate_schema(schema)
 
 
-def test_accept_object_which_implements_interface_along_with_more_fields():
+def test_incomplete_interface_chain_from_object():
     schema = _single_type_schema(
         ObjectType(
             "SomeObject",
-            [Field("f", String), Field("f2", String)],
-            interfaces=[SomeInterface],
-        ),
-    )
-    schema.validate()
-
-
-def test_accept_object_which_implements_interface_along_with_nullable_args():
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", String, [Argument("arg", String)])],
-            interfaces=[SomeInterface],
-        ),
-    )
-    schema.validate()
-
-
-def test_reject_object_missing_interface_field():
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("_f", String)],
-            interfaces=[SomeInterface],
+            [Field("f", String)],
+            interfaces=[SomeOtherInterface],
         ),
     )
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
     assert (
-        'Interface field "SomeInterface.f" is not implemented '
-        'by type "SomeObject"' in str(exc_info.value)
+        'Type "SomeObject" must implement interface "SomeInterface" which is '
+        'implemented by "SomeOtherInterface"' in str(exc_info.value)
     )
 
 
-def test_reject_object_with_incorrectly_typed_interface_field():
+def test_complete_interface_chain_from_interface():
     schema = _single_type_schema(
-        ObjectType("SomeObject", [Field("f", Int)], interfaces=[SomeInterface]),
+        InterfaceType(
+            "SomeInterface2",
+            [Field("f", String)],
+            interfaces=[SomeOtherInterface, SomeInterface],
+        ),
+    )
+    validate_schema(schema)
+
+
+def test_incomplete_interface_chain_from_interface():
+    schema = _single_type_schema(
+        InterfaceType(
+            "SomeInterface2",
+            [Field("f", String)],
+            interfaces=[SomeOtherInterface],
+        ),
     )
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
     assert (
-        'Interface field "SomeInterface.f" expects type "String" '
-        'but "SomeObject.f" is type "Int"' in str(exc_info.value)
+        'Type "SomeInterface2" must implement interface "SomeInterface" which is '
+        'implemented by "SomeOtherInterface"' in str(exc_info.value)
     )
 
 
-def test_accept_object_fields_with_interface_subtype_of_interface_field():
+def test_cyclic_interface_chain():
     iface = InterfaceType(
-        "IFace",
-        [Field("f", lambda: iface)],
-    )  # type: InterfaceType
-    obj = ObjectType(
-        "Obj",
-        [Field("f", lambda: obj)],
-        interfaces=[iface],
-    )  # type: ObjectType
-    schema = _single_type_schema(obj)
-    schema.validate()
-
-
-def test_accept_object_fields_with_union_subtype_of_interface_field():
-    union = UnionType("union", [SomeObject])
-    iface = InterfaceType("IFace", [Field("f", union)])
-    obj = ObjectType("Obj", [Field("f", SomeObject)], interfaces=[iface])
-    schema = _single_type_schema(obj)
-    schema.validate()
-
-
-def test_reject_object_fields_with_missing_interface_argument():
-    iface = InterfaceType(
-        "IFace",
-        [Field("f", String, [Argument("arg", String)])],
+        "SomeInterface2",
+        [Field("f", String)],
+        interfaces=lambda: [SomeOtherInterface, SomeInterface, iface],
     )
-    obj = ObjectType("Obj", [Field("f", String)], interfaces=[iface])
-    schema = _single_type_schema(obj)
+    schema = _single_type_schema(iface)
+
+    with pytest.raises(SchemaError) as exc_info:
+        validate_schema(schema)
+
+    assert 'Interface "SomeInterface2" cannot implement itself' in str(
+        exc_info.value,
+    )
+
+
+def test_cyclic_interface_chain_deeper():
+    iface1 = InterfaceType(
+        "SomeInterface1",
+        [Field("f", String)],
+        interfaces=lambda: [SomeOtherInterface, SomeInterface, iface2],
+    )
+
+    iface2 = InterfaceType(
+        "SomeInterface2",
+        [Field("f", String)],
+        interfaces=lambda: [SomeOtherInterface, SomeInterface, iface1],
+    )
+
+    schema = _single_type_schema(
+        ObjectType("Foo", [Field("f1", iface1), Field("f2", iface2)]),
+    )
+
     with pytest.raises(SchemaError) as exc_info:
         validate_schema(schema)
 
     assert (
-        'Interface field argument "IFace.f.arg" is not provided by "Obj.f"'
+        'Interface "SomeInterface2" cannot implement itself (via: "SomeInterface1")'
         in str(exc_info.value)
     )
 
-
-def test_reject_object_fields_with_incorrectly_typed_interface_argument():
-    iface = InterfaceType(
-        "IFace",
-        [Field("f", String, [Argument("arg", String)])],
-    )
-    obj = ObjectType(
-        "Obj",
-        [Field("f", String, [Argument("arg", Int)])],
-        interfaces=[iface],
-    )
-    schema = _single_type_schema(obj)
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
     assert (
-        'Interface field argument "IFace.f.arg" expects '
-        'type "String" but "Obj.f.arg" is type "Int"' in str(exc_info.value)
-    )
-
-
-def test_reject_object_which_implements_interface_along_with_required_args():
-    iface = InterfaceType("IFace", [Field("f", String)])
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", String, [Argument("arg", NonNullType(String))])],
-            interfaces=[iface],
-        ),
-    )
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
-    assert (
-        'Object field argument "SomeObject.f.arg" is of required '
-        'type "String!" but is not provided by interface field "IFace.f"'
-    ) in str(exc_info.value)
-
-
-def test_accept_object_with_list_interface_list_field():
-    iface = InterfaceType("IFace", [Field("f", ListType(String))])
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", ListType(String))],
-            interfaces=[iface],
-        ),
-    )
-    schema.validate()
-
-
-def test_accept_object_with_non_list_interface_list_field():
-    iface = InterfaceType("IFace", [Field("f", ListType(String))])
-    schema = _single_type_schema(
-        ObjectType("SomeObject", [Field("f", String)], interfaces=[iface]),
-    )
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
-    assert (
-        'Interface field "IFace.f" expects type "[String]" but '
-        '"SomeObject.f" is type "String"' in str(exc_info.value)
-    )
-
-
-def test_accept_object_with_list_interface_non_list_field():
-    iface = InterfaceType("IFace", [Field("f", String)])
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", ListType(String))],
-            interfaces=[iface],
-        ),
-    )
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
-    assert (
-        'Interface field "IFace.f" expects type "String" but '
-        '"SomeObject.f" is type "[String]"' in str(exc_info.value)
-    )
-
-
-def test_accept_object_with_non_null_interface_null_field():
-    iface = InterfaceType("IFace", [Field("f", String)])
-    schema = _single_type_schema(
-        ObjectType(
-            "SomeObject",
-            [Field("f", NonNullType(String))],
-            interfaces=[iface],
-        ),
-    )
-    schema.validate()
-
-
-def test_reject_object_with_null_interface_non_null_field():
-    iface = InterfaceType("IFace", [Field("f", NonNullType(String))])
-    schema = _single_type_schema(
-        ObjectType("SomeObject", [Field("f", String)], interfaces=[iface]),
-    )
-    with pytest.raises(SchemaError) as exc_info:
-        validate_schema(schema)
-
-    assert (
-        'Interface field "IFace.f" expects type "String!" but '
-        '"SomeObject.f" is type "String"' in str(exc_info.value)
+        'Interface "SomeInterface1" cannot implement itself (via: "SomeInterface2")'
+        in str(exc_info.value)
     )
 
 

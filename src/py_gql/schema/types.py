@@ -74,8 +74,6 @@ class GraphQLLeafType(NamedType):
     These types may describe types which may be leaf values.
     """
 
-    pass
-
 
 class GraphQLCompositeType(NamedType):
     """
@@ -83,37 +81,6 @@ class GraphQLCompositeType(NamedType):
 
     These types may describe the parent context of a selection set.
     """
-
-    _source_fields = NotImplemented  # type: LazySeq[Field]
-    _fields = NotImplemented  # type: Optional[Sequence[Field]]
-    _source_interfaces = (
-        NotImplemented
-    )  # type: Optional[LazySeq[InterfaceType]]
-    _interfaces = NotImplemented  # type: Optional[Sequence[InterfaceType]]
-
-    @property
-    def fields(self) -> Sequence["Field"]:
-        if self._fields is None:
-            self._fields = lazy(self._source_fields) or []
-        return self._fields
-
-    @fields.setter
-    def fields(self, fields: List["Field"]) -> None:
-        self._fields = self._source_fields = fields
-
-    @property
-    def field_map(self) -> Dict[str, "Field"]:
-        return {f.name: f for f in self.fields}
-
-    @property
-    def interfaces(self) -> Sequence["InterfaceType"]:
-        if self._interfaces is None:
-            self._interfaces = lazy(self._source_interfaces) or []
-        return self._interfaces
-
-    @interfaces.setter
-    def interfaces(self, interfaces: List["InterfaceType"]) -> None:
-        self._interfaces = self._source_interfaces = interfaces
 
 
 # TODO: The default value handling is really weird. Should be reviewed.
@@ -890,6 +857,30 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
         self.resolve_type = resolve_type
 
+    @property
+    def fields(self) -> Sequence["Field"]:
+        if self._fields is None:
+            self._fields = lazy(self._source_fields) or []
+        return self._fields
+
+    @fields.setter
+    def fields(self, fields: List["Field"]) -> None:
+        self._fields = self._source_fields = fields
+
+    @property
+    def field_map(self) -> Dict[str, "Field"]:
+        return {f.name: f for f in self.fields}
+
+    @property
+    def interfaces(self) -> Sequence["InterfaceType"]:
+        if self._interfaces is None:
+            self._interfaces = lazy(self._source_interfaces) or []
+        return self._interfaces
+
+    @interfaces.setter
+    def interfaces(self, interfaces: List["InterfaceType"]) -> None:
+        self._interfaces = self._source_interfaces = interfaces
+
 
 class ObjectType(GraphQLCompositeType, NamedType):
     """
@@ -955,6 +946,30 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
+
+    @property
+    def fields(self) -> Sequence["Field"]:
+        if self._fields is None:
+            self._fields = lazy(self._source_fields) or []
+        return self._fields
+
+    @fields.setter
+    def fields(self, fields: List["Field"]) -> None:
+        self._fields = self._source_fields = fields
+
+    @property
+    def field_map(self) -> Dict[str, "Field"]:
+        return {f.name: f for f in self.fields}
+
+    @property
+    def interfaces(self) -> Sequence["InterfaceType"]:
+        if self._interfaces is None:
+            self._interfaces = lazy(self._source_interfaces) or []
+        return self._interfaces
+
+    @interfaces.setter
+    def interfaces(self, interfaces: List["InterfaceType"]) -> None:
+        self._interfaces = self._source_interfaces = interfaces
 
 
 class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
