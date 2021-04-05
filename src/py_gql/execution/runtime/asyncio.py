@@ -146,12 +146,13 @@ class AsyncIORuntime(SubscriptionRuntime):
 
         return value
 
-    def map_stream(
+    async def map_stream(
         self,
         source_stream: AsyncIterator[T],
         map_value: Callable[[T], Awaitable[G]],
     ) -> AsyncIterable[G]:
-        return AsyncMap(source_stream, map_value)
+        async for value in source_stream:
+            yield await map_value(value)
 
     def wrap_callable(self, func: Callable[..., Any]) -> Callable[..., Any]:
         if (
@@ -168,24 +169,6 @@ class AsyncIORuntime(SubscriptionRuntime):
             return wrapped
 
         return func
-
-
-# This is helper class is necessary because we cannot use async generators in
-# order to support Python 3.5.
-class AsyncMap:
-    __slots__ = ("source_stream", "map_value")
-
-    def __init__(self, source_stream, map_value):
-        self.source_stream = source_stream
-        self.map_value = map_value
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        return await self.map_value(
-            await type(self.source_stream).__anext__(self.source_stream),
-        )
 
 
 def _isawaitable_fast(value, cache={}, __isawaitable=isawaitable):
