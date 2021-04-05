@@ -766,7 +766,7 @@ class TestResolverValidation:
         def resolver(root, ctx, info):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -782,7 +782,7 @@ class TestResolverValidation:
         def resolver(root, ctx, info, *, a, b, c):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -797,7 +797,7 @@ class TestResolverValidation:
         def resolver(root, ctx, info, *, b, c, d, a="s"):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -819,7 +819,7 @@ class TestResolverValidation:
         def resolver(*, b, c, a="s", d=None):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -834,7 +834,7 @@ class TestResolverValidation:
         def resolver(root, ctx, info, bar, *, b, c, a="s", d=None):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -873,7 +873,7 @@ class TestResolverValidation:
         def resolver(root, ctx, info, a, **kwargs):
             pass
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -956,7 +956,7 @@ class TestInputTypeCycles:
         C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
         schema = self._schema([A, B, C])
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
@@ -979,7 +979,7 @@ class TestInputTypeCycles:
         C = InputObjectType("C", [InputField("a", lambda: NonNullType(A))])
         schema = self._schema([A, B, C])
 
-        with pytest.raises(SchemaError) as exc_info:
+        with pytest.raises(SchemaValidationError) as exc_info:
             validate_schema(schema)
 
         assert set([str(e) for e in exc_info.value.errors]) == set(
