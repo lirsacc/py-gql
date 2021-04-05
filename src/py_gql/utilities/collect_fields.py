@@ -8,12 +8,12 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Pattern,
     Sequence,
     Set,
     TypeVar,
     Union,
 )
-from typing.re import Pattern
 
 from ..lang import ast
 from ..schema import (
@@ -212,7 +212,7 @@ def selected_fields(
     fragments: Mapping[str, ast.FragmentDefinition],
     variables: Mapping[str, Any],
     maxdepth: Optional[int] = 1,
-    pattern: Optional[Union[str, Pattern]] = None,
+    pattern: Optional[Union[str, Pattern[str]]] = None,
     _path: Optional[List[str]] = None,
 ) -> List[str]:
     """
