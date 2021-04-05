@@ -33,7 +33,7 @@ class CaseSchemaTransform(abc.ABC, SchemaVisitor):
 
     This transform can be implemented to systematically expose a different name
     for field and directive arguments, fields and input fields. No other object
-    is touchedand description are not modified.
+    is touched and descriptions are not modified.
     """
 
     @abc.abstractmethod
