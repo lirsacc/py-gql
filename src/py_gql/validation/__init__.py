@@ -55,7 +55,7 @@ def validate_with_rules(
     document: _ast.Document,
     *,
     variables: Optional[Dict[str, Any]] = None,
-    rules: Sequence[Type[ValidationVisitor]] = ()
+    rules: Sequence[Type[ValidationVisitor]] = (),
 ) -> List[ValidationError]:
     """
     Validate a GraphQL document using a collection of :class:`ValidationVisitor`.

@@ -65,7 +65,7 @@ class ResolutionContext:
         context_value: Any,
         *,
         disable_introspection: bool = False,
-        middlewares: Optional[Sequence[Callable[..., Any]]] = None
+        middlewares: Optional[Sequence[Callable[..., Any]]] = None,
     ):
         #: ~py_gql.schema.Schema: Current schema.
         self.schema = schema

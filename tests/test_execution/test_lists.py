@@ -35,7 +35,7 @@ async def run_test(
     expected_data=None,
     expected_errors=None,
     expected_exc=None,
-    expected_msg=None
+    expected_msg=None,
 ):
 
     data = _obj(test=test_data)

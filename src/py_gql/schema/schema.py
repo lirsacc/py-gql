@@ -450,7 +450,7 @@ class Schema(ResolverMap):
         fieldname: str,
         resolver: Resolver,
         *,
-        allow_override: bool = False
+        allow_override: bool = False,
     ) -> None:
         super().register_resolver(
             typename, fieldname, resolver, allow_override=allow_override
@@ -498,7 +498,7 @@ class Schema(ResolverMap):
         fieldname: str,
         resolver: Resolver,
         *,
-        allow_override: bool = False
+        allow_override: bool = False,
     ) -> None:
         super().register_subscription(
             typename, fieldname, resolver, allow_override=allow_override
@@ -542,7 +542,7 @@ class Schema(ResolverMap):
         typename: str,
         resolver: TypeResolver,
         *,
-        allow_override: bool = False
+        allow_override: bool = False,
     ) -> None:
         super().register_type_resolver(
             typename, resolver, allow_override=allow_override

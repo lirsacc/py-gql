@@ -209,7 +209,7 @@ def selected_fields(
     variables: Mapping[str, Any],
     maxdepth: Optional[int] = 1,
     pattern: Optional[Union[str, Pattern]] = None,
-    _path: Optional[List[str]] = None
+    _path: Optional[List[str]] = None,
 ) -> List[str]:
     """
     Extract a list of field paths from an object field and provided fragments.

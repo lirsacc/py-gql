@@ -27,7 +27,7 @@ def subscribe(
     context_value: Optional[Any] = None,
     instrumentation: Optional[Instrumentation] = None,
     runtime: SubscriptionRuntime,
-    executor_cls: Type[Executor] = Executor
+    executor_cls: Type[Executor] = Executor,
 ) -> Any:
     """
     Execute a subscription against a schema and return the appropriate response stream.

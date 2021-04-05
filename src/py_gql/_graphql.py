@@ -30,7 +30,7 @@ def process_graphql_query(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     runtime: Optional[Runtime] = None,
-    executor_cls: Type[Executor] = Executor
+    executor_cls: Type[Executor] = Executor,
 ) -> Any:
     """
     Execute a GraphQL query.
@@ -158,7 +158,7 @@ async def graphql(
     context: Any = None,
     validators: Sequence[Validator] = (default_validator,),
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    instrumentation: Optional[Instrumentation] = None
+    instrumentation: Optional[Instrumentation] = None,
 ) -> GraphQLResult:
     """
     Execute a GraphQL query on the AsyncIO runtime.
@@ -197,7 +197,7 @@ def graphql_blocking(
     context: Any = None,
     validators: Sequence[Validator] = (default_validator,),
     middlewares: Optional[Sequence[Callable[..., Any]]] = None,
-    instrumentation: Optional[Instrumentation] = None
+    instrumentation: Optional[Instrumentation] = None,
 ) -> GraphQLResult:
     """
     Execute a GraphQL query in the current thread.

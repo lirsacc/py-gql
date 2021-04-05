@@ -67,7 +67,7 @@ class Executor(ResolutionContext):
         middlewares: Optional[Sequence[Callable[..., Any]]] = None,
         instrumentation: Optional[Instrumentation] = None,
         disable_introspection: bool = False,
-        runtime: Optional[Runtime] = None
+        runtime: Optional[Runtime] = None,
     ):
         super().__init__(
             schema,

@@ -15,7 +15,7 @@ def default_resolver(
     __getattr: Any = getattr,
     __callable: Any = callable,
     __mapping_cls: Any = Mapping,
-    **args: Any
+    **args: Any,
 ) -> Any:
     """
     Resolve a field from dictionaries or objects.

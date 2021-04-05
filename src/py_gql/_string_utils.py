@@ -345,7 +345,7 @@ def quoted_options_list(
     options: Sequence[str],
     *,
     separator: str = ", ",
-    final_separator: str = " or "
+    final_separator: str = " or ",
 ) -> str:
     """
     Quote a list of possible strings.

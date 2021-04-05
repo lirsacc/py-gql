@@ -27,7 +27,7 @@ def execute(
     instrumentation: Optional[Instrumentation] = None,
     disable_introspection: bool = False,
     runtime: Optional[Runtime] = None,
-    executor_cls: Type[Executor] = Executor
+    executor_cls: Type[Executor] = Executor,
 ) -> Any:
     """
     Execute a query or mutation against a schema.
