@@ -33,6 +33,7 @@ Unreleased
   - `ResolveInfo.get_all_directive_arguments` has been added to handle repeated directives.
 - Added `ASTSchemaConverter`.
 - Added validation for recursive input types with non breakable chains.
+- Add support for `implements` keyword on interfaces. (see [RFC](https://github.com/graphql/graphql-spec/pull/373)).
 
 [0.6.1](https://github.com/lirsacc/py-gql/releases/tag/0.6.1) - 2020-04-01
 --------------------------------------------------------------------------
