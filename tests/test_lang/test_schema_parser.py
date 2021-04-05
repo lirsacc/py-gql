@@ -340,7 +340,7 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces():
     )
 
 
-def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_ampersand():  # noqa: E501
+def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_ampersand():  # noqa: E501, B950
     body = "type Hello implements & Wo & rld { field: String }"
     assert_node_equal(
         parse(body, allow_type_system=True),
