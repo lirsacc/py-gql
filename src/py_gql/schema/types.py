@@ -805,7 +805,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
 
         interfaces: Implemented interfaces
 
-        interfaces (Sequence[InterfaceType]):
+        interfaces (LazySeq[InterfaceType]):
             Implemented interfaces.
 
         resolve_type: Type resolver

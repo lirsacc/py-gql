@@ -2,7 +2,7 @@ import pytest
 
 from py_gql._string_utils import dedent
 from py_gql._utils import flatten
-from py_gql.exc import SDLError
+from py_gql.exc import SchemaValidationError, SDLError
 from py_gql.exts.scalars import UUID
 from py_gql.lang import ast as _ast
 from py_gql.schema import ID, Boolean, Field, Float, Int, ObjectType, String
@@ -201,6 +201,36 @@ def test_interface_type_extension_already_implemented_interface():
         "locations": [{"column": 48, "line": 5}],
         "message": 'Interface "IFace2" already implemented for interface "IFace1"',
     }
+
+
+def test_interface_type_extension_recursive_implements_interface():
+    # Test that we do not get a recursion error.
+    with pytest.raises(SchemaValidationError):
+        build_schema(
+            """
+            interface Base {
+                a: String
+            }
+
+            type Foo implements IFace1 & Base {
+                a: String
+            }
+
+            interface IFace1 implements Base {
+                a: String
+            }
+
+            interface IFace2 implements IFace1 & Base {
+                a: String
+            }
+
+            extend interface IFace1 implements IFace2
+
+            type Query {
+                foo: Foo
+            }
+            """,
+        )
 
 
 def test_interface_type_extension_bad_extension():
