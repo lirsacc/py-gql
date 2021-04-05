@@ -6,7 +6,6 @@ Collection of useful tracers implementations.
 import datetime
 from typing import Any, Dict, Optional, Tuple, Union, cast
 
-from ._utils import OrderedDict
 from .execution import GraphQLExtension, Instrumentation, ResolveInfo
 
 
@@ -45,9 +44,7 @@ class TimingTracer(Instrumentation):
     """
 
     def __init__(self):
-        self.fields = (
-            OrderedDict()
-        )  # type: Dict[Tuple[Union[str, int]], FieldTiming]
+        self.fields = {}  # type: Dict[Tuple[Union[str, int]], FieldTiming]
         self.start = None  # type: Optional[datetime.datetime]
         self.end = None  # type: Optional[datetime.datetime]
         self.parse_end = None  # type: Optional[datetime.datetime]

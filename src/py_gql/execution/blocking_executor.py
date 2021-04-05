@@ -2,7 +2,6 @@
 
 from typing import Any, Callable, Dict, List
 
-from .._utils import OrderedDict
 from ..exc import CoercionError, ResolverError
 from ..lang import ast as _ast
 from ..schema import Field, GraphQLType, ObjectType
@@ -33,22 +32,17 @@ class BlockingExecutor(Executor):
         path: ResponsePath,
         fields: CollectedFields,
     ) -> Dict[str, Any]:
-        return OrderedDict(
-            [
-                (
-                    key,
-                    self.resolve_field(
-                        parent_type,
-                        root,
-                        field_def,
-                        nodes,
-                        path + [key],
-                    ),
-                )
-                for key, field_def, nodes in fields
-                if field_def is not None
-            ],
-        )
+        return {
+            key: self.resolve_field(
+                parent_type,
+                root,
+                field_def,
+                nodes,
+                path + [key],
+            )
+            for key, field_def, nodes in fields
+            if field_def is not None
+        }
 
     execute_fields_serially = execute_fields
 

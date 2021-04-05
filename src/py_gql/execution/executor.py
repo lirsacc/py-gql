@@ -3,7 +3,7 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar, Union
 
 from .._string_utils import stringify_path
-from .._utils import OrderedDict, apply_middlewares, is_iterable
+from .._utils import apply_middlewares, is_iterable
 from ..exc import (
     CoercionError,
     ResolverError,
@@ -231,7 +231,7 @@ class Executor(ResolutionContext):
             pending.append(resolved)
 
         def _collect(done):
-            return OrderedDict(zip(keys, done))
+            return dict(zip(keys, done))
 
         return self.runtime.map_value(
             self.runtime.gather_values(pending),
@@ -245,7 +245,7 @@ class Executor(ResolutionContext):
         path: ResponsePath,
         fields: CollectedFields,
     ) -> Any:
-        resolved_fields = OrderedDict()  # type: Dict[str, Any]
+        resolved_fields = {}  # type: Dict[str, Any]
 
         args = [
             (key, field_def, nodes)

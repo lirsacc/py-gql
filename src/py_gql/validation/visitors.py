@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from typing import List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
 
-from .._utils import DefaultOrderedDict, OrderedDict, deduplicate, find_one
+from .._utils import deduplicate, find_one
 from ..exc import UnknownEnumValue, UnknownType, ValidationError
 from ..lang import ast as _ast
 from ..lang.visitor import DispatchingVisitor
@@ -128,18 +129,14 @@ class VariablesCollector(ValidationVisitor):
         super(VariablesCollector, self).__init__(schema, type_info)
 
         self._op = None
-        self._op_variables = DefaultOrderedDict(
-            OrderedDict,
-        )  # type: VariableUsages
-        self._op_defined_variables = DefaultOrderedDict(
-            OrderedDict,
+        self._op_variables = defaultdict(dict)  # type: VariableUsages
+        self._op_defined_variables = defaultdict(
+            dict,
         )  # type: MMap[_ast.VariableDefinition]
-        self._op_fragments = DefaultOrderedDict(list)  # type: LMap[str]
+        self._op_fragments = defaultdict(list)  # type: LMap[str]
         self._fragment = None
-        self._fragment_variables = DefaultOrderedDict(
-            OrderedDict,
-        )  # type: VariableUsages
-        self._fragment_fragments = DefaultOrderedDict(list)  # type: LMap[str]
+        self._fragment_variables = defaultdict(dict)  # type: VariableUsages
+        self._fragment_fragments = defaultdict(list)  # type: LMap[str]
         self._in_var_def = False
 
     def enter_operation_definition(self, node):

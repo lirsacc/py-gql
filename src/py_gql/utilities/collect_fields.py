@@ -15,7 +15,6 @@ from typing import (
 )
 from typing.re import Pattern
 
-from .._utils import OrderedDict
 from ..lang import ast
 from ..schema import (
     GraphQLAbstractType,
@@ -45,7 +44,7 @@ def collect_fields(
     _seen_fragments: Optional[Set[str]] = None,
 ) -> GroupedFields:
     _seen_fragments = _seen_fragments or set()
-    grouped_fields = OrderedDict()  # type: GroupedFields
+    grouped_fields = {}  # type: GroupedFields
 
     for selection in selections:
         if isinstance(selection, ast.Field):
@@ -117,7 +116,7 @@ def collect_fields_untyped(
     _seen_fragments: Optional[Set[str]] = None,
 ) -> GroupedFields:
     _seen_fragments = _seen_fragments or set()
-    grouped_fields = OrderedDict()  # type: GroupedFields
+    grouped_fields = {}  # type: GroupedFields
 
     for selection in selections:
         if isinstance(selection, ast.Field):

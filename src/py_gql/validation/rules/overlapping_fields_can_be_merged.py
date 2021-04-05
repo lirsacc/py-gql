@@ -12,7 +12,7 @@ from typing import (
     cast,
 )
 
-from ..._utils import OrderedDict, deduplicate, flatten
+from ..._utils import deduplicate, flatten
 from ...exc import UnknownType
 from ...lang import ast as _ast
 from ...schema import (
@@ -309,7 +309,7 @@ def _collect_fields_and_fragments(
 ) -> FieldsAndFragments:
 
     if node_and_defs is None:
-        node_and_defs = OrderedDict()
+        node_and_defs = {}
     if fragment_names is None:
         fragment_names = []
 
