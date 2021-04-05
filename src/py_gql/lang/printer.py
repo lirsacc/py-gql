@@ -392,6 +392,10 @@ class ASTPrinter:
                 [
                     "interface",
                     node.name.value,
+                    _wrap(
+                        "implements ",
+                        _join(map(self, node.interfaces), " & "),
+                    ),
                     self.print_directives(node),
                     _block(map(self, node.fields), self.indent),
                 ],
@@ -408,6 +412,7 @@ class ASTPrinter:
             [
                 "extend interface",
                 node.name.value,
+                _wrap("implements ", _join(map(self, node.interfaces), " & ")),
                 self.print_directives(node),
                 _block(map(self, node.fields), self.indent),
             ],

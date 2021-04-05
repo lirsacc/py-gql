@@ -1089,7 +1089,7 @@ class Parser:
         """
         ObjectTypeDefinition :
             Description? type Name ImplementsInterfaces? Directives[Const]?
-                FieldsDefinition?
+            FieldsDefinition?
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1183,7 +1183,8 @@ class Parser:
     def parse_interface_type_definition(self) -> _ast.InterfaceTypeDefinition:
         """
         InterfaceTypeDefinition :
-            Description? interface Name Directives[Const]? FieldsDefinition?
+            Description? interface Name ImplementsInterfaces? Directives[Const]?
+            FieldsDefinition?
         """
         start = self.peek()
         desc = self.parse_description()
@@ -1191,6 +1192,7 @@ class Parser:
         return _ast.InterfaceTypeDefinition(
             description=desc,
             name=self.parse_name(),
+            interfaces=self.parse_implements_interfaces(),
             directives=self.parse_directives(True),
             fields=self.parse_fields_definition(),
             loc=self._loc(start),
@@ -1385,7 +1387,7 @@ class Parser:
         interfaces = self.parse_implements_interfaces()
         directives = self.parse_directives(True)
         fields = self.parse_fields_definition()
-        if (not interfaces) and (not directives) and (not fields):
+        if not (interfaces or directives or fields):
             tok = self.peek()
             raise UnexpectedToken(
                 f'Unexpected "{tok}"',
@@ -1404,16 +1406,19 @@ class Parser:
     def parse_interface_type_extension(self) -> _ast.InterfaceTypeExtension:
         """
         InterfaceTypeExtension :
-            extend interface Name Directives[Const]? FieldsDefinition
-            | extend interface Name Directives[Const]
+            extend interface Name ImplementsInterfaces? Directives[Const]?
+                FieldsDefinition
+            | extend interface Name ImplementsInterfaces? Directives[Const]
+            | extend interface Name ImplementsInterfaces
         """
         start = self.peek()
         self.expect_keyword("extend")
         self.expect_keyword("interface")
         name = self.parse_name()
+        interfaces = self.parse_implements_interfaces()
         directives = self.parse_directives(True)
         fields = self.parse_fields_definition()
-        if (not directives) and (not fields):
+        if not (interfaces or directives or fields):
             tok = self.peek()
             raise UnexpectedToken(
                 f'Unexpected "{tok}"',
@@ -1423,6 +1428,7 @@ class Parser:
 
         return _ast.InterfaceTypeExtension(
             name=name,
+            interfaces=interfaces,
             directives=directives,
             fields=fields,
             loc=self._loc(start),

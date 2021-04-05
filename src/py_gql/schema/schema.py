@@ -135,18 +135,16 @@ class Schema(ResolverMap):
         self._invalidate_and_rebuild_caches()
 
     def _invalidate_and_rebuild_caches(self):
-        self._possible_types = (
-            {}
-        )  # type: Dict[GraphQLAbstractType, Sequence[ObjectType]]
-        self._is_valid = None  # type: Optional[bool]
-        self._literal_types_cache = {}  # type: Dict[_ast.Type, GraphQLType]
+        self._is_valid: Optional[bool] = None
+        self._literal_types_cache: Dict[_ast.Type, GraphQLType] = {}
 
-        self.implementations = defaultdict(
-            list,
-        )  # type: Dict[str, List[ObjectType]]
+        self.implementations: Dict[
+            str,
+            List[Union[ObjectType, InterfaceType]],
+        ] = defaultdict(list)
 
         for type_ in self.types.values():
-            if isinstance(type_, ObjectType):
+            if isinstance(type_, (InterfaceType, ObjectType)):
                 for i in type_.interfaces:
                     self.implementations[i.name].append(type_)
 
@@ -253,12 +251,6 @@ class Schema(ResolverMap):
         except KeyError:
             raise UnknownType(name)
 
-    def has_type(self, name: str) -> bool:
-        """
-        Check if the schema contains a type with the given name.
-        """
-        return name in self.types
-
     def get_type_from_literal(self, ast_node: _ast.Type) -> GraphQLType:
         """
         Return a :class:`py_gql.schema.Type` instance for an AST type node.
@@ -292,7 +284,7 @@ class Schema(ResolverMap):
     def get_possible_types(
         self,
         abstract_type: GraphQLAbstractType,
-    ) -> Sequence[ObjectType]:
+    ) -> Sequence[Union[InterfaceType, ObjectType]]:
         """
         Get the possible implementations of an abstract type.
 
@@ -306,18 +298,10 @@ class Schema(ResolverMap):
             List of possible types.
 
         """
-        if abstract_type in self._possible_types:
-            return self._possible_types[abstract_type]
-
         if isinstance(abstract_type, UnionType):
-            self._possible_types[abstract_type] = abstract_type.types or []
-            return self._possible_types[abstract_type]
+            return abstract_type.types or []
         elif isinstance(abstract_type, InterfaceType):
-            self._possible_types[abstract_type] = self.implementations.get(
-                abstract_type.name,
-                [],
-            )
-            return self._possible_types[abstract_type]
+            return self.implementations.get(abstract_type.name, [])
 
         raise TypeError(f"Not an abstract type: {abstract_type}")
 
@@ -331,18 +315,18 @@ class Schema(ResolverMap):
 
         Returns: ``True`` if ``type_`` is valid for ``abstract_type``
         """
-        if not isinstance(type_, ObjectType):
+        if not isinstance(type_, (InterfaceType, ObjectType)):
             return False
 
         return type_ in self.get_possible_types(abstract_type)
 
-    def is_subtype(self, type_, super_type):
+    def is_subtype(self, type_: GraphQLType, super_type: GraphQLType) -> bool:
         """
         Check if a type is either equal or a subset of a super type (covariant).
 
         Args:
-            type_ (py_gql.schema.Type): Target type.
-            super_type (py_gql.schema.Type): Super type.
+            type_ (py_gql.schema.GraphQLType): Target type.
+            super_type (py_gql.schema.GraphQLType): Super type.
 
         Returns:
             bool:
@@ -365,8 +349,10 @@ class Schema(ResolverMap):
             return False
 
         return (
-            isinstance(super_type, GraphQLAbstractType)
-            and isinstance(type_, ObjectType)
+            isinstance(
+                super_type,
+                GraphQLAbstractType,
+            )
             and self.is_possible_type(super_type, type_)
         )
 

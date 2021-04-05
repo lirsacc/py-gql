@@ -1,15 +1,14 @@
 # Tests were adapted from the one in the GraphQLJS reference implementation,
-# as our version exits early not all of the expected errors are aplicable but
+# as our version exits early not all of the expected errors are applicable but
 # they conserved as comments for reference.
-# Tests related to suggestion list are kept for reference but skipped as this
-# feature is not implemented.
+
 
 from py_gql.validation.rules import PossibleFragmentSpreadsChecker
 
 from .._test_utils import assert_checker_validation_result as run_test
 
 
-def test_of_the_same_object(schema):
+def test_object_into_the_same_object(schema):
     run_test(
         PossibleFragmentSpreadsChecker,
         schema,
@@ -20,7 +19,7 @@ def test_of_the_same_object(schema):
     )
 
 
-def test_of_the_same_object_with_inline_fragment(schema):
+def test_object_into_the_same_object_with_inline_fragment(schema):
     run_test(
         PossibleFragmentSpreadsChecker,
         schema,
@@ -304,5 +303,63 @@ def test_interface_into_non_overlapping_union(schema):
         [
             'Fragment "petFragment" cannot be spread here as types "Pet" and '
             '"HumanOrAlien" do not overlap.',
+        ],
+    )
+
+
+def test_interface_into_the_same_interface(schema):
+    run_test(
+        PossibleFragmentSpreadsChecker,
+        schema,
+        """
+        fragment ifaceWithinIface on Canine { ...canineFragment }
+        fragment canineFragment on Canine { name }
+        """,
+    )
+
+
+def test_interface_into_the_same_interface_with_inline_fragment(schema):
+    run_test(
+        PossibleFragmentSpreadsChecker,
+        schema,
+        """
+        fragment objectWithifaceWithinIfaceAnon on Canine { ... on Mammal { father } }
+        """,
+    )
+
+
+def test_interface_into_an_implementing_interface(schema):
+    run_test(
+        PossibleFragmentSpreadsChecker,
+        schema,
+        """
+        fragment ifaceWithinIface on Canine { ...mammalFragment }
+        fragment mammalFragment on Mammal { father }
+        """,
+    )
+
+
+def test_interface_into_an_implemented_interface(schema):
+    run_test(
+        PossibleFragmentSpreadsChecker,
+        schema,
+        """
+        fragment ifaceWithinIface on Mammal { ...canineFragment }
+        fragment canineFragment on Canine { father }
+        """,
+    )
+
+
+def test_interface_into_a_non_implemented_interface(schema):
+    run_test(
+        PossibleFragmentSpreadsChecker,
+        schema,
+        """
+        fragment canineFragment on Canine { ...intelligentFragment }
+        fragment intelligentFragment on Intelligent { iq }
+        """,
+        [
+            'Fragment "intelligentFragment" cannot be spread here as types '
+            '"Intelligent" and "Canine" do not overlap.',
         ],
     )

@@ -19,6 +19,7 @@ from ..lang import ast
 from ..schema import (
     GraphQLAbstractType,
     IncludeDirective,
+    InterfaceType,
     ObjectType,
     Schema,
     SkipDirective,
@@ -181,7 +182,7 @@ def _merge(groups: Dict[str, List[T]], *, into: Dict[str, List[T]]) -> None:
 
 def _fragment_type_applies(
     schema: Schema,
-    object_type: ObjectType,
+    type_: Union[ObjectType, InterfaceType],
     fragment: Union[ast.InlineFragment, ast.FragmentDefinition],
 ) -> bool:
     type_condition = fragment.type_condition
@@ -189,9 +190,9 @@ def _fragment_type_applies(
         return True
 
     fragment_type = schema.get_type_from_literal(type_condition)
-    return (fragment_type == object_type) or (
+    return (fragment_type == type_) or (
         isinstance(fragment_type, GraphQLAbstractType)
-        and schema.is_possible_type(fragment_type, object_type)
+        and schema.is_subtype(type_, fragment_type)
     )
 
 

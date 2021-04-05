@@ -2,7 +2,7 @@ import pytest
 
 from py_gql import graphql_blocking
 from py_gql._string_utils import dedent
-from py_gql.exc import SDLError
+from py_gql.exc import SchemaValidationError, SDLError
 from py_gql.exts.scalars import UUID
 from py_gql.lang import parse
 from py_gql.schema import SPECIFIED_DIRECTIVES
@@ -200,6 +200,56 @@ def test_simple_interface():
         }
         """,
     )
+
+
+def test_interface_implements_interface():
+    _check(
+        """
+        interface Base {
+            a: String
+        }
+
+        type Foo implements Intermediate & Base {
+            a: String
+        }
+
+        interface Intermediate implements Base {
+            a: String
+        }
+
+        type Query {
+            foo: Foo
+        }
+        """,
+    )
+
+
+def test_interface_implements_interface_recursive():
+    # Test that we do not get a recursion error.
+    with pytest.raises(SchemaValidationError):
+        build_schema(
+            """
+            interface Base {
+                a: String
+            }
+
+            type Foo implements Intermediate1 & Base {
+                a: String
+            }
+
+            interface Intermediate1 implements Intermediate2 & Base {
+                a: String
+            }
+
+            interface Intermediate2 implements Intermediate1 & Base {
+                a: String
+            }
+
+            type Query {
+                foo: Foo
+            }
+            """,
+        )
 
 
 def test_simple_output_enum():

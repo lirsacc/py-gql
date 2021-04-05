@@ -201,9 +201,7 @@ def _extend_schema(
 
     # Cast is safe as type defs will always lead to named types and not wrapped types
     types = [
-        cast(NamedType, builder.extend_type(t))
-        for t in schema.types.values()
-        if t.name in type_exts
+        cast(NamedType, builder.extend_type(t)) for t in schema.types.values()
     ] + [
         cast(NamedType, builder.extend_type(builder.build_type(t)))
         for t in type_defs.values()
@@ -414,7 +412,7 @@ def _collect_extensions(  # noqa: C901
 
     for ext in _type_exts:
         target = ext.name.value
-        if not ((target in type_defs) or schema.has_type(target)):
+        if not ((target in type_defs) or target in schema.types):
             if strict:
                 raise ExtensionError(
                     f'Cannot extend undefined type "{target}".',

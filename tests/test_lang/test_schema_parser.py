@@ -152,7 +152,7 @@ type Hello {
     )
 
 
-def test_it_parses_simple_extension():
+def test_it_parses_simple_type_extension():
     body = """
 extend type Hello {
   world: String
@@ -181,7 +181,7 @@ extend type Hello {
     )
 
 
-def test_it_parses_extension_without_fields():
+def test_it_parses_type_extension_without_fields():
     assert_node_equal(
         parse("extend type Hello implements Greeting", allow_type_system=True),
         _doc(
@@ -199,7 +199,7 @@ def test_it_parses_extension_without_fields():
     )
 
 
-def test_it_parses_extension_without_fields_followed_by_extension():
+def test_it_parses_type_extension_without_fields_followed_by_extension():
     assert_node_equal(
         parse(
             """
@@ -235,6 +235,95 @@ def test_extension_without_anything_throws():
     with pytest.raises(UnexpectedToken) as exc_info:
         parse("extend type Hello", allow_type_system=True)
     assert exc_info.value.position == 17
+    assert exc_info.value.message == 'Unexpected "<EOF>"'
+
+
+def test_it_parses_simple_interface_extension():
+    body = """
+    extend interface IHello {
+        world: String
+    }
+    """
+    assert_node_equal(
+        parse(body, allow_type_system=True),
+        _doc(
+            (0, 63),
+            [
+                _ast.InterfaceTypeExtension(
+                    loc=(5, 58),
+                    name=_name((22, 28), "IHello"),
+                    interfaces=[],
+                    directives=[],
+                    fields=[
+                        _field(
+                            (39, 52),
+                            _name((39, 44), "world"),
+                            _type((46, 52), "String"),
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    )
+
+
+def test_it_parses_interface_extension_without_fields():
+    assert_node_equal(
+        parse(
+            "extend interface IHello implements Greeting",
+            allow_type_system=True,
+        ),
+        _doc(
+            (0, 43),
+            [
+                _ast.InterfaceTypeExtension(
+                    loc=(0, 43),
+                    name=_name((17, 23), "IHello"),
+                    interfaces=[_type((35, 43), "Greeting")],
+                    fields=[],
+                    directives=[],
+                ),
+            ],
+        ),
+    )
+
+
+def test_it_parses_interface_extension_without_fields_followed_by_extension():
+    assert_node_equal(
+        parse(
+            """
+            extend interface IHello implements Greeting
+
+            extend interface IHello implements SecondGreeting
+            """,
+            allow_type_system=True,
+        ),
+        _ast.Document(
+            loc=(0, 132),
+            definitions=[
+                _ast.InterfaceTypeExtension(
+                    loc=(13, 56),
+                    name=_name((30, 36), "IHello"),
+                    interfaces=[_type((48, 56), "Greeting")],
+                    fields=[],
+                    directives=[],
+                ),
+                _ast.InterfaceTypeExtension(
+                    loc=(70, 119),
+                    name=_name((87, 93), "IHello"),
+                    interfaces=[_type((105, 119), "SecondGreeting")],
+                    fields=[],
+                    directives=[],
+                ),
+            ],
+        ),
+    )
+
+
+def test_interface_extension_without_anything_throws():
+    with pytest.raises(UnexpectedToken) as exc_info:
+        parse("extend interface Hello", allow_type_system=True)
+    assert exc_info.value.position == 22
     assert exc_info.value.message == 'Unexpected "<EOF>"'
 
 
@@ -363,6 +452,31 @@ def test_it_parses_simple_type_inheriting_multiple_interfaces_with_leading_amper
                             (35, 48),
                             _name((35, 40), "field"),
                             _type((42, 48), "String"),
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    )
+
+
+def test_it_parses_interface_inheriting_multiple_interfaces_with_leading_ampersand():  # noqa: E501, B950
+    body = "interface IHello implements & Wo & rld { field: String }"
+    assert_node_equal(
+        parse(body, allow_type_system=True),
+        _ast.Document(
+            loc=(0, 56),
+            definitions=[
+                _ast.InterfaceTypeDefinition(
+                    loc=(0, 56),
+                    name=_name((10, 16), "IHello"),
+                    interfaces=[_type((30, 32), "Wo"), _type((35, 38), "rld")],
+                    directives=[],
+                    fields=[
+                        _field(
+                            (41, 54),
+                            _name((41, 46), "field"),
+                            _type((48, 54), "String"),
                         ),
                     ],
                 ),

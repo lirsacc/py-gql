@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from .._utils import lazy
+from .._utils import Lazy, lazy
 from ..exc import ExtensionError, SDLError
 from ..lang import ast as _ast
 from ..schema import (
@@ -288,13 +288,28 @@ class ASTTypeBuilder:
             fields=[
                 self._build_field(field_node) for field_node in type_def.fields
             ],
+            interfaces=(
+                # Interface types can be recursive. Cycles should be caught by
+                # schema validation.
+                self.delay(
+                    lambda: [
+                        cast(
+                            InterfaceType,
+                            self.build_type(interface),
+                        )
+                        for interface in type_def.interfaces
+                    ],
+                )
+                if type_def.interfaces
+                else None
+            ),
             nodes=[type_def],
         )
 
     def _build_field(self, field_def: _ast.FieldDefinition) -> Field:
         return Field(
             field_def.name.value,
-            # has to be lazy to support cyclic definition
+            # Object types can be recursive.
             self.delay(ft.partial(self.build_type, field_def.type)),
             description=_desc(field_def),
             args=(
@@ -392,6 +407,8 @@ class ASTTypeBuilder:
 
         return InputField(
             node.name.value,
+            # Input object types can be recursive. Cycles should be caught by
+            # schema validation.
             self.delay(ft.partial(self.build_type, node.type)),
             default_value=default_value,
             description=_desc(node),
@@ -449,6 +466,7 @@ class ASTTypeBuilder:
     def _extend_field(self, field_def: Field) -> Field:
         return Field(
             field_def.name,
+            # Object types can be recursive.
             self.delay(ft.partial(self.extend_type, field_def.type)),
             description=field_def.description,
             deprecation_reason=field_def.deprecation_reason,
@@ -478,10 +496,41 @@ class ASTTypeBuilder:
                 field_names.add(ext_field.name.value)
                 fields.append(self._extend_field(self._build_field(ext_field)))
 
+        interface_names = set(i.name for i in interface_type.interfaces)
+        # No need for this to be lazy as types should have already been resolved
+        # and so not lead to any recursion error.
+        interfaces = [
+            cast(InterfaceType, self.extend_type(interface))
+            for interface in interface_type.interfaces
+        ]  # type: List[Lazy[InterfaceType]]
+
+        for extension in extensions:
+            for ext_interface in extension.interfaces:
+                if ext_interface.name.value in interface_names:
+                    raise ExtensionError(
+                        f'Interface "{ext_interface.name.value}" already '
+                        f'implemented for interface "{interface_type.name}"',
+                        [ext_interface],
+                    )
+                interface_names.add(ext_interface.name.value)
+                # Interface types can be recursive. Cycles should be caught by
+                # schema validation.
+                interfaces.append(
+                    cast(
+                        Callable[[], InterfaceType],
+                        lambda x=ext_interface: self.extend_type(
+                            self.build_type(x),
+                        ),
+                    ),
+                )
+
         return InterfaceType(
             name,
             description=interface_type.description,
             fields=fields,
+            # Interface types can be recursive. Cycles should be caught by
+            # schema validation.
+            interfaces=self.delay(lambda: [lazy(x) for x in interfaces]),
             nodes=interface_type.nodes + extensions,  # type: ignore
         )
 
@@ -555,6 +604,8 @@ class ASTTypeBuilder:
         fields = [
             InputField(
                 f.name,
+                # Input object types can be recursive. Cycles should be caught
+                # by schema validation.
                 self.delay(ft.partial(self.extend_type, f.type)),
                 default_value=self.delay(lambda x=f: x._default_value),  # type: ignore
                 description=f.description,
@@ -588,6 +639,8 @@ class ASTTypeBuilder:
     def _extend_input_field(self, field: InputField) -> InputField:
         return InputField(
             field.name,
+            # Input object types can be recursive. Cycles should be caught by
+            # schema validation.
             self.delay(ft.partial(self.extend_type, field.type)),
             default_value=self.delay(lambda x=field: x._default_value),  # type: ignore
             description=field.description,
