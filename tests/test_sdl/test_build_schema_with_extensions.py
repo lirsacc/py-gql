@@ -146,14 +146,22 @@ def test_interface_type_extension():
                 one: String
             }
 
-            extend interface IFace {
+            extend interface IFace implements IFace2 {
+                two: String
+            }
+
+            interface IFace2 {
                 two: String
             }
             """,
     ).to_string() == dedent(
         """
-            interface IFace {
+            interface IFace implements IFace2 {
                 one: String
+                two: String
+            }
+
+            interface IFace2 {
                 two: String
             }
 
@@ -176,6 +184,22 @@ def test_interface_type_extension_duplicate_field():
     assert exc_info.value.to_dict() == {
         "locations": [{"column": 38, "line": 4}],
         "message": 'Found duplicate field "one" when extending interface "IFace"',
+    }
+
+
+def test_interface_type_extension_already_implemented_interface():
+    with pytest.raises(SDLError) as exc_info:
+        build_schema(
+            """
+            type Query { foo: String }
+            interface IFace1 implements IFace2 { one: String }
+            interface IFace2 { one: String }
+            extend interface IFace1 implements IFace2
+            """,
+        )
+    assert exc_info.value.to_dict() == {
+        "locations": [{"column": 48, "line": 5}],
+        "message": 'Interface "IFace2" already implemented for interface "IFace1"',
     }
 
 

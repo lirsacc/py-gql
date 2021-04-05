@@ -201,9 +201,7 @@ def _extend_schema(
 
     # Cast is safe as type defs will always lead to named types and not wrapped types
     types = [
-        cast(NamedType, builder.extend_type(t))
-        for t in schema.types.values()
-        if t.name in type_exts
+        cast(NamedType, builder.extend_type(t)) for t in schema.types.values()
     ] + [
         cast(NamedType, builder.extend_type(builder.build_type(t)))
         for t in type_defs.values()

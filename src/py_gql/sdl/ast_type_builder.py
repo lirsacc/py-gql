@@ -288,6 +288,14 @@ class ASTTypeBuilder:
             fields=[
                 self._build_field(field_node) for field_node in type_def.fields
             ],
+            interfaces=(
+                [
+                    cast(InterfaceType, self.build_type(interface))
+                    for interface in type_def.interfaces
+                ]
+                if type_def.interfaces
+                else None
+            ),
             nodes=[type_def],
         )
 
@@ -478,10 +486,33 @@ class ASTTypeBuilder:
                 field_names.add(ext_field.name.value)
                 fields.append(self._extend_field(self._build_field(ext_field)))
 
+        interface_names = set(i.name for i in interface_type.interfaces)
+        interfaces = [
+            cast(InterfaceType, self.extend_type(interface))
+            for interface in interface_type.interfaces
+        ]
+
+        for extension in extensions:
+            for ext_interface in extension.interfaces:
+                if ext_interface.name.value in interface_names:
+                    raise ExtensionError(
+                        f'Interface "{ext_interface.name.value}" already '
+                        f'implemented for interface "{interface_type.name}"',
+                        [ext_interface],
+                    )
+                interface_names.add(ext_interface.name.value)
+                interfaces.append(
+                    cast(
+                        InterfaceType,
+                        self.extend_type(self.build_type(ext_interface)),
+                    ),
+                )
+
         return InterfaceType(
             name,
             description=interface_type.description,
             fields=fields,
+            interfaces=interfaces,
             nodes=interface_type.nodes + extensions,  # type: ignore
         )
 

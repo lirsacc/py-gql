@@ -202,6 +202,28 @@ def test_simple_interface():
     )
 
 
+def test_interface_implements_interface():
+    _check(
+        """
+        interface Base {
+            a: String
+        }
+
+        type Foo implements Intermediate & Base {
+            a: String
+        }
+
+        interface Intermediate implements Base {
+            a: String
+        }
+
+        type Query {
+            foo: Foo
+        }
+        """,
+    )
+
+
 def test_simple_output_enum():
     _check(
         """
