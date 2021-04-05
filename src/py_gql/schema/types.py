@@ -86,6 +86,10 @@ class GraphQLCompositeType(NamedType):
 
     _source_fields = NotImplemented  # type: LazySeq[Field]
     _fields = NotImplemented  # type: Optional[Sequence[Field]]
+    _source_interfaces = (
+        NotImplemented
+    )  # type: Optional[LazySeq[InterfaceType]]
+    _interfaces = NotImplemented  # type: Optional[Sequence[InterfaceType]]
 
     @property
     def fields(self) -> Sequence["Field"]:
@@ -100,6 +104,16 @@ class GraphQLCompositeType(NamedType):
     @property
     def field_map(self) -> Dict[str, "Field"]:
         return {f.name: f for f in self.fields}
+
+    @property
+    def interfaces(self) -> Sequence["InterfaceType"]:
+        if self._interfaces is None:
+            self._interfaces = lazy(self._source_interfaces) or []
+        return self._interfaces
+
+    @interfaces.setter
+    def interfaces(self, interfaces: List["InterfaceType"]) -> None:
+        self._interfaces = self._source_interfaces = interfaces
 
 
 # TODO: The default value handling is really weird. Should be reviewed.
@@ -822,6 +836,11 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
 
         fields: Fields
 
+        interfaces: Implemented interfaces
+
+        interfaces (Sequence[InterfaceType]):
+            Implemented interfaces.
+
         resolve_type: Type resolver
 
         description: Type description
@@ -851,6 +870,7 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self,
         name: str,
         fields: LazySeq[Field],
+        interfaces: Optional[LazySeq["InterfaceType"]] = None,
         resolve_type: Optional["TypeResolver"] = None,
         description: Optional[str] = None,
         nodes: Optional[
@@ -863,6 +883,8 @@ class InterfaceType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
         self.description = description
         self._source_fields = fields
         self._fields = None  # type: Optional[Sequence[Field]]
+        self._source_interfaces = interfaces
+        self._interfaces = None  # type: Optional[Sequence[InterfaceType]]
         self.nodes = (
             [] if nodes is None else nodes
         )  # noqa: B950, type: List[Union[_ast.InterfaceTypeDefinition, _ast.InterfaceTypeExtension]]
@@ -933,16 +955,6 @@ class ObjectType(GraphQLCompositeType, NamedType):
         self.nodes = (
             [] if nodes is None else nodes
         )  # type: List[Union[_ast.ObjectTypeDefinition, _ast.ObjectTypeExtension]]
-
-    @property
-    def interfaces(self) -> Sequence[InterfaceType]:
-        if self._interfaces is None:
-            self._interfaces = lazy(self._source_interfaces) or []
-        return self._interfaces
-
-    @interfaces.setter
-    def interfaces(self, interfaces: List[InterfaceType]) -> None:
-        self._interfaces = self._source_interfaces = interfaces
 
 
 class UnionType(GraphQLCompositeType, GraphQLAbstractType, NamedType):
