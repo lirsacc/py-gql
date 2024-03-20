@@ -11,7 +11,7 @@ flake8-tuple ~= 0.2
 flake8-commas ~= 2.0
 flake8-docstrings ~= 1.5
 
-black == 19.10b0; python_version >= "3.6"
+black == 24.3.0; python_version >= "3.6"
 flake8-black ~= 0.1; python_version >= "3.6"
 
 # pep8-naming ~= 0.9
